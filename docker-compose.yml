@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    environment:
+      POSTGRES_USER: clinical_ai
+      POSTGRES_PASSWORD: clinical_ai_password
+      POSTGRES_DB: clinical_ai_db
+    ports:
+      # Host 5433 — 5432 may be taken by other local projects.
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinical_ai -d clinical_ai_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://clinical_ai:clinical_ai_password@postgres:5432/clinical_ai_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: change-me-in-production
+      # Ollama runs NATIVELY on the host (Metal GPU passthrough is not
+      # available inside Docker on macOS) — do not add an ollama container.
+      OLLAMA_HOST: http://host.docker.internal:11434
+      OLLAMA_MODEL: qwen3:8b
+      OLLAMA_VISION_MODEL: llava:7b
+      DEBUG: "false"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      # urllib instead of curl — the slim python base image has no curl.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
