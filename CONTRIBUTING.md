@@ -16,8 +16,7 @@
 # Install dependencies
 pip install -r requirements.txt
 
-# Install dev dependencies
-pip install pytest black flake8 mypy
+# Dev dependencies (pytest, pytest-cov, ruff, mypy) are already in requirements.txt
 
 # Create .env file
 cp .env.example .env
@@ -26,14 +25,13 @@ cp .env.example .env
 ## Code Standards
 
 ### Python
-- Use Black for formatting
 - Use type hints
 - Follow PEP 8
 - Write docstrings
 
 ```bash
-black .
-flake8 .
+ruff check .
+ruff format .
 mypy .
 ```
 
@@ -45,9 +43,11 @@ mypy .
 
 ### Testing
 - Write tests for new features
-- Maintain >80% coverage
-- Test edge cases
-- Include integration tests
+- Maintain the 87% coverage gate (`pytest --cov`; CI fails below this — see `pyproject.toml`)
+- Test edge cases, including adversarial cases for the Citation Guard and RAG retrieval
+- If you touch `data/rag/SEED_GUIDELINES` or the Evidence Agent's prompt, run
+  `python -m intelligence.evaluation.run --mode full --record` and check the
+  [Evaluation](README.md#evaluation) numbers before opening a PR
 
 ## Commit Messages
 

@@ -25,7 +25,7 @@ clinical-ai-copilot/
 │   ├── agents/               # OllamaMCPAgent base + 5 agents + LangGraph workflow
 │   ├── medical-imaging/      # MONAI reference code (transforms, networks)
 │   ├── nlp/                  # MedCAT reference code (ner, pipeline, preprocessing)
-│   └── evaluation/           # Model evaluation (planned)
+│   └── evaluation/           # RAG eval harness — Recall@k, MRR, Citation Precision, Faithfulness (see README § Evaluation)
 │
 ├── data/
 │   ├── rag/                  # Retrieval pipeline + seeded guideline corpus

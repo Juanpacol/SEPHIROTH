@@ -1,5 +1,8 @@
 # SEPHIROTH
 
+![CI](https://github.com/Juanpacol/SEPHIROTH/actions/workflows/ci.yml/badge.svg)
+![coverage](https://img.shields.io/badge/coverage-88%25-brightgreen)
+
 **Clinical AI Intelligence Platform** — a **local-first AI decision-support platform** for healthcare professionals. Specialized AI agents — powered entirely by a local Ollama model — extract clinical entities, analyze medical images, screen drug interactions, and retrieve cited evidence from clinical guidelines and PubMed.
 
 > ⚠️ **Research, education and professional support only.** Not a medical device. All AI output requires review by a qualified healthcare professional.
@@ -81,7 +84,7 @@ curl -X POST http://127.0.0.1:8000/api/patients/P001/notes \
 
 ### Run the tests
 ```bash
-PYTHONPATH=.:platform .venv/bin/pytest   # no services needed (SQLite in-memory)
+PYTHONPATH=.:platform .venv/bin/pytest --cov   # no services needed (SQLite in-memory)
 ```
 
 ## Architecture
@@ -108,16 +111,48 @@ Each specialist is an `OllamaMCPAgent`: a system prompt + a whitelist of MCP too
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) and [CLAUDE.md](CLAUDE.md) for details.
 
+## Evaluation
+
+The Evidence Agent's RAG pipeline is measured against a 27-question golden dataset (15 direct/"golden" clinical questions, 8 colloquial paraphrases, 4 adversarial questions with no supporting guideline at all) over a 23-document corpus of clinical guideline excerpts (ADA, USPSTF, KDIGO, ACC/AHA, GINA, IDSA, WHO, and more).
+
+| Metric | Value | Threshold | What it measures |
+|---|---|---|---|
+| Recall@1 | **0.78** | 0.75 | Correct guideline is the top retrieval hit |
+| Recall@3 | **0.99** | 0.95 | Correct guideline is in the top 3 |
+| Recall@5 | **0.99** | 0.95 | Correct guideline is in the top 5 |
+| MRR | **0.88** | 0.85 | Mean reciprocal rank of the correct guideline |
+| Citation Precision | **0.64** | 0.60 | Fraction of citations in answers that are traceable to actual tool output (via [Citation Guard](intelligence/agents/citation_guard.py)) |
+| Faithfulness (LLM judge) | **0.28** | 0.25 | Fraction of answer claims a judge model rates as supported by the retrieved evidence |
+| Faithfulness (heuristic proxy, informational) | 0.57 | — | Deterministic token-overlap stand-in; runs in CI, not gated |
+
+*(Full numbers, per-case breakdown, and run metadata: [`intelligence/evaluation/results/latest.json`](intelligence/evaluation/results/latest.json).)*
+
+**How it works — two modes, one committed baseline:**
+- **`--mode ci`** (offline, deterministic, <5s): Recall@k and MRR are recomputed live against `RAGPipeline.retrieve()` and the golden dataset; Citation Precision is recomputed by replaying the Citation Guard over committed transcripts. This is what runs on every PR — no Ollama required.
+- **`--mode full`** (local, needs Ollama): runs the real Evidence Agent end-to-end, records fresh transcripts, and scores Faithfulness with an LLM judge (per-claim: "is this supported by the retrieved evidence?"). Writes `results/latest.json`.
+- The committed results embed a SHA-256 hash of the dataset and transcripts. If either changes without a fresh `--mode full --record` run, CI fails on a **stale baseline** rather than silently trusting outdated numbers.
+
+```bash
+PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ci
+PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode full --record --skip-pubmed
+```
+
+**Honest limitations:**
+- The committed baseline was generated with `llama3.2:latest` as a stand-in — `qwen3:8b` (the production model) wasn't pulled locally at eval time. Recall@k/MRR are retrieval-only and already reflect production behavior; Citation Precision and Faithfulness should improve once regenerated against `qwen3:8b`.
+- Retrieval is keyword/token-overlap scoring (`data/rag/RAGPipeline.retrieve`), not embeddings — Recall@1 on paraphrased queries is the weakest number here and is the concrete, measured case for the pgvector/embeddings upgrade already planned in `data/embeddings/` and `data/vectors/`.
+- The LLM judge is the same model family as the generator on the committed baseline (a self-judging limitation); an independent judge model would be a stronger signal.
+
 ## Project Structure
 
 ```
 clinical-ai-copilot/
 ├── platform/          # FastAPI backend (api/, core/, auth/) + Next.js frontend
-├── intelligence/      # llm/ (Ollama client), mcp/ (FastMCP servers), agents/ (LangGraph)
+├── intelligence/      # llm/ (Ollama client), mcp/ (FastMCP servers), agents/ (LangGraph),
+│                      # evaluation/ (RAG eval harness — see Evaluation above)
 ├── data/              # rag/ (evidence retrieval), schemas/ (SQLAlchemy models)
 ├── examples/          # Runnable examples per module
 ├── docs/              # Integration guide
-└── references/        # Cloned open-source projects (read-only reference)
+└── references/        # Cloned open-source projects (read-only reference; not committed — see .gitignore)
 ```
 
 ## Docker
