@@ -1,6 +1,0 @@
-{
-  "/copilot/page": "app/copilot/page.js",
-  "/login/page": "app/login/page.js",
-  "/imaging/page": "app/imaging/page.js",
-  "/patients/page": "app/patients/page.js"
-}
