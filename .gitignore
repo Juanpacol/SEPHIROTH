@@ -6,6 +6,8 @@ __pycache__/
 *$py.class
 *.so
 .Python
+.pytest_cache/
+.mypy_cache/
 build/
 develop-eggs/
 dist/
@@ -29,7 +31,7 @@ dist/
 out/
 .turbo/
 *.log
-npm-debug.log
+npm-debug.log*
 yarn-error.log
 
 # IDE
@@ -37,7 +39,6 @@ yarn-error.log
 .idea/
 *.swp
 *.swo
-.DS_Store
 
 # Environment
 .env
@@ -59,5 +60,13 @@ Thumbs.db
 tmp/
 /scratch/
 
-# References (cloned read-only repos)
+# Models (large binaries)
+models/
+
+# Coverage
+.coverage
+coverage.xml
+htmlcov/
+
+# References (cloned read-only repos, fetch separately — see README)
 references/

@@ -1,0 +1,47 @@
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = [".", "platform"]
+
+[tool.coverage.run]
+source = [
+    "intelligence/agents",
+    "intelligence/llm",
+    "intelligence/mcp",
+    "intelligence/evaluation",
+    "intelligence/nlp/__init__.py",
+    "intelligence/nlp/timeline_extractor.py",
+    "data/rag",
+    "data/schemas",
+    "platform/api",
+    "platform/auth",
+    "platform/core",
+]
+omit = [
+    "*/__pycache__/*",
+    "*/tests/*",
+]
+
+[tool.coverage.report]
+fail_under = 0
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+
+[tool.ruff]
+line-length = 100
+exclude = [
+    "references",
+    "intelligence/medical-imaging",
+    "intelligence/nlp/ner",
+    "intelligence/nlp/pipeline",
+    "intelligence/nlp/preprocessing",
+    "platform/frontend",
+    ".venv",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
