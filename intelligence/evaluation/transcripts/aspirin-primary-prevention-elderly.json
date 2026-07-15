@@ -1,0 +1,67 @@
+{
+  "case_id": "aspirin-primary-prevention-elderly",
+  "answer": "For a healthy 65-year-old, the current evidence does not support routine aspirin use for primary prevention of cardiovascular disease due to the increased bleeding risk [1]. The American College of Cardiology/American Heart Association (ACC/AHA) guideline recommends that aspirin for primary prevention be considered on an individual basis in high-risk adults aged 40-70 years after a risk-benefit discussion with their clinician [2].\n\nIn contrast, high-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C \u2265190 mg/dL or diabetes with additional risk factors [3].\n\nThe final answer is: Aspirin use for primary prevention in healthy 65-year-olds is not routinely recommended due to bleeding risk. Exceptions may be considered on an individual basis in high-risk adults aged 40-70 years after a risk-benefit discussion with their clinician.\n\n[1] Primary Prevention of Cardiovascular Disease, ACC/AHA, 2019\n\n[2] Management of Blood Cholesterol, ACC/AHA, 2018\n\n[3] Management of Blood Cholesterol, ACC/AHA, 2018",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "aspirin for primary prevention in healthy 65-year-olds",
+        "top_k": "10"
+      },
+      "result": {
+        "query": "aspirin for primary prevention in healthy 65-year-olds",
+        "results": [
+          {
+            "id": "acc-aha-2019-primary-prevention",
+            "content": "Aspirin for primary prevention of cardiovascular disease is not routinely recommended due to bleeding risk, except in select high-risk adults 40-70 years after a risk-benefit discussion with their clinician.",
+            "source": "ACC/AHA Primary Prevention of Cardiovascular Disease Guideline",
+            "citation": "Primary Prevention of Cardiovascular Disease, ACC/AHA, 2019",
+            "score": 0.6,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2019,
+              "title": "Primary Prevention of Cardiovascular Disease"
+            }
+          },
+          {
+            "id": "acc-aha-2018-lipids",
+            "content": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C >=190 mg/dL or diabetes with additional risk factors.",
+            "source": "ACC/AHA Multi-Society Cholesterol Guideline",
+            "citation": "Management of Blood Cholesterol, ACC/AHA, 2018",
+            "score": 0.4,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2018,
+              "title": "Management of Blood Cholesterol"
+            }
+          },
+          {
+            "id": "idsa-2023-cap",
+            "content": "For outpatient community-acquired pneumonia in healthy adults, amoxicillin or doxycycline is recommended. For inpatients, beta-lactam plus macrolide combination therapy is standard.",
+            "source": "ATS/IDSA Community-Acquired Pneumonia Guideline",
+            "citation": "Treatment of Community-Acquired Pneumonia, ATS/IDSA, 2023",
+            "score": 0.2425,
+            "metadata": {
+              "organization": "ATS/IDSA",
+              "year": 2023,
+              "title": "Treatment of Community-Acquired Pneumonia"
+            }
+          },
+          {
+            "id": "acog-2020-preeclampsia",
+            "content": "Low-dose aspirin starting at 12-28 weeks of gestation is recommended for patients at high risk of preeclampsia. Magnesium sulfate is recommended for seizure prophylaxis in patients with severe features of preeclampsia.",
+            "source": "ACOG Practice Bulletin on Preeclampsia",
+            "citation": "Gestational Hypertension and Preeclampsia, ACOG, 2020",
+            "score": 0.2041,
+            "metadata": {
+              "organization": "ACOG",
+              "year": 2020,
+              "title": "Gestational Hypertension and Preeclampsia"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ]
+}

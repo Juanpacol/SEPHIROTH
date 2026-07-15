@@ -1,0 +1,197 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "dm-a1c-target",
+      "category": "golden",
+      "query": "What A1C goal is appropriate for most nonpregnant adults with type 2 diabetes?",
+      "relevant_doc_ids": ["ada-2024-hba1c"],
+      "expected_citation_substrings": ["ADA Standards of Care in Diabetes"],
+      "must_not_cite": ["UpToDate"]
+    },
+    {
+      "id": "htn-bp-target",
+      "category": "golden",
+      "query": "What blood pressure target is recommended for most adults with hypertension?",
+      "relevant_doc_ids": ["acc-aha-2023-htn"],
+      "expected_citation_substrings": ["ACC/AHA Hypertension Guideline"]
+    },
+    {
+      "id": "hf-sglt2-therapy",
+      "category": "golden",
+      "query": "What guideline-directed medical therapy is recommended for heart failure with reduced ejection fraction?",
+      "relevant_doc_ids": ["aha-2022-hf"],
+      "expected_citation_substrings": ["AHA/ACC/HFSA Heart Failure Guideline"]
+    },
+    {
+      "id": "copd-laba-lama",
+      "category": "golden",
+      "query": "What inhaler therapy is preferred for COPD patients with frequent exacerbations?",
+      "relevant_doc_ids": ["gold-2024-copd"],
+      "expected_citation_substrings": ["GOLD COPD Report"]
+    },
+    {
+      "id": "cap-outpatient-antibiotics",
+      "category": "golden",
+      "query": "What antibiotics are recommended for outpatient community-acquired pneumonia in healthy adults?",
+      "relevant_doc_ids": ["idsa-2023-cap"],
+      "expected_citation_substrings": ["ATS/IDSA Community-Acquired Pneumonia Guideline"]
+    },
+    {
+      "id": "ckd-sglt2-egfr",
+      "category": "golden",
+      "query": "When is an SGLT2 inhibitor recommended for chronic kidney disease in type 2 diabetes?",
+      "relevant_doc_ids": ["ada-2024-ckd"],
+      "expected_citation_substrings": ["ADA Standards of Care in Diabetes"]
+    },
+    {
+      "id": "colorectal-screening-age",
+      "category": "golden",
+      "query": "At what age should colorectal cancer screening begin for average-risk adults?",
+      "relevant_doc_ids": ["uspstf-2021-colorectal"],
+      "expected_citation_substrings": ["USPSTF Colorectal Cancer Screening Recommendation"]
+    },
+    {
+      "id": "breast-mammography-interval",
+      "category": "golden",
+      "query": "How often should women aged 40 to 74 get a screening mammogram?",
+      "relevant_doc_ids": ["uspstf-2024-breast"],
+      "expected_citation_substrings": ["USPSTF Breast Cancer Screening Recommendation"]
+    },
+    {
+      "id": "statin-primary-prevention",
+      "category": "golden",
+      "query": "Who should receive high-intensity statin therapy for primary prevention of cardiovascular disease?",
+      "relevant_doc_ids": ["acc-aha-2018-lipids"],
+      "expected_citation_substrings": ["ACC/AHA Multi-Society Cholesterol Guideline"]
+    },
+    {
+      "id": "asthma-reliever-therapy",
+      "category": "golden",
+      "query": "What reliever therapy is preferred for adults with asthma to reduce exacerbation risk?",
+      "relevant_doc_ids": ["gina-2024-asthma"],
+      "expected_citation_substrings": ["Global Initiative for Asthma Report"]
+    },
+    {
+      "id": "stroke-tpa-window",
+      "category": "golden",
+      "query": "What is the time window for giving intravenous alteplase in acute ischemic stroke?",
+      "relevant_doc_ids": ["aha-asa-2021-stroke"],
+      "expected_citation_substrings": ["AHA/ASA Acute Ischemic Stroke Guideline"]
+    },
+    {
+      "id": "uti-first-line-agents",
+      "category": "golden",
+      "query": "What are the first-line antibiotics for uncomplicated cystitis in women?",
+      "relevant_doc_ids": ["idsa-2019-uti"],
+      "expected_citation_substrings": ["IDSA Uncomplicated UTI Guideline"]
+    },
+    {
+      "id": "sepsis-antibiotic-timing",
+      "category": "golden",
+      "query": "How quickly should antibiotics be given in septic shock?",
+      "relevant_doc_ids": ["sscm-2021-sepsis"],
+      "expected_citation_substrings": ["Surviving Sepsis Campaign Guidelines"]
+    },
+    {
+      "id": "afib-anticoagulation-threshold",
+      "category": "golden",
+      "query": "At what CHA2DS2-VASc score should oral anticoagulation be started in atrial fibrillation?",
+      "relevant_doc_ids": ["accp-2024-afib"],
+      "expected_citation_substrings": ["Atrial Fibrillation Guideline"]
+    },
+    {
+      "id": "gout-urate-lowering",
+      "category": "golden",
+      "query": "What is the preferred first-line urate-lowering therapy for recurrent gout?",
+      "relevant_doc_ids": ["acr-2020-gout"],
+      "expected_citation_substrings": ["ACR Guideline for Management of Gout"]
+    },
+    {
+      "id": "tb-standard-regimen",
+      "category": "paraphrase",
+      "query": "How long do you treat regular TB that isn't drug resistant?",
+      "relevant_doc_ids": ["who-2022-tb"],
+      "expected_citation_substrings": ["WHO Consolidated Guidelines on Tuberculosis"]
+    },
+    {
+      "id": "obesity-glp1-dm",
+      "category": "paraphrase",
+      "query": "Are GLP-1 drugs a good option for weight loss in someone with type 2 diabetes?",
+      "relevant_doc_ids": ["ada-2024-obesity"],
+      "expected_citation_substrings": ["ADA Standards of Care in Diabetes"]
+    },
+    {
+      "id": "preeclampsia-aspirin-timing",
+      "category": "paraphrase",
+      "query": "Should a high-risk pregnant patient start baby aspirin, and when?",
+      "relevant_doc_ids": ["acog-2020-preeclampsia"],
+      "expected_citation_substrings": ["ACOG Practice Bulletin on Preeclampsia"]
+    },
+    {
+      "id": "otitis-media-kids-antibiotic",
+      "category": "paraphrase",
+      "query": "My kid has an ear infection — what's the go-to antibiotic?",
+      "relevant_doc_ids": ["aap-2013-otitis"],
+      "expected_citation_substrings": ["AAP Clinical Practice Guideline on Acute Otitis Media"]
+    },
+    {
+      "id": "afib-doac-vs-warfarin",
+      "category": "paraphrase",
+      "query": "Is a DOAC or warfarin better for most people needing blood thinners for AFib?",
+      "relevant_doc_ids": ["accp-2024-afib"],
+      "expected_citation_substrings": ["Atrial Fibrillation Guideline"]
+    },
+    {
+      "id": "depression-treatment-combo",
+      "category": "paraphrase",
+      "query": "What's the best approach for someone with fairly severe depression — meds, therapy, or both?",
+      "relevant_doc_ids": ["nice-2022-depression"],
+      "expected_citation_substrings": ["NICE Guideline on Depression in Adults"]
+    },
+    {
+      "id": "aspirin-primary-prevention-elderly",
+      "category": "paraphrase",
+      "query": "Should a healthy 65-year-old take a daily aspirin to prevent a heart attack?",
+      "relevant_doc_ids": ["acc-aha-2019-primary-prevention"],
+      "expected_citation_substrings": ["Primary Prevention of Cardiovascular Disease"]
+    },
+    {
+      "id": "diabetes-hypertension-agent-choice",
+      "category": "paraphrase",
+      "query": "For a diabetic patient with high blood pressure and protein in the urine, which BP medication class fits best?",
+      "relevant_doc_ids": ["ada-2024-hypertension-dm", "ada-2024-ckd", "acc-aha-2023-htn"],
+      "expected_citation_substrings": ["ADA Standards of Care in Diabetes"]
+    },
+    {
+      "id": "adv-autism-semaglutide",
+      "category": "adversarial-negative",
+      "query": "What do the clinical guidelines say about using semaglutide to treat autism spectrum disorder?",
+      "relevant_doc_ids": [],
+      "expects_abstention": true,
+      "must_not_cite": ["ADA Standards of Care in Diabetes"]
+    },
+    {
+      "id": "adv-crystal-healing-cancer",
+      "category": "adversarial-negative",
+      "query": "What is the recommended crystal healing protocol for treating pancreatic cancer?",
+      "relevant_doc_ids": [],
+      "expects_abstention": true
+    },
+    {
+      "id": "adv-homeopathy-sepsis",
+      "category": "adversarial-negative",
+      "query": "What homeopathic remedy is recommended as first-line treatment for septic shock?",
+      "relevant_doc_ids": [],
+      "expects_abstention": true,
+      "must_not_cite": ["Surviving Sepsis Campaign Guidelines"]
+    },
+    {
+      "id": "adv-unrelated-tax-advice",
+      "category": "adversarial-negative",
+      "query": "What do the guidelines recommend for filing quarterly small-business tax returns?",
+      "relevant_doc_ids": [],
+      "expects_abstention": true
+    }
+  ]
+}

@@ -17,9 +17,7 @@ async def search_evidence(
     """Search indexed clinical guidelines (always returns citations)."""
     registry = get_registry()
     await registry.load()
-    return await registry.execute(
-        "search_clinical_guidelines", {"query": q, "top_k": top_k}
-    )
+    return await registry.execute("search_clinical_guidelines", {"query": q, "top_k": top_k})
 
 
 @router.get("/pubmed")
@@ -30,6 +28,4 @@ async def search_pubmed(
     """Search PubMed for peer-reviewed evidence (requires internet)."""
     registry = get_registry()
     await registry.load()
-    return await registry.execute(
-        "search_pubmed", {"query": q, "max_results": max_results}
-    )
+    return await registry.execute("search_pubmed", {"query": q, "max_results": max_results})

@@ -74,9 +74,7 @@ async def list_patients(session: AsyncSession = Depends(get_session)) -> List[Di
 
 
 @router.post("", status_code=201)
-async def create_patient(
-    body: PatientCreate, session: AsyncSession = Depends(get_session)
-) -> Dict[str, Any]:
+async def create_patient(body: PatientCreate, session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
     patient = Patient(
         id=f"P{uuid4().hex[:6].upper()}",
         medical_record_number=f"PT-{uuid4().hex[:5].upper()}",
@@ -91,9 +89,7 @@ async def create_patient(
 
 async def _get_patient(session: AsyncSession, patient_id: str) -> Patient:
     patient = await session.scalar(
-        select(Patient)
-        .where(Patient.id == patient_id)
-        .options(selectinload(Patient.timeline))
+        select(Patient).where(Patient.id == patient_id).options(selectinload(Patient.timeline))
     )
     if patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -101,18 +97,14 @@ async def _get_patient(session: AsyncSession, patient_id: str) -> Patient:
 
 
 @router.get("/{patient_id}")
-async def get_patient(
-    patient_id: str, session: AsyncSession = Depends(get_session)
-) -> Dict[str, Any]:
+async def get_patient(patient_id: str, session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
     return _full(await _get_patient(session, patient_id))
 
 
 class NoteCreate(BaseModel):
     content: str = Field(..., min_length=10)
     note_type: str = "progress_note"
-    note_date: Optional[str] = Field(
-        None, description="ISO date the note refers to; defaults to today"
-    )
+    note_date: Optional[str] = Field(None, description="ISO date the note refers to; defaults to today")
 
 
 async def _ingest_note(
@@ -183,14 +175,10 @@ async def add_clinical_note(
 ) -> Dict[str, Any]:
     """Store a clinical note and auto-extract Intelligent Timeline events."""
     patient = await _get_patient(session, patient_id)
-    return await _ingest_note(
-        session, patient, user, body.content, body.note_type, body.note_date
-    )
+    return await _ingest_note(session, patient, user, body.content, body.note_type, body.note_date)
 
 
-@router.post(
-    "/{patient_id}/notes/upload", status_code=201, summary="Upload a clinical note as PDF"
-)
+@router.post("/{patient_id}/notes/upload", status_code=201, summary="Upload a clinical note as PDF")
 async def upload_clinical_note(
     patient_id: str,
     file: UploadFile = File(...),

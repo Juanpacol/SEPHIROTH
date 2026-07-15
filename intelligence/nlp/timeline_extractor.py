@@ -83,9 +83,7 @@ def _fallback_extract(note_text: str, note_date: str) -> List[ExtractedEvent]:
     return events
 
 
-async def extract_events(
-    client: OllamaClient, note_text: str, note_date: str
-) -> List[ExtractedEvent]:
+async def extract_events(client: OllamaClient, note_text: str, note_date: str) -> List[ExtractedEvent]:
     """Extract timeline events from a clinical note (LLM-first, fallback-safe)."""
     try:
         payload = await client.generate_json(

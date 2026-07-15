@@ -36,7 +36,9 @@ INTERACTIONS: Dict[frozenset, Dict[str, str]] = {
     frozenset(["metformin", "iodinated contrast"]): {
         "severity": "major",
         "effect": "Risk of contrast-induced nephropathy and lactic acidosis.",
-        "recommendation": "Hold metformin at the time of contrast administration; recheck renal function at 48h.",
+        "recommendation": (
+            "Hold metformin at the time of contrast administration; recheck renal function at 48h."
+        ),
     },
     frozenset(["sertraline", "tramadol"]): {
         "severity": "major",

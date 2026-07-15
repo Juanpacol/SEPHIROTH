@@ -1,0 +1,327 @@
+{
+  "run": {
+    "mode": "full",
+    "timestamp": "2026-07-15T08:41:45.498633+00:00",
+    "model": "llama3.2:latest",
+    "git_sha": "87fe1a0",
+    "n_cases": 27,
+    "dataset_sha256": "16bc2455beeb55a3e650edc26e676670b4a56681a3cbdf2c1d4f1fb7b7623dab",
+    "transcripts_sha256": "629bb3cc1d945d9b500b380d060313d975122e2a4e986b3a53059250fab3ab3a",
+    "note": "PROVISIONAL baseline using llama3.2:latest as a stand-in for the production model (qwen3:8b not yet pulled locally). Regenerate with --model qwen3:8b once available."
+  },
+  "retrieval": {
+    "recall_at_1": 0.782608695652174,
+    "recall_at_3": 0.9855072463768116,
+    "recall_at_5": 0.9855072463768116,
+    "mrr": 0.8768115942028984
+  },
+  "citation": {
+    "precision": 0.6429,
+    "verified": 9,
+    "fabricated": 5,
+    "per_case": [
+      {
+        "id": "adv-autism-semaglutide",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "adv-crystal-healing-cancer",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "adv-homeopathy-sepsis",
+        "verified": [],
+        "fabricated": [
+          "Source: American Heart Association. (2020). Diagnosis and Treatment of Sepsis. Circulation, 141(10), e1048-e1088."
+        ]
+      },
+      {
+        "id": "adv-unrelated-tax-advice",
+        "verified": [],
+        "fabricated": [
+          "Source: IRS Publication 550, 2023",
+          "Source: IRS Form 2210, 2022"
+        ]
+      },
+      {
+        "id": "afib-anticoagulation-threshold",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "afib-doac-vs-warfarin",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "aspirin-primary-prevention-elderly",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "asthma-reliever-therapy",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "breast-mammography-interval",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "cap-outpatient-antibiotics",
+        "verified": [
+          "Source: Treatment of Community-Acquired Pneumonia, ATS/IDSA, 2023"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "ckd-sglt2-egfr",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "colorectal-screening-age",
+        "verified": [
+          "Screening for Colorectal Cancer, USPSTF, 2021"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "copd-laba-lama",
+        "verified": [
+          "Source: GOLD COPD Report, 2024"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "depression-treatment-combo",
+        "verified": [],
+        "fabricated": [
+          "PMID: 28369337",
+          "PMID:28369337"
+        ]
+      },
+      {
+        "id": "diabetes-hypertension-agent-choice",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "dm-a1c-target",
+        "verified": [
+          "Glycemic Targets & Pharmacologic Approaches, 2024"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "gout-urate-lowering",
+        "verified": [
+          "ACR Guideline for Management of Gout, 2020"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "hf-sglt2-therapy",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "htn-bp-target",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "obesity-glp1-dm",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "otitis-media-kids-antibiotic",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "preeclampsia-aspirin-timing",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "sepsis-antibiotic-timing",
+        "verified": [
+          "Surviving Sepsis Campaign Guidelines, 2021"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "statin-primary-prevention",
+        "verified": [
+          "Management of Blood Cholesterol, ACC/AHA, 2018",
+          "Primary Prevention of Cardiovascular Disease, ACC/AHA, 2019"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "stroke-tpa-window",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "tb-standard-regimen",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "uti-first-line-agents",
+        "verified": [
+          "Source: Treatment of Uncomplicated Cystitis, IDSA, 2019"
+        ],
+        "fabricated": []
+      }
+    ]
+  },
+  "faithfulness": {
+    "llm_judge": 0.2804,
+    "heuristic_proxy": 0.5702,
+    "claims_checked": 110
+  },
+  "per_case": [
+    {
+      "id": "adv-autism-semaglutide",
+      "score": 0.0,
+      "claims_checked": 3
+    },
+    {
+      "id": "adv-crystal-healing-cancer",
+      "score": 0.0,
+      "claims_checked": 7
+    },
+    {
+      "id": "adv-homeopathy-sepsis",
+      "score": 0.0,
+      "claims_checked": 6
+    },
+    {
+      "id": "adv-unrelated-tax-advice",
+      "score": 0.0,
+      "claims_checked": 5
+    },
+    {
+      "id": "afib-anticoagulation-threshold",
+      "score": 0.0,
+      "claims_checked": 2
+    },
+    {
+      "id": "afib-doac-vs-warfarin",
+      "score": 0.0,
+      "claims_checked": 4
+    },
+    {
+      "id": "aspirin-primary-prevention-elderly",
+      "score": 0.375,
+      "claims_checked": 8
+    },
+    {
+      "id": "asthma-reliever-therapy",
+      "score": 0.0,
+      "claims_checked": 3
+    },
+    {
+      "id": "breast-mammography-interval",
+      "score": 0.5,
+      "claims_checked": 2
+    },
+    {
+      "id": "cap-outpatient-antibiotics",
+      "score": 0.0,
+      "claims_checked": 4
+    },
+    {
+      "id": "ckd-sglt2-egfr",
+      "score": 0.0,
+      "claims_checked": 1
+    },
+    {
+      "id": "colorectal-screening-age",
+      "score": 0.5,
+      "claims_checked": 2
+    },
+    {
+      "id": "copd-laba-lama",
+      "score": 0.6666666666666666,
+      "claims_checked": 3
+    },
+    {
+      "id": "depression-treatment-combo",
+      "score": 0.0,
+      "claims_checked": 5
+    },
+    {
+      "id": "diabetes-hypertension-agent-choice",
+      "score": 0.5,
+      "claims_checked": 4
+    },
+    {
+      "id": "dm-a1c-target",
+      "score": 1.0,
+      "claims_checked": 2
+    },
+    {
+      "id": "gout-urate-lowering",
+      "score": 1.0,
+      "claims_checked": 1
+    },
+    {
+      "id": "hf-sglt2-therapy",
+      "score": 0.3333333333333333,
+      "claims_checked": 3
+    },
+    {
+      "id": "htn-bp-target",
+      "score": 0.5,
+      "claims_checked": 6
+    },
+    {
+      "id": "obesity-glp1-dm",
+      "score": 1.0,
+      "claims_checked": 3
+    },
+    {
+      "id": "otitis-media-kids-antibiotic",
+      "score": 0.0,
+      "claims_checked": 11
+    },
+    {
+      "id": "preeclampsia-aspirin-timing",
+      "score": 0.36363636363636365,
+      "claims_checked": 11
+    },
+    {
+      "id": "sepsis-antibiotic-timing",
+      "score": 0.0,
+      "claims_checked": 2
+    },
+    {
+      "id": "statin-primary-prevention",
+      "score": 0.5,
+      "claims_checked": 4
+    },
+    {
+      "id": "stroke-tpa-window",
+      "score": 0.0,
+      "claims_checked": 3
+    },
+    {
+      "id": "tb-standard-regimen",
+      "score": 0.0,
+      "claims_checked": 2
+    },
+    {
+      "id": "uti-first-line-agents",
+      "score": 0.3333333333333333,
+      "claims_checked": 3
+    }
+  ]
+}

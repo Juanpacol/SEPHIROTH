@@ -1,0 +1,79 @@
+{
+  "case_id": "cap-outpatient-antibiotics",
+  "answer": "For outpatient community-acquired pneumonia (CAP) in healthy adults, amoxicillin or doxycycline is recommended. For inpatients, beta-lactam plus macrolide combination therapy is standard.\n\n[Source: Treatment of Community-Acquired Pneumonia, ATS/IDSA, 2023]\n\nNote that the guidelines may vary depending on individual patient factors and specific clinical scenarios.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "outpatient community-acquired pneumonia treatment in healthy adults",
+        "top_k": "5"
+      },
+      "result": {
+        "query": "outpatient community-acquired pneumonia treatment in healthy adults",
+        "results": [
+          {
+            "id": "idsa-2023-cap",
+            "content": "For outpatient community-acquired pneumonia in healthy adults, amoxicillin or doxycycline is recommended. For inpatients, beta-lactam plus macrolide combination therapy is standard.",
+            "source": "ATS/IDSA Community-Acquired Pneumonia Guideline",
+            "citation": "Treatment of Community-Acquired Pneumonia, ATS/IDSA, 2023",
+            "score": 1.4552,
+            "metadata": {
+              "organization": "ATS/IDSA",
+              "year": 2023,
+              "title": "Treatment of Community-Acquired Pneumonia"
+            }
+          },
+          {
+            "id": "gina-2024-asthma",
+            "content": "For adults and adolescents with asthma, as-needed low-dose ICS-formoterol is preferred as reliever therapy over short-acting beta-agonist alone, even at the mildest step of treatment, to reduce exacerbation risk.",
+            "source": "Global Initiative for Asthma Report",
+            "citation": "Global Strategy for Asthma Management, GINA, 2024",
+            "score": 0.3849,
+            "metadata": {
+              "organization": "GINA",
+              "year": 2024,
+              "title": "Global Strategy for Asthma Management"
+            }
+          },
+          {
+            "id": "ada-2024-hba1c",
+            "content": "An A1C goal for many nonpregnant adults with diabetes of <7% without significant hypoglycemia is appropriate. Metformin is the preferred initial pharmacologic agent for type 2 diabetes.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Glycemic Targets & Pharmacologic Approaches, American Diabetes Association, 2024",
+            "score": 0.2294,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Glycemic Targets & Pharmacologic Approaches"
+            }
+          },
+          {
+            "id": "nice-2022-depression",
+            "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
+            "source": "NICE Guideline on Depression in Adults",
+            "citation": "Management of Depression in Adults, NICE, 2022",
+            "score": 0.2236,
+            "metadata": {
+              "organization": "NICE",
+              "year": 2022,
+              "title": "Management of Depression in Adults"
+            }
+          },
+          {
+            "id": "ada-2024-hypertension-dm",
+            "content": "A blood pressure target of <130/80 mmHg is recommended for most adults with diabetes and hypertension. ACE inhibitors or ARBs are preferred first-line agents, particularly in the presence of albuminuria.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Hypertension Management in Diabetes, American Diabetes Association, 2024",
+            "score": 0.2182,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Hypertension Management in Diabetes"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ]
+}

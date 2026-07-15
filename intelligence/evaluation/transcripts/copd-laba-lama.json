@@ -1,0 +1,272 @@
+{
+  "case_id": "copd-laba-lama",
+  "answer": "For COPD patients with frequent exacerbations, the preferred inhaler therapy is LABA+LAMA combination therapy. Inhaled corticosteroids are added for patients with blood eosinophils >=300 cells/uL or continued exacerbations.\n\n[Source: GOLD COPD Report, 2024]",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "top_k": "10",
+        "query": "preferred inhaler therapy for COPD patients with frequent exacerbations"
+      },
+      "result": {
+        "query": "preferred inhaler therapy for COPD patients with frequent exacerbations",
+        "results": [
+          {
+            "id": "gold-2024-copd",
+            "content": "For COPD patients with frequent exacerbations, LABA+LAMA combination therapy is preferred. Inhaled corticosteroids are added for patients with blood eosinophils >=300 cells/uL or continued exacerbations.",
+            "source": "GOLD COPD Report",
+            "citation": "COPD Diagnosis, Management and Prevention, GOLD, 2024",
+            "score": 1.7889,
+            "metadata": {
+              "organization": "GOLD",
+              "year": 2024,
+              "title": "COPD Diagnosis, Management and Prevention"
+            }
+          },
+          {
+            "id": "accp-2024-afib",
+            "content": "Oral anticoagulation is recommended for patients with atrial fibrillation and a CHA2DS2-VASc score of 2 or more in men or 3 or more in women. Direct oral anticoagulants are preferred over warfarin in most eligible patients.",
+            "source": "ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline",
+            "citation": "Anticoagulation in Atrial Fibrillation, ACC/AHA/HRS, 2024",
+            "score": 0.6124,
+            "metadata": {
+              "organization": "ACC/AHA/HRS",
+              "year": 2024,
+              "title": "Anticoagulation in Atrial Fibrillation"
+            }
+          },
+          {
+            "id": "acr-2020-gout",
+            "content": "Urate-lowering therapy is recommended for patients with recurrent gout flares, tophi, or radiographic damage, with allopurinol as the preferred first-line agent, titrated to a serum urate target below 6 mg/dL.",
+            "source": "ACR Guideline for Management of Gout",
+            "citation": "Management of Gout, ACR, 2020",
+            "score": 0.6,
+            "metadata": {
+              "organization": "ACR",
+              "year": 2020,
+              "title": "Management of Gout"
+            }
+          },
+          {
+            "id": "nice-2022-depression",
+            "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
+            "source": "NICE Guideline on Depression in Adults",
+            "citation": "Management of Depression in Adults, NICE, 2022",
+            "score": 0.4472,
+            "metadata": {
+              "organization": "NICE",
+              "year": 2022,
+              "title": "Management of Depression in Adults"
+            }
+          },
+          {
+            "id": "acog-2020-preeclampsia",
+            "content": "Low-dose aspirin starting at 12-28 weeks of gestation is recommended for patients at high risk of preeclampsia. Magnesium sulfate is recommended for seizure prophylaxis in patients with severe features of preeclampsia.",
+            "source": "ACOG Practice Bulletin on Preeclampsia",
+            "citation": "Gestational Hypertension and Preeclampsia, ACOG, 2020",
+            "score": 0.4082,
+            "metadata": {
+              "organization": "ACOG",
+              "year": 2020,
+              "title": "Gestational Hypertension and Preeclampsia"
+            }
+          },
+          {
+            "id": "acc-aha-2018-lipids",
+            "content": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C >=190 mg/dL or diabetes with additional risk factors.",
+            "source": "ACC/AHA Multi-Society Cholesterol Guideline",
+            "citation": "Management of Blood Cholesterol, ACC/AHA, 2018",
+            "score": 0.4,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2018,
+              "title": "Management of Blood Cholesterol"
+            }
+          },
+          {
+            "id": "aha-asa-2021-stroke",
+            "content": "Intravenous alteplase is recommended within 4.5 hours of symptom onset for eligible patients with acute ischemic stroke. Mechanical thrombectomy is recommended for large-vessel occlusion within 24 hours in selected patients.",
+            "source": "AHA/ASA Acute Ischemic Stroke Guideline",
+            "citation": "Early Management of Acute Ischemic Stroke, AHA/ASA, 2021",
+            "score": 0.4,
+            "metadata": {
+              "organization": "AHA/ASA",
+              "year": 2021,
+              "title": "Early Management of Acute Ischemic Stroke"
+            }
+          },
+          {
+            "id": "gina-2024-asthma",
+            "content": "For adults and adolescents with asthma, as-needed low-dose ICS-formoterol is preferred as reliever therapy over short-acting beta-agonist alone, even at the mildest step of treatment, to reduce exacerbation risk.",
+            "source": "Global Initiative for Asthma Report",
+            "citation": "Global Strategy for Asthma Management, GINA, 2024",
+            "score": 0.3849,
+            "metadata": {
+              "organization": "GINA",
+              "year": 2024,
+              "title": "Global Strategy for Asthma Management"
+            }
+          },
+          {
+            "id": "aha-2022-hf",
+            "content": "In patients with heart failure with reduced ejection fraction (HFrEF), guideline-directed medical therapy includes ARNI/ACEi/ARB, beta-blockers, mineralocorticoid receptor antagonists, and SGLT2 inhibitors. SGLT2 inhibitors are recommended regardless of diabetes status.",
+            "source": "AHA/ACC/HFSA Heart Failure Guideline",
+            "citation": "Management of Heart Failure, AHA/ACC/HFSA, 2022",
+            "score": 0.378,
+            "metadata": {
+              "organization": "AHA/ACC/HFSA",
+              "year": 2022,
+              "title": "Management of Heart Failure"
+            }
+          },
+          {
+            "id": "ada-2024-ckd",
+            "content": "In patients with type 2 diabetes and chronic kidney disease, an SGLT2 inhibitor is recommended for those with eGFR >=20 mL/min/1.73m2 to reduce CKD progression and cardiovascular risk. ACE inhibitors or ARBs are first-line for patients with albuminuria and hypertension.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Chronic Kidney Disease in Diabetes, American Diabetes Association, 2024",
+            "score": 0.3651,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Chronic Kidney Disease in Diabetes"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    },
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "preferred inhaler therapy for COPD patients with frequent exacerbations",
+        "top_k": "10"
+      },
+      "result": {
+        "query": "preferred inhaler therapy for COPD patients with frequent exacerbations",
+        "results": [
+          {
+            "id": "gold-2024-copd",
+            "content": "For COPD patients with frequent exacerbations, LABA+LAMA combination therapy is preferred. Inhaled corticosteroids are added for patients with blood eosinophils >=300 cells/uL or continued exacerbations.",
+            "source": "GOLD COPD Report",
+            "citation": "COPD Diagnosis, Management and Prevention, GOLD, 2024",
+            "score": 1.7889,
+            "metadata": {
+              "organization": "GOLD",
+              "year": 2024,
+              "title": "COPD Diagnosis, Management and Prevention"
+            }
+          },
+          {
+            "id": "accp-2024-afib",
+            "content": "Oral anticoagulation is recommended for patients with atrial fibrillation and a CHA2DS2-VASc score of 2 or more in men or 3 or more in women. Direct oral anticoagulants are preferred over warfarin in most eligible patients.",
+            "source": "ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline",
+            "citation": "Anticoagulation in Atrial Fibrillation, ACC/AHA/HRS, 2024",
+            "score": 0.6124,
+            "metadata": {
+              "organization": "ACC/AHA/HRS",
+              "year": 2024,
+              "title": "Anticoagulation in Atrial Fibrillation"
+            }
+          },
+          {
+            "id": "acr-2020-gout",
+            "content": "Urate-lowering therapy is recommended for patients with recurrent gout flares, tophi, or radiographic damage, with allopurinol as the preferred first-line agent, titrated to a serum urate target below 6 mg/dL.",
+            "source": "ACR Guideline for Management of Gout",
+            "citation": "Management of Gout, ACR, 2020",
+            "score": 0.6,
+            "metadata": {
+              "organization": "ACR",
+              "year": 2020,
+              "title": "Management of Gout"
+            }
+          },
+          {
+            "id": "nice-2022-depression",
+            "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
+            "source": "NICE Guideline on Depression in Adults",
+            "citation": "Management of Depression in Adults, NICE, 2022",
+            "score": 0.4472,
+            "metadata": {
+              "organization": "NICE",
+              "year": 2022,
+              "title": "Management of Depression in Adults"
+            }
+          },
+          {
+            "id": "acog-2020-preeclampsia",
+            "content": "Low-dose aspirin starting at 12-28 weeks of gestation is recommended for patients at high risk of preeclampsia. Magnesium sulfate is recommended for seizure prophylaxis in patients with severe features of preeclampsia.",
+            "source": "ACOG Practice Bulletin on Preeclampsia",
+            "citation": "Gestational Hypertension and Preeclampsia, ACOG, 2020",
+            "score": 0.4082,
+            "metadata": {
+              "organization": "ACOG",
+              "year": 2020,
+              "title": "Gestational Hypertension and Preeclampsia"
+            }
+          },
+          {
+            "id": "acc-aha-2018-lipids",
+            "content": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C >=190 mg/dL or diabetes with additional risk factors.",
+            "source": "ACC/AHA Multi-Society Cholesterol Guideline",
+            "citation": "Management of Blood Cholesterol, ACC/AHA, 2018",
+            "score": 0.4,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2018,
+              "title": "Management of Blood Cholesterol"
+            }
+          },
+          {
+            "id": "aha-asa-2021-stroke",
+            "content": "Intravenous alteplase is recommended within 4.5 hours of symptom onset for eligible patients with acute ischemic stroke. Mechanical thrombectomy is recommended for large-vessel occlusion within 24 hours in selected patients.",
+            "source": "AHA/ASA Acute Ischemic Stroke Guideline",
+            "citation": "Early Management of Acute Ischemic Stroke, AHA/ASA, 2021",
+            "score": 0.4,
+            "metadata": {
+              "organization": "AHA/ASA",
+              "year": 2021,
+              "title": "Early Management of Acute Ischemic Stroke"
+            }
+          },
+          {
+            "id": "gina-2024-asthma",
+            "content": "For adults and adolescents with asthma, as-needed low-dose ICS-formoterol is preferred as reliever therapy over short-acting beta-agonist alone, even at the mildest step of treatment, to reduce exacerbation risk.",
+            "source": "Global Initiative for Asthma Report",
+            "citation": "Global Strategy for Asthma Management, GINA, 2024",
+            "score": 0.3849,
+            "metadata": {
+              "organization": "GINA",
+              "year": 2024,
+              "title": "Global Strategy for Asthma Management"
+            }
+          },
+          {
+            "id": "aha-2022-hf",
+            "content": "In patients with heart failure with reduced ejection fraction (HFrEF), guideline-directed medical therapy includes ARNI/ACEi/ARB, beta-blockers, mineralocorticoid receptor antagonists, and SGLT2 inhibitors. SGLT2 inhibitors are recommended regardless of diabetes status.",
+            "source": "AHA/ACC/HFSA Heart Failure Guideline",
+            "citation": "Management of Heart Failure, AHA/ACC/HFSA, 2022",
+            "score": 0.378,
+            "metadata": {
+              "organization": "AHA/ACC/HFSA",
+              "year": 2022,
+              "title": "Management of Heart Failure"
+            }
+          },
+          {
+            "id": "ada-2024-ckd",
+            "content": "In patients with type 2 diabetes and chronic kidney disease, an SGLT2 inhibitor is recommended for those with eGFR >=20 mL/min/1.73m2 to reduce CKD progression and cardiovascular risk. ACE inhibitors or ARBs are first-line for patients with albuminuria and hypertension.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Chronic Kidney Disease in Diabetes, American Diabetes Association, 2024",
+            "score": 0.3651,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Chronic Kidney Disease in Diabetes"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ]
+}

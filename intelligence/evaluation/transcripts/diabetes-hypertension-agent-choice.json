@@ -1,0 +1,127 @@
+{
+  "case_id": "diabetes-hypertension-agent-choice",
+  "answer": "For a diabetic patient with high blood pressure and protein in the urine, the most suitable BP medication class is ACE inhibitors or ARBs, particularly in the presence of albuminuria. This recommendation is aligned with the ADA Standards of Care in Diabetes (2024) [1] and ACC/AHA Hypertension Guideline (2023) [2].\n\nReferences:\n\n[1] Hypertension Management in Diabetes, American Diabetes Association, 2024.\n\n[2] High Blood Pressure Management, ACC/AHA, 2023.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "Diabetic patient with high blood pressure and protein in the urine. Which BP medication class is most suitable?",
+        "top_k": "10"
+      },
+      "result": {
+        "query": "Diabetic patient with high blood pressure and protein in the urine. Which BP medication class is most suitable?",
+        "results": [
+          {
+            "id": "ada-2024-hypertension-dm",
+            "content": "A blood pressure target of <130/80 mmHg is recommended for most adults with diabetes and hypertension. ACE inhibitors or ARBs are preferred first-line agents, particularly in the presence of albuminuria.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Hypertension Management in Diabetes, American Diabetes Association, 2024",
+            "score": 0.6547,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Hypertension Management in Diabetes"
+            }
+          },
+          {
+            "id": "acc-aha-2023-htn",
+            "content": "A blood pressure target of <130/80 mmHg is recommended for most adults with hypertension. First-line agents include thiazide diuretics, ACE inhibitors, ARBs, and calcium channel blockers.",
+            "source": "ACC/AHA Hypertension Guideline",
+            "citation": "High Blood Pressure Management, ACC/AHA, 2023",
+            "score": 0.6396,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2023,
+              "title": "High Blood Pressure Management"
+            }
+          },
+          {
+            "id": "nice-2022-depression",
+            "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
+            "source": "NICE Guideline on Depression in Adults",
+            "citation": "Management of Depression in Adults, NICE, 2022",
+            "score": 0.4472,
+            "metadata": {
+              "organization": "NICE",
+              "year": 2022,
+              "title": "Management of Depression in Adults"
+            }
+          },
+          {
+            "id": "gold-2024-copd",
+            "content": "For COPD patients with frequent exacerbations, LABA+LAMA combination therapy is preferred. Inhaled corticosteroids are added for patients with blood eosinophils >=300 cells/uL or continued exacerbations.",
+            "source": "GOLD COPD Report",
+            "citation": "COPD Diagnosis, Management and Prevention, GOLD, 2024",
+            "score": 0.2236,
+            "metadata": {
+              "organization": "GOLD",
+              "year": 2024,
+              "title": "COPD Diagnosis, Management and Prevention"
+            }
+          },
+          {
+            "id": "idsa-2019-uti",
+            "content": "Nitrofurantoin for 5 days or trimethoprim-sulfamethoxazole for 3 days are first-line agents for uncomplicated cystitis in women. Fluoroquinolones are reserved for cases where first-line agents are not suitable.",
+            "source": "IDSA Uncomplicated UTI Guideline",
+            "citation": "Treatment of Uncomplicated Cystitis, IDSA, 2019",
+            "score": 0.2132,
+            "metadata": {
+              "organization": "IDSA",
+              "year": 2019,
+              "title": "Treatment of Uncomplicated Cystitis"
+            }
+          },
+          {
+            "id": "accp-2024-afib",
+            "content": "Oral anticoagulation is recommended for patients with atrial fibrillation and a CHA2DS2-VASc score of 2 or more in men or 3 or more in women. Direct oral anticoagulants are preferred over warfarin in most eligible patients.",
+            "source": "ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline",
+            "citation": "Anticoagulation in Atrial Fibrillation, ACC/AHA/HRS, 2024",
+            "score": 0.2041,
+            "metadata": {
+              "organization": "ACC/AHA/HRS",
+              "year": 2024,
+              "title": "Anticoagulation in Atrial Fibrillation"
+            }
+          },
+          {
+            "id": "acog-2020-preeclampsia",
+            "content": "Low-dose aspirin starting at 12-28 weeks of gestation is recommended for patients at high risk of preeclampsia. Magnesium sulfate is recommended for seizure prophylaxis in patients with severe features of preeclampsia.",
+            "source": "ACOG Practice Bulletin on Preeclampsia",
+            "citation": "Gestational Hypertension and Preeclampsia, ACOG, 2020",
+            "score": 0.2041,
+            "metadata": {
+              "organization": "ACOG",
+              "year": 2020,
+              "title": "Gestational Hypertension and Preeclampsia"
+            }
+          },
+          {
+            "id": "acc-aha-2018-lipids",
+            "content": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C >=190 mg/dL or diabetes with additional risk factors.",
+            "source": "ACC/AHA Multi-Society Cholesterol Guideline",
+            "citation": "Management of Blood Cholesterol, ACC/AHA, 2018",
+            "score": 0.2,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2018,
+              "title": "Management of Blood Cholesterol"
+            }
+          },
+          {
+            "id": "acc-aha-2019-primary-prevention",
+            "content": "Aspirin for primary prevention of cardiovascular disease is not routinely recommended due to bleeding risk, except in select high-risk adults 40-70 years after a risk-benefit discussion with their clinician.",
+            "source": "ACC/AHA Primary Prevention of Cardiovascular Disease Guideline",
+            "citation": "Primary Prevention of Cardiovascular Disease, ACC/AHA, 2019",
+            "score": 0.2,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2019,
+              "title": "Primary Prevention of Cardiovascular Disease"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ]
+}

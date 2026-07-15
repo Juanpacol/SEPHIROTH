@@ -1,0 +1,79 @@
+{
+  "case_id": "dm-a1c-target",
+  "answer": "For most nonpregnant adults with type 2 diabetes, an A1C goal of <7% without significant hypoglycemia is appropriate. This recommendation is in line with the guidelines provided by the American Diabetes Association (ADA) [Glycemic Targets & Pharmacologic Approaches, 2024].",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "A1C goal for nonpregnant adults with type 2 diabetes",
+        "top_k": "5"
+      },
+      "result": {
+        "query": "A1C goal for nonpregnant adults with type 2 diabetes",
+        "results": [
+          {
+            "id": "ada-2024-hba1c",
+            "content": "An A1C goal for many nonpregnant adults with diabetes of <7% without significant hypoglycemia is appropriate. Metformin is the preferred initial pharmacologic agent for type 2 diabetes.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Glycemic Targets & Pharmacologic Approaches, American Diabetes Association, 2024",
+            "score": 1.8353,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Glycemic Targets & Pharmacologic Approaches"
+            }
+          },
+          {
+            "id": "ada-2024-obesity",
+            "content": "GLP-1 receptor agonists and dual GIP/GLP-1 agonists are recommended for weight management in patients with type 2 diabetes and obesity, in addition to lifestyle intervention, given their combined glycemic and weight benefits.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Obesity Management in Type 2 Diabetes, American Diabetes Association, 2024",
+            "score": 0.5883,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Obesity Management in Type 2 Diabetes"
+            }
+          },
+          {
+            "id": "ada-2024-ckd",
+            "content": "In patients with type 2 diabetes and chronic kidney disease, an SGLT2 inhibitor is recommended for those with eGFR >=20 mL/min/1.73m2 to reduce CKD progression and cardiovascular risk. ACE inhibitors or ARBs are first-line for patients with albuminuria and hypertension.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Chronic Kidney Disease in Diabetes, American Diabetes Association, 2024",
+            "score": 0.5477,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Chronic Kidney Disease in Diabetes"
+            }
+          },
+          {
+            "id": "ada-2024-hypertension-dm",
+            "content": "A blood pressure target of <130/80 mmHg is recommended for most adults with diabetes and hypertension. ACE inhibitors or ARBs are preferred first-line agents, particularly in the presence of albuminuria.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Hypertension Management in Diabetes, American Diabetes Association, 2024",
+            "score": 0.4364,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Hypertension Management in Diabetes"
+            }
+          },
+          {
+            "id": "acc-aha-2018-lipids",
+            "content": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C >=190 mg/dL or diabetes with additional risk factors.",
+            "source": "ACC/AHA Multi-Society Cholesterol Guideline",
+            "citation": "Management of Blood Cholesterol, ACC/AHA, 2018",
+            "score": 0.4,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2018,
+              "title": "Management of Blood Cholesterol"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ]
+}

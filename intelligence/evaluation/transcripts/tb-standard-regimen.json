@@ -1,0 +1,55 @@
+{
+  "case_id": "tb-standard-regimen",
+  "answer": "For non-drug resistant TB, the standard regimen is a 6-month course of isoniazid, rifampicin, pyrazinamide, and ethambutol for 2 months, followed by isoniazid and rifampicin for 4 months. (Source: WHO Consolidated Guidelines on Tuberculosis, 2022)",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "TB treatment duration non-drug resistant",
+        "top_k": "10"
+      },
+      "result": {
+        "query": "TB treatment duration non-drug resistant",
+        "results": [
+          {
+            "id": "nice-2022-depression",
+            "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
+            "source": "NICE Guideline on Depression in Adults",
+            "citation": "Management of Depression in Adults, NICE, 2022",
+            "score": 0.2236,
+            "metadata": {
+              "organization": "NICE",
+              "year": 2022,
+              "title": "Management of Depression in Adults"
+            }
+          },
+          {
+            "id": "who-2022-tb",
+            "content": "The standard regimen for drug-susceptible pulmonary tuberculosis is a 6-month course of isoniazid, rifampicin, pyrazinamide, and ethambutol for 2 months, followed by isoniazid and rifampicin for 4 months.",
+            "source": "WHO Consolidated Guidelines on Tuberculosis",
+            "citation": "Treatment of Drug-Susceptible Tuberculosis, WHO, 2022",
+            "score": 0.2182,
+            "metadata": {
+              "organization": "WHO",
+              "year": 2022,
+              "title": "Treatment of Drug-Susceptible Tuberculosis"
+            }
+          },
+          {
+            "id": "gina-2024-asthma",
+            "content": "For adults and adolescents with asthma, as-needed low-dose ICS-formoterol is preferred as reliever therapy over short-acting beta-agonist alone, even at the mildest step of treatment, to reduce exacerbation risk.",
+            "source": "Global Initiative for Asthma Report",
+            "citation": "Global Strategy for Asthma Management, GINA, 2024",
+            "score": 0.1925,
+            "metadata": {
+              "organization": "GINA",
+              "year": 2024,
+              "title": "Global Strategy for Asthma Management"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ]
+}

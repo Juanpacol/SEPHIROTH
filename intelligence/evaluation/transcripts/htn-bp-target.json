@@ -1,0 +1,79 @@
+{
+  "case_id": "htn-bp-target",
+  "answer": "For most adults with hypertension, the recommended blood pressure target is <130/80 mmHg. This is in line with the guidelines from both the American Diabetes Association (ADA) [1] and the ACC/AHA [2]. \n\nPlease note that while this is generally recommended, it may not be suitable for every individual. Your doctor will consider your specific needs when making recommendations.\n\nReferences:\n[1] ADA Standards of Care in Diabetes, 2024: Hypertension Management in Diabetes\n[2] ACC/AHA Hypertension Guideline, 2023: High Blood Pressure Management",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "blood pressure target for most adults with hypertension",
+        "top_k": "5"
+      },
+      "result": {
+        "query": "blood pressure target for most adults with hypertension",
+        "results": [
+          {
+            "id": "ada-2024-hypertension-dm",
+            "content": "A blood pressure target of <130/80 mmHg is recommended for most adults with diabetes and hypertension. ACE inhibitors or ARBs are preferred first-line agents, particularly in the presence of albuminuria.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Hypertension Management in Diabetes, American Diabetes Association, 2024",
+            "score": 1.3093,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Hypertension Management in Diabetes"
+            }
+          },
+          {
+            "id": "acc-aha-2023-htn",
+            "content": "A blood pressure target of <130/80 mmHg is recommended for most adults with hypertension. First-line agents include thiazide diuretics, ACE inhibitors, ARBs, and calcium channel blockers.",
+            "source": "ACC/AHA Hypertension Guideline",
+            "citation": "High Blood Pressure Management, ACC/AHA, 2023",
+            "score": 1.2792,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2023,
+              "title": "High Blood Pressure Management"
+            }
+          },
+          {
+            "id": "idsa-2023-cap",
+            "content": "For outpatient community-acquired pneumonia in healthy adults, amoxicillin or doxycycline is recommended. For inpatients, beta-lactam plus macrolide combination therapy is standard.",
+            "source": "ATS/IDSA Community-Acquired Pneumonia Guideline",
+            "citation": "Treatment of Community-Acquired Pneumonia, ATS/IDSA, 2023",
+            "score": 0.2425,
+            "metadata": {
+              "organization": "ATS/IDSA",
+              "year": 2023,
+              "title": "Treatment of Community-Acquired Pneumonia"
+            }
+          },
+          {
+            "id": "ada-2024-hba1c",
+            "content": "An A1C goal for many nonpregnant adults with diabetes of <7% without significant hypoglycemia is appropriate. Metformin is the preferred initial pharmacologic agent for type 2 diabetes.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Glycemic Targets & Pharmacologic Approaches, American Diabetes Association, 2024",
+            "score": 0.2294,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Glycemic Targets & Pharmacologic Approaches"
+            }
+          },
+          {
+            "id": "gold-2024-copd",
+            "content": "For COPD patients with frequent exacerbations, LABA+LAMA combination therapy is preferred. Inhaled corticosteroids are added for patients with blood eosinophils >=300 cells/uL or continued exacerbations.",
+            "source": "GOLD COPD Report",
+            "citation": "COPD Diagnosis, Management and Prevention, GOLD, 2024",
+            "score": 0.2236,
+            "metadata": {
+              "organization": "GOLD",
+              "year": 2024,
+              "title": "COPD Diagnosis, Management and Prevention"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ]
+}

@@ -95,6 +95,4 @@ async def check_interactions(request: DrugCheckRequest) -> Dict[str, Any]:
     """Screen a medication list for drug-drug interactions."""
     registry = get_registry()
     await registry.load()
-    return await registry.execute(
-        "check_drug_interactions", {"medications": request.medications}
-    )
+    return await registry.execute("check_drug_interactions", {"medications": request.medications})

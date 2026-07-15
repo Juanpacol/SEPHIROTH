@@ -68,9 +68,7 @@ def build_explanation(
             steps.append(
                 {
                     "agent": agent,
-                    "action": _NO_TOOL_ACTIONS.get(
-                        agent, "Analyzed the patient context directly"
-                    ),
+                    "action": _NO_TOOL_ACTIONS.get(agent, "Analyzed the patient context directly"),
                     "tool": "",
                 }
             )

@@ -54,8 +54,7 @@ class MCPRegistry:
                             "function": {
                                 "name": tool.name,
                                 "description": tool.description or "",
-                                "parameters": tool.inputSchema
-                                or {"type": "object", "properties": {}},
+                                "parameters": tool.inputSchema or {"type": "object", "properties": {}},
                             },
                         }
                     )

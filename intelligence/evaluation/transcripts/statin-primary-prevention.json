@@ -1,0 +1,79 @@
+{
+  "case_id": "statin-primary-prevention",
+  "answer": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C \u2265190 mg/dL or diabetes with additional risk factors [Management of Blood Cholesterol, ACC/AHA, 2018]. For primary prevention, aspirin is not routinely recommended due to bleeding risk, except in select high-risk adults 40-70 years after a risk-benefit discussion with their clinician [Primary Prevention of Cardiovascular Disease, ACC/AHA, 2019]. \n\nNote: The recommendation on who should receive high-intensity statin therapy for primary prevention of cardiovascular disease may vary depending on the specific guidelines or clinical scenarios. It is essential to consult with a healthcare professional and consider individual patient factors before making any treatment decisions.\n\nRequires professional review",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "high-intensity statin therapy for primary prevention of cardiovascular disease in whom",
+        "top_k": "5"
+      },
+      "result": {
+        "query": "high-intensity statin therapy for primary prevention of cardiovascular disease in whom",
+        "results": [
+          {
+            "id": "acc-aha-2018-lipids",
+            "content": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C >=190 mg/dL or diabetes with additional risk factors.",
+            "source": "ACC/AHA Multi-Society Cholesterol Guideline",
+            "citation": "Management of Blood Cholesterol, ACC/AHA, 2018",
+            "score": 1.6,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2018,
+              "title": "Management of Blood Cholesterol"
+            }
+          },
+          {
+            "id": "acc-aha-2019-primary-prevention",
+            "content": "Aspirin for primary prevention of cardiovascular disease is not routinely recommended due to bleeding risk, except in select high-risk adults 40-70 years after a risk-benefit discussion with their clinician.",
+            "source": "ACC/AHA Primary Prevention of Cardiovascular Disease Guideline",
+            "citation": "Primary Prevention of Cardiovascular Disease, ACC/AHA, 2019",
+            "score": 1.0,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2019,
+              "title": "Primary Prevention of Cardiovascular Disease"
+            }
+          },
+          {
+            "id": "nice-2022-depression",
+            "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
+            "source": "NICE Guideline on Depression in Adults",
+            "citation": "Management of Depression in Adults, NICE, 2022",
+            "score": 0.8944,
+            "metadata": {
+              "organization": "NICE",
+              "year": 2022,
+              "title": "Management of Depression in Adults"
+            }
+          },
+          {
+            "id": "ada-2024-ckd",
+            "content": "In patients with type 2 diabetes and chronic kidney disease, an SGLT2 inhibitor is recommended for those with eGFR >=20 mL/min/1.73m2 to reduce CKD progression and cardiovascular risk. ACE inhibitors or ARBs are first-line for patients with albuminuria and hypertension.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Chronic Kidney Disease in Diabetes, American Diabetes Association, 2024",
+            "score": 0.3651,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Chronic Kidney Disease in Diabetes"
+            }
+          },
+          {
+            "id": "idsa-2023-cap",
+            "content": "For outpatient community-acquired pneumonia in healthy adults, amoxicillin or doxycycline is recommended. For inpatients, beta-lactam plus macrolide combination therapy is standard.",
+            "source": "ATS/IDSA Community-Acquired Pneumonia Guideline",
+            "citation": "Treatment of Community-Acquired Pneumonia, ATS/IDSA, 2023",
+            "score": 0.2425,
+            "metadata": {
+              "organization": "ATS/IDSA",
+              "year": 2023,
+              "title": "Treatment of Community-Acquired Pneumonia"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ]
+}

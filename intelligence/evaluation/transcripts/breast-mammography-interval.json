@@ -1,0 +1,79 @@
+{
+  "case_id": "breast-mammography-interval",
+  "answer": "The USPSTF recommends biennial screening mammography for women aged 40 to 74 years. In contrast, the USPSTF found insufficient evidence to assess the balance of benefits and harms of screening in women 75 years and older.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "screening mammogram recommendations for women aged 40-74",
+        "top_k": "5"
+      },
+      "result": {
+        "query": "screening mammogram recommendations for women aged 40-74",
+        "results": [
+          {
+            "id": "uspstf-2024-breast",
+            "content": "The USPSTF recommends biennial screening mammography for women aged 40 to 74 years. Evidence is insufficient to assess the balance of benefits and harms of screening in women 75 years and older.",
+            "source": "USPSTF Breast Cancer Screening Recommendation",
+            "citation": "Screening for Breast Cancer, USPSTF, 2024",
+            "score": 1.5275,
+            "metadata": {
+              "organization": "USPSTF",
+              "year": 2024,
+              "title": "Screening for Breast Cancer"
+            }
+          },
+          {
+            "id": "uspstf-2021-colorectal",
+            "content": "The USPSTF recommends screening for colorectal cancer in all adults aged 45 to 75 years. Screening options include colonoscopy every 10 years, annual FIT testing, or stool DNA-FIT every 1-3 years.",
+            "source": "USPSTF Colorectal Cancer Screening Recommendation",
+            "citation": "Screening for Colorectal Cancer, USPSTF, 2021",
+            "score": 0.5669,
+            "metadata": {
+              "organization": "USPSTF",
+              "year": 2021,
+              "title": "Screening for Colorectal Cancer"
+            }
+          },
+          {
+            "id": "idsa-2019-uti",
+            "content": "Nitrofurantoin for 5 days or trimethoprim-sulfamethoxazole for 3 days are first-line agents for uncomplicated cystitis in women. Fluoroquinolones are reserved for cases where first-line agents are not suitable.",
+            "source": "IDSA Uncomplicated UTI Guideline",
+            "citation": "Treatment of Uncomplicated Cystitis, IDSA, 2019",
+            "score": 0.2132,
+            "metadata": {
+              "organization": "IDSA",
+              "year": 2019,
+              "title": "Treatment of Uncomplicated Cystitis"
+            }
+          },
+          {
+            "id": "accp-2024-afib",
+            "content": "Oral anticoagulation is recommended for patients with atrial fibrillation and a CHA2DS2-VASc score of 2 or more in men or 3 or more in women. Direct oral anticoagulants are preferred over warfarin in most eligible patients.",
+            "source": "ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline",
+            "citation": "Anticoagulation in Atrial Fibrillation, ACC/AHA/HRS, 2024",
+            "score": 0.2041,
+            "metadata": {
+              "organization": "ACC/AHA/HRS",
+              "year": 2024,
+              "title": "Anticoagulation in Atrial Fibrillation"
+            }
+          },
+          {
+            "id": "acc-aha-2018-lipids",
+            "content": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C >=190 mg/dL or diabetes with additional risk factors.",
+            "source": "ACC/AHA Multi-Society Cholesterol Guideline",
+            "citation": "Management of Blood Cholesterol, ACC/AHA, 2018",
+            "score": 0.2,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2018,
+              "title": "Management of Blood Cholesterol"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ]
+}

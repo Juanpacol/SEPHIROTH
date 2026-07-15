@@ -15,8 +15,22 @@ from typing import Any, Dict, List
 
 # Words too generic to prove provenance on their own.
 _GENERIC_TOKENS = {
-    "source", "guideline", "guidelines", "study", "studies", "trial",
-    "the", "of", "and", "for", "in", "on", "et", "al", "a", "an",
+    "source",
+    "guideline",
+    "guidelines",
+    "study",
+    "studies",
+    "trial",
+    "the",
+    "of",
+    "and",
+    "for",
+    "in",
+    "on",
+    "et",
+    "al",
+    "a",
+    "an",
     "pmid",  # the prefix proves nothing — only the number identifies a paper
 }
 
@@ -43,11 +57,7 @@ class CitationReport:
 
 
 def _tokens(text: str) -> set:
-    return {
-        t
-        for t in re.findall(r"[a-z0-9/]+", text.lower())
-        if t not in _GENERIC_TOKENS and len(t) > 1
-    }
+    return {t for t in re.findall(r"[a-z0-9/]+", text.lower()) if t not in _GENERIC_TOKENS and len(t) > 1}
 
 
 def _harvest(value: Any, out: List[str]) -> None:

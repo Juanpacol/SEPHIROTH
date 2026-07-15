@@ -1,7 +1,8 @@
 """Structured logging — stdlib only, key=value lines that grep/parse cleanly.
 
 Example output:
-    2026-07-06T17:41:43Z level=INFO logger=api.request request_id=1f3a… method=POST path=/api/agents/consult status=200 duration_ms=171904
+    2026-07-06T17:41:43Z level=INFO logger=api.request request_id=1f3a…
+    method=POST path=/api/agents/consult status=200 duration_ms=171904
 """
 
 from __future__ import annotations

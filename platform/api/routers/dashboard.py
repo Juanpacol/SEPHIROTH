@@ -27,9 +27,7 @@ async def dashboard_stats(session: AsyncSession = Depends(get_session)) -> Dict[
     # Rule-based risk sweep — fine at demo scale; cache if the panel grows.
     patients = (await session.scalars(select(Patient))).all()
     high_risk_count = sum(
-        1
-        for p in patients
-        if assess_risk_level(assess_patient_risk(p.lab_results, p.medications)) == "high"
+        1 for p in patients if assess_risk_level(assess_patient_risk(p.lab_results, p.medications)) == "high"
     )
 
     today_start = datetime.combine(datetime.now(timezone.utc).date(), time.min)

@@ -89,9 +89,7 @@ class Consultation(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
-    patient_id: Mapped[Optional[str]] = mapped_column(
-        ForeignKey("patients.id"), nullable=True
-    )
+    patient_id: Mapped[Optional[str]] = mapped_column(ForeignKey("patients.id"), nullable=True)
     query: Mapped[str] = mapped_column(Text)
     answer: Mapped[str] = mapped_column(Text)
     agents: Mapped[List[str]] = mapped_column(JSON, default=list)

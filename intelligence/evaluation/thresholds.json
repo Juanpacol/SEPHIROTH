@@ -1,0 +1,8 @@
+{
+  "recall_at_1": 0.75,
+  "recall_at_3": 0.95,
+  "recall_at_5": 0.95,
+  "mrr": 0.85,
+  "citation_precision": 0.6,
+  "faithfulness_llm_judge": 0.25
+}

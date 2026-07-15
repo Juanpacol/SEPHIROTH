@@ -1,0 +1,55 @@
+{
+  "case_id": "hf-sglt2-therapy",
+  "answer": "For heart failure with reduced ejection fraction (HFrEF), guideline-directed medical therapy includes:\n\n* ARNI/ACEi/ARB\n* Beta-blockers\n* Mineralocorticoid receptor antagonists\n* SGLT2 inhibitors\n\nSGLT2 inhibitors are recommended regardless of diabetes status. [1]\n\nReferences:\n[1] Management of Heart Failure, AHA/ACC/HFSA, 2022",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "heart failure with reduced ejection fraction treatment guidelines",
+        "top_k": "5"
+      },
+      "result": {
+        "query": "heart failure with reduced ejection fraction treatment guidelines",
+        "results": [
+          {
+            "id": "aha-2022-hf",
+            "content": "In patients with heart failure with reduced ejection fraction (HFrEF), guideline-directed medical therapy includes ARNI/ACEi/ARB, beta-blockers, mineralocorticoid receptor antagonists, and SGLT2 inhibitors. SGLT2 inhibitors are recommended regardless of diabetes status.",
+            "source": "AHA/ACC/HFSA Heart Failure Guideline",
+            "citation": "Management of Heart Failure, AHA/ACC/HFSA, 2022",
+            "score": 0.9449,
+            "metadata": {
+              "organization": "AHA/ACC/HFSA",
+              "year": 2022,
+              "title": "Management of Heart Failure"
+            }
+          },
+          {
+            "id": "nice-2022-depression",
+            "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
+            "source": "NICE Guideline on Depression in Adults",
+            "citation": "Management of Depression in Adults, NICE, 2022",
+            "score": 0.2236,
+            "metadata": {
+              "organization": "NICE",
+              "year": 2022,
+              "title": "Management of Depression in Adults"
+            }
+          },
+          {
+            "id": "gina-2024-asthma",
+            "content": "For adults and adolescents with asthma, as-needed low-dose ICS-formoterol is preferred as reliever therapy over short-acting beta-agonist alone, even at the mildest step of treatment, to reduce exacerbation risk.",
+            "source": "Global Initiative for Asthma Report",
+            "citation": "Global Strategy for Asthma Management, GINA, 2024",
+            "score": 0.1925,
+            "metadata": {
+              "organization": "GINA",
+              "year": 2024,
+              "title": "Global Strategy for Asthma Management"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ]
+}

@@ -46,9 +46,7 @@ def _auth_response(user: User) -> AuthResponse:
 
 
 @router.post("/register", response_model=AuthResponse, status_code=201)
-async def register(
-    request: RegisterRequest, session: AsyncSession = Depends(get_session)
-) -> AuthResponse:
+async def register(request: RegisterRequest, session: AsyncSession = Depends(get_session)) -> AuthResponse:
     existing = await session.scalar(select(User).where(User.email == request.email))
     if existing:
         raise HTTPException(status_code=409, detail="Email already registered")
@@ -65,9 +63,7 @@ async def register(
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(
-    request: LoginRequest, session: AsyncSession = Depends(get_session)
-) -> AuthResponse:
+async def login(request: LoginRequest, session: AsyncSession = Depends(get_session)) -> AuthResponse:
     user = await session.scalar(select(User).where(User.email == request.email))
     if user is None or not verify_password(request.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")

@@ -1,0 +1,272 @@
+{
+  "case_id": "obesity-glp1-dm",
+  "answer": "GLP-1 drugs are a good option for weight loss in someone with type 2 diabetes, particularly when used as an adjunct to lifestyle intervention. The American Diabetes Association recommends GLP-1 receptor agonists and dual GIP/GLP-1 agonists for weight management in patients with type 2 diabetes and obesity (ADA Standards of Care in Diabetes, 2024). These medications have been shown to have combined glycemic and weight benefits, making them a valuable adjunct to lifestyle intervention.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "GLP-1 drugs for weight loss in patients with type 2 diabetes",
+        "top_k": "10"
+      },
+      "result": {
+        "query": "GLP-1 drugs for weight loss in patients with type 2 diabetes",
+        "results": [
+          {
+            "id": "ada-2024-obesity",
+            "content": "GLP-1 receptor agonists and dual GIP/GLP-1 agonists are recommended for weight management in patients with type 2 diabetes and obesity, in addition to lifestyle intervention, given their combined glycemic and weight benefits.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Obesity Management in Type 2 Diabetes, American Diabetes Association, 2024",
+            "score": 1.9612,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Obesity Management in Type 2 Diabetes"
+            }
+          },
+          {
+            "id": "ada-2024-ckd",
+            "content": "In patients with type 2 diabetes and chronic kidney disease, an SGLT2 inhibitor is recommended for those with eGFR >=20 mL/min/1.73m2 to reduce CKD progression and cardiovascular risk. ACE inhibitors or ARBs are first-line for patients with albuminuria and hypertension.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Chronic Kidney Disease in Diabetes, American Diabetes Association, 2024",
+            "score": 1.0954,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Chronic Kidney Disease in Diabetes"
+            }
+          },
+          {
+            "id": "ada-2024-hba1c",
+            "content": "An A1C goal for many nonpregnant adults with diabetes of <7% without significant hypoglycemia is appropriate. Metformin is the preferred initial pharmacologic agent for type 2 diabetes.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Glycemic Targets & Pharmacologic Approaches, American Diabetes Association, 2024",
+            "score": 0.9177,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Glycemic Targets & Pharmacologic Approaches"
+            }
+          },
+          {
+            "id": "accp-2024-afib",
+            "content": "Oral anticoagulation is recommended for patients with atrial fibrillation and a CHA2DS2-VASc score of 2 or more in men or 3 or more in women. Direct oral anticoagulants are preferred over warfarin in most eligible patients.",
+            "source": "ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline",
+            "citation": "Anticoagulation in Atrial Fibrillation, ACC/AHA/HRS, 2024",
+            "score": 0.6124,
+            "metadata": {
+              "organization": "ACC/AHA/HRS",
+              "year": 2024,
+              "title": "Anticoagulation in Atrial Fibrillation"
+            }
+          },
+          {
+            "id": "gold-2024-copd",
+            "content": "For COPD patients with frequent exacerbations, LABA+LAMA combination therapy is preferred. Inhaled corticosteroids are added for patients with blood eosinophils >=300 cells/uL or continued exacerbations.",
+            "source": "GOLD COPD Report",
+            "citation": "COPD Diagnosis, Management and Prevention, GOLD, 2024",
+            "score": 0.4472,
+            "metadata": {
+              "organization": "GOLD",
+              "year": 2024,
+              "title": "COPD Diagnosis, Management and Prevention"
+            }
+          },
+          {
+            "id": "kdigo-2024-ckd",
+            "content": "CKD staging is based on eGFR and albuminuria categories. SGLT2 inhibitors and ACE inhibitors or ARBs are recommended to slow progression in patients with albuminuric CKD, regardless of diabetes status.",
+            "source": "KDIGO Clinical Practice Guideline for CKD",
+            "citation": "Evaluation and Management of CKD, KDIGO, 2024",
+            "score": 0.4472,
+            "metadata": {
+              "organization": "KDIGO",
+              "year": 2024,
+              "title": "Evaluation and Management of CKD"
+            }
+          },
+          {
+            "id": "sscm-2021-sepsis",
+            "content": "For patients with sepsis or septic shock, broad-spectrum antibiotics should be administered within 1 hour of recognition, along with 30 mL/kg of intravenous crystalloid fluid for hypotension or elevated lactate.",
+            "source": "Surviving Sepsis Campaign Guidelines",
+            "citation": "Management of Sepsis and Septic Shock, Surviving Sepsis Campaign, 2021",
+            "score": 0.4264,
+            "metadata": {
+              "organization": "Surviving Sepsis Campaign",
+              "year": 2021,
+              "title": "Management of Sepsis and Septic Shock"
+            }
+          },
+          {
+            "id": "acog-2020-preeclampsia",
+            "content": "Low-dose aspirin starting at 12-28 weeks of gestation is recommended for patients at high risk of preeclampsia. Magnesium sulfate is recommended for seizure prophylaxis in patients with severe features of preeclampsia.",
+            "source": "ACOG Practice Bulletin on Preeclampsia",
+            "citation": "Gestational Hypertension and Preeclampsia, ACOG, 2020",
+            "score": 0.4082,
+            "metadata": {
+              "organization": "ACOG",
+              "year": 2020,
+              "title": "Gestational Hypertension and Preeclampsia"
+            }
+          },
+          {
+            "id": "acc-aha-2018-lipids",
+            "content": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C >=190 mg/dL or diabetes with additional risk factors.",
+            "source": "ACC/AHA Multi-Society Cholesterol Guideline",
+            "citation": "Management of Blood Cholesterol, ACC/AHA, 2018",
+            "score": 0.4,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2018,
+              "title": "Management of Blood Cholesterol"
+            }
+          },
+          {
+            "id": "aha-asa-2021-stroke",
+            "content": "Intravenous alteplase is recommended within 4.5 hours of symptom onset for eligible patients with acute ischemic stroke. Mechanical thrombectomy is recommended for large-vessel occlusion within 24 hours in selected patients.",
+            "source": "AHA/ASA Acute Ischemic Stroke Guideline",
+            "citation": "Early Management of Acute Ischemic Stroke, AHA/ASA, 2021",
+            "score": 0.4,
+            "metadata": {
+              "organization": "AHA/ASA",
+              "year": 2021,
+              "title": "Early Management of Acute Ischemic Stroke"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    },
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "top_k": "10",
+        "query": "GLP-1 drugs as an adjunct to lifestyle intervention for weight loss in patients with type 2 diabetes"
+      },
+      "result": {
+        "query": "GLP-1 drugs as an adjunct to lifestyle intervention for weight loss in patients with type 2 diabetes",
+        "results": [
+          {
+            "id": "ada-2024-obesity",
+            "content": "GLP-1 receptor agonists and dual GIP/GLP-1 agonists are recommended for weight management in patients with type 2 diabetes and obesity, in addition to lifestyle intervention, given their combined glycemic and weight benefits.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Obesity Management in Type 2 Diabetes, American Diabetes Association, 2024",
+            "score": 2.3534,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Obesity Management in Type 2 Diabetes"
+            }
+          },
+          {
+            "id": "ada-2024-ckd",
+            "content": "In patients with type 2 diabetes and chronic kidney disease, an SGLT2 inhibitor is recommended for those with eGFR >=20 mL/min/1.73m2 to reduce CKD progression and cardiovascular risk. ACE inhibitors or ARBs are first-line for patients with albuminuria and hypertension.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Chronic Kidney Disease in Diabetes, American Diabetes Association, 2024",
+            "score": 1.0954,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Chronic Kidney Disease in Diabetes"
+            }
+          },
+          {
+            "id": "ada-2024-hba1c",
+            "content": "An A1C goal for many nonpregnant adults with diabetes of <7% without significant hypoglycemia is appropriate. Metformin is the preferred initial pharmacologic agent for type 2 diabetes.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Glycemic Targets & Pharmacologic Approaches, American Diabetes Association, 2024",
+            "score": 0.9177,
+            "metadata": {
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Glycemic Targets & Pharmacologic Approaches"
+            }
+          },
+          {
+            "id": "accp-2024-afib",
+            "content": "Oral anticoagulation is recommended for patients with atrial fibrillation and a CHA2DS2-VASc score of 2 or more in men or 3 or more in women. Direct oral anticoagulants are preferred over warfarin in most eligible patients.",
+            "source": "ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline",
+            "citation": "Anticoagulation in Atrial Fibrillation, ACC/AHA/HRS, 2024",
+            "score": 0.6124,
+            "metadata": {
+              "organization": "ACC/AHA/HRS",
+              "year": 2024,
+              "title": "Anticoagulation in Atrial Fibrillation"
+            }
+          },
+          {
+            "id": "gold-2024-copd",
+            "content": "For COPD patients with frequent exacerbations, LABA+LAMA combination therapy is preferred. Inhaled corticosteroids are added for patients with blood eosinophils >=300 cells/uL or continued exacerbations.",
+            "source": "GOLD COPD Report",
+            "citation": "COPD Diagnosis, Management and Prevention, GOLD, 2024",
+            "score": 0.4472,
+            "metadata": {
+              "organization": "GOLD",
+              "year": 2024,
+              "title": "COPD Diagnosis, Management and Prevention"
+            }
+          },
+          {
+            "id": "kdigo-2024-ckd",
+            "content": "CKD staging is based on eGFR and albuminuria categories. SGLT2 inhibitors and ACE inhibitors or ARBs are recommended to slow progression in patients with albuminuric CKD, regardless of diabetes status.",
+            "source": "KDIGO Clinical Practice Guideline for CKD",
+            "citation": "Evaluation and Management of CKD, KDIGO, 2024",
+            "score": 0.4472,
+            "metadata": {
+              "organization": "KDIGO",
+              "year": 2024,
+              "title": "Evaluation and Management of CKD"
+            }
+          },
+          {
+            "id": "sscm-2021-sepsis",
+            "content": "For patients with sepsis or septic shock, broad-spectrum antibiotics should be administered within 1 hour of recognition, along with 30 mL/kg of intravenous crystalloid fluid for hypotension or elevated lactate.",
+            "source": "Surviving Sepsis Campaign Guidelines",
+            "citation": "Management of Sepsis and Septic Shock, Surviving Sepsis Campaign, 2021",
+            "score": 0.4264,
+            "metadata": {
+              "organization": "Surviving Sepsis Campaign",
+              "year": 2021,
+              "title": "Management of Sepsis and Septic Shock"
+            }
+          },
+          {
+            "id": "acog-2020-preeclampsia",
+            "content": "Low-dose aspirin starting at 12-28 weeks of gestation is recommended for patients at high risk of preeclampsia. Magnesium sulfate is recommended for seizure prophylaxis in patients with severe features of preeclampsia.",
+            "source": "ACOG Practice Bulletin on Preeclampsia",
+            "citation": "Gestational Hypertension and Preeclampsia, ACOG, 2020",
+            "score": 0.4082,
+            "metadata": {
+              "organization": "ACOG",
+              "year": 2020,
+              "title": "Gestational Hypertension and Preeclampsia"
+            }
+          },
+          {
+            "id": "acc-aha-2018-lipids",
+            "content": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C >=190 mg/dL or diabetes with additional risk factors.",
+            "source": "ACC/AHA Multi-Society Cholesterol Guideline",
+            "citation": "Management of Blood Cholesterol, ACC/AHA, 2018",
+            "score": 0.4,
+            "metadata": {
+              "organization": "ACC/AHA",
+              "year": 2018,
+              "title": "Management of Blood Cholesterol"
+            }
+          },
+          {
+            "id": "aha-asa-2021-stroke",
+            "content": "Intravenous alteplase is recommended within 4.5 hours of symptom onset for eligible patients with acute ischemic stroke. Mechanical thrombectomy is recommended for large-vessel occlusion within 24 hours in selected patients.",
+            "source": "AHA/ASA Acute Ischemic Stroke Guideline",
+            "citation": "Early Management of Acute Ischemic Stroke, AHA/ASA, 2021",
+            "score": 0.4,
+            "metadata": {
+              "organization": "AHA/ASA",
+              "year": 2021,
+              "title": "Early Management of Acute Ischemic Stroke"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ]
+}

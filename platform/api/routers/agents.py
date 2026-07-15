@@ -1,10 +1,9 @@
 """Agent consultation endpoints — auth-protected, persisted per user."""
 
+import json
 import logging
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
-
-import json
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response, StreamingResponse
@@ -208,9 +207,7 @@ async def export_consultation(
 ) -> Response:
     """Download one of the current user's consultations as a PDF report."""
     consultation = await session.scalar(
-        select(Consultation).where(
-            Consultation.id == consultation_id, Consultation.user_id == user.id
-        )
+        select(Consultation).where(Consultation.id == consultation_id, Consultation.user_id == user.id)
     )
     if consultation is None:
         raise HTTPException(status_code=404, detail="Consultation not found")
@@ -222,9 +219,7 @@ async def export_consultation(
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={
-            "Content-Disposition": f'attachment; filename="consultation-{consultation.id[:8]}.pdf"'
-        },
+        headers={"Content-Disposition": f'attachment; filename="consultation-{consultation.id[:8]}.pdf"'},
     )
 
 

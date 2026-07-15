@@ -69,6 +69,7 @@ async def request_logging(request: Request, call_next):
     response.headers["X-Request-ID"] = request_id
     return response
 
+
 app.include_router(auth_router_module.router, prefix="/api/auth", tags=["auth"])
 app.include_router(agents.router, prefix="/api/agents", tags=["agents"])
 app.include_router(patients.router, prefix="/api/patients", tags=["patients"])

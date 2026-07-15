@@ -51,7 +51,10 @@ LAB_RULES: Dict[str, List[tuple]] = {
         (lambda v: v > 9, LabRule("Poor glycemic control", "medium", "HbA1c {value}% (> 9%)")),
     ],
     "bnp": [
-        (lambda v: v > 400, LabRule("Elevated BNP", "medium", "BNP {value} pg/mL (> 400) — decompensation risk")),
+        (
+            lambda v: v > 400,
+            LabRule("Elevated BNP", "medium", "BNP {value} pg/mL (> 400) — decompensation risk"),
+        ),
     ],
     "ef": [
         (lambda v: v < 40, LabRule("Reduced ejection fraction", "high", "EF {value}% (< 40%)")),

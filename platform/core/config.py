@@ -14,9 +14,7 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # Database (async driver; host port 5433 — see docker-compose.yml)
-    database_url: str = (
-        "postgresql+asyncpg://clinical_ai:clinical_ai_password@localhost:5433/clinical_ai_db"
-    )
+    database_url: str = "postgresql+asyncpg://clinical_ai:clinical_ai_password@localhost:5433/clinical_ai_db"
 
     # Auth
     jwt_secret: str = "dev-secret-change-in-production-0000"  # >=32 bytes for HS256

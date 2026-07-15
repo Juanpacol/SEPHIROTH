@@ -72,21 +72,17 @@ def build_workflow(client: OllamaClient):
             result = await agent.run(state["query"], state.get("context"))
             return {
                 "agent_outputs": {agent.name: result.content},
-                "tool_calls": [
-                    {"agent": agent.name, **call} for call in result.tool_calls
-                ],
+                "tool_calls": [{"agent": agent.name, **call} for call in result.tool_calls],
             }
 
         return node
 
     async def coordinator_node(state: WorkflowState) -> WorkflowState:
         sections = "\n\n".join(
-            f"### {name} agent\n{output}"
-            for name, output in state.get("agent_outputs", {}).items()
+            f"### {name} agent\n{output}" for name, output in state.get("agent_outputs", {}).items()
         )
         result = await coordinator.run(
-            f"Clinical question: {state['query']}\n\n"
-            f"Specialist analyses:\n\n{sections}",
+            f"Clinical question: {state['query']}\n\nSpecialist analyses:\n\n{sections}",
             state.get("context"),
         )
         all_tool_calls = state.get("tool_calls", []) + [
@@ -97,12 +93,8 @@ def build_workflow(client: OllamaClient):
         return {
             "final_answer": sanitize(result.content, report),
             "citation_report": report.as_dict(),
-            "explanation": build_explanation(
-                agents_involved, all_tool_calls, report.as_dict()
-            ),
-            "tool_calls": [
-                {"agent": coordinator.name, **call} for call in result.tool_calls
-            ],
+            "explanation": build_explanation(agents_involved, all_tool_calls, report.as_dict()),
+            "tool_calls": [{"agent": coordinator.name, **call} for call in result.tool_calls],
         }
 
     graph = StateGraph(WorkflowState)
@@ -164,9 +156,7 @@ async def stream_consultation(
     agent_outputs: Dict[str, str] = {}
     tool_calls: List[Dict[str, Any]] = []
 
-    async for update in workflow.astream(
-        _initial_state(query, patient_id, context), stream_mode="updates"
-    ):
+    async for update in workflow.astream(_initial_state(query, patient_id, context), stream_mode="updates"):
         for node_name, node_state in update.items():
             if node_name == "coordinator":
                 tool_calls.extend(node_state.get("tool_calls", []))
@@ -189,7 +179,6 @@ async def stream_consultation(
                     "agent": agent_name,
                     "summary": (output.get(agent_name, "") or "")[:280],
                     "tool_calls": [
-                        {"name": c.get("name"), "arguments": c.get("arguments")}
-                        for c in node_calls
+                        {"name": c.get("name"), "arguments": c.get("arguments")} for c in node_calls
                     ],
                 }
