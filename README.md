@@ -155,6 +155,15 @@ clinical-ai-copilot/
 └── references/        # Cloned open-source projects (read-only reference; not committed — see .gitignore)
 ```
 
+`references/` holds read-only clones used for API reference while building the MONAI/MedCAT/LangGraph wrappers in `intelligence/`. Not committed (see `.gitignore`) and not required to run or test the app — clone them only if you're extending those integrations:
+
+```bash
+mkdir -p references
+git clone --depth 1 https://github.com/Project-MONAI/MONAI.git references/ref-monai-medical-imaging
+git clone --depth 1 https://github.com/CogStack/MedCAT.git references/ref-medcat-nlp
+git clone --depth 1 https://github.com/langchain-ai/langgraph.git references/ref-langgraph-agents
+```
+
 ## Docker
 
 ```bash
