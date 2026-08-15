@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import date
+from pathlib import Path
 from typing import AsyncIterator
 
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from core.config import settings
 from data.schemas import Base, Patient, TimelineEvent
 
 logger = logging.getLogger(__name__)
+
+_ALEMBIC_INI_PATH = Path(__file__).parent.parent.parent / "alembic.ini"
 
 engine = create_async_engine(settings.database_url, echo=settings.debug)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
@@ -68,15 +72,34 @@ SEED_PATIENTS = [
 ]
 
 
+def _run_alembic_upgrade() -> None:
+    """Sync entry point for Alembic's `upgrade head` — runs its own
+    async engine internally (see migrations/env.py), so this must be
+    called off the running event loop (via asyncio.to_thread), not
+    nested inside it: `env.py`'s `asyncio.run(...)` would otherwise
+    raise "cannot be called from a running event loop"."""
+    from alembic import command
+    from alembic.config import Config
+
+    command.upgrade(Config(str(_ALEMBIC_INI_PATH)), "head")
+
+
 async def init_db() -> None:
-    """Create tables and seed demo patients when the table is empty (idempotent)."""
-    async with engine.begin() as conn:
-        if conn.dialect.name == "postgresql":
-            # SQLite (used in tests) has no equivalent extension mechanism —
-            # only run this against real Postgres, where pgvector persists
-            # GuidelineDocument.embedding.
-            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-        await conn.run_sync(Base.metadata.create_all)
+    """Create/upgrade the schema and seed demo patients when the table is
+    empty (idempotent).
+
+    Postgres (local docker-compose or Supabase): schema is Alembic-managed
+    — `migrations/versions/` is the single source of truth, applied via
+    `alembic upgrade head` on every boot (safe to run repeatedly; a no-op
+    once already current). SQLite (tests, `tests/conftest.py::db_session`)
+    has no migration history and never will — `Base.metadata.create_all`
+    there is the accepted, ephemeral-schema pattern for a per-test DB.
+    """
+    if engine.dialect.name == "postgresql":
+        await asyncio.to_thread(_run_alembic_upgrade)
+    else:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
     async with SessionLocal() as session:
         existing = await session.scalar(select(Patient.id).limit(1))

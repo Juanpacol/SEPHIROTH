@@ -37,6 +37,7 @@ An **AI-powered clinical decision support platform** for healthcare professional
 | `data/vectors/` | In-memory vector store (cosine similarity) used by `RAGPipeline` |
 | `references/` | Cloned open-source projects (don't edit; reference only) |
 | `real_data/` | Optional real/synthetic sample data (Synthea patients+notes, DDInter drug interactions, RSNA imaging fixtures) — see `real_data/README.md`; never required for tests/CI |
+| `migrations/` | Alembic schema migrations for Postgres (local docker-compose + Supabase). SQLite tests never touch this — see "Database migrations" below |
 
 ## Design System (Frontend)
 
@@ -165,7 +166,7 @@ echo 'GEMINI_API_KEY=your-key-here' >> .env
 # Terminal 1: Postgres
 docker compose up -d postgres
 
-# Terminal 2: Backend (creates tables + seeds P001/P002 on first boot)
+# Terminal 2: Backend (runs `alembic upgrade head` + seeds P001/P002 on first boot)
 PYTHONPATH=.:platform .venv/bin/uvicorn api.main:app --reload --port 8000
 
 # Terminal 3: Frontend (proxies /api/* to the backend)
@@ -176,12 +177,26 @@ cd platform/frontend && npm run dev -- --port 3100
 - `*:8000`, `*:3000`, and `*:5432` are all taken by other containers.
 - Backend: always test via `http://127.0.0.1:8000` (IPv4). Frontend: port **3100**.
 - Our Postgres maps to host **5433** (set in `.env`, which overrides `core/config.py` defaults).
-- **Using Supabase instead of local Postgres?** Set `DATABASE_URL` in `.env` to Supabase's **Session pooler** string (port 5432 — not the 6543 transaction pooler, which needs `asyncpg` prepared statements disabled) and skip `docker compose up -d postgres` entirely. `init_db()` creates tables + enables `pgvector` automatically on first boot either way. See ARCHITECTURE.md's "Cloud database" note.
+- **Using Supabase instead of local Postgres?** Set `DATABASE_URL` in `.env` to Supabase's **Session pooler** string (port 5432 — not the 6543 transaction pooler, which needs `asyncpg` prepared statements disabled) and skip `docker compose up -d postgres` entirely. `init_db()` runs the same Alembic migrations + enables `pgvector` automatically on first boot either way. See ARCHITECTURE.md's "Cloud database" note.
 
 Or via Docker:
 ```bash
 GEMINI_API_KEY=your-key JWT_SECRET=$(openssl rand -hex 32) docker-compose up
 ```
+
+## Database migrations
+
+Schema is Alembic-managed for both local Postgres and Supabase (`migrations/versions/`) — `platform/core/db.py::init_db()` runs `alembic upgrade head` on every boot when the dialect is `postgresql` (idempotent; a no-op once already current). SQLite (`tests/conftest.py::db_session`) never uses migrations — it calls `Base.metadata.create_all()` directly, the accepted pattern for an ephemeral per-test schema.
+
+- **Changed a model in `data/schemas/__init__.py`?** Generate the migration against a fresh local Postgres (never against Supabase — it already has live data):
+  ```bash
+  docker compose down -v postgres && docker compose up -d postgres   # empty DB
+  DATABASE_URL=postgresql+asyncpg://clinical_ai:clinical_ai_password@localhost:5433/clinical_ai_db \
+    PYTHONPATH=.:platform .venv/bin/alembic revision --autogenerate -m "describe the change"
+  ```
+  Review the generated file — autogenerate doesn't detect everything (e.g. it won't add `CREATE EXTENSION` statements or always get custom types like `pgvector.sqlalchemy.Vector` right on the first pass; the baseline migration needed a manual import fixup, see `migrations/versions/dff332c99951_initial_schema.py` for the pattern).
+- **`tests/test_alembic_migration.py`** is the drift guard: it fails if a model changed without a matching migration. Self-skips if no local Postgres is reachable at `localhost:5433` (never blocks CI).
+- Supabase was **stamped**, not migrated, at the baseline revision (`alembic stamp head`) — its schema already matched the models exactly (it was created by the old `create_all` path before this migration system existed), so `stamp` just recorded "already current" without running any DDL against the 14 real patients already there. Never run `alembic upgrade head` against Supabase for a revision it hasn't seen yet without checking the migration is additive first.
 
 ## Testing
 

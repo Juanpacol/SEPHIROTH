@@ -1,8 +1,8 @@
 """
 SEPHIROTH — FastAPI backend.
 
-Local-first: all LLM inference runs through Ollama on the host machine.
-Launch (from repo root, with `platform/` on PYTHONPATH):
+LLM inference runs through the Google Gemini API (see README's privacy
+notice). Launch (from repo root, with `platform/` on PYTHONPATH):
 
     PYTHONPATH=.:platform uvicorn api.main:app --reload
 """
