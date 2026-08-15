@@ -34,7 +34,7 @@ clinical-ai-copilot/
 ├── data/
 │   ├── rag/                  # Retrieval pipeline + seeded guideline corpus
 │   ├── schemas/              # SQLAlchemy models (Patient, ClinicalNote, ...)
-│   ├── embeddings/, vectors/ # pgvector integration (planned)
+│   ├── embeddings/, vectors/ # hybrid dense+keyword retrieval (Gemini embeddings, in-memory vector store)
 │
 ├── examples/                 # tools_example.py (no LLM), agents_example.py (full workflow)
 ├── docs/                     # Integration guide

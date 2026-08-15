@@ -109,10 +109,6 @@ class FakeLLMClient:
         return True
 
 
-# Backwards-compatible alias during the Ollama -> Gemini migration.
-FakeOllamaClient = FakeLLMClient
-
-
 @pytest.fixture
 def fake_llm_client():
     """A bare FakeLLMClient with no scripts — override `.scripts` /

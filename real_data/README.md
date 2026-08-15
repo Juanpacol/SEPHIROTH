@@ -1,6 +1,6 @@
 # `real_data/` — verified, licensed sample data
 
-Optional, real/synthetic sample data to make SEPHIROTH's demo experience realistic — patients with actual clinical histories, real drug-interaction severities, and a real chest X-ray, instead of only the two hand-typed demo patients. **Nothing here is required to run the app or the test suite** — see [Qué NO cambia](#qué-no-cambia-y-por-qué) below.
+Optional, real/synthetic sample data to make SEPHIROTH's demo experience realistic — patients with actual clinical histories, real drug-interaction severities, and a real chest X-ray, instead of only the two hand-typed demo patients. **Nothing here is required to run the app or the test suite** — see [What doesn't change](#what-doesnt-change-and-why) below.
 
 Each source was chosen after explicit research into which one is genuinely verifiable and appropriately licensed for this use — see the conversation history / project docs for the comparison against alternatives that were rejected (NIH ChestX-ray14, CheXpert, MIMIC, RxNav, openFDA, DrugBank, n2c2, etc.) and why.
 
@@ -13,7 +13,7 @@ Each source was chosen after explicit research into which one is genuinely verif
 
 Each subfolder has its own `README.md` with the full detail on what's actually in the data, its exact license terms, and how it's used by the app.
 
-## Qué NO cambia (y por qué)
+## What doesn't change (and why)
 
 - **`platform/core/db.py::SEED_PATIENTS`** (the two demo patients, P001/P002) is untouched — it's the deterministic fixture the test suite depends on. Synthea patients are *additive*, imported separately, never auto-seeded.
 - **`intelligence/mcp/drug_safety_server.py::INTERACTIONS`** (hand-curated pairs) is untouched and always takes priority — DDInter only fills gaps, and gracefully degrades to hand-curated-only if `ddinter_subset.json` is ever missing.

@@ -111,6 +111,10 @@ class GuidelineDocument(Base):
     (`data.vectors.InMemoryVectorStore`), not a live query against this
     table — see `data/rag/__init__.py`. This table exists purely so
     API-ingested documents survive a restart.
+
+    No HNSW/IVFFlat index yet -- intentional while this table is empty (no
+    ingestion endpoint writes to it today). Add one once real rows start
+    landing here via `/api/rag` ingestion, not before.
     """
 
     __tablename__ = "guideline_documents"
