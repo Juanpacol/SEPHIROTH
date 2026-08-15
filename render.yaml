@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: sephiroth-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    autoDeploy: false # deploys are triggered explicitly by the CD workflow, gated on the smoke test
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: JWT_SECRET
+        sync: false # set manually in the Render dashboard — never committed
+      - key: DATABASE_URL
+        sync: false # Supabase session-pooler connection string — never committed
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false

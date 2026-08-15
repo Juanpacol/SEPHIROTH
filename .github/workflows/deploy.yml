@@ -1,0 +1,82 @@
+name: Deploy
+
+# Runs after CI succeeds on main — never deploys a commit that hasn't
+# passed lint/tests/eval/security/docker-smoke-test. Single-environment
+# (production) with the smoke test as the gate: if it fails, we redeploy
+# the last known-good commit automatically rather than leaving a broken
+# deploy live.
+#
+# NOTE: this workflow's exact Render API response shapes are written
+# against Render's documented v1 API but have not yet been exercised
+# against a real Render service (none existed at authoring time) — treat
+# the first real run as a dry-run and check the Actions log carefully.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Trigger Render deploy for this commit
+        id: trigger
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          RESPONSE=$(curl -sf -X POST \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"commitId\": \"$COMMIT_SHA\"}")
+          echo "$RESPONSE"
+          DEPLOY_ID=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+          echo "deploy_id=$DEPLOY_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for deploy to go live
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          DEPLOY_ID: ${{ steps.trigger.outputs.deploy_id }}
+        run: |
+          for i in $(seq 1 60); do
+            STATUS=$(curl -sf "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys/$DEPLOY_ID" \
+              -H "Authorization: Bearer $RENDER_API_KEY" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
+            echo "deploy status: $STATUS"
+            if [ "$STATUS" = "live" ]; then exit 0; fi
+            case "$STATUS" in
+              build_failed|update_failed|canceled|deactivated)
+                echo "deploy ended with status $STATUS"; exit 1 ;;
+            esac
+            sleep 10
+          done
+          echo "timed out waiting for the deploy to go live"; exit 1
+
+      - name: Smoke test the live deployment
+        id: smoke
+        run: bash scripts/smoke_test.sh "${{ vars.RENDER_SERVICE_URL }}"
+
+      - name: Roll back to the previous live deploy on smoke test failure
+        if: failure() && steps.smoke.outcome == 'failure'
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          echo "::warning::Smoke test failed against the new deploy — rolling back"
+          PREV_COMMIT=$(curl -sf "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys?status=live&limit=1" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['commit']['id'])")
+          echo "rolling back to $PREV_COMMIT"
+          curl -sf -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"commitId\": \"$PREV_COMMIT\"}"
+          exit 1
