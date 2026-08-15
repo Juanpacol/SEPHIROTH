@@ -13,6 +13,8 @@ source = [
     "intelligence/nlp/timeline_extractor.py",
     "data/rag",
     "data/schemas",
+    "data/embeddings",
+    "data/vectors",
     "platform/api",
     "platform/auth",
     "platform/core",
@@ -20,6 +22,7 @@ source = [
 omit = [
     "*/__pycache__/*",
     "*/tests/*",
+    "data/embeddings/build_artifact.py",
 ]
 
 [tool.coverage.report]

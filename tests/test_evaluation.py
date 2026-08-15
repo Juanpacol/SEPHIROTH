@@ -9,6 +9,7 @@ from intelligence.evaluation import metrics
 from intelligence.evaluation.dataset import DatasetError, GoldenCase, load_dataset
 from intelligence.evaluation.faithfulness import heuristic_proxy
 from intelligence.evaluation.runner import (
+    _check_embeddings_artifact_staleness,
     compare_thresholds,
     sha256_transcripts,
 )
@@ -176,3 +177,32 @@ def test_sha256_transcripts_order_independent(tmp_path):
     # Re-hashing the same directory is deterministic regardless of glob order.
     hash2 = sha256_transcripts(tmp_path)
     assert hash1 == hash2
+
+
+def test_embeddings_artifact_staleness_no_artifact_is_not_stale(monkeypatch):
+    monkeypatch.setattr("data.embeddings.cached.load_artifact", lambda: None)
+    stale, warning = _check_embeddings_artifact_staleness()
+    assert stale is False
+    assert warning is None
+
+
+def test_embeddings_artifact_staleness_hash_mismatch_is_stale(monkeypatch):
+    monkeypatch.setattr(
+        "data.embeddings.cached.load_artifact",
+        lambda: {"corpus_sha256": "definitely-not-the-real-hash"},
+    )
+    stale, warning = _check_embeddings_artifact_staleness()
+    assert stale is True
+    assert "build_artifact" in warning
+
+
+def test_embeddings_artifact_staleness_hash_match_is_fresh(monkeypatch):
+    from data.embeddings.corpus_hash import compute_corpus_sha256
+
+    monkeypatch.setattr(
+        "data.embeddings.cached.load_artifact",
+        lambda: {"corpus_sha256": compute_corpus_sha256()},
+    )
+    stale, warning = _check_embeddings_artifact_staleness()
+    assert stale is False
+    assert warning is None

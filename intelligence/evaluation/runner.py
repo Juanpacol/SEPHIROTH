@@ -13,6 +13,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from data.embeddings.cached import CachedEmbeddingProvider
+from data.embeddings.corpus_hash import compute_corpus_sha256
 from data.rag import RAGPipeline
 from intelligence.evaluation import metrics
 from intelligence.evaluation.dataset import GoldenCase, load_dataset
@@ -63,10 +65,18 @@ def extract_evidence_texts(tool_calls: List[Dict[str, Any]]) -> List[str]:
     return texts
 
 
+def _offline_pipeline() -> RAGPipeline:
+    """Retrieval pipeline wired to the committed embeddings artifact only —
+    deterministic and offline regardless of whether GEMINI_API_KEY happens
+    to be set in the environment running this eval (CI must never depend
+    on that)."""
+    return RAGPipeline(embedding_provider=CachedEmbeddingProvider(inner=None))
+
+
 def retrieved_ids_by_case(
     cases: List[GoldenCase], pipeline: Optional[RAGPipeline] = None, top_k: int = 5
 ) -> Dict[str, List[str]]:
-    pipeline = pipeline or RAGPipeline()
+    pipeline = pipeline or _offline_pipeline()
     return {case.id: [hit["id"] for hit in pipeline.retrieve(case.query, top_k=top_k)] for case in cases}
 
 
@@ -130,7 +140,7 @@ def run_ci_mode(
     thresholds = load_thresholds(thresholds_path)
 
     observed: Dict[str, Any] = {}
-    observed.update(compute_retrieval_metrics(cases))
+    observed.update(compute_retrieval_metrics(cases, pipeline=_offline_pipeline()))
     replay = compute_replay_metrics(cases, transcripts)
     observed["citation_precision"] = replay["citation"]["precision"]
 
@@ -148,18 +158,45 @@ def run_ci_mode(
         if not stale:
             observed["faithfulness_llm_judge"] = results_data.get("faithfulness", {}).get("llm_judge")
 
+    embeddings_stale, embeddings_warning = _check_embeddings_artifact_staleness()
+
     rows = compare_thresholds(observed, thresholds)
-    passed = all(row["passed"] for row in rows) and not stale
+    passed = all(row["passed"] for row in rows) and not stale and not embeddings_stale
 
     return {
         "mode": "ci",
         "passed": passed,
         "stale_results": stale,
+        "embeddings_artifact_stale": embeddings_stale,
+        "embeddings_artifact_warning": embeddings_warning,
         "observed": observed,
         "replay": replay,
         "threshold_rows": rows,
         "n_cases": len(cases),
     }
+
+
+def _check_embeddings_artifact_staleness() -> tuple[bool, Optional[str]]:
+    """Verify the committed embeddings artifact's corpus hash still matches
+    `SEED_GUIDELINES` + the golden-set queries. A mismatch means someone
+    added/changed a guideline or a golden query without regenerating the
+    artifact — that entry would silently retrieve keyword-only forever, so
+    this must fail loudly rather than pass quietly."""
+    from data.embeddings.cached import load_artifact
+
+    artifact = load_artifact()
+    if artifact is None:
+        # No artifact yet is not a failure by itself — retrieval simply
+        # stays keyword-only. Nothing to check for staleness.
+        return False, None
+
+    current_hash = compute_corpus_sha256()
+    if artifact.get("corpus_sha256") != current_hash:
+        return True, (
+            "Embeddings artifact is stale relative to SEED_GUIDELINES/golden.json — "
+            "regenerate with `python -m data.embeddings.build_artifact` before merging."
+        )
+    return False, None
 
 
 async def run_full_mode(

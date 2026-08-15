@@ -42,7 +42,23 @@ PYTHONPATH=.:platform .venv/bin/pytest tests/test_rag_pipeline.py tests/test_eva
 
 `test_evaluation.py::test_load_dataset_real_file_loads_without_error` will catch a typo'd `relevant_doc_ids` (it validates every id exists in the corpus) — if it fails, fix the id before continuing.
 
-## 4. Regenerate the baseline
+## 4. Regenerate the embeddings artifact (if it exists)
+
+The new document/query text isn't in the committed embeddings artifact (`data/embeddings/artifacts/seed_embeddings.json.gz`) yet, so it would silently retrieve keyword-only forever. Check whether the artifact exists:
+
+```bash
+ls data/embeddings/artifacts/seed_embeddings.json.gz 2>/dev/null && echo "exists" || echo "not built yet"
+```
+
+If it exists, regenerate it with a real `GEMINI_API_KEY` set:
+
+```bash
+PYTHONPATH=.:platform .venv/bin/python -m data.embeddings.build_artifact
+```
+
+`--mode ci`'s staleness gate (`runner.py::_check_embeddings_artifact_staleness`) will fail loudly with an actionable message if this step is skipped. If the artifact doesn't exist yet in this repo, skip this step — retrieval stays keyword-only and there's nothing to regenerate.
+
+## 5. Regenerate the baseline
 
 The dataset changed, so the committed `results/latest.json` is now stale relative to it — `--mode ci` will warn or fail until it's refreshed. Invoke the `/eval` skill with `--full` (or run directly):
 
@@ -52,6 +68,6 @@ PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ful
 
 Then update the README's `## Evaluation` metric table to match, per the `/eval` skill's "after a full refresh" steps.
 
-## 5. Consider a targeted test
+## 6. Consider a targeted test
 
-If the new topic has a distinctive vocabulary that could confuse retrieval against neighboring corpus entries, add a case to `tests/test_rag_pipeline.py` asserting the new doc ranks first for its golden query — cheap insurance against future corpus growth silently degrading this one.
+If the new topic has a distinctive vocabulary that could confuse retrieval against neighboring corpus entries, add a case to `tests/test_rag_pipeline.py` asserting the new doc ranks first for its golden query — cheap insurance against future corpus growth silently degrading this one. If the embeddings artifact exists, also add a lay-language paraphrase case to `tests/test_embeddings_matching.py` following the existing `LAY_LANGUAGE_CASES` pattern.

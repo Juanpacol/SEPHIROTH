@@ -1,5 +1,6 @@
 """Tests for the keyword-scored RAG pipeline over the seeded guideline corpus."""
 
+from data.embeddings.base import EmbeddingUnavailable
 from data.rag import SEED_GUIDELINES, Document, MedicalKnowledgeBase, RAGPipeline, _tokenize
 
 
@@ -95,3 +96,108 @@ def test_medical_knowledge_base_search_delegates_to_pipeline():
     results = kb.search("A1C goal type 2 diabetes", top_k=1)
     assert results
     assert results[0]["id"] == "ada-2024-hba1c"
+
+
+# --- Hybrid (dense + keyword) retrieval, using hand-crafted synthetic ---
+# --- vectors so fusion/threshold behavior is testable without a real   ---
+# --- embedding model or network access. See tests/test_embeddings_    ---
+# --- matching.py for tests against the real committed artifact.       ---
+
+
+class _FakeEmbeddingProvider:
+    """Maps exact strings to hand-picked vectors; anything unmapped raises,
+    mirroring a real provider's behavior for out-of-corpus text."""
+
+    model_id = "fake-embedding-model"
+    dimension = 2
+
+    def __init__(self, vectors):
+        self._vectors = vectors
+
+    def _lookup(self, text):
+        if text not in self._vectors:
+            raise EmbeddingUnavailable(f"no fake vector for: {text!r}")
+        return self._vectors[text]
+
+    def embed_documents(self, texts):
+        return [self._lookup(t) for t in texts]
+
+    def embed_query(self, text):
+        return self._lookup(text)
+
+
+def _pipeline_with_docs_and_vectors(docs_and_vectors, min_similarity=0.5):
+    """Builds a small pipeline (no seed corpus) wired to a fake provider
+    whose vectors are unit-norm so dot product == cosine similarity."""
+    docs = [d for d, _ in docs_and_vectors]
+    vectors = {d.content: v for d, v in docs_and_vectors}
+    pipeline = RAGPipeline(seed=False, min_similarity=min_similarity)
+    for doc in docs:
+        pipeline.add_document(doc)
+    pipeline._embedding_provider = _FakeEmbeddingProvider(vectors)
+    pipeline._index_documents(docs)
+    return pipeline
+
+
+def test_hybrid_retrieval_finds_paraphrase_with_zero_keyword_overlap():
+    doc = Document(
+        id="ear-infection-doc", content="Amoxicillin for acute otitis media in children", source="s"
+    )
+    query = "my kid has an ear infection what antibiotic"
+    pipeline = _pipeline_with_docs_and_vectors([(doc, [1.0, 0.0])])
+    # No shared vocabulary at all -> keyword scoring alone would miss this.
+    assert pipeline._retrieve_keyword(set(_tokenize(query))) == []
+
+    pipeline._embedding_provider._vectors[query] = [1.0, 0.0]  # perfect semantic match
+    results = pipeline.retrieve(query, top_k=3)
+    assert results
+    assert results[0]["id"] == "ear-infection-doc"
+
+
+def test_hybrid_retrieval_drops_dense_hits_below_similarity_floor():
+    doc = Document(id="unrelated-doc", content="Zebrafish congenital cardiomyopathy screening", source="s")
+    query = "tax filing advice for small business"
+    pipeline = _pipeline_with_docs_and_vectors([(doc, [1.0, 0.0])], min_similarity=0.5)
+    pipeline._embedding_provider._vectors[query] = [0.1, 0.995]  # low cosine similarity (~0.1)
+
+    assert pipeline.retrieve(query, top_k=3) == []
+
+
+def test_hybrid_retrieval_falls_back_to_keyword_when_embedding_unavailable():
+    doc = Document(id="fallback-doc", content="statin therapy cardiovascular disease prevention", source="s")
+    pipeline = RAGPipeline(seed=False)
+    pipeline.add_document(doc)
+    pipeline._embedding_provider = _FakeEmbeddingProvider({})  # every lookup raises
+
+    results = pipeline.retrieve("statin therapy cardiovascular", top_k=3)
+    assert results
+    assert results[0]["id"] == "fallback-doc"
+
+
+def test_hybrid_retrieval_fuses_keyword_and_dense_signals():
+    keyword_doc = Document(
+        id="keyword-match", content="hypertension blood pressure target adults", source="s"
+    )
+    dense_doc = Document(id="dense-match", content="cardiac output regulation mechanism", source="s")
+    query = "blood pressure control in adults"
+
+    pipeline = _pipeline_with_docs_and_vectors(
+        [(keyword_doc, [1.0, 0.0]), (dense_doc, [0.0, 1.0])], min_similarity=0.5
+    )
+    pipeline._embedding_provider._vectors[query] = [0.0, 1.0]  # only matches dense_doc semantically
+
+    ids = [r["id"] for r in pipeline.retrieve(query, top_k=5)]
+    # keyword_doc wins on keyword overlap; dense_doc surfaces purely via
+    # the embedding signal — both should appear via RRF fusion.
+    assert "keyword-match" in ids
+    assert "dense-match" in ids
+
+
+def test_hybrid_retrieval_output_shape_matches_keyword_only():
+    doc = Document(id="shape-doc", content="statin therapy cardiovascular disease", source="s")
+    pipeline = _pipeline_with_docs_and_vectors([(doc, [1.0, 0.0])])
+    pipeline._embedding_provider._vectors["statin therapy"] = [1.0, 0.0]
+
+    results = pipeline.retrieve("statin therapy", top_k=1)
+    assert results
+    assert set(results[0].keys()) == {"id", "content", "source", "citation", "score", "metadata"}

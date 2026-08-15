@@ -5,6 +5,7 @@ from typing import Any, Dict
 import httpx
 from fastmcp import FastMCP
 
+from data.embeddings import get_embedding_provider
 from data.rag import RAGPipeline
 
 mcp = FastMCP(
@@ -12,7 +13,17 @@ mcp = FastMCP(
     instructions="Evidence retrieval from clinical guidelines and PubMed. Always cite sources.",
 )
 
-_pipeline = RAGPipeline()
+
+def _default_min_similarity() -> float:
+    try:
+        from core.config import settings  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
+
+        return settings.retrieval_min_similarity
+    except Exception:
+        return 0.58
+
+
+_pipeline = RAGPipeline(embedding_provider=get_embedding_provider(), min_similarity=_default_min_similarity())
 
 PUBMED_ESEARCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 PUBMED_ESUMMARY = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"

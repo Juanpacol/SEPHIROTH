@@ -52,6 +52,8 @@ def _run_ci() -> int:
             "`--mode full --record` before merging.",
             file=sys.stderr,
         )
+    if result.get("embeddings_artifact_stale"):
+        print(f"WARNING: {result['embeddings_artifact_warning']}", file=sys.stderr)
     _print_table(result["threshold_rows"])
     print(f"\nOverall: {'PASS' if result['passed'] else 'FAIL'}")
     return 0 if result["passed"] else 1

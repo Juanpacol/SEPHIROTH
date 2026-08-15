@@ -15,11 +15,14 @@ All notable changes to this project are documented here. Format based on
 - Lint tooling migrated from black + flake8 to ruff (check + format).
 
 ### Added
+- **Hybrid RAG retrieval**: `data/rag/RAGPipeline.retrieve()` now fuses keyword-overlap scoring with dense Gemini embeddings (`gemini-embedding-001`) via Reciprocal Rank Fusion, targeting the paraphrase-recall gap in the eval harness. New `data/embeddings/` (provider protocol, live `GeminiEmbeddingProvider`, `CachedEmbeddingProvider` over a committed, hashed artifact) and `data/vectors/` (`InMemoryVectorStore`, cosine similarity). Fully backward-compatible: `RAGPipeline()` with no configuration stays exactly keyword-only, and any embedding failure falls back silently. A cosine-similarity floor (`RETRIEVAL_MIN_SIMILARITY`) keeps adversarial/off-topic queries returning zero results. `--mode ci`'s staleness gate now also checks the embeddings artifact's corpus hash.
+  - New matching-quality test suites: `tests/test_rag_pipeline.py` (fusion/threshold mechanics, synthetic vectors, no network) and `tests/test_embeddings_matching.py` (specific lay-language, compound-query, and adversarial-abstention cases against the real committed artifact — skipped until the artifact is built with a live API key via `python -m data.embeddings.build_artifact`).
+  - New `GuidelineDocument` model (`data/schemas/__init__.py`) persists API-ingested documents via pgvector on Postgres (JSON on SQLite); retrieval scoring itself always runs against the in-memory vector store, not a live DB query.
 - RAG evaluation harness (`intelligence/evaluation/`) measuring Recall@k, MRR, Citation Precision, and Faithfulness against a 27-case golden dataset — see README § Evaluation.
 - GitHub Actions CI (`.github/workflows/ci.yml`): lint (ruff), test + 87% coverage gate, eval regression gate, frontend build, and a security gate (`security`: gitleaks + bandit, blocking; `security-advisory`: pip-audit + npm audit, advisory).
 - JWT secret fail-fast: `Settings` refuses to start in `staging`/`production` with a known-insecure or too-short `jwt_secret` (`platform/core/config.py`); new `environment` setting.
 - Four Claude Code skills (`.claude/skills/`): `/eval`, `/add-guideline`, `/verify`, `/release-check`.
-- Test suite expanded from 23 to 151+ tests (87%+ coverage).
+- Test suite expanded from 23 to 200+ tests (88%+ coverage).
 
 ## [0.1.0] — Initial release
 

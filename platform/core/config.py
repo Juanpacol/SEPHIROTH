@@ -51,13 +51,22 @@ class Settings(BaseSettings):
     medcat_model_path: Optional[str] = None
     monai_model_path: Optional[str] = None
 
-    # RAG
+    # RAG — dense retrieval (Gemini embeddings), fused with keyword scoring.
+    # A cached, committed artifact backs offline/CI use; see data/embeddings/.
     embedding_model: str = "gemini-embedding-001"
+    gemini_embedding_model: str = "gemini-embedding-001"
+    embedding_dimension: int = 768
+    # Cosine-similarity floor below which a dense hit is dropped entirely —
+    # keeps adversarial/off-topic queries returning zero results, since
+    # dense embeddings (unlike keyword overlap) almost never score exactly 0.
+    retrieval_min_similarity: float = 0.58
+    retrieval_mode: Literal["hybrid", "keyword_only"] = "hybrid"
 
     # Feature flags
     enable_image_analysis: bool = True
     enable_vision_analysis: bool = True
     enable_rag: bool = True
+    enable_rag_embeddings: bool = True
     enable_agents: bool = True
 
     class Config:

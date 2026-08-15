@@ -1,17 +1,24 @@
 """
 RAG (Retrieval-Augmented Generation) pipeline for medical evidence.
 
-Keyword-scored retrieval over an in-memory corpus seeded with clinical
-guideline excerpts. Designed so the vector-store backend (pgvector +
-LlamaIndex) can replace `retrieve()` internals without changing callers —
-every result always carries a citation.
+Hybrid retrieval over an in-memory corpus seeded with clinical guideline
+excerpts: keyword overlap (always available, zero dependencies) fused via
+Reciprocal Rank Fusion with dense Gemini-embedding similarity (when an
+embedding provider is configured). Every result always carries a citation,
+and the output shape is identical regardless of which scoring path fired —
+see `retrieve()`.
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
+from data.embeddings.base import EmbeddingProvider, EmbeddingUnavailable
+from data.vectors import InMemoryVectorStore, VectorStore
+
+RRF_K = 60
 
 STOPWORDS = {
     "the",
@@ -353,21 +360,45 @@ def _tokenize(text: str) -> List[str]:
 
 
 class RAGPipeline:
-    """Retrieval pipeline over medical documents. Every hit carries a citation."""
+    """Retrieval pipeline over medical documents. Every hit carries a citation.
 
-    def __init__(self, seed: bool = True):
+    Fully functional with zero configuration — `RAGPipeline()` alone must
+    keep working with no network or DB, since it's constructed at module
+    scope by `intelligence/mcp/rag_server.py` and by the eval harness's
+    `compute_retrieval_metrics`. Passing an `embedding_provider` upgrades
+    retrieval to hybrid (dense + keyword); passing none keeps today's exact
+    keyword-only behavior.
+    """
+
+    def __init__(
+        self,
+        seed: bool = True,
+        embedding_provider: Optional[EmbeddingProvider] = None,
+        vector_store: Optional[VectorStore] = None,
+        min_similarity: float = 0.58,
+    ):
         self.documents: List[Document] = list(SEED_GUIDELINES) if seed else []
+        self._embedding_provider = embedding_provider
+        self._vector_store = vector_store or InMemoryVectorStore()
+        self._min_similarity = min_similarity
+        if seed and embedding_provider is not None:
+            self._index_documents(self.documents)
+
+    def _index_documents(self, docs: List[Document]) -> None:
+        try:
+            vectors = self._embedding_provider.embed_documents([d.content for d in docs])
+        except EmbeddingUnavailable:
+            return  # stay keyword-only for this session; never raises to callers
+        for doc, vector in zip(docs, vectors):
+            self._vector_store.upsert(doc.id, vector, {})
 
     def add_document(self, doc: Document) -> None:
         self.documents.append(doc)
+        if self._embedding_provider is not None:
+            self._index_documents([doc])
 
-    def retrieve(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        """Score documents by weighted keyword overlap and return the top_k
-        as dicts with content, source, citation, and score."""
-        query_tokens = set(_tokenize(query))
-        if not query_tokens:
-            return []
-
+    def _retrieve_keyword(self, query_tokens: set) -> List[Dict[str, Any]]:
+        """Today's original scoring: weighted keyword overlap."""
         scored = []
         for doc in self.documents:
             doc_tokens = _tokenize(doc.content)
@@ -377,7 +408,6 @@ class RAGPipeline:
             score = overlap / len(doc_tokens) ** 0.5
             if score > 0:
                 scored.append((score, doc))
-
         scored.sort(key=lambda pair: pair[0], reverse=True)
         return [
             {
@@ -388,8 +418,59 @@ class RAGPipeline:
                 "score": round(score, 4),
                 "metadata": doc.metadata,
             }
-            for score, doc in scored[:top_k]
+            for score, doc in scored
         ]
+
+    def _fuse(
+        self, keyword_hits: List[Dict[str, Any]], dense_hits: List[Any], top_k: int
+    ) -> List[Dict[str, Any]]:
+        """Reciprocal Rank Fusion — no scale calibration needed between
+        keyword's unbounded score and dense cosine similarity (0-1)."""
+        by_id = {doc.id: doc for doc in self.documents}
+        rrf_scores: Dict[str, float] = {}
+        for rank, hit in enumerate(keyword_hits):
+            rrf_scores[hit["id"]] = rrf_scores.get(hit["id"], 0.0) + 1.0 / (RRF_K + rank + 1)
+        for rank, scored_doc in enumerate(dense_hits):
+            rrf_scores[scored_doc.id] = rrf_scores.get(scored_doc.id, 0.0) + 1.0 / (RRF_K + rank + 1)
+
+        ordered_ids = sorted(rrf_scores.keys(), key=lambda doc_id: rrf_scores[doc_id], reverse=True)
+        results = []
+        for doc_id in ordered_ids[:top_k]:
+            doc = by_id.get(doc_id)
+            if doc is None:
+                continue
+            results.append(
+                {
+                    "id": doc.id,
+                    "content": doc.content,
+                    "source": doc.source,
+                    "citation": doc.citation,
+                    "score": round(rrf_scores[doc_id], 4),
+                    "metadata": doc.metadata,
+                }
+            )
+        return results
+
+    def retrieve(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        """Return the top_k documents as dicts with content, source,
+        citation, and score. Hybrid when an embedding provider is
+        configured and available; keyword-only otherwise — the output
+        shape never changes."""
+        query_tokens = set(_tokenize(query))
+        if not query_tokens:
+            return []
+
+        keyword_hits = self._retrieve_keyword(query_tokens)
+        if self._embedding_provider is None:
+            return keyword_hits[:top_k]
+
+        try:
+            query_vector = self._embedding_provider.embed_query(query)
+        except EmbeddingUnavailable:
+            return keyword_hits[:top_k]  # full fallback — never raises to the caller
+
+        dense_hits = self._vector_store.search(query_vector, top_k=top_k * 2, min_score=self._min_similarity)
+        return self._fuse(keyword_hits, dense_hits, top_k)
 
 
 class MedicalKnowledgeBase:

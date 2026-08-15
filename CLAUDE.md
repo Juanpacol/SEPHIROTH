@@ -33,8 +33,8 @@ An **AI-powered clinical decision support platform** for healthcare professional
 | `data/rag/` | Evidence retrieval with mandatory citations (seeded guideline corpus + PubMed) |
 | `data/schemas/` | SQLAlchemy 2.0 models (User, Patient, TimelineEvent, ClinicalNote, Consultation) |
 | `tests/` | pytest suite (auth, citation guard, timeline fallback) — SQLite in-memory, no services needed, no API key needed |
-| `data/embeddings/` | Vector embedding utilities |
-| `data/vectors/` | pgvector operations |
+| `data/embeddings/` | Gemini embedding providers (live + cached-artifact) powering hybrid RAG retrieval |
+| `data/vectors/` | In-memory vector store (cosine similarity) used by `RAGPipeline` |
 | `references/` | Cloned open-source projects (don't edit; reference only) |
 
 ## Design System (Frontend)

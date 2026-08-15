@@ -139,9 +139,18 @@ PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ci
 PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode full --record --skip-pubmed
 ```
 
+### Hybrid retrieval (dense embeddings + keyword)
+
+`data/rag/RAGPipeline.retrieve()` fuses keyword-overlap scoring with dense Gemini embeddings (`gemini-embedding-001`) via Reciprocal Rank Fusion, closing the biggest gap in the metrics above: keyword-only Recall@1 misses colloquial paraphrases ("my kid has an ear infection" → *Acute Otitis Media*, "blood thinners for AFib" → *anticoagulation*) that share little vocabulary with the guideline text.
+
+- **Fully backward-compatible.** `RAGPipeline()` alone still works with zero configuration and stays keyword-only. Dense retrieval only activates when an embedding provider is wired in (`GEMINI_API_KEY` set + a built artifact, see below).
+- **Deterministic and offline in CI.** A committed, hashed artifact (`data/embeddings/artifacts/seed_embeddings.json.gz`) supplies the vectors for `--mode ci` and the whole test suite — no network, no API key needed. Build/refresh it once with a real key: `python -m data.embeddings.build_artifact`.
+- **Adversarial-safe by design.** A cosine-similarity floor (`RETRIEVAL_MIN_SIMILARITY`, default 0.58) drops low-confidence dense hits — dense embeddings almost never score exactly 0, so without this floor, off-topic/adversarial queries (which correctly return zero results today) would start surfacing plausible-looking but wrong guideline excerpts.
+- **Matching-quality test suite** (`tests/test_embeddings_matching.py`, `tests/test_rag_pipeline.py`) pins specific, previously-diagnosed match/no-match pairs — lay-language paraphrases, compound multi-document queries, near-duplicate topic disambiguation, adversarial abstention — so a regression in one specific case fails by name, not just as a dip in an aggregate metric. The real-artifact tests are skipped until the artifact is built; the fusion/threshold mechanics are covered independently with synthetic vectors so they run in every CI run regardless.
+
 **Honest limitations:**
 - The committed baseline predates the Gemini migration and was generated with `llama3.2:latest` as a stand-in for the production model. Recall@k/MRR are retrieval-only and already reflect production behavior; Citation Precision and Faithfulness should be regenerated against `gemini-2.5-flash` (`--mode full --record`).
-- Retrieval is keyword/token-overlap scoring (`data/rag/RAGPipeline.retrieve`), not embeddings — Recall@1 on paraphrased queries is the weakest number here and is the concrete, measured case for the pgvector/embeddings upgrade already planned in `data/embeddings/` and `data/vectors/`.
+- The metrics table above still reflects **keyword-only** retrieval — the hybrid retriever's real-world Recall@1 improvement depends on building the embeddings artifact with a live API key and re-running `--mode ci`/`--mode full --record`; this repo ships the mechanism, tests, and calibration hooks, not yet a regenerated number.
 - The LLM judge is the same model family as the generator on the committed baseline (a self-judging limitation); an independent judge model would be a stronger signal.
 
 ## Project Structure

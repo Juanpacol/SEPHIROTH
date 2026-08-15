@@ -12,6 +12,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import JSON, Date, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -100,6 +101,31 @@ class Consultation(Base):
     user: Mapped["User"] = relationship(back_populates="consultations")
 
 
+class GuidelineDocument(Base):
+    """Persisted clinical guideline document, ingested via `/api/rag`.
+
+    `embedding` uses `JSON` on SQLite (the in-memory test DB — pgvector has
+    no SQLite equivalent) and `pgvector`'s native type on Postgres, so
+    `Base.metadata.create_all` keeps working in both. Retrieval scoring
+    itself always runs against the in-memory vector store
+    (`data.vectors.InMemoryVectorStore`), not a live query against this
+    table — see `data/rag/__init__.py`. This table exists purely so
+    API-ingested documents survive a restart.
+    """
+
+    __tablename__ = "guideline_documents"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    content: Mapped[str] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(String(255))
+    doc_metadata: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    embedding: Mapped[Optional[List[float]]] = mapped_column(
+        Vector(768).with_variant(JSON, "sqlite"), nullable=True
+    )
+    embedding_model: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 __all__ = [
     "Base",
     "User",
@@ -107,4 +133,5 @@ __all__ = [
     "TimelineEvent",
     "ClinicalNote",
     "Consultation",
+    "GuidelineDocument",
 ]

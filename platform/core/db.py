@@ -6,7 +6,7 @@ import logging
 from datetime import date
 from typing import AsyncIterator
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from core.config import settings
@@ -71,6 +71,11 @@ SEED_PATIENTS = [
 async def init_db() -> None:
     """Create tables and seed demo patients when the table is empty (idempotent)."""
     async with engine.begin() as conn:
+        if conn.dialect.name == "postgresql":
+            # SQLite (used in tests) has no equivalent extension mechanism —
+            # only run this against real Postgres, where pgvector persists
+            # GuidelineDocument.embedding.
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
 
     async with SessionLocal() as session:
