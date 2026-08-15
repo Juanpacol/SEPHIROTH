@@ -194,6 +194,10 @@ git clone --depth 1 https://github.com/CogStack/MedCAT.git references/ref-medcat
 git clone --depth 1 https://github.com/langchain-ai/langgraph.git references/ref-langgraph-agents
 ```
 
+## Sample Data
+
+`real_data/` has optional, real/synthetic sample data for a more realistic demo: 12 real synthetic patient histories (Synthea, Apache 2.0), 6 clinical notes, 193 real drug-interaction severity pairs (DDInter 2.0, CC BY-NC), and a script for fetching real chest X-rays (RSNA, academic use only — never committed). **None of this is needed to run the app or the tests** — see [`real_data/README.md`](real_data/README.md) for what's in each source, its exact license, and how to refresh it.
+
 ## Docker
 
 ```bash

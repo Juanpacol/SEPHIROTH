@@ -36,6 +36,7 @@ An **AI-powered clinical decision support platform** for healthcare professional
 | `data/embeddings/` | Gemini embedding providers (live + cached-artifact) powering hybrid RAG retrieval |
 | `data/vectors/` | In-memory vector store (cosine similarity) used by `RAGPipeline` |
 | `references/` | Cloned open-source projects (don't edit; reference only) |
+| `real_data/` | Optional real/synthetic sample data (Synthea patients+notes, DDInter drug interactions, RSNA imaging fixtures) — see `real_data/README.md`; never required for tests/CI |
 
 ## Design System (Frontend)
 

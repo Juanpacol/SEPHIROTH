@@ -1,0 +1,1361 @@
+[
+  {
+    "id": "5992d31a-d035-44f6-a852-0da586dd89bb",
+    "name": "Adeline Witting",
+    "age": 87,
+    "sex": "F",
+    "medical_record_number": "SYN-5992D31A",
+    "conditions": [
+      "Acute bronchitis (disorder)",
+      "Body mass index 30+ - obesity (finding)",
+      "Chronic kidney disease stage 1 (disorder)",
+      "Diabetes",
+      "Diabetic renal disease (disorder)",
+      "Hyperglycemia (disorder)",
+      "Hyperlipidemia",
+      "Hypertension",
+      "Hypertriglyceridemia (disorder)",
+      "Metabolic syndrome X (disorder)",
+      "Miscarriage in first trimester",
+      "Neuropathy due to type 2 diabetes mellitus (disorder)",
+      "Prediabetes",
+      "Viral sinusitis (disorder)"
+    ],
+    "medications": [
+      "acetaminophen",
+      "amlodipine",
+      "hydrochlorothiazide",
+      "insulin",
+      "lisinopril",
+      "metformin",
+      "simvastatin"
+    ],
+    "allergies": [],
+    "lab_results": {
+      "bmi": "30.1 kg/m2",
+      "bp_diastolic": "50.0 mm[Hg]",
+      "bp_systolic": "131.0 mm[Hg]",
+      "cholesterol": "169.6 mg/dL",
+      "ldl": "85.0 mg/dL",
+      "hba1c": "3.0 %"
+    },
+    "timeline": [
+      {
+        "date": "1973-06-28",
+        "type": "diagnosis",
+        "title": "Body mass index 30+ - obesity (finding)",
+        "detail": ""
+      },
+      {
+        "date": "1979-04-19",
+        "type": "diagnosis",
+        "title": "Prediabetes",
+        "detail": ""
+      },
+      {
+        "date": "1981-04-23",
+        "type": "diagnosis",
+        "title": "Diabetes",
+        "detail": ""
+      },
+      {
+        "date": "1982-07-01",
+        "type": "diagnosis",
+        "title": "Miscarriage in first trimester",
+        "detail": ""
+      },
+      {
+        "date": "1983-04-28",
+        "type": "diagnosis",
+        "title": "Hyperlipidemia",
+        "detail": ""
+      },
+      {
+        "date": "1983-04-28",
+        "type": "diagnosis",
+        "title": "Hypertriglyceridemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1983-04-28",
+        "type": "diagnosis",
+        "title": "Metabolic syndrome X (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1983-04-28",
+        "type": "diagnosis",
+        "title": "Hypertension",
+        "detail": ""
+      },
+      {
+        "date": "1983-04-28",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1983-05-19",
+        "type": "medication",
+        "title": "Started simvastatin",
+        "detail": "Simvastatin 10 MG Oral Tablet"
+      },
+      {
+        "date": "1983-05-28",
+        "type": "medication",
+        "title": "Started hydrochlorothiazide",
+        "detail": "Hydrochlorothiazide 25 MG Oral Tablet"
+      },
+      {
+        "date": "1983-07-27",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      }
+    ]
+  },
+  {
+    "id": "5fd58757-af2b-1e79-c2bc-f32f3087834b",
+    "name": "Hilton Hartmann",
+    "age": 112,
+    "sex": "M",
+    "medical_record_number": "SYN-5FD58757",
+    "conditions": [
+      "Anemia (disorder)",
+      "Atrial Fibrillation",
+      "Body mass index 30+ - obesity (finding)",
+      "Diabetes",
+      "Diabetic retinopathy associated with type II diabetes mellitus (disorder)",
+      "Hypertriglyceridemia (disorder)",
+      "Macular edema and retinopathy due to type 2 diabetes mellitus (disorder)",
+      "Metabolic syndrome X (disorder)",
+      "Neuropathy due to type 2 diabetes mellitus (disorder)",
+      "Nonproliferative diabetic retinopathy due to type 2 diabetes mellitus (disorder)",
+      "Proliferative diabetic retinopathy due to type II diabetes mellitus (disorder)",
+      "Viral sinusitis (disorder)",
+      "Whiplash injury to neck"
+    ],
+    "medications": [
+      "digoxin",
+      "ibuprofen",
+      "verapamil",
+      "warfarin"
+    ],
+    "allergies": [],
+    "lab_results": {
+      "bmi": "9.0 kg/m2",
+      "bp_diastolic": "66.0 mm[Hg]",
+      "bp_systolic": "165.0 mm[Hg]",
+      "cholesterol": "219.1 mg/dL",
+      "ldl": "127.2 mg/dL",
+      "hba1c": "6.6 %"
+    },
+    "timeline": [
+      {
+        "date": "1956-06-16",
+        "type": "diagnosis",
+        "title": "Body mass index 30+ - obesity (finding)",
+        "detail": ""
+      },
+      {
+        "date": "1958-06-21",
+        "type": "diagnosis",
+        "title": "Diabetes",
+        "detail": ""
+      },
+      {
+        "date": "1958-06-21",
+        "type": "diagnosis",
+        "title": "Anemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1960-06-25",
+        "type": "diagnosis",
+        "title": "Hypertriglyceridemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1960-06-25",
+        "type": "diagnosis",
+        "title": "Metabolic syndrome X (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1960-06-25",
+        "type": "diagnosis",
+        "title": "Neuropathy due to type 2 diabetes mellitus (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1969-07-05",
+        "type": "diagnosis",
+        "title": "Diabetic retinopathy associated with type II diabetes mellitus (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1970-07-11",
+        "type": "diagnosis",
+        "title": "Nonproliferative diabetic retinopathy due to type 2 diabetes mellitus (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1978-08-26",
+        "type": "diagnosis",
+        "title": "Macular edema and retinopathy due to type 2 diabetes mellitus (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1992-11-14",
+        "type": "diagnosis",
+        "title": "Proliferative diabetic retinopathy due to type II diabetes mellitus (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "2012-10-07",
+        "type": "diagnosis",
+        "title": "Whiplash injury to neck",
+        "detail": ""
+      },
+      {
+        "date": "2012-10-08",
+        "type": "medication",
+        "title": "Started ibuprofen",
+        "detail": "Ibuprofen 200 MG Oral Tablet"
+      }
+    ]
+  },
+  {
+    "id": "340b955b-ed03-ef64-8a57-49bba2ab74de",
+    "name": "Hobert Ernser",
+    "age": 50,
+    "sex": "M",
+    "medical_record_number": "SYN-340B955B",
+    "conditions": [
+      "Acute bronchitis (disorder)",
+      "Acute viral pharyngitis (disorder)",
+      "Anemia (disorder)",
+      "Concussion with no loss of consciousness",
+      "Diabetes",
+      "Diabetic retinopathy associated with type II diabetes mellitus (disorder)",
+      "Hyperglycemia (disorder)",
+      "Hypertriglyceridemia (disorder)",
+      "Macular edema and retinopathy due to type 2 diabetes mellitus (disorder)",
+      "Metabolic syndrome X (disorder)",
+      "Neuropathy due to type 2 diabetes mellitus (disorder)",
+      "Nonproliferative diabetic retinopathy due to type 2 diabetes mellitus (disorder)",
+      "Prediabetes",
+      "Viral sinusitis (disorder)"
+    ],
+    "medications": [
+      "acetaminophen",
+      "astemizole",
+      "metformin"
+    ],
+    "allergies": [],
+    "lab_results": {
+      "bmi": "30.6 kg/m2",
+      "bp_diastolic": "84.0 mm[Hg]",
+      "bp_systolic": "143.0 mm[Hg]",
+      "cholesterol": "198.7 mg/dL",
+      "ldl": "110.0 mg/dL",
+      "hba1c": "6.2 %"
+    },
+    "timeline": [
+      {
+        "date": "1977-12-13",
+        "type": "medication",
+        "title": "Started astemizole",
+        "detail": "Astemizole 10 MG Oral Tablet"
+      },
+      {
+        "date": "1995-01-21",
+        "type": "diagnosis",
+        "title": "Prediabetes",
+        "detail": ""
+      },
+      {
+        "date": "1998-01-24",
+        "type": "diagnosis",
+        "title": "Diabetes",
+        "detail": ""
+      },
+      {
+        "date": "1998-01-24",
+        "type": "diagnosis",
+        "title": "Anemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1998-01-31",
+        "type": "diagnosis",
+        "title": "Diabetic retinopathy associated with type II diabetes mellitus (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1998-09-26",
+        "type": "diagnosis",
+        "title": "Hypertriglyceridemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "2010-02-06",
+        "type": "diagnosis",
+        "title": "Nonproliferative diabetic retinopathy due to type 2 diabetes mellitus (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "2010-02-07",
+        "type": "medication",
+        "title": "Started metformin",
+        "detail": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet"
+      },
+      {
+        "date": "2010-02-07",
+        "type": "medication",
+        "title": "Started metformin",
+        "detail": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet"
+      },
+      {
+        "date": "2011-02-12",
+        "type": "diagnosis",
+        "title": "Hyperglycemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "2011-02-12",
+        "type": "diagnosis",
+        "title": "Metabolic syndrome X (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "2011-02-12",
+        "type": "diagnosis",
+        "title": "Macular edema and retinopathy due to type 2 diabetes mellitus (disorder)",
+        "detail": ""
+      }
+    ]
+  },
+  {
+    "id": "5622acee-dfc5-7be0-db2c-8a37b2c6a83f",
+    "name": "Arnulfo Murphy",
+    "age": 87,
+    "sex": "M",
+    "medical_record_number": "SYN-5622ACEE",
+    "conditions": [
+      "Anemia (disorder)",
+      "Atrial Fibrillation",
+      "Carcinoma in situ of prostate (disorder)",
+      "Chronic kidney disease stage 1 (disorder)",
+      "Diabetes",
+      "Diabetic renal disease (disorder)",
+      "Hyperglycemia (disorder)",
+      "Hypertriglyceridemia (disorder)",
+      "Laceration of thigh",
+      "Major depression disorder",
+      "Metabolic syndrome X (disorder)",
+      "Neoplasm of prostate",
+      "Prediabetes",
+      "Viral sinusitis (disorder)"
+    ],
+    "medications": [
+      "digoxin",
+      "docetaxel",
+      "fluoxetine",
+      "ibuprofen",
+      "insulin",
+      "leuprolide",
+      "metformin",
+      "verapamil",
+      "vitamin",
+      "warfarin"
+    ],
+    "allergies": [],
+    "lab_results": {
+      "bmi": "29.4 kg/m2",
+      "bp_diastolic": "86.0 mm[Hg]",
+      "bp_systolic": "167.0 mm[Hg]",
+      "cholesterol": "162.4 mg/dL",
+      "ldl": "67.9 mg/dL",
+      "hba1c": "2.9 %"
+    },
+    "timeline": [
+      {
+        "date": "1957-11-16",
+        "type": "diagnosis",
+        "title": "Major depression disorder",
+        "detail": ""
+      },
+      {
+        "date": "1957-11-16",
+        "type": "medication",
+        "title": "Started fluoxetine",
+        "detail": "FLUoxetine 20 MG Oral Capsule"
+      },
+      {
+        "date": "1969-12-13",
+        "type": "diagnosis",
+        "title": "Prediabetes",
+        "detail": ""
+      },
+      {
+        "date": "1969-12-13",
+        "type": "diagnosis",
+        "title": "Anemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1969-12-13",
+        "type": "medication",
+        "title": "Started vitamin",
+        "detail": "Vitamin B 12 5 MG/ML Injectable Solution"
+      },
+      {
+        "date": "1972-12-16",
+        "type": "diagnosis",
+        "title": "Diabetes",
+        "detail": ""
+      },
+      {
+        "date": "1972-12-16",
+        "type": "medication",
+        "title": "Started metformin",
+        "detail": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet"
+      },
+      {
+        "date": "1972-12-16",
+        "type": "medication",
+        "title": "Started metformin",
+        "detail": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet"
+      },
+      {
+        "date": "1973-12-22",
+        "type": "diagnosis",
+        "title": "Hyperglycemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1973-12-22",
+        "type": "diagnosis",
+        "title": "Hypertriglyceridemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1973-12-22",
+        "type": "diagnosis",
+        "title": "Metabolic syndrome X (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1973-12-22",
+        "type": "medication",
+        "title": "Started metformin",
+        "detail": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet"
+      }
+    ]
+  },
+  {
+    "id": "d6171bec-1b35-e080-0d0c-33f928c4b040",
+    "name": "Chase Mohr",
+    "age": 62,
+    "sex": "M",
+    "medical_record_number": "SYN-D6171BEC",
+    "conditions": [
+      "Anemia (disorder)",
+      "Body mass index 30+ - obesity (finding)",
+      "Chronic kidney disease stage 1 (disorder)",
+      "Diabetes",
+      "Diabetic renal disease (disorder)",
+      "Hyperglycemia (disorder)",
+      "Hypertension",
+      "Hypertriglyceridemia (disorder)",
+      "Major depression disorder",
+      "Metabolic syndrome X (disorder)",
+      "Opioid abuse (disorder)",
+      "Otitis media",
+      "Prediabetes"
+    ],
+    "medications": [
+      "amlodipine",
+      "ibuprofen",
+      "insulin",
+      "lisinopril",
+      "metformin"
+    ],
+    "allergies": [
+      "Allergy to fish"
+    ],
+    "lab_results": {
+      "bmi": "27.7 kg/m2",
+      "bp_diastolic": "60.0 mm[Hg]",
+      "bp_systolic": "133.0 mm[Hg]",
+      "cholesterol": "164.2 mg/dL",
+      "ldl": "62.0 mg/dL",
+      "hba1c": "2.4 %"
+    },
+    "timeline": [
+      {
+        "date": "1982-02-20",
+        "type": "diagnosis",
+        "title": "Hypertension",
+        "detail": ""
+      },
+      {
+        "date": "1982-02-20",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1982-03-22",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1983-02-12",
+        "type": "diagnosis",
+        "title": "Major depression disorder",
+        "detail": ""
+      },
+      {
+        "date": "1983-02-26",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1983-02-26",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1984-03-03",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1984-03-03",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1984-08-25",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1984-08-25",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1985-03-02",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1985-03-02",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      }
+    ]
+  },
+  {
+    "id": "c5450d36-7905-0484-dbed-fe4fd8be6c46",
+    "name": "Shea Olson",
+    "age": 105,
+    "sex": "F",
+    "medical_record_number": "SYN-C5450D36",
+    "conditions": [
+      "Anemia (disorder)",
+      "Atrial Fibrillation",
+      "Body mass index 30+ - obesity (finding)",
+      "Chronic sinusitis (disorder)",
+      "Fracture of rib",
+      "Hyperlipidemia",
+      "Hypertension",
+      "Malignant neoplasm of breast (disorder)",
+      "Osteoporosis (disorder)",
+      "Pathological fracture due to osteoporosis (disorder)",
+      "Prediabetes"
+    ],
+    "medications": [
+      "acetaminophen",
+      "alendronic",
+      "amlodipine",
+      "digoxin",
+      "simvastatin",
+      "verapamil",
+      "vitamin",
+      "warfarin"
+    ],
+    "allergies": [],
+    "lab_results": {
+      "cholesterol": "176.1 mg/dL",
+      "ldl": "76.8 mg/dL",
+      "bmi": "27.8 kg/m2",
+      "bp_diastolic": "39.0 mm[Hg]",
+      "bp_systolic": "133.0 mm[Hg]",
+      "hba1c": "5.8 %"
+    },
+    "timeline": [
+      {
+        "date": "1939-02-11",
+        "type": "diagnosis",
+        "title": "Hypertension",
+        "detail": ""
+      },
+      {
+        "date": "1939-02-12",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1940-02-18",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1940-09-29",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1941-02-23",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1942-03-01",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1943-03-07",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1944-03-12",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1945-03-18",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1946-03-24",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1947-03-30",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1948-04-04",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      }
+    ]
+  },
+  {
+    "id": "b3064b90-9a02-3eaa-6699-85732f21eac7",
+    "name": "Freeman Grimes",
+    "age": 97,
+    "sex": "M",
+    "medical_record_number": "SYN-B3064B90",
+    "conditions": [
+      "Acute bronchitis (disorder)",
+      "Acute viral pharyngitis (disorder)",
+      "Anemia (disorder)",
+      "Atrial Fibrillation",
+      "Body mass index 30+ - obesity (finding)",
+      "Fracture of forearm",
+      "Hyperlipidemia",
+      "Hypertension",
+      "Osteoporosis (disorder)",
+      "Pathological fracture due to osteoporosis (disorder)",
+      "Prediabetes",
+      "Smokes tobacco daily",
+      "Viral sinusitis (disorder)"
+    ],
+    "medications": [
+      "acetaminophen",
+      "amoxicillin",
+      "digoxin",
+      "lisinopril",
+      "naproxen",
+      "nicotine",
+      "simvastatin",
+      "verapamil",
+      "warfarin"
+    ],
+    "allergies": [],
+    "lab_results": {
+      "cholesterol": "208.8 mg/dL",
+      "ldl": "106.8 mg/dL",
+      "bmi": "28.0 kg/m2",
+      "bp_diastolic": "42.0 mm[Hg]",
+      "bp_systolic": "139.0 mm[Hg]",
+      "hba1c": "5.9 %"
+    },
+    "timeline": [
+      {
+        "date": "1947-02-03",
+        "type": "diagnosis",
+        "title": "Hypertension",
+        "detail": ""
+      },
+      {
+        "date": "1947-02-03",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1948-02-09",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1949-02-14",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1950-02-20",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1951-02-26",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1952-03-03",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1953-03-09",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1954-03-15",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1955-03-21",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1956-03-26",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1957-04-01",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      }
+    ]
+  },
+  {
+    "id": "3e5858d2-7924-7b7f-1ea1-902eaf2d0a27",
+    "name": "Cherlyn Thiel",
+    "age": 88,
+    "sex": "F",
+    "medical_record_number": "SYN-3E5858D2",
+    "conditions": [
+      "Anemia (disorder)",
+      "Atrial Fibrillation",
+      "Chronic kidney disease stage 1 (disorder)",
+      "Chronic kidney disease stage 2 (disorder)",
+      "Diabetes",
+      "Diabetic renal disease (disorder)",
+      "Diabetic retinopathy associated with type II diabetes mellitus (disorder)",
+      "Hypertension",
+      "Hypertriglyceridemia (disorder)",
+      "Metabolic syndrome X (disorder)",
+      "Microalbuminuria due to type 2 diabetes mellitus (disorder)",
+      "Neuropathy due to type 2 diabetes mellitus (disorder)",
+      "Nonproliferative diabetic retinopathy due to type 2 diabetes mellitus (disorder)",
+      "Prediabetes"
+    ],
+    "medications": [
+      "amlodipine",
+      "digoxin",
+      "insulin",
+      "lisinopril",
+      "verapamil",
+      "vitamin",
+      "warfarin"
+    ],
+    "allergies": [],
+    "lab_results": {
+      "bmi": "30.1 kg/m2",
+      "bp_diastolic": "48.0 mm[Hg]",
+      "bp_systolic": "138.0 mm[Hg]",
+      "cholesterol": "230.6 mg/dL",
+      "ldl": "154.8 mg/dL",
+      "hba1c": "4.5 %"
+    },
+    "timeline": [
+      {
+        "date": "1956-11-07",
+        "type": "diagnosis",
+        "title": "Hypertension",
+        "detail": ""
+      },
+      {
+        "date": "1956-11-07",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1956-12-07",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1957-11-13",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1957-11-13",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1958-11-19",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1958-11-19",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1959-11-25",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1959-11-25",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1960-11-30",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1960-11-30",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1961-12-06",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      }
+    ]
+  },
+  {
+    "id": "d619e82b-87f7-59cd-83bd-29d998dde81d",
+    "name": "Carol Kilback",
+    "age": 37,
+    "sex": "M",
+    "medical_record_number": "SYN-D619E82B",
+    "conditions": [
+      "Acute viral pharyngitis (disorder)",
+      "Anemia (disorder)",
+      "Chronic kidney disease stage 1 (disorder)",
+      "Diabetes",
+      "Diabetic renal disease (disorder)",
+      "Diabetic retinopathy associated with type II diabetes mellitus (disorder)",
+      "Hyperglycemia (disorder)",
+      "Hypertriglyceridemia (disorder)",
+      "Laceration of thigh",
+      "Metabolic syndrome X (disorder)",
+      "Nonproliferative diabetic retinopathy due to type 2 diabetes mellitus (disorder)",
+      "Prediabetes",
+      "Sprain of ankle",
+      "Viral sinusitis (disorder)"
+    ],
+    "medications": [
+      "acetaminophen",
+      "metformin"
+    ],
+    "allergies": [],
+    "lab_results": {
+      "bmi": "33.3 kg/m2",
+      "bp_diastolic": "89.0 mm[Hg]",
+      "bp_systolic": "140.0 mm[Hg]",
+      "cholesterol": "217.8 mg/dL",
+      "ldl": "131.2 mg/dL",
+      "hba1c": "6.8 %"
+    },
+    "timeline": [
+      {
+        "date": "2010-12-06",
+        "type": "diagnosis",
+        "title": "Diabetes",
+        "detail": ""
+      },
+      {
+        "date": "2010-12-06",
+        "type": "diagnosis",
+        "title": "Diabetic retinopathy associated with type II diabetes mellitus (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "2010-12-06",
+        "type": "medication",
+        "title": "Started metformin",
+        "detail": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet"
+      },
+      {
+        "date": "2010-12-06",
+        "type": "medication",
+        "title": "Started metformin",
+        "detail": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet"
+      },
+      {
+        "date": "2011-12-12",
+        "type": "diagnosis",
+        "title": "Hyperglycemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "2011-12-12",
+        "type": "diagnosis",
+        "title": "Hypertriglyceridemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "2011-12-12",
+        "type": "diagnosis",
+        "title": "Metabolic syndrome X (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "2011-12-12",
+        "type": "diagnosis",
+        "title": "Nonproliferative diabetic retinopathy due to type 2 diabetes mellitus (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "2011-12-12",
+        "type": "medication",
+        "title": "Started metformin",
+        "detail": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet"
+      },
+      {
+        "date": "2012-12-17",
+        "type": "diagnosis",
+        "title": "Anemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "2012-12-17",
+        "type": "medication",
+        "title": "Started metformin",
+        "detail": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet"
+      },
+      {
+        "date": "2012-12-17",
+        "type": "medication",
+        "title": "Started metformin",
+        "detail": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet"
+      }
+    ]
+  },
+  {
+    "id": "01ece8c9-b5f1-4a9e-251c-3ee76f0739b5",
+    "name": "Gordon Bartoletti",
+    "age": 110,
+    "sex": "M",
+    "medical_record_number": "SYN-01ECE8C9",
+    "conditions": [
+      "Acute bronchitis (disorder)",
+      "Anemia (disorder)",
+      "Body mass index 30+ - obesity (finding)",
+      "Carcinoma in situ of prostate (disorder)",
+      "Chronic kidney disease stage 1 (disorder)",
+      "Chronic sinusitis (disorder)",
+      "Diabetes",
+      "Diabetic renal disease (disorder)",
+      "Hyperglycemia (disorder)",
+      "Hypertension",
+      "Hypertriglyceridemia (disorder)",
+      "Metabolic syndrome X (disorder)",
+      "Neoplasm of prostate",
+      "Prediabetes"
+    ],
+    "medications": [
+      "acetaminophen",
+      "amlodipine",
+      "docetaxel",
+      "insulin",
+      "leuprolide",
+      "metformin",
+      "sertraline"
+    ],
+    "allergies": [],
+    "lab_results": {
+      "bmi": "28.0 kg/m2",
+      "bp_diastolic": "84.0 mm[Hg]",
+      "bp_systolic": "171.0 mm[Hg]",
+      "cholesterol": "160.9 mg/dL",
+      "ldl": "71.6 mg/dL",
+      "hba1c": "2.5 %"
+    },
+    "timeline": [
+      {
+        "date": "1935-04-19",
+        "type": "diagnosis",
+        "title": "Body mass index 30+ - obesity (finding)",
+        "detail": ""
+      },
+      {
+        "date": "1936-03-29",
+        "type": "diagnosis",
+        "title": "Chronic sinusitis (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1944-04-28",
+        "type": "diagnosis",
+        "title": "Diabetes",
+        "detail": ""
+      },
+      {
+        "date": "1944-04-28",
+        "type": "diagnosis",
+        "title": "Anemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1944-04-28",
+        "type": "diagnosis",
+        "title": "Hypertension",
+        "detail": ""
+      },
+      {
+        "date": "1944-04-28",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1945-05-04",
+        "type": "diagnosis",
+        "title": "Hypertriglyceridemia (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1945-05-04",
+        "type": "diagnosis",
+        "title": "Metabolic syndrome X (disorder)",
+        "detail": ""
+      },
+      {
+        "date": "1945-05-04",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1946-02-25",
+        "type": "medication",
+        "title": "Started sertraline",
+        "detail": "Sertraline 100 MG Oral Tablet"
+      },
+      {
+        "date": "1946-05-10",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1947-05-16",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      }
+    ]
+  },
+  {
+    "id": "6acb2b0f-20ea-b37d-6e10-44598640e962",
+    "name": "Drew Swaniawski",
+    "age": 62,
+    "sex": "M",
+    "medical_record_number": "SYN-6ACB2B0F",
+    "conditions": [
+      "Acute viral pharyngitis (disorder)",
+      "Body mass index 30+ - obesity (finding)",
+      "Chronic kidney disease stage 1 (disorder)",
+      "Coronary Heart Disease",
+      "Diabetes",
+      "Diabetic renal disease (disorder)",
+      "Hyperlipidemia",
+      "Hypertension",
+      "Hypertriglyceridemia (disorder)",
+      "Metabolic syndrome X (disorder)",
+      "Neuropathy due to type 2 diabetes mellitus (disorder)",
+      "Sprain of wrist",
+      "Viral sinusitis (disorder)"
+    ],
+    "medications": [
+      "amlodipine",
+      "clopidogrel",
+      "ibuprofen",
+      "insulin",
+      "nitroglycerin",
+      "simvastatin"
+    ],
+    "allergies": [],
+    "lab_results": {
+      "bmi": "28.1 kg/m2",
+      "bp_diastolic": "57.0 mm[Hg]",
+      "bp_systolic": "123.0 mm[Hg]",
+      "cholesterol": "200.4 mg/dL",
+      "ldl": "124.2 mg/dL",
+      "hba1c": "4.0 %"
+    },
+    "timeline": [
+      {
+        "date": "1982-08-26",
+        "type": "diagnosis",
+        "title": "Hypertension",
+        "detail": ""
+      },
+      {
+        "date": "1982-08-27",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1983-09-02",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1984-09-07",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1985-09-13",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1986-09-19",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1987-09-25",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1988-09-30",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1989-10-06",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1990-10-12",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1991-10-18",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1992-10-23",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      }
+    ]
+  },
+  {
+    "id": "351adae3-d3a7-32ea-c345-568f944a77e7",
+    "name": "Claretha Kuhlman",
+    "age": 73,
+    "sex": "F",
+    "medical_record_number": "SYN-351ADAE3",
+    "conditions": [
+      "Anemia (disorder)",
+      "Cardiac Arrest",
+      "Diabetes",
+      "Diabetic retinopathy associated with type II diabetes mellitus (disorder)",
+      "Fracture of rib",
+      "History of cardiac arrest (situation)",
+      "Hyperglycemia (disorder)",
+      "Hypertension",
+      "Hypertriglyceridemia (disorder)",
+      "Malignant neoplasm of breast (disorder)",
+      "Metabolic syndrome X (disorder)",
+      "Miscarriage in first trimester",
+      "Nonproliferative diabetic retinopathy due to type 2 diabetes mellitus (disorder)",
+      "Prediabetes"
+    ],
+    "medications": [
+      "amlodipine",
+      "hydrochlorothiazide",
+      "lisinopril",
+      "metformin",
+      "naproxen"
+    ],
+    "allergies": [
+      "Allergy to eggs"
+    ],
+    "lab_results": {},
+    "timeline": [
+      {
+        "date": "1970-11-20",
+        "type": "diagnosis",
+        "title": "Hypertension",
+        "detail": ""
+      },
+      {
+        "date": "1970-11-20",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1970-12-20",
+        "type": "medication",
+        "title": "Started hydrochlorothiazide",
+        "detail": "Hydrochlorothiazide 25 MG Oral Tablet"
+      },
+      {
+        "date": "1971-02-18",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1971-11-26",
+        "type": "medication",
+        "title": "Started hydrochlorothiazide",
+        "detail": "Hydrochlorothiazide 25 MG Oral Tablet"
+      },
+      {
+        "date": "1971-11-26",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1971-11-26",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1972-12-01",
+        "type": "medication",
+        "title": "Started hydrochlorothiazide",
+        "detail": "Hydrochlorothiazide 25 MG Oral Tablet"
+      },
+      {
+        "date": "1972-12-01",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      },
+      {
+        "date": "1972-12-01",
+        "type": "medication",
+        "title": "Started amlodipine",
+        "detail": "amLODIPine 2.5 MG Oral Tablet"
+      },
+      {
+        "date": "1973-12-07",
+        "type": "medication",
+        "title": "Started hydrochlorothiazide",
+        "detail": "Hydrochlorothiazide 25 MG Oral Tablet"
+      },
+      {
+        "date": "1973-12-07",
+        "type": "medication",
+        "title": "Started lisinopril",
+        "detail": "lisinopril 10 MG Oral Tablet"
+      }
+    ]
+  }
+]

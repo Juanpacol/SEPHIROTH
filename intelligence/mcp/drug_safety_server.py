@@ -1,9 +1,14 @@
 """FastMCP server exposing drug interaction and safety checks."""
 
+import json
+import logging
 from itertools import combinations
+from pathlib import Path
 from typing import Any, Dict, List
 
 from fastmcp import FastMCP
+
+logger = logging.getLogger(__name__)
 
 mcp = FastMCP(
     name="drug-safety",
@@ -56,6 +61,40 @@ INTERACTIONS: Dict[frozenset, Dict[str, str]] = {
         "recommendation": "Monitor potassium and digoxin levels.",
     },
 }
+
+# Real-data extension (DDInter 2.0 — see real_data/drug_interactions/README.md).
+# Never overrides a hand-curated pair above (that text is pair-specific);
+# only fills in additional pairs DDInter covers. Missing file degrades
+# gracefully — INTERACTIONS just stays at the hand-curated set.
+_DDINTER_SUBSET_PATH = (
+    Path(__file__).parent.parent.parent / "real_data" / "drug_interactions" / "ddinter_subset.json"
+)
+
+
+def _load_ddinter_subset(path: Path = _DDINTER_SUBSET_PATH) -> Dict[frozenset, Dict[str, str]]:
+    if not path.exists():
+        return {}
+    try:
+        entries = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        logger.exception("Failed to load DDInter subset from %s", path)
+        return {}
+
+    extra: Dict[frozenset, Dict[str, str]] = {}
+    for entry in entries:
+        key = frozenset([entry["drug_a"], entry["drug_b"]])
+        if key in INTERACTIONS:
+            continue  # hand-curated text always wins
+        extra[key] = {
+            "severity": entry["severity"],
+            "effect": entry["effect"],
+            "recommendation": entry["recommendation"],
+            "source": entry.get("source", "DDInter 2.0"),
+        }
+    return extra
+
+
+INTERACTIONS.update(_load_ddinter_subset())
 
 
 def _normalize(name: str) -> str:

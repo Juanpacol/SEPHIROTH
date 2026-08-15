@@ -79,13 +79,20 @@ async def test_execute_check_drug_interactions_known_pair():
 
 
 def test_find_interactions_known_pair():
+    # warfarin+aspirin is hand-curated (major); warfarin+metformin is a real,
+    # additional pair merged in from the DDInter 2.0 real-data extension
+    # (real_data/drug_interactions/ddinter_subset.json) — both are expected.
     findings = find_interactions(["warfarin", "aspirin", "metformin"])
-    assert len(findings) == 1
-    assert set(findings[0]["pair"]) == {"warfarin", "aspirin"}
+    pairs = {frozenset(f["pair"]) for f in findings}
+    assert frozenset(["warfarin", "aspirin"]) in pairs
+    assert frozenset(["warfarin", "metformin"]) in pairs
+    assert len(findings) == 2
 
 
 def test_find_interactions_no_known_pair():
-    assert find_interactions(["metformin", "lisinopril"]) == []
+    # Neither drug appears in the hand-curated table nor in the DDInter
+    # real-data subset — guaranteed no match regardless of dataset growth.
+    assert find_interactions(["biotin", "folic acid"]) == []
 
 
 def test_find_interactions_case_insensitive():

@@ -70,3 +70,11 @@ htmlcov/
 
 # References (cloned read-only repos, fetch separately — see README)
 references/
+
+# Real-data sample fixtures — large/licensed source files, fetched
+# separately — see real_data/README.md. Small derived artifacts
+# (sample_patients.json, sample_notes.json, ddinter_subset.json) ARE
+# committed and are NOT covered by these patterns.
+real_data/patients/synthea_raw/
+real_data/imaging/samples/
+real_data/imaging/_kaggle_download/

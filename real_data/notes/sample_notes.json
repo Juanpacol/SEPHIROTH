@@ -1,0 +1,32 @@
+[
+  {
+    "patient_id": "5992d31a-d035-44f6-a852-0da586dd89bb",
+    "note_date": "2026-01-05",
+    "content": "87-year-old female with longstanding type 2 diabetes complicated by diabetic renal disease (CKD stage 1) and obesity, presenting for routine follow-up. Currently on metformin, insulin, lisinopril, amlodipine, hydrochlorothiazide, and simvastatin for combined glycemic, blood pressure, and lipid control. No new complaints today; reports good adherence to her regimen. Recent history notable for an episode of acute bronchitis, now resolved. Assessment: T2DM with diabetic nephropathy, hypertension, and obesity, all reasonably controlled on current multi-agent therapy. Plan: continue current medications, recheck renal function and HbA1c at next visit, reinforce dietary counseling for weight management."
+  },
+  {
+    "patient_id": "5fd58757-af2b-1e79-c2bc-f32f3087834b",
+    "note_date": "2026-01-12",
+    "content": "112-year-old male with atrial fibrillation on warfarin, type 2 diabetes with proliferative diabetic retinopathy and macular edema, and anemia. Medications include digoxin, verapamil, warfarin, and ibuprofen for a recent whiplash injury to the neck. Reports the neck pain is improving. Given his anticoagulation, counseled explicitly on the risks of concurrent NSAID use (ibuprofen) and advised to switch to acetaminophen for further analgesia if needed. Diabetic retinopathy is being followed by ophthalmology; no new visual complaints. Assessment: AFib on anticoagulation, advanced diabetic eye disease, resolving cervical strain. Plan: discontinue ibuprofen, substitute acetaminophen, continue warfarin with routine INR monitoring, ophthalmology follow-up as scheduled."
+  },
+  {
+    "patient_id": "340b955b-ed03-ef64-8a57-49bba2ab74de",
+    "note_date": "2025-11-20",
+    "content": "50-year-old male recently diagnosed with type 2 diabetes in the setting of metabolic syndrome, now started on metformin. History also notable for anemia and a recent concussion without loss of consciousness following a minor fall, from which he has fully recovered neurologically. Currently also being treated for an acute viral pharyngitis with supportive care (acetaminophen). Reports mild fatigue but otherwise feels well; no polyuria or polydipsia currently. Assessment: new-onset T2DM in the context of metabolic syndrome, resolving viral pharyngitis, resolved concussion. Plan: continue metformin, recheck fasting glucose and HbA1c in three months, routine anemia workup if not already done, return precautions reviewed."
+  },
+  {
+    "patient_id": "5622acee-dfc5-7be0-db2c-8a37b2c6a83f",
+    "note_date": "2026-02-02",
+    "content": "87-year-old male with a complex history including atrial fibrillation on warfarin, type 2 diabetes on insulin and metformin, chronic kidney disease stage 1, anemia, and carcinoma in situ of the prostate being managed with leuprolide. Also on digoxin, verapamil, fluoxetine, and ibuprofen. Presents for medication reconciliation. Flagged for pharmacist review given the combination of warfarin, ibuprofen, and fluoxetine, which together raise bleeding risk beyond any single agent. Metabolic syndrome and hyperglycemia noted on recent labs. Assessment: multimorbid patient with several interacting medications requiring closer oversight. Plan: discuss discontinuing ibuprofen given anticoagulation and SSRI use, continue oncologic therapy per urology, reinforce glucose monitoring."
+  },
+  {
+    "patient_id": "d6171bec-1b35-e080-0d0c-33f928c4b040",
+    "note_date": "2026-03-10",
+    "content": "62-year-old male with type 2 diabetes complicated by diabetic renal disease, obesity, and chronic kidney disease stage 1, on metformin, insulin, lisinopril, and amlodipine for combined glycemic and blood pressure control. Occasional ibuprofen use reported for joint pain. Renal function has been stable on recent labs. No acute complaints today. Assessment: T2DM with early diabetic nephropathy and hypertension, currently stable. Plan: continue current regimen, advise minimizing NSAID use given CKD, recheck eGFR and urine albumin-to-creatinine ratio at next visit, continue lifestyle counseling for weight management."
+  },
+  {
+    "patient_id": "c5450d36-7905-0484-dbed-fe4fd8be6c46",
+    "note_date": "2026-01-28",
+    "content": "105-year-old female with atrial fibrillation on warfarin, obesity, chronic sinusitis, and a recent healed rib fracture, on digoxin, verapamil, amlodipine, and simvastatin. Also takes alendronic acid for osteoporosis prevention and a vitamin B12 injectable supplement. Reports the rib pain has resolved and denies any new falls. Sinus symptoms are currently quiescent. Assessment: stable multimorbid elderly patient, anticoagulated for AFib, osteoporosis prophylaxis ongoing. Plan: continue current medications, routine INR check, reinforce fall-prevention precautions given her age and anticoagulation, follow up in three months or sooner if symptoms recur."
+  }
+]
