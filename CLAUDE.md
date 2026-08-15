@@ -10,7 +10,7 @@ An **AI-powered clinical decision support platform** for healthcare professional
 
 ## Tech Stack
 
-- **LLM**: Google Gemini API (`gemini-flash-latest`, a Google-maintained alias for the current recommended flash model), free AI Studio tier — no local model to run
+- **LLM**: Google Gemini API (`gemini-flash-latest`, a Google-maintained alias for the current recommended flash model), free AI Studio tier — no local model to run. Optional Groq fallback for text/tool-calling when Gemini's quota is exhausted (`GROQ_API_KEY`).
 - **Agents**: `MCPAgent` subclasses orchestrated via LangGraph, each with MCP tools
 - **Tools (MCP servers)**: Clinical NLP, medical imaging analysis, evidence retrieval, drug safety checks — all in `intelligence/mcp/`
 - **Backend**: FastAPI + PostgreSQL + pgvector
@@ -25,7 +25,7 @@ An **AI-powered clinical decision support platform** for healthcare professional
 | `platform/core/` | Config (`config.py`) + async DB engine/sessions/seed (`db.py`) |
 | `platform/auth/` | JWT auth: `security.py` (bcrypt+pyjwt), `deps.py` (`get_current_user`), `router.py` (register/login/me) |
 | `platform/frontend/` | Next.js app (pages in `app/`, components in `components/`, design tokens in Tailwind config) |
-| `intelligence/llm/` | `GeminiClient` (chat/tool-call loop, structured output, vision) + `factory.py` (`get_llm_client()` singleton) |
+| `intelligence/llm/` | `GeminiClient` (chat/tool-call loop, structured output, vision) + `GroqClient` (text-only fallback) + `FallbackLLMClient` (composes both) + `factory.py` (`get_llm_client()` singleton) |
 | `intelligence/mcp/` | FastMCP servers (registry.py + nlp, imaging, rag, drug_safety, and vision servers — vision shares the same Gemini client, model override via `gemini_vision_model`) |
 | `intelligence/agents/` | Agent base class + 5 specialists + LangGraph workflow (`workflow.py`, blocking + SSE streaming) + Citation Guard (`citation_guard.py`) + explainability trace (`explainability.py`) + rule-based risk engine (`risk_engine.py`) |
 | `intelligence/medical-imaging/` | MONAI transforms + networks (cloned from ref-monai-medical-imaging) |
@@ -101,6 +101,7 @@ Registry (`intelligence/mcp/registry.py`) discovers all servers, aggregates thei
 11. **Vision = one MCP tool, same client.** `describe_medical_image` (vision_server.py) does one-shot `GeminiClient.describe_image()`; the RadiologyAgent is prompted to call it first when `image_path` is in context. It reads rendered images (PNG/JPG…), not raw DICOM. Degrades gracefully (`status: "unavailable"`) if the API key is missing or the request fails.
 12. **Image preview shares the imaging trust boundary.** `GET /api/medical/imaging/preview` (medical.py) streams back the same local file `describe_medical_image`/`analyze_medical_image` already read, hard-restricted to browser-renderable extensions (png/jpg/jpeg/gif/webp/bmp) so it can't become a general file-download route. Powers the side-by-side viewer on `/imaging`.
 13. **Free-tier quota is a real constraint.** `llm_max_tool_rounds` (default 6) and a shared per-client rate limiter (`gemini_rpm_limit`) keep a single consultation (5 agents, each doing several tool-call rounds) inside the AI Studio free tier. See README's Gemini quota section before raising these.
+14. **Optional Groq fallback, text-only.** `intelligence/llm/factory.py::get_llm_client()` returns a `FallbackLLMClient` instead of a bare `GeminiClient` when `GROQ_API_KEY` is set: `chat()`/`generate_json()` try Gemini first, then Groq on any `LLMUnavailableError` (rate limit, daily quota exhaustion, outage). `describe_image()` (vision) and embeddings always stay on Gemini — Groq has no comparable endpoints.
 
 ## How to Extend
 

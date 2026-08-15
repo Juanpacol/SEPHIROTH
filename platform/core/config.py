@@ -51,6 +51,16 @@ class Settings(BaseSettings):
     gemini_rpm_limit: int = 10
     llm_max_tool_rounds: int = 6
 
+    # Fallback LLM — Groq (OpenAI-compatible API), free tier. Used only for
+    # text/tool-calling when Gemini is unavailable (rate-limited or its
+    # daily request quota is exhausted — a real constraint observed on
+    # the free tier). No fallback for vision or embeddings; those stay on
+    # Gemini only. Fallback is active only when GROQ_API_KEY is set.
+    groq_api_key: Optional[str] = None
+    groq_model: str = "llama-3.3-70b-versatile"
+    groq_max_retries: int = 3
+    llm_enable_fallback: bool = True
+
     # Medical AI model weights (optional — features degrade gracefully)
     medcat_model_path: Optional[str] = None
     monai_model_path: Optional[str] = None

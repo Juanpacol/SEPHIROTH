@@ -5,6 +5,9 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Added
+- **Optional Groq fallback for the LLM layer** (`intelligence/llm/groq_client.py`, `intelligence/llm/fallback_client.py`): when `GROQ_API_KEY` is set, `get_llm_client()` returns a `FallbackLLMClient` that tries Gemini first for `chat()`/`generate_json()` and falls through to Groq (`llama-3.3-70b-versatile` by default) on any failure — rate limit, daily quota exhaustion, or outage. Mitigates the real free-tier daily-quota constraint discovered while regenerating the eval baseline (see below). Vision and embeddings are Gemini-only (no fallback); unset `GROQ_API_KEY`, behavior is unchanged from a bare `GeminiClient`.
+
 ### Changed
 - **BREAKING: migrated the LLM backend from local Ollama to the Google Gemini API** (`gemini-2.5-flash`, AI Studio free tier). `intelligence/llm/ollama_client.py` is replaced by `intelligence/llm/gemini_client.py` (`GeminiClient`), accessed through a lazy singleton factory (`intelligence/llm/factory.py::get_llm_client()`). `OllamaMCPAgent` is renamed `MCPAgent`; `registry.ollama_tools()` is renamed `registry.llm_tools()`. Vision description (`vision_server.py`) now goes through the same shared client instead of a second raw Ollama client. Contract preserved: `ChatResult`, `chat()`, `generate_json()`, `health()` keep the same shapes, so the whole agent stack, timeline extraction, and test doubles (`tests/conftest.py::FakeLLMClient`) needed no behavioral changes.
   - ⚠️ **Privacy:** clinical text and images now leave the machine and are sent to Google's Gemini API. Not HIPAA/GDPR-compliant as-is — see README's privacy notice.

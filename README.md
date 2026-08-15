@@ -155,6 +155,23 @@ PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ful
 - Citation Precision and Faithfulness in the table above are still from the pre-Gemini baseline (generated with `llama3.2:latest` as a stand-in). Regenerating them against `gemini-flash-latest` via `--mode full --record` requires enough free-tier quota to run an agent consultation per golden case — this repo's own key hit its **daily** free-tier request quota partway through a regeneration attempt (a real, worth-knowing constraint: some Gemini model aliases carry very low free-tier daily caps, independent of the per-minute rate limit `gemini_rpm_limit` already handles). Retry on a fresh day or with a paid tier.
 - The LLM judge is the same model family as the generator on the committed baseline (a self-judging limitation); an independent judge model would be a stronger signal.
 
+### Free-tier quota management (Gemini + Groq fallback)
+
+Neither Gemini's nor Groq's free tiers are unlimited — Gemini caps requests **per minute and per day**, and newer model aliases (like `gemini-flash-latest`, which resolves to whatever Google's current flash model is) can carry much stricter daily caps than older, established models. This repo's own key hit a 20-request/day cap on the resolved model while regenerating the eval baseline above.
+
+To make that failure mode non-fatal, `intelligence/llm/factory.py::get_llm_client()` optionally wraps Gemini with a **Groq fallback** for text/tool-calling (`intelligence/llm/fallback_client.py`):
+
+- Set `GROQ_API_KEY` (free key at [console.groq.com/keys](https://console.groq.com/keys)) to enable it — unset, behavior is identical to a bare Gemini client.
+- `chat()` and `generate_json()` try Gemini first; on any failure (rate limit, daily quota exhaustion, outage) they fall through to Groq (`llama-3.3-70b-versatile` by default, configurable via `GROQ_MODEL`) — same `ChatResult` contract, so agents and timeline extraction need no changes.
+- **Vision and embeddings always stay on Gemini.** Groq has no comparable multimodal or embeddings endpoint, so `describe_medical_image` and the RAG embedding provider never fall back — they degrade to their existing `unavailable`/keyword-only paths instead.
+- Set `LLM_ENABLE_FALLBACK=false` to disable fallback even with a Groq key configured (e.g. to test Gemini-only behavior deliberately).
+
+```bash
+# .env
+GROQ_API_KEY=your-groq-key
+GROQ_MODEL=llama-3.3-70b-versatile   # default
+```
+
 ## Project Structure
 
 ```
