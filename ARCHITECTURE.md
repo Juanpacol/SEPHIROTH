@@ -99,3 +99,5 @@ Pages: `/dashboard`, `/copilot` (chat with agent badges + tool traces), `/patien
 ## Deployment
 
 `docker-compose up` starts Postgres (pgvector) + API. The API talks to Gemini over the internet — no host GPU or local model server required. `JWT_SECRET` and `GEMINI_API_KEY` are required environment variables (compose fails fast if `JWT_SECRET` is unset).
+
+**Cloud database (optional):** `DATABASE_URL` can point to a managed Postgres instead — e.g. [Supabase](https://supabase.com), which supports `pgvector` natively. `platform/core/db.py::init_db()` already handles this: it only runs `CREATE EXTENSION IF NOT EXISTS vector` when the dialect is `postgresql`, and `data/schemas.GuidelineDocument.embedding` uses the real `Vector` type there (JSON on SQLite). Use Supabase's **Session pooler** connection string (port 5432) — the Transaction pooler (6543) disables prepared statements, which asyncpg relies on by default. No other code changes needed; local `docker-compose` Postgres remains the default for development.

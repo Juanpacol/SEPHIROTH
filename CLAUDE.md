@@ -176,6 +176,7 @@ cd platform/frontend && npm run dev -- --port 3100
 - `*:8000`, `*:3000`, and `*:5432` are all taken by other containers.
 - Backend: always test via `http://127.0.0.1:8000` (IPv4). Frontend: port **3100**.
 - Our Postgres maps to host **5433** (set in `.env`, which overrides `core/config.py` defaults).
+- **Using Supabase instead of local Postgres?** Set `DATABASE_URL` in `.env` to Supabase's **Session pooler** string (port 5432 — not the 6543 transaction pooler, which needs `asyncpg` prepared statements disabled) and skip `docker compose up -d postgres` entirely. `init_db()` creates tables + enables `pgvector` automatically on first boot either way. See ARCHITECTURE.md's "Cloud database" note.
 
 Or via Docker:
 ```bash
