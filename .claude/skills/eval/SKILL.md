@@ -5,9 +5,9 @@ description: Run the RAG evaluation harness and report metric deltas — use aft
 
 # /eval — run the RAG evaluation harness
 
-Two modes; pick based on whether Ollama is available and whether the user asked for a quick check or a full refresh.
+Two modes; pick based on whether a Gemini API key is available and whether the user asked for a quick check or a full refresh.
 
-## 1. Quick check (`--mode ci`, always safe, no Ollama needed)
+## 1. Quick check (`--mode ci`, always safe, no API key needed)
 
 ```bash
 cd clinical-ai-copilot
@@ -16,16 +16,16 @@ PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ci
 
 Read the printed table. If it says `Overall: FAIL`, report which metric(s) dropped below threshold and by how much — check `git diff` on `data/rag/__init__.py`, `intelligence/agents/citation_guard.py`, or `intelligence/agents/__init__.py` (EvidenceAgent prompt) for what likely caused it.
 
-If it warns `results/latest.json is missing or stale`, the dataset or transcripts changed since the last full run — offer to run `--mode full --record` (below) if Ollama is reachable, or tell the user it needs a local refresh before merging.
+If it warns `results/latest.json is missing or stale`, the dataset or transcripts changed since the last full run — offer to run `--mode full --record` (below) if `GEMINI_API_KEY` is set, or tell the user it needs a refresh before merging.
 
-## 2. Full refresh (`--mode full --record`, needs local Ollama)
+## 2. Full refresh (`--mode full --record`, needs GEMINI_API_KEY — burns free-tier quota)
 
-Check Ollama is up first:
+Check the key is set first:
 ```bash
-curl -s -m 3 "${OLLAMA_HOST:-http://127.0.0.1:11435}/api/tags" > /dev/null && echo reachable
+grep -q '^GEMINI_API_KEY=.' .env && echo "key present" || echo "GEMINI_API_KEY missing"
 ```
 
-If reachable, run the real Evidence Agent against every golden case and refresh the committed baseline:
+If present, run the real Evidence Agent against every golden case and refresh the committed baseline:
 ```bash
 PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode full --record --skip-pubmed
 ```
@@ -33,7 +33,7 @@ PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ful
 
 Omit `--skip-pubmed` only if the user explicitly wants live PubMed citations exercised too.
 
-Add `--model <name>` to override the model (defaults to `settings.ollama_model`, i.e. `qwen3:8b`). Useful if the production model isn't pulled locally yet — check `intelligence/evaluation/results/latest.json`'s `run.model` field to see what the committed baseline was actually generated with, and flag it in your summary if it's a stand-in rather than the production model.
+Add `--model <name>` to override the model (defaults to `settings.gemini_model`, i.e. `gemini-2.5-flash`). Useful if the committed baseline was generated with a different model — check `intelligence/evaluation/results/latest.json`'s `run.model` field to see what it was actually generated with, and flag it in your summary if it's a stand-in rather than the production model.
 
 ## After a full refresh
 

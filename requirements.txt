@@ -9,20 +9,19 @@ sqlalchemy[asyncio]>=2.0
 asyncpg>=0.29
 alembic>=1.13
 pgvector>=0.3
-redis>=5.0
 
 # Auth
 bcrypt>=4.1
 pyjwt>=2.8
 
-# LLM & Agents — 100% local (no cloud LLM APIs)
-ollama>=0.4
+# LLM & Agents — Google Gemini API (AI Studio free tier); PHI leaves the
+# machine, see README's privacy notice.
+google-genai>=1.0
 fastmcp>=2.0
 langgraph>=0.2
 
 # RAG (optional heavy extras; core retrieval works without them)
 # llama-index>=0.11
-# llama-index-llms-ollama>=0.3
 # llama-index-embeddings-huggingface>=0.3
 
 # Medical AI (optional — install when enabling real inference)
@@ -52,3 +51,5 @@ pytest-cov>=5.0
 aiosqlite>=0.20
 ruff>=0.5
 mypy>=1.10
+bandit[toml]>=1.7
+pip-audit>=2.7

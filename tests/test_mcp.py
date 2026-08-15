@@ -27,17 +27,17 @@ async def test_registry_load_is_idempotent():
 async def test_registry_discovers_expected_tools():
     registry = MCPRegistry()
     await registry.load()
-    names = {s["function"]["name"] for s in registry.ollama_tools()}
+    names = {s["function"]["name"] for s in registry.llm_tools()}
     assert "search_clinical_guidelines" in names
     assert "check_drug_interactions" in names
     assert "search_pubmed" in names
 
 
 @pytest.mark.asyncio
-async def test_ollama_tools_filters_to_allowed():
+async def test_llm_tools_filters_to_allowed():
     registry = MCPRegistry()
     await registry.load()
-    filtered = registry.ollama_tools(["check_drug_interactions"])
+    filtered = registry.llm_tools(["check_drug_interactions"])
     assert len(filtered) == 1
     assert filtered[0]["function"]["name"] == "check_drug_interactions"
 

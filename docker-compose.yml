@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: pgvector/pgvector:pg15
@@ -18,34 +16,19 @@ services:
       timeout: 5s
       retries: 10
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
   api:
     build: .
     ports:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://clinical_ai:clinical_ai_password@postgres:5432/clinical_ai_db
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: change-me-in-production
-      # Ollama runs NATIVELY on the host (Metal GPU passthrough is not
-      # available inside Docker on macOS) — do not add an ollama container.
-      OLLAMA_HOST: http://host.docker.internal:11434
-      OLLAMA_MODEL: qwen3:8b
-      OLLAMA_VISION_MODEL: llava:7b
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required — generate one with `openssl rand -hex 32`}
+      # LLM — Google Gemini API. PHI leaves the machine once this is set;
+      # see README's privacy notice.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
       DEBUG: "false"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     healthcheck:
       # urllib instead of curl — the slim python base image has no curl.
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
@@ -56,9 +39,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
 
 volumes:
   postgres_data:
-  redis_data:

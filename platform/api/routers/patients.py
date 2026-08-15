@@ -12,15 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from auth.deps import get_current_user
-from core.config import settings
 from core.db import get_session
 from data.schemas import ClinicalNote, Patient, TimelineEvent, User
 from intelligence.agents.risk_engine import assess_patient_risk, assess_risk_level
-from intelligence.llm import OllamaClient
+from intelligence.llm import get_llm_client
 
 router = APIRouter()
-
-_client = OllamaClient(host=settings.ollama_host, model=settings.ollama_model)
 
 
 def _summary(patient: Patient) -> Dict[str, Any]:
@@ -136,7 +133,7 @@ async def _ingest_note(
     )
     session.add(note)
 
-    extracted = await extract_events(_client, content, resolved_date)
+    extracted = await extract_events(get_llm_client(), content, resolved_date)
 
     # Dedupe against existing events on (date, title).
     existing = {(e.date.isoformat(), e.title.lower()) for e in patient.timeline}

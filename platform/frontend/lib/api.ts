@@ -16,7 +16,7 @@ export interface AgentStatus {
 export interface DashboardStats {
   kpis: Kpi[];
   agents: AgentStatus[];
-  system: { ollama: string; model: string; local_only: boolean };
+  system: { llm: string; model: string; provider: string; local_only: boolean };
 }
 
 export interface PatientSummary {

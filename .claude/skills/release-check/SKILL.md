@@ -40,7 +40,23 @@ Must print `Overall: PASS` with no staleness warning. If it warns the baseline i
 
 Compare the metric table in `README.md`'s `## Evaluation` section against `intelligence/evaluation/results/latest.json`. If any number differs, the README wasn't updated after the last eval refresh — fix it now (this is a quick, common miss).
 
-## 5. Clean tree check
+## 5. Security scan (bandit, blocking on HIGH/HIGH)
+
+```bash
+.venv/bin/bandit -c pyproject.toml -r . -ll -ii
+```
+
+Must report zero HIGH-severity + HIGH-confidence issues (this mirrors CI's `security` job exactly). MEDIUM/LOW findings are advisory — mention them but don't block on them.
+
+## 6. Dependency CVEs (advisory)
+
+```bash
+.venv/bin/pip-audit -r requirements.txt
+```
+
+Non-blocking — report anything with an available fix, but don't hold up the push on CVEs with no fix yet.
+
+## 7. Clean tree check
 
 ```bash
 git status --short
@@ -50,4 +66,4 @@ Everything intended for this change should be staged/committed; nothing stray (s
 
 ## Result
 
-Green on all five means the branch is safe to push and open a PR. Summarize which steps passed; if anything failed, name the exact command and output that failed rather than a general "something's wrong."
+Green on steps 1-5 (6 is advisory) means the branch is safe to push and open a PR. Summarize which steps passed; if anything failed, name the exact command and output that failed rather than a general "something's wrong."

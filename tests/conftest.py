@@ -1,6 +1,6 @@
 """Shared fixtures: an isolated async SQLite database per test, and a
-scripted OllamaClient double so agent/workflow tests never need a live
-Ollama server."""
+scripted Gemini client double so agent/workflow tests never need a live
+Gemini API call."""
 
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -9,7 +9,7 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from data.schemas import Base
-from intelligence.llm.ollama_client import ChatResult
+from intelligence.llm.gemini_client import ChatResult
 
 
 @pytest_asyncio.fixture
@@ -28,9 +28,16 @@ def anyio_backend():
     return "asyncio"
 
 
-class FakeOllamaClient:
-    """Scripted double for `OllamaClient` — the only LLM touchpoint the
-    whole agent stack uses (`base.py::OllamaMCPAgent.run` calls `.chat()`
+@pytest.fixture(autouse=True)
+def no_gemini_key(monkeypatch):
+    """Never let a developer's local .env leak GEMINI_API_KEY into tests —
+    the suite must pass with zero network calls."""
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+
+class FakeLLMClient:
+    """Scripted double for `GeminiClient` — the only LLM touchpoint the
+    whole agent stack uses (`base.py::MCPAgent.run` calls `.chat()`
     exclusively).
 
     `scripts` maps a substring found in the agent's `system_prompt` (each
@@ -93,12 +100,36 @@ class FakeOllamaClient:
             return self.json_payloads.pop(0)
         return {}
 
+    async def describe_image(
+        self, image_bytes: bytes, mime_type: str, prompt: str, max_output_tokens: int = 512
+    ) -> str:
+        return "Fake vision description."
+
     async def health(self) -> bool:
         return True
 
 
+# Backwards-compatible alias during the Ollama -> Gemini migration.
+FakeOllamaClient = FakeLLMClient
+
+
 @pytest.fixture
-def fake_ollama_client():
-    """A bare FakeOllamaClient with no scripts — override `.scripts` /
+def fake_llm_client():
+    """A bare FakeLLMClient with no scripts — override `.scripts` /
     `.default_script` per test as needed."""
-    return FakeOllamaClient()
+    return FakeLLMClient()
+
+
+@pytest.fixture
+def patch_llm_factory(fake_llm_client, monkeypatch):
+    """Swap the `get_llm_client()` singleton for a scripted fake.
+
+    `get_llm_client()` closes over the module-level `_client` global in
+    `intelligence.llm.factory`, so setting that global (rather than
+    replacing the function object) makes every caller — regardless of
+    where they imported `get_llm_client` from — return the fake.
+    """
+    import intelligence.llm.factory as factory_module
+
+    monkeypatch.setattr(factory_module, "_client", fake_llm_client)
+    return fake_llm_client

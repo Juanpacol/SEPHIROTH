@@ -11,7 +11,7 @@ from api.routers import rag as rag_router_module
 from auth import router as auth_router_module
 from core.db import get_session
 from data.schemas import Patient
-from tests.conftest import FakeOllamaClient
+from tests.conftest import FakeLLMClient
 
 NOTE_EVENTS_PAYLOAD = {
     "events": [{"date": "2026-01-01", "type": "diagnosis", "title": "Test diagnosis", "detail": "detail"}]
@@ -20,8 +20,9 @@ NOTE_EVENTS_PAYLOAD = {
 
 @pytest.fixture
 def app(db_session, monkeypatch):
-    monkeypatch.setattr(patients_router_module, "_client", FakeOllamaClient())
-    monkeypatch.setattr(dashboard_router_module, "_client", FakeOllamaClient())
+    import intelligence.llm.factory as factory_module
+
+    monkeypatch.setattr(factory_module, "_client", FakeLLMClient())
 
     app = FastAPI()
     app.include_router(auth_router_module.router, prefix="/api/auth")
@@ -118,15 +119,17 @@ async def test_dashboard_stats_shape(client, seeded_patient):
         assert "kpis" in body
         assert "agents" in body
         assert "system" in body
-        assert body["system"]["local_only"] is True
+        assert body["system"]["local_only"] is False
 
 
 @pytest.mark.asyncio
 async def test_add_clinical_note_extracts_entities_and_timeline(client, seeded_patient, monkeypatch):
+    import intelligence.llm.factory as factory_module
+
     monkeypatch.setattr(
-        patients_router_module,
+        factory_module,
         "_client",
-        FakeOllamaClient(json_payloads=[NOTE_EVENTS_PAYLOAD]),
+        FakeLLMClient(json_payloads=[NOTE_EVENTS_PAYLOAD]),
     )
     async with client:
         register = await client.post(
@@ -158,7 +161,9 @@ async def test_add_clinical_note_requires_auth(client, seeded_patient):
 
 @pytest.mark.asyncio
 async def test_add_clinical_note_unknown_patient_404(client, monkeypatch):
-    monkeypatch.setattr(patients_router_module, "_client", FakeOllamaClient(json_payloads=[{"events": []}]))
+    import intelligence.llm.factory as factory_module
+
+    monkeypatch.setattr(factory_module, "_client", FakeLLMClient(json_payloads=[{"events": []}]))
     async with client:
         register = await client.post(
             "/api/auth/register",

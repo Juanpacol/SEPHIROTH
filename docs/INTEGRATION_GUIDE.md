@@ -130,12 +130,6 @@ python examples/rag_example.py
 
 ## Performance Optimization
 
-### Caching
-Use Redis for:
-- Medical model inference results
-- RAG document retrieval
-- Agent state persistence
-
 ### Vectorization
 Use pgvector for:
 - Semantic search

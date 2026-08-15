@@ -19,7 +19,7 @@ from typing import Annotated, Any, AsyncIterator, Dict, List, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
-from intelligence.llm import OllamaClient
+from intelligence.llm import GeminiClient
 
 from . import (
     ClinicalCoordinator,
@@ -58,8 +58,8 @@ def route_specialists(context: Dict[str, Any] | None) -> List[str]:
     return branches
 
 
-def build_workflow(client: OllamaClient):
-    """Compile the clinical multi-agent graph for a given Ollama client."""
+def build_workflow(client: GeminiClient):
+    """Compile the clinical multi-agent graph for a given LLM client."""
 
     radiology = RadiologyAgent(client)
     laboratory = LabAgent(client)
@@ -127,7 +127,7 @@ def _initial_state(query: str, patient_id: str, context: Dict[str, Any] | None) 
 
 
 async def run_consultation(
-    client: OllamaClient,
+    client: GeminiClient,
     query: str,
     patient_id: str = "",
     context: Dict[str, Any] | None = None,
@@ -138,7 +138,7 @@ async def run_consultation(
 
 
 async def stream_consultation(
-    client: OllamaClient,
+    client: GeminiClient,
     query: str,
     patient_id: str = "",
     context: Dict[str, Any] | None = None,

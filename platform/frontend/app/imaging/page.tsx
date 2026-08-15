@@ -68,7 +68,7 @@ export default function ImagingPage() {
       <div>
         <h1 className="text-xl font-extrabold">Imaging Analysis</h1>
         <p className="text-sm text-muted">
-          MONAI-backed analysis + LLaVA vision reasoning for X-Ray, CT, MRI, ultrasound and
+          MONAI-backed analysis + Gemini vision reasoning for X-Ray, CT, MRI, ultrasound and
           pathology images
         </p>
       </div>

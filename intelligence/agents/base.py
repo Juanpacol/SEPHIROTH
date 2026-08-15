@@ -1,10 +1,10 @@
-"""Base class for Ollama-powered agents with MCP tool access."""
+"""Base class for Gemini-powered agents with MCP tool access."""
 
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from intelligence.llm import ChatResult, OllamaClient
+from intelligence.llm import ChatResult, GeminiClient
 from intelligence.mcp import get_registry
 
 MEDICAL_DISCLAIMER = (
@@ -14,19 +14,19 @@ MEDICAL_DISCLAIMER = (
 )
 
 
-class OllamaMCPAgent:
-    """An agent = a system prompt + a whitelist of MCP tools + an Ollama model.
+class MCPAgent:
+    """An agent = a system prompt + a whitelist of MCP tools + an LLM client.
 
     Subclasses set ``name``, ``role_prompt`` and ``allowed_tools``. The MCP
     registry injects a natural-language tool catalog into the system prompt and
-    enforces the structured tool contract via Ollama's native ``tools`` param.
+    enforces the structured tool contract via the client's native ``tools`` param.
     """
 
     name: str = "base-agent"
     role_prompt: str = ""
     allowed_tools: Optional[List[str]] = None  # None = no tools
 
-    def __init__(self, client: OllamaClient):
+    def __init__(self, client: GeminiClient):
         self.client = client
 
     async def run(self, query: str, context: Optional[Dict[str, Any]] = None) -> ChatResult:
@@ -36,7 +36,7 @@ class OllamaMCPAgent:
         system_parts = [MEDICAL_DISCLAIMER, self.role_prompt]
         tools: List[Dict[str, Any]] = []
         if self.allowed_tools:
-            tools = registry.ollama_tools(self.allowed_tools)
+            tools = registry.llm_tools(self.allowed_tools)
             system_parts.append(registry.system_prompt_summary(self.allowed_tools))
 
         user_content = query

@@ -16,7 +16,7 @@ async def main() -> None:
     await registry.load()
 
     print("Discovered tools:")
-    for schema in registry.ollama_tools():
+    for schema in registry.llm_tools():
         print(f"  - {schema['function']['name']}")
 
     print("\n--- Clinical NLP ---")

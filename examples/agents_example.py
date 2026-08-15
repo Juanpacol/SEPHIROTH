@@ -1,7 +1,7 @@
 """
-Example: full multi-agent consultation through Ollama + MCP tools.
+Example: full multi-agent consultation through the Gemini API + MCP tools.
 
-Run from the repo root (requires Ollama running with qwen3:8b pulled):
+Run from the repo root (requires GEMINI_API_KEY set in .env):
 
     PYTHONPATH=.:platform .venv/bin/python examples/agents_example.py
 """
@@ -10,19 +10,19 @@ import asyncio
 
 from core.config import settings
 from intelligence.agents.workflow import run_consultation
-from intelligence.llm import OllamaClient
+from intelligence.llm import get_llm_client
 
 
 async def main() -> None:
-    client = OllamaClient(host=settings.ollama_host, model=settings.ollama_model)
+    client = get_llm_client()
 
     if not await client.health():
         raise SystemExit(
-            f"Ollama not reachable at {settings.ollama_host} or model "
-            f"'{settings.ollama_model}' missing. Run: ollama pull {settings.ollama_model}"
+            f"Gemini not reachable or model '{settings.gemini_model}' unavailable. "
+            "Check GEMINI_API_KEY and quota."
         )
 
-    print(f"Running consultation on {settings.ollama_model} (local)...\n")
+    print(f"Running consultation on {settings.gemini_model}...\n")
 
     state = await run_consultation(
         client,

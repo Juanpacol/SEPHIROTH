@@ -1,22 +1,23 @@
 """FastMCP server exposing multimodal (vision) medical image description.
 
-Uses a local multimodal Ollama model (default llava:7b) via a one-shot
-``generate()`` call — unlike the chat/tool-calling loop in
-``intelligence/llm/ollama_client.py``, vision description needs no tools,
-so the server talks to Ollama directly, matching how other MCP servers
-are self-contained.
+Uses the shared Gemini client's one-shot ``describe_image()`` call — unlike
+the chat/tool-calling loop in ``intelligence/llm/gemini_client.py``, vision
+description needs no tools. Sharing the client (rather than talking to the
+provider directly) means vision competes for the same rate-limit budget and
+retry/backoff logic as the agents.
 """
 
-import base64
+import mimetypes
 from pathlib import Path
 from typing import Any, Dict
 
 from fastmcp import FastMCP
-from ollama import AsyncClient
+
+from intelligence.llm import LLMUnavailableError, get_llm_client
 
 mcp = FastMCP(
     name="vision",
-    instructions="AI-generated clinical descriptions of medical images via a local vision model.",
+    instructions="AI-generated clinical descriptions of medical images via a cloud vision model.",
 )
 
 DESCRIPTION_PROMPT = (
@@ -28,6 +29,8 @@ DESCRIPTION_PROMPT = (
 )
 
 READABLE_FORMATS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}
+_MIME_OVERRIDES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".bmp": "image/bmp"}
+MAX_IMAGE_BYTES = 15 * 1024 * 1024  # Gemini's inline request cap is ~20MB
 
 
 def _settings():
@@ -38,7 +41,7 @@ def _settings():
 
 @mcp.tool
 async def describe_medical_image(image_path: str, clinical_focus: str = "") -> Dict[str, Any]:
-    """Generate an AI clinical description of a medical image using a local
+    """Generate an AI clinical description of a medical image using a cloud
     vision model. Optional `clinical_focus` narrows the description (e.g.
     'left lung', 'bone density'). Use when an image is provided and you need
     to know what it shows before reasoning about it."""
@@ -68,27 +71,32 @@ async def describe_medical_image(image_path: str, clinical_focus: str = "") -> D
             )
         }
 
-    image_b64 = base64.b64encode(path.read_bytes()).decode()
+    image_bytes = path.read_bytes()
+    if len(image_bytes) > MAX_IMAGE_BYTES:
+        return {
+            "error": f"Image too large ({len(image_bytes)} bytes, max {MAX_IMAGE_BYTES}) for inline analysis."
+        }
+
+    mime_type = _MIME_OVERRIDES.get(path.suffix.lower()) or mimetypes.guess_type(path.name)[0] or "image/png"
     prompt = DESCRIPTION_PROMPT
     if clinical_focus:
         prompt += f"\nFocus especially on: {clinical_focus}."
 
+    model_name = settings.gemini_vision_model or settings.gemini_model
     try:
-        client = AsyncClient(host=settings.ollama_host)
-        response = await client.generate(
-            model=settings.ollama_vision_model,
-            prompt=prompt,
-            images=[image_b64],
-            options={"num_predict": 512},
-        )
-        description = (response.get("response") or "").strip()
+        client = get_llm_client()
+        description = await client.describe_image(image_bytes=image_bytes, mime_type=mime_type, prompt=prompt)
+    except LLMUnavailableError as exc:
+        return {
+            "status": "unavailable",
+            "message": f"Vision model '{model_name}' failed: {exc}. Check GEMINI_API_KEY and quota.",
+            "description": None,
+            "requires_professional_review": True,
+        }
     except Exception as exc:
         return {
             "status": "unavailable",
-            "message": (
-                f"Vision model '{settings.ollama_vision_model}' failed: {exc}. "
-                f"Pull it with: ollama pull {settings.ollama_vision_model}"
-            ),
+            "message": f"Vision model '{model_name}' failed: {exc}. Check GEMINI_API_KEY and quota.",
             "description": None,
             "requires_professional_review": True,
         }
@@ -96,7 +104,7 @@ async def describe_medical_image(image_path: str, clinical_focus: str = "") -> D
     return {
         "status": "ok",
         "description": description,
-        "model": settings.ollama_vision_model,
+        "model": model_name,
         "clinical_focus": clinical_focus or None,
         "requires_professional_review": True,
     }

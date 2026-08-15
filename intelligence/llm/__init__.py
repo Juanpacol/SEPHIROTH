@@ -1,5 +1,6 @@
-"""Local LLM layer — Ollama client with MCP tool-calling support."""
+"""Cloud LLM layer — Gemini client with MCP tool-calling support."""
 
-from .ollama_client import ChatResult, OllamaClient
+from .factory import get_llm_client, reset_llm_client
+from .gemini_client import ChatResult, GeminiClient, LLMUnavailableError
 
-__all__ = ["OllamaClient", "ChatResult"]
+__all__ = ["ChatResult", "GeminiClient", "LLMUnavailableError", "get_llm_client", "reset_llm_client"]

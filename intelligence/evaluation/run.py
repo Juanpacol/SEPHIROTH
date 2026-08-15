@@ -4,8 +4,8 @@
     python -m intelligence.evaluation.run --mode full --record [--skip-pubmed] [--model NAME]
 
 `--mode ci` is fully offline and deterministic — this is what CI runs on
-every PR. `--mode full` talks to a locally running Ollama server and is
-meant to be run by hand (or via the `/eval` skill) to refresh the
+every PR. `--mode full` talks to the Gemini API (burns free-tier quota) and
+is meant to be run by hand (or via the `/eval` skill) to refresh the
 committed baseline.
 """
 
@@ -59,10 +59,10 @@ def _run_ci() -> int:
 
 def _run_full(record: bool, skip_pubmed: bool, model: str) -> int:
     from core.config import settings  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
-    from intelligence.llm.ollama_client import OllamaClient
+    from intelligence.llm.gemini_client import GeminiClient
 
     async def _main() -> int:
-        client = OllamaClient(host=settings.ollama_host, model=model)
+        client = GeminiClient(api_key=settings.gemini_api_key, model=model)
         results = await runner.run_full_mode(
             client,
             record=record,
@@ -93,7 +93,7 @@ def main() -> int:
     parser.add_argument(
         "--model",
         default=None,
-        help="full mode: Ollama model override (defaults to settings.ollama_model)",
+        help="full mode: Gemini model override (defaults to settings.gemini_model)",
     )
     args = parser.parse_args()
 
@@ -102,7 +102,7 @@ def main() -> int:
 
     from core.config import settings  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
 
-    return _run_full(args.record, args.skip_pubmed, args.model or settings.ollama_model)
+    return _run_full(args.record, args.skip_pubmed, args.model or settings.gemini_model)
 
 
 if __name__ == "__main__":

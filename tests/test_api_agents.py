@@ -1,8 +1,9 @@
 """API tests for /api/agents/* — the consultation endpoints.
 
-`api.routers.agents` holds its OllamaClient as a module-level singleton
-(`_client`), not a FastAPI dependency, so it's swapped via monkeypatch
-rather than `dependency_overrides`.
+`api.routers.agents` resolves its LLM client via `get_llm_client()`, a lazy
+singleton in `intelligence.llm.factory`, so tests swap it by setting that
+module's `_client` global (see `patch_llm_factory` in conftest.py) rather
+than `dependency_overrides`.
 """
 
 import pytest
@@ -12,7 +13,7 @@ from httpx import ASGITransport, AsyncClient
 from api.routers import agents as agents_router_module
 from auth import router as auth_router_module
 from core.db import get_session
-from tests.conftest import FakeOllamaClient
+from tests.conftest import FakeLLMClient
 
 EVIDENCE_SCRIPT = [
     ("tool", "search_clinical_guidelines", {"query": "A1C goal", "top_k": 5}),
@@ -29,13 +30,15 @@ COORDINATOR_SCRIPT = [
 
 @pytest.fixture
 def app(db_session, monkeypatch):
-    fake_client = FakeOllamaClient(
+    import intelligence.llm.factory as factory_module
+
+    fake_client = FakeLLMClient(
         scripts={
             "clinical evidence specialist": EVIDENCE_SCRIPT,
             "coordinating physician-assistant": COORDINATOR_SCRIPT,
         }
     )
-    monkeypatch.setattr(agents_router_module, "_client", fake_client)
+    monkeypatch.setattr(factory_module, "_client", fake_client)
 
     app = FastAPI()
     app.include_router(auth_router_module.router, prefix="/api/auth")

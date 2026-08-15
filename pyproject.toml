@@ -50,3 +50,15 @@ select = ["E", "F", "I"]
 # `platform/` is on PYTHONPATH rather than a normal src layout (see
 # CLAUDE.md), so ruff can't infer these first-party roots on its own.
 known-first-party = ["api", "auth", "core", "data", "intelligence", "tests"]
+
+[tool.bandit]
+exclude_dirs = [
+    "references",
+    "intelligence/medical-imaging",
+    "intelligence/nlp/ner",
+    "intelligence/nlp/pipeline",
+    "intelligence/nlp/preprocessing",
+    "platform/frontend",
+    ".venv",
+    "tests",
+]

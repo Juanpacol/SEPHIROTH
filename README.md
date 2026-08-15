@@ -1,23 +1,25 @@
 # SEPHIROTH
 
 ![CI](https://github.com/Juanpacol/SEPHIROTH/actions/workflows/ci.yml/badge.svg)
-![coverage](https://img.shields.io/badge/coverage-88%25-brightgreen)
+![coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)
 
-**Clinical AI Intelligence Platform** — a **local-first AI decision-support platform** for healthcare professionals. Specialized AI agents — powered entirely by a local Ollama model — extract clinical entities, analyze medical images, screen drug interactions, and retrieve cited evidence from clinical guidelines and PubMed.
+**Clinical AI Intelligence Platform** — an **AI decision-support platform** for healthcare professionals. Specialized AI agents — powered by the Google Gemini API — extract clinical entities, analyze medical images, screen drug interactions, and retrieve cited evidence from clinical guidelines and PubMed.
 
 > ⚠️ **Research, education and professional support only.** Not a medical device. All AI output requires review by a qualified healthcare professional.
 
+> ⚠️ **Privacy notice:** clinical text and medical images are sent to the Google Gemini API (AI Studio free tier). This is **not HIPAA/GDPR-compliant as-is**, and the free tier may use submitted data to improve Google's models. Use only with synthetic or de-identified data, or migrate to Vertex AI with a Business Associate Agreement before using real patient data.
+
 ## Highlights
 
-- 🧠 **100% local inference** — Ollama (`qwen3:8b`) with native tool calling; no cloud LLM APIs, no PHI leaves the machine
-- 👁️ **Vision-enabled image reasoning** — a local multimodal model (`llava:7b`) describes medical images; the Radiology agent reasons over the description
+- 🧠 **Cloud LLM via Google Gemini** — `gemini-2.5-flash` with native tool calling and JSON-Schema structured output; free tier, no local GPU required
+- 👁️ **Vision-enabled image reasoning** — the same Gemini model describes medical images multimodally; the Radiology agent reasons over the description
 - 🔧 **MCP tool layer** — clinical capabilities exposed as FastMCP servers (NLP, imaging, vision, evidence, drug safety)
 - 🤖 **Multi-agent workflow** — 4 specialists + a coordinator orchestrated with LangGraph, fanning out in parallel
 - 📡 **Live streaming consultations** — SSE stream shows each agent and tool call as it completes
 - 🛡️ **Citation Guard** — every citation in an answer is verified against actual tool output; fabricated references are stripped and reported (an anti-hallucination firewall)
 - 🧭 **Explainability panel** — a deterministic reasoning trace under every answer: which agent did what, with which tool, and how many citations survived the guard
 - ⚠️ **Risk scoring & alerts** — rule-based flags (abnormal labs, dangerous drug combos) on every patient, plus a High-Risk Patients KPI
-- 🗓️ **Auto-generated Intelligent Timeline** — paste a clinical note **or upload a PDF** and the local model extracts structured timeline events (diagnoses, med changes, labs, imaging)
+- 🗓️ **Auto-generated Intelligent Timeline** — paste a clinical note **or upload a PDF** and Gemini extracts structured timeline events (diagnoses, med changes, labs, imaging)
 - 📄 **PDF consultation export** — download any consultation as a shareable clinical report (query, answer, citations, reasoning trace, disclaimer)
 - 🔐 **Auth + per-user history** — JWT login/registration; every consultation is persisted to Postgres under the requesting clinician
 - 📋 **Structured logging** — request ids, per-LLM-call latency, and an audit line per persisted consultation
@@ -26,14 +28,14 @@
 ## Quick Start
 
 ### Prerequisites
-- [Ollama](https://ollama.com) installed and running natively (not in Docker)
+- A free Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey)
 - Python 3.10+ (3.11 recommended)
 - Node.js 18+
 
-### 1. Pull the models (one-time)
+### 1. Set your API key
 ```bash
-ollama pull qwen3:8b     # reasoning + tool calling
-ollama pull llava:7b     # vision (medical image description)
+cp .env.example .env
+# edit .env and set GEMINI_API_KEY=your-key-here
 ```
 
 ### 2. Database + Backend
@@ -70,7 +72,7 @@ curl -X POST http://127.0.0.1:8000/api/auth/register -H "Content-Type: applicati
   -d '{"email": "doc@hospital.org", "name": "Dr. Smith", "password": "atleast8chars"}'
 TOKEN=<access_token from the response>
 
-# Full multi-agent consultation, streamed as SSE (local LLM)
+# Full multi-agent consultation, streamed as SSE (calls Gemini — burns free-tier quota)
 curl -N -X POST http://127.0.0.1:8000/api/agents/consult/stream \
   -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
   -d '{"query": "Medication safety concerns for this patient?", "patient_id": "P002",
@@ -84,7 +86,7 @@ curl -X POST http://127.0.0.1:8000/api/patients/P001/notes \
 
 ### Run the tests
 ```bash
-PYTHONPATH=.:platform .venv/bin/pytest --cov   # no services needed (SQLite in-memory)
+PYTHONPATH=.:platform .venv/bin/pytest --cov   # no services needed (SQLite in-memory), no GEMINI_API_KEY needed
 ```
 
 ## Architecture
@@ -99,15 +101,15 @@ FastAPI backend (8000)
 LangGraph workflow ──► ClinicalCoordinator
    │ parallel fan-out
    ├─► EvidenceAgent ────► rag_server (guidelines + PubMed, cited)
-   ├─► RadiologyAgent ───► imaging_server (MONAI)
+   ├─► RadiologyAgent ───► imaging_server (MONAI) + vision_server (Gemini)
    ├─► LabAgent ─────────► patient context
    └─► DrugSafetyAgent ──► drug_safety_server
         │
         ▼
-Ollama qwen3:8b (native tool calling, host Metal GPU)
+Gemini 2.5 Flash (native tool calling, cloud API)
 ```
 
-Each specialist is an `OllamaMCPAgent`: a system prompt + a whitelist of MCP tools. The MCP registry feeds tool schemas to Ollama's structured `tools` parameter **and** summarizes them in the agent's system prompt.
+Each specialist is an `MCPAgent`: a system prompt + a whitelist of MCP tools. The MCP registry feeds tool schemas to Gemini's structured function-calling contract **and** summarizes them in the agent's system prompt.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) and [CLAUDE.md](CLAUDE.md) for details.
 
@@ -128,8 +130,8 @@ The Evidence Agent's RAG pipeline is measured against a 27-question golden datas
 *(Full numbers, per-case breakdown, and run metadata: [`intelligence/evaluation/results/latest.json`](intelligence/evaluation/results/latest.json).)*
 
 **How it works — two modes, one committed baseline:**
-- **`--mode ci`** (offline, deterministic, <5s): Recall@k and MRR are recomputed live against `RAGPipeline.retrieve()` and the golden dataset; Citation Precision is recomputed by replaying the Citation Guard over committed transcripts. This is what runs on every PR — no Ollama required.
-- **`--mode full`** (local, needs Ollama): runs the real Evidence Agent end-to-end, records fresh transcripts, and scores Faithfulness with an LLM judge (per-claim: "is this supported by the retrieved evidence?"). Writes `results/latest.json`.
+- **`--mode ci`** (offline, deterministic, <5s): Recall@k and MRR are recomputed live against `RAGPipeline.retrieve()` and the golden dataset; Citation Precision is recomputed by replaying the Citation Guard over committed transcripts. This is what runs on every PR — **no Gemini API key required**.
+- **`--mode full`** (calls the Gemini API, burns free-tier quota): runs the real Evidence Agent end-to-end, records fresh transcripts, and scores Faithfulness with an LLM judge (per-claim: "is this supported by the retrieved evidence?"). Writes `results/latest.json`.
 - The committed results embed a SHA-256 hash of the dataset and transcripts. If either changes without a fresh `--mode full --record` run, CI fails on a **stale baseline** rather than silently trusting outdated numbers.
 
 ```bash
@@ -138,7 +140,7 @@ PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ful
 ```
 
 **Honest limitations:**
-- The committed baseline was generated with `llama3.2:latest` as a stand-in — `qwen3:8b` (the production model) wasn't pulled locally at eval time. Recall@k/MRR are retrieval-only and already reflect production behavior; Citation Precision and Faithfulness should improve once regenerated against `qwen3:8b`.
+- The committed baseline predates the Gemini migration and was generated with `llama3.2:latest` as a stand-in for the production model. Recall@k/MRR are retrieval-only and already reflect production behavior; Citation Precision and Faithfulness should be regenerated against `gemini-2.5-flash` (`--mode full --record`).
 - Retrieval is keyword/token-overlap scoring (`data/rag/RAGPipeline.retrieve`), not embeddings — Recall@1 on paraphrased queries is the weakest number here and is the concrete, measured case for the pgvector/embeddings upgrade already planned in `data/embeddings/` and `data/vectors/`.
 - The LLM judge is the same model family as the generator on the committed baseline (a self-judging limitation); an independent judge model would be a stronger signal.
 
@@ -147,7 +149,7 @@ PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ful
 ```
 clinical-ai-copilot/
 ├── platform/          # FastAPI backend (api/, core/, auth/) + Next.js frontend
-├── intelligence/      # llm/ (Ollama client), mcp/ (FastMCP servers), agents/ (LangGraph),
+├── intelligence/      # llm/ (Gemini client), mcp/ (FastMCP servers), agents/ (LangGraph),
 │                      # evaluation/ (RAG eval harness — see Evaluation above)
 ├── data/              # rag/ (evidence retrieval), schemas/ (SQLAlchemy models)
 ├── examples/          # Runnable examples per module
@@ -167,16 +169,16 @@ git clone --depth 1 https://github.com/langchain-ai/langgraph.git references/ref
 ## Docker
 
 ```bash
-docker-compose up   # Postgres + Redis + API
+GEMINI_API_KEY=your-key JWT_SECRET=$(openssl rand -hex 32) docker-compose up   # Postgres + API
 ```
 
-Ollama stays on the host (Docker on macOS has no Metal GPU passthrough); the API container reaches it via `host.docker.internal:11434`.
+The API reaches Gemini over the internet — no host GPU or local model server required. `JWT_SECRET` is a required environment variable; compose refuses to start without it.
 
 ## Built On
 
 | Project | Role | License |
 |---|---|---|
-| [Ollama](https://ollama.com) | Local LLM runtime | MIT |
+| [Google Gemini API](https://ai.google.dev/gemini-api/docs) | Cloud LLM (reasoning, tool calling, vision) | [Terms](https://ai.google.dev/gemini-api/terms) |
 | [FastMCP](https://github.com/jlowin/fastmcp) | MCP tool servers | Apache 2.0 |
 | [LangGraph](https://github.com/langchain-ai/langgraph) | Agent orchestration | MIT |
 | [MONAI](https://github.com/Project-MONAI/MONAI) | Medical imaging | Apache 2.0 |
@@ -188,4 +190,4 @@ Dashboard design adapted from the [Nexura Care](https://www.behance.net/gallery/
 
 ## Disclaimer
 
-This system provides **evidence-grounded decision support**, not diagnoses. It is intended for research, education, and as an aid to qualified healthcare professionals, who retain full clinical responsibility.
+This system provides **evidence-grounded decision support**, not diagnoses. It is intended for research, education, and as an aid to qualified healthcare professionals, who retain full clinical responsibility. It sends clinical data to a third-party cloud API (Google Gemini) — see the privacy notice above before using real patient data.

@@ -74,7 +74,7 @@ export default function Sidebar() {
 
       <div className="rounded-xl bg-sephiroth p-3 text-xs font-medium text-ink/80">
         100% local inference
-        <div className="mt-0.5 font-normal text-ink/60">Ollama · qwen3:8b</div>
+        <div className="mt-0.5 font-normal text-ink/60">Gemini · 2.5 Flash</div>
       </div>
     </aside>
   );

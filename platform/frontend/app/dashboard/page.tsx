@@ -71,8 +71,8 @@ export default function DashboardPage() {
           </ul>
           <div className="mt-5 rounded-xl border border-line/60 p-3 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted">Ollama</span>
-              <StatusPill label={data.system.ollama} />
+              <span className="text-muted">Gemini</span>
+              <StatusPill label={data.system.llm} />
             </div>
             <div className="mt-2 flex items-center justify-between">
               <span className="text-muted">Model</span>

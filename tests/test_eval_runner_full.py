@@ -1,5 +1,5 @@
 """Tests for the runner's `run_ci_mode` (staleness/threshold gate) and
-`run_full_mode` (real EvidenceAgent through a FakeOllamaClient) paths —
+`run_full_mode` (real EvidenceAgent through a FakeLLMClient) paths —
 the parts not already covered by test_evaluation.py's pure-function tests."""
 
 import json
@@ -12,7 +12,7 @@ from intelligence.evaluation.runner import (
     sha256_file,
     sha256_transcripts,
 )
-from tests.conftest import FakeOllamaClient
+from tests.conftest import FakeLLMClient
 
 GOLDEN = {
     "cases": [
@@ -143,7 +143,7 @@ async def test_run_full_mode_runs_real_agent_and_writes_results(tmp_path):
     transcripts_dir = tmp_path / "transcripts"
     results_path = tmp_path / "results" / "latest.json"
 
-    client = FakeOllamaClient(
+    client = FakeLLMClient(
         scripts={
             "clinical evidence specialist": [
                 ("tool", "search_clinical_guidelines", {"query": "A1C goal", "top_k": 5}),
@@ -191,7 +191,7 @@ async def test_run_full_mode_without_record_does_not_write_files(tmp_path):
     transcripts_dir = tmp_path / "transcripts"
     results_path = tmp_path / "results" / "latest.json"
 
-    client = FakeOllamaClient(
+    client = FakeLLMClient(
         scripts={
             "clinical evidence specialist": [
                 ("tool", "search_clinical_guidelines", {"query": "A1C", "top_k": 5}),

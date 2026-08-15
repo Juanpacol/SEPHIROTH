@@ -99,3 +99,57 @@ async def test_describe_medical_image_unsupported_format(monkeypatch, tmp_path):
     dicom_like.write_bytes(b"not really dicom")
     result = await vision_server.describe_medical_image(str(dicom_like))
     assert "error" in result
+
+
+class _Settings:
+    enable_vision_analysis = True
+    gemini_vision_model = None
+    gemini_model = "gemini-2.5-flash"
+
+
+@pytest.mark.asyncio
+async def test_describe_medical_image_too_large(monkeypatch, tmp_path):
+    monkeypatch.setattr(vision_server, "_settings", lambda: _Settings())
+    monkeypatch.setattr(vision_server, "MAX_IMAGE_BYTES", 10)
+    img_path = tmp_path / "big.png"
+    img_path.write_bytes(b"x" * 20)
+    result = await vision_server.describe_medical_image(str(img_path))
+    assert "error" in result
+    assert "too large" in result["error"].lower()
+
+
+@pytest.mark.asyncio
+async def test_describe_medical_image_happy_path(monkeypatch, tmp_path):
+    monkeypatch.setattr(vision_server, "_settings", lambda: _Settings())
+    img_path = tmp_path / "chest.png"
+    img_path.write_bytes(b"fake png bytes")
+
+    class _FakeClient:
+        async def describe_image(self, image_bytes, mime_type, prompt):
+            assert mime_type == "image/png"
+            return "Chest X-ray, no acute findings."
+
+    monkeypatch.setattr(vision_server, "get_llm_client", lambda: _FakeClient())
+    result = await vision_server.describe_medical_image(str(img_path), clinical_focus="left lung")
+    assert result["status"] == "ok"
+    assert result["description"] == "Chest X-ray, no acute findings."
+    assert result["clinical_focus"] == "left lung"
+    assert result["requires_professional_review"] is True
+
+
+@pytest.mark.asyncio
+async def test_describe_medical_image_llm_unavailable(monkeypatch, tmp_path):
+    from intelligence.llm import LLMUnavailableError
+
+    monkeypatch.setattr(vision_server, "_settings", lambda: _Settings())
+    img_path = tmp_path / "chest.jpg"
+    img_path.write_bytes(b"fake jpg bytes")
+
+    class _FakeClient:
+        async def describe_image(self, image_bytes, mime_type, prompt):
+            raise LLMUnavailableError("no key")
+
+    monkeypatch.setattr(vision_server, "get_llm_client", lambda: _FakeClient())
+    result = await vision_server.describe_medical_image(str(img_path))
+    assert result["status"] == "unavailable"
+    assert result["description"] is None

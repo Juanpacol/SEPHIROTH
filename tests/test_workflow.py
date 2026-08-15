@@ -4,7 +4,7 @@ scripted Ollama double, citation sanitization, and SSE event order."""
 import pytest
 
 from intelligence.agents.workflow import route_specialists, run_consultation, stream_consultation
-from tests.conftest import FakeOllamaClient
+from tests.conftest import FakeLLMClient
 
 
 def test_route_specialists_evidence_always_runs():
@@ -37,7 +37,7 @@ def test_route_specialists_all_four_branches():
 
 @pytest.mark.asyncio
 async def test_run_consultation_end_to_end_with_fake_client():
-    client = FakeOllamaClient(
+    client = FakeLLMClient(
         scripts={
             "clinical evidence specialist": [
                 (
@@ -70,7 +70,7 @@ async def test_run_consultation_end_to_end_with_fake_client():
 
 @pytest.mark.asyncio
 async def test_run_consultation_sanitizes_fabricated_citation_in_final_answer():
-    client = FakeOllamaClient(
+    client = FakeLLMClient(
         scripts={
             "clinical evidence specialist": [
                 ("tool", "search_clinical_guidelines", {"query": "x", "top_k": 5}),
@@ -90,7 +90,7 @@ async def test_run_consultation_sanitizes_fabricated_citation_in_final_answer():
 
 @pytest.mark.asyncio
 async def test_run_consultation_tags_tool_calls_with_agent_name():
-    client = FakeOllamaClient(
+    client = FakeLLMClient(
         scripts={
             "clinical evidence specialist": [
                 ("tool", "search_clinical_guidelines", {"query": "x", "top_k": 5}),
@@ -106,7 +106,7 @@ async def test_run_consultation_tags_tool_calls_with_agent_name():
 
 @pytest.mark.asyncio
 async def test_stream_consultation_event_sequence():
-    client = FakeOllamaClient(
+    client = FakeLLMClient(
         scripts={
             "clinical evidence specialist": [
                 ("tool", "search_clinical_guidelines", {"query": "x", "top_k": 5}),
@@ -128,7 +128,7 @@ async def test_stream_consultation_event_sequence():
 
 @pytest.mark.asyncio
 async def test_stream_consultation_agent_completed_carries_tool_call_names():
-    client = FakeOllamaClient(
+    client = FakeLLMClient(
         scripts={
             "clinical evidence specialist": [
                 ("tool", "search_clinical_guidelines", {"query": "x", "top_k": 5}),

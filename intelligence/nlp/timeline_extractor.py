@@ -1,6 +1,6 @@
 """
 Timeline extractor — turns free-text clinical notes into structured
-Intelligent Timeline events using Ollama structured output, with a
+Intelligent Timeline events using Gemini structured output, with a
 deterministic lexicon fallback when the LLM is unavailable.
 """
 
@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass
 from typing import List
 
-from intelligence.llm import OllamaClient
+from intelligence.llm import GeminiClient
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ EVENTS_SCHEMA = {
                     "detail": {"type": "string"},
                 },
                 "required": ["date", "type", "title", "detail"],
+                "propertyOrdering": ["date", "type", "title", "detail"],
             },
         }
     },
@@ -83,7 +84,7 @@ def _fallback_extract(note_text: str, note_date: str) -> List[ExtractedEvent]:
     return events
 
 
-async def extract_events(client: OllamaClient, note_text: str, note_date: str) -> List[ExtractedEvent]:
+async def extract_events(client: GeminiClient, note_text: str, note_date: str) -> List[ExtractedEvent]:
     """Extract timeline events from a clinical note (LLM-first, fallback-safe)."""
     try:
         payload = await client.generate_json(

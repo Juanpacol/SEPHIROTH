@@ -4,8 +4,8 @@ Two implementations with very different trust levels:
 
 - `heuristic_proxy` — deterministic token-overlap, no LLM. Runs in CI on
   every PR. Coarse by design, so it is reported but never gates a build.
-- `judge_llm` — an LLM-as-judge over each claim sentence, run locally
-  against Ollama. This is the number that actually gates faithfulness
+- `judge_llm` — an LLM-as-judge over each claim sentence, run against
+  Gemini. This is the number that actually gates faithfulness
   regressions, via the committed `results/latest.json`.
 """
 
@@ -70,8 +70,8 @@ def heuristic_proxy(answer: str, evidence_texts: List[str]) -> FaithfulnessResul
 
 async def judge_llm(answer: str, evidence_texts: List[str], client: Any) -> FaithfulnessResult:
     """Per-claim LLM judge: ask the model whether each claim sentence is
-    supported by the evidence excerpts. Local-only (needs Ollama) —
-    never runs in CI. `client` is an OllamaClient (or a fake with a
+    supported by the evidence excerpts. Needs a live Gemini client —
+    never runs in CI. `client` is a GeminiClient (or a fake with a
     compatible `generate_json`)."""
     claims = _claim_sentences(answer)
     if not claims:

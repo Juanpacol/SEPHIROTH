@@ -80,7 +80,7 @@ app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"]
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "version": settings.api_version, "model": settings.ollama_model}
+    return {"status": "healthy", "version": settings.api_version, "model": settings.gemini_model}
 
 
 if __name__ == "__main__":

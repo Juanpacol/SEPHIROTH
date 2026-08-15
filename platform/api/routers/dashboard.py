@@ -11,11 +11,9 @@ from core.config import settings
 from core.db import get_session
 from data.schemas import Consultation, Patient
 from intelligence.agents.risk_engine import assess_patient_risk, assess_risk_level
-from intelligence.llm import OllamaClient
+from intelligence.llm import get_llm_client
 
 router = APIRouter()
-
-_client = OllamaClient(host=settings.ollama_host, model=settings.ollama_model)
 
 
 @router.get("/stats", summary="Dashboard KPIs, agent usage, and system status")
@@ -56,7 +54,7 @@ async def dashboard_stats(session: AsyncSession = Depends(get_session)) -> Dict[
     # Coordinator synthesizes every consultation.
     usage["Coordinator"] = consultation_count
 
-    ollama_ok = await _client.health()
+    llm_ok = await get_llm_client().health()
     return {
         "kpis": [
             {"label": "Active Patients", "value": patient_count, "delta": "", "trend": "up"},
@@ -70,12 +68,13 @@ async def dashboard_stats(session: AsyncSession = Depends(get_session)) -> Dict[
             },
         ],
         "agents": [
-            {"name": name, "status": "ready" if ollama_ok else "offline", "consultations": usage[name]}
+            {"name": name, "status": "ready" if llm_ok else "offline", "consultations": usage[name]}
             for name in agent_names
         ],
         "system": {
-            "ollama": "online" if ollama_ok else "offline",
-            "model": settings.ollama_model,
-            "local_only": True,
+            "llm": "online" if llm_ok else "offline",
+            "model": settings.gemini_model,
+            "provider": "gemini",
+            "local_only": False,
         },
     }

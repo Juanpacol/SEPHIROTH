@@ -18,13 +18,11 @@ from core.db import SessionLocal, get_session
 from data.schemas import Consultation, User
 from intelligence.agents.explainability import build_explanation
 from intelligence.agents.workflow import run_consultation, stream_consultation
-from intelligence.llm import OllamaClient
+from intelligence.llm import get_llm_client
 
 router = APIRouter()
 
 logger = logging.getLogger("api.consultations")
-
-_client = OllamaClient(host=settings.ollama_host, model=settings.ollama_model)
 
 DISCLAIMER = "Decision support only — not a diagnosis. Professional review required."
 
@@ -48,13 +46,13 @@ class ConsultResponse(BaseModel):
     disclaimer: str = DISCLAIMER
 
 
-async def _ensure_ollama() -> None:
-    if not await _client.health():
+async def _ensure_llm() -> None:
+    if not await get_llm_client().health():
         raise HTTPException(
             status_code=503,
             detail=(
-                f"Ollama is not reachable at {settings.ollama_host} or model "
-                f"'{settings.ollama_model}' is missing. Run: ollama pull {settings.ollama_model}"
+                f"Gemini is not reachable or model '{settings.gemini_model}' is unavailable. "
+                "Check GEMINI_API_KEY and quota."
             ),
         )
 
@@ -99,10 +97,10 @@ async def consult(
     """Run the multi-agent clinical workflow and persist it to the user's history."""
     if not settings.enable_agents:
         raise HTTPException(status_code=503, detail="Agent workflow is disabled")
-    await _ensure_ollama()
+    await _ensure_llm()
 
     state = await run_consultation(
-        _client,
+        get_llm_client(),
         query=request.query,
         patient_id=request.patient_id,
         context=request.context,
@@ -130,13 +128,13 @@ async def consult_stream(
     """
     if not settings.enable_agents:
         raise HTTPException(status_code=503, detail="Agent workflow is disabled")
-    await _ensure_ollama()
+    await _ensure_llm()
 
     async def event_stream():
         final_state: Dict[str, Any] = {}
         try:
             async for event in stream_consultation(
-                _client,
+                get_llm_client(),
                 query=request.query,
                 patient_id=request.patient_id,
                 context=request.context,
@@ -253,7 +251,7 @@ async def ask_single_agent(
     agent_cls = agents.get(request.agent)
     if agent_cls is None:
         raise HTTPException(status_code=404, detail=f"Unknown agent '{request.agent}'")
-    await _ensure_ollama()
+    await _ensure_llm()
 
-    result = await agent_cls(_client).run(request.query, request.context)
+    result = await agent_cls(get_llm_client()).run(request.query, request.context)
     return {"agent": request.agent, "answer": result.content, "tool_calls": result.tool_calls}

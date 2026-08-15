@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Advisory scan for newly-disclosed CVEs even with no code changes.
+    - cron: "0 6 * * 1"
 
 jobs:
   lint:
@@ -65,3 +68,61 @@ jobs:
           cache-dependency-path: platform/frontend/package-lock.json
       - run: npm ci
       - run: npm run build
+
+  # Blocking: secrets and high-confidence/high-severity SAST findings are
+  # 100% actionable — no reason to ever let these ride.
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && 1 || 0 }}
+      - name: gitleaks (secret scanning)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - run: pip install "bandit[toml]"
+      - name: bandit (HIGH severity + HIGH confidence only)
+        run: |
+          bandit -c pyproject.toml -r . -ll -ii -f txt | tee bandit-report.txt
+          if [ -n "$GITHUB_STEP_SUMMARY" ]; then
+            { echo "## Bandit (HIGH/HIGH)"; echo '```'; cat bandit-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # Advisory: dependency CVEs churn constantly (including in transitives
+  # with no fix yet) — never let these turn main permanently red.
+  security-advisory:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - run: pip install pip-audit
+      - name: pip-audit (Python dependency CVEs)
+        run: |
+          pip-audit -r requirements.txt -f markdown | tee pip-audit-report.md
+          if [ -n "$GITHUB_STEP_SUMMARY" ]; then
+            { echo "## pip-audit (advisory)"; cat pip-audit-report.md; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: platform/frontend/package-lock.json
+      - name: npm audit (advisory)
+        working-directory: platform/frontend
+        run: |
+          npm ci
+          npm audit --audit-level=high | tee ../../npm-audit-report.txt || true
+          if [ -n "$GITHUB_STEP_SUMMARY" ]; then
+            { echo "## npm audit (advisory, high+)"; echo '```'; cat ../../npm-audit-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          fi

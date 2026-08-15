@@ -8,7 +8,7 @@ their outputs (see workflow.py for the LangGraph orchestration).
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
-from .base import OllamaMCPAgent
+from .base import MCPAgent
 
 
 @dataclass
@@ -23,7 +23,7 @@ class AgentState:
     final_answer: str = ""
 
 
-class RadiologyAgent(OllamaMCPAgent):
+class RadiologyAgent(MCPAgent):
     """Analyzes medical images through the imaging + vision MCP servers."""
 
     name = "radiology"
@@ -42,7 +42,7 @@ class RadiologyAgent(OllamaMCPAgent):
     ]
 
 
-class LabAgent(OllamaMCPAgent):
+class LabAgent(MCPAgent):
     """Interprets laboratory values present in the patient context."""
 
     name = "laboratory"
@@ -55,7 +55,7 @@ class LabAgent(OllamaMCPAgent):
     allowed_tools = None  # works purely from the provided patient context
 
 
-class DrugSafetyAgent(OllamaMCPAgent):
+class DrugSafetyAgent(MCPAgent):
     """Screens medication lists for interactions via the drug-safety server."""
 
     name = "drug-safety"
@@ -67,7 +67,7 @@ class DrugSafetyAgent(OllamaMCPAgent):
     allowed_tools = ["check_drug_interactions"]
 
 
-class EvidenceAgent(OllamaMCPAgent):
+class EvidenceAgent(MCPAgent):
     """Retrieves clinical guidelines and PubMed evidence — always cited."""
 
     name = "evidence"
@@ -80,7 +80,7 @@ class EvidenceAgent(OllamaMCPAgent):
     allowed_tools = ["search_clinical_guidelines", "search_pubmed"]
 
 
-class ClinicalCoordinator(OllamaMCPAgent):
+class ClinicalCoordinator(MCPAgent):
     """Synthesizes the specialists' outputs into one clinical summary."""
 
     name = "coordinator"
@@ -97,7 +97,7 @@ class ClinicalCoordinator(OllamaMCPAgent):
 
 __all__ = [
     "AgentState",
-    "OllamaMCPAgent",
+    "MCPAgent",
     "ClinicalCoordinator",
     "RadiologyAgent",
     "LabAgent",

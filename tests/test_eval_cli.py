@@ -35,16 +35,16 @@ def test_main_dispatches_to_ci_mode(monkeypatch):
 
 
 def test_run_full_uses_model_override(monkeypatch, tmp_path):
-    from tests.conftest import FakeOllamaClient
+    from tests.conftest import FakeLLMClient
 
     captured = {}
 
-    def fake_ollama_client_ctor(host, model):
-        captured["host"] = host
+    def fake_gemini_client_ctor(api_key, model):
+        captured["api_key"] = api_key
         captured["model"] = model
-        return FakeOllamaClient(default_script=[("answer", "ok")])
+        return FakeLLMClient(default_script=[("answer", "ok")])
 
-    monkeypatch.setattr("intelligence.llm.ollama_client.OllamaClient", fake_ollama_client_ctor)
+    monkeypatch.setattr("intelligence.llm.gemini_client.GeminiClient", fake_gemini_client_ctor)
 
     async def fake_run_full_mode(client, **kwargs):
         return {

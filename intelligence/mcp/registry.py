@@ -60,7 +60,7 @@ class MCPRegistry:
                     )
         self._loaded = True
 
-    def ollama_tools(self, allowed: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    def llm_tools(self, allowed: Optional[List[str]] = None) -> List[Dict[str, Any]]:
         """Tool schemas in Ollama format, optionally filtered to a whitelist."""
         if allowed is None:
             return list(self._schemas)
@@ -69,7 +69,7 @@ class MCPRegistry:
     def system_prompt_summary(self, allowed: Optional[List[str]] = None) -> str:
         """Natural-language tool catalog for inclusion in a system prompt."""
         lines = ["You have access to the following clinical tools:"]
-        for schema in self.ollama_tools(allowed):
+        for schema in self.llm_tools(allowed):
             fn = schema["function"]
             first_sentence = fn["description"].split(".")[0].strip()
             lines.append(f"- {fn['name']}: {first_sentence}.")

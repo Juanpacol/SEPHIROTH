@@ -43,10 +43,10 @@ export default function AgentsPage() {
         <div>
           <h1 className="text-xl font-extrabold">Agents Activity</h1>
           <p className="text-sm text-muted">
-            Specialist agents running locally on {data?.system.model ?? "Ollama"}
+            Specialist agents powered by {data?.system.model ?? "Gemini"}
           </p>
         </div>
-        <AgentBadge name="100% local" />
+        <AgentBadge name="Cloud AI" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
