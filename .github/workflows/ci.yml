@@ -69,6 +69,52 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+  # Builds the real production Docker image and boots it against a real
+  # Postgres — the only check that would have caught, e.g., a file missing
+  # from the image's COPY list (migrations/ + alembic.ini were once
+  # forgotten here). Deliberately skips anything needing GEMINI_API_KEY —
+  # scripts/smoke_test.sh only exercises health/auth/patients/dashboard.
+  docker-build-smoke-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_USER: clinical_ai
+          POSTGRES_PASSWORD: clinical_ai_password
+          POSTGRES_DB: clinical_ai_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U clinical_ai -d clinical_ai_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t sephiroth-api:ci .
+      - name: Run container
+        run: |
+          docker run -d --name sephiroth-api-ci \
+            --network host \
+            -e DATABASE_URL="postgresql+asyncpg://clinical_ai:clinical_ai_password@localhost:5432/clinical_ai_db" \
+            -e JWT_SECRET="$(openssl rand -hex 32)" \
+            -e ENVIRONMENT=development \
+            sephiroth-api:ci
+      - name: Wait for /health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health > /dev/null; then echo "up"; exit 0; fi
+            sleep 2
+          done
+          echo "backend never became healthy"; docker logs sephiroth-api-ci; exit 1
+      - name: Smoke test
+        run: bash scripts/smoke_test.sh http://127.0.0.1:8000
+      - name: Container logs (always, for debugging)
+        if: always()
+        run: docker logs sephiroth-api-ci
+
   # Blocking: secrets and high-confidence/high-severity SAST findings are
   # 100% actionable — no reason to ever let these ride.
   security:
