@@ -19,6 +19,13 @@ from data.embeddings.base import EmbeddingProvider, EmbeddingUnavailable
 from data.vectors import InMemoryVectorStore, VectorStore
 
 RRF_K = 60
+# Dense embeddings are the more semantically precise signal when available;
+# keyword overlap (unweighted by IDF) is a crude fallback prone to noise
+# from generic shared words. Weighting dense 2x prevents keyword noise, or
+# a near-exact RRF tie, from overriding a clear embedding-model win — see
+# `_fuse()`.
+KEYWORD_WEIGHT = 1.0
+DENSE_WEIGHT = 2.0
 
 STOPWORDS = {
     "the",
@@ -375,7 +382,7 @@ class RAGPipeline:
         seed: bool = True,
         embedding_provider: Optional[EmbeddingProvider] = None,
         vector_store: Optional[VectorStore] = None,
-        min_similarity: float = 0.58,
+        min_similarity: float = 0.70,
     ):
         self.documents: List[Document] = list(SEED_GUIDELINES) if seed else []
         self._embedding_provider = embedding_provider
@@ -424,14 +431,26 @@ class RAGPipeline:
     def _fuse(
         self, keyword_hits: List[Dict[str, Any]], dense_hits: List[Any], top_k: int
     ) -> List[Dict[str, Any]]:
-        """Reciprocal Rank Fusion — no scale calibration needed between
-        keyword's unbounded score and dense cosine similarity (0-1)."""
+        """Reciprocal Rank Fusion, weighted toward the dense signal.
+
+        Keyword scoring here isn't IDF-weighted (`score = overlap /
+        sqrt(len(doc))`), so short documents sharing only generic words
+        with the query (e.g. "patient", "class") can rank artificially
+        high — real corpus behavior confirmed empirically while building
+        the matching-quality test suite (see tests/test_embeddings_
+        matching.py::test_compound_query_surfaces_all_relevant_documents
+        and ::test_bp_target_specific_query_does_not_default_to_ckd_
+        document). An equal-weight RRF let that keyword noise, or a
+        near-exact RRF tie, outrank a real embedding-model win. Dense gets
+        2x weight so it can only be overridden by a *clear* keyword
+        signal, not by noise or a coin-flip tie.
+        """
         by_id = {doc.id: doc for doc in self.documents}
         rrf_scores: Dict[str, float] = {}
         for rank, hit in enumerate(keyword_hits):
-            rrf_scores[hit["id"]] = rrf_scores.get(hit["id"], 0.0) + 1.0 / (RRF_K + rank + 1)
+            rrf_scores[hit["id"]] = rrf_scores.get(hit["id"], 0.0) + KEYWORD_WEIGHT / (RRF_K + rank + 1)
         for rank, scored_doc in enumerate(dense_hits):
-            rrf_scores[scored_doc.id] = rrf_scores.get(scored_doc.id, 0.0) + 1.0 / (RRF_K + rank + 1)
+            rrf_scores[scored_doc.id] = rrf_scores.get(scored_doc.id, 0.0) + DENSE_WEIGHT / (RRF_K + rank + 1)
 
         ordered_ids = sorted(rrf_scores.keys(), key=lambda doc_id: rrf_scores[doc_id], reverse=True)
         results = []

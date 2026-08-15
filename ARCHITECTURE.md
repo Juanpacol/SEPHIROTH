@@ -48,7 +48,7 @@ clinical-ai-copilot/
 ## LLM Layer
 
 - **Runtime:** Google Gemini API (AI Studio free tier) — no local model, no GPU, just an API key.
-- **Model:** `gemini-2.5-flash` — native tool calling, JSON-Schema structured output, and multimodal vision in one model, configurable via `GEMINI_MODEL`.
+- **Model:** `gemini-flash-latest` — a Google-maintained alias for the current recommended flash model (native tool calling, JSON-Schema structured output, and multimodal vision), configurable via `GEMINI_MODEL`. Pinned version names (e.g. `gemini-2.5-flash`) get deprecated for new API keys over time; the alias avoids that churn.
 - **Thinking mode is off** (`thinking_budget=0`) — it multiplies latency and burns free-tier quota; the agents rely on tools rather than long hidden reasoning.
 - `GeminiClient.chat()` loops: send request → execute any `functionCall`s through the MCP registry → append the corresponding `functionResponse` parts → repeat until a plain answer (max `llm_max_tool_rounds`, default 6 — lower than a local model's slack because free-tier quota is finite).
 - A shared token-bucket rate limiter (`gemini_rpm_limit`) and retry/backoff on 429s keep a full multi-agent consultation (5 agents, several tool-call rounds each) inside the free tier's requests-per-minute budget.

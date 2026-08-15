@@ -10,7 +10,7 @@ An **AI-powered clinical decision support platform** for healthcare professional
 
 ## Tech Stack
 
-- **LLM**: Google Gemini API (`gemini-2.5-flash`), free AI Studio tier — no local model to run
+- **LLM**: Google Gemini API (`gemini-flash-latest`, a Google-maintained alias for the current recommended flash model), free AI Studio tier — no local model to run
 - **Agents**: `MCPAgent` subclasses orchestrated via LangGraph, each with MCP tools
 - **Tools (MCP servers)**: Clinical NLP, medical imaging analysis, evidence retrieval, drug safety checks — all in `intelligence/mcp/`
 - **Backend**: FastAPI + PostgreSQL + pgvector

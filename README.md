@@ -11,7 +11,7 @@
 
 ## Highlights
 
-- 🧠 **Cloud LLM via Google Gemini** — `gemini-2.5-flash` with native tool calling and JSON-Schema structured output; free tier, no local GPU required
+- 🧠 **Cloud LLM via Google Gemini** — `gemini-flash-latest` with native tool calling and JSON-Schema structured output; free tier, no local GPU required
 - 👁️ **Vision-enabled image reasoning** — the same Gemini model describes medical images multimodally; the Radiology agent reasons over the description
 - 🔧 **MCP tool layer** — clinical capabilities exposed as FastMCP servers (NLP, imaging, vision, evidence, drug safety)
 - 🤖 **Multi-agent workflow** — 4 specialists + a coordinator orchestrated with LangGraph, fanning out in parallel
@@ -119,13 +119,15 @@ The Evidence Agent's RAG pipeline is measured against a 27-question golden datas
 
 | Metric | Value | Threshold | What it measures |
 |---|---|---|---|
-| Recall@1 | **0.78** | 0.75 | Correct guideline is the top retrieval hit |
-| Recall@3 | **0.99** | 0.95 | Correct guideline is in the top 3 |
-| Recall@5 | **0.99** | 0.95 | Correct guideline is in the top 5 |
-| MRR | **0.88** | 0.85 | Mean reciprocal rank of the correct guideline |
+| Recall@1 | **0.97** | 0.90 | Correct guideline is the top retrieval hit |
+| Recall@3 | **1.00** | 0.95 | Correct guideline is in the top 3 |
+| Recall@5 | **1.00** | 0.95 | Correct guideline is in the top 5 |
+| MRR | **1.00** | 0.93 | Mean reciprocal rank of the correct guideline |
 | Citation Precision | **0.64** | 0.60 | Fraction of citations in answers that are traceable to actual tool output (via [Citation Guard](intelligence/agents/citation_guard.py)) |
 | Faithfulness (LLM judge) | **0.28** | 0.25 | Fraction of answer claims a judge model rates as supported by the retrieved evidence |
 | Faithfulness (heuristic proxy, informational) | 0.57 | — | Deterministic token-overlap stand-in; runs in CI, not gated |
+
+Recall@1/@3/@5 and MRR are **live, verified numbers** from the hybrid retriever described below, run via `--mode ci` against the committed embeddings artifact (reproducible offline, no API key needed). Citation Precision and Faithfulness are still from the pre-Gemini baseline (see limitations) — regenerating them requires a live `--mode full --record` run, which needs enough Gemini API quota to complete an agent run per golden case.
 
 *(Full numbers, per-case breakdown, and run metadata: [`intelligence/evaluation/results/latest.json`](intelligence/evaluation/results/latest.json).)*
 
@@ -145,12 +147,12 @@ PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ful
 
 - **Fully backward-compatible.** `RAGPipeline()` alone still works with zero configuration and stays keyword-only. Dense retrieval only activates when an embedding provider is wired in (`GEMINI_API_KEY` set + a built artifact, see below).
 - **Deterministic and offline in CI.** A committed, hashed artifact (`data/embeddings/artifacts/seed_embeddings.json.gz`) supplies the vectors for `--mode ci` and the whole test suite — no network, no API key needed. Build/refresh it once with a real key: `python -m data.embeddings.build_artifact`.
-- **Adversarial-safe by design.** A cosine-similarity floor (`RETRIEVAL_MIN_SIMILARITY`, default 0.58) drops low-confidence dense hits — dense embeddings almost never score exactly 0, so without this floor, off-topic/adversarial queries (which correctly return zero results today) would start surfacing plausible-looking but wrong guideline excerpts.
-- **Matching-quality test suite** (`tests/test_embeddings_matching.py`, `tests/test_rag_pipeline.py`) pins specific, previously-diagnosed match/no-match pairs — lay-language paraphrases, compound multi-document queries, near-duplicate topic disambiguation, adversarial abstention — so a regression in one specific case fails by name, not just as a dip in an aggregate metric. The real-artifact tests are skipped until the artifact is built; the fusion/threshold mechanics are covered independently with synthetic vectors so they run in every CI run regardless.
+- **Adversarial-safe by design, empirically calibrated.** A cosine-similarity floor (`RETRIEVAL_MIN_SIMILARITY`, default **0.70**) drops low-confidence dense hits. This was tuned against real Gemini embedding scores, not guessed: some adversarial queries (e.g. "homeopathic remedy for septic shock") are topically *on-topic* and score in the 0.65-0.70 range even though the requested treatment is unsupported — the floor only needs to (and does) separate those from genuinely relevant top-1 matches, which score 0.73+. It does **not** attempt to detect "this is pseudo-scientific" from embeddings alone; that judgment belongs to the Citation Guard, which checks whether the LLM's specific claims are grounded in what a retrieved document actually says.
+- **Dense-weighted fusion.** Reciprocal Rank Fusion weights the dense signal 2x over keyword (`DENSE_WEIGHT`/`KEYWORD_WEIGHT` in `data/rag/__init__.py`) — keyword scoring here isn't IDF-weighted, so short documents sharing only generic words with the query can rank artificially high, and an equal-weight fusion let that noise (or a near-exact RRF tie) occasionally outrank a correct embedding-model result. Confirmed and fixed while building the matching-quality test suite below.
+- **Matching-quality test suite** (`tests/test_embeddings_matching.py`, `tests/test_rag_pipeline.py`) pins specific, previously-diagnosed match/no-match pairs — lay-language paraphrases, a compound multi-document query, near-duplicate topic disambiguation (`ada-2024-ckd` vs. `ada-2024-hypertension-dm`), and adversarial abstention — so a regression in one specific case fails by name, not just as a dip in an aggregate metric. All 13 real-artifact tests pass against the committed artifact; the fusion/threshold mechanics are additionally covered with synthetic vectors so they run in every CI run regardless of whether the artifact exists.
 
 **Honest limitations:**
-- The committed baseline predates the Gemini migration and was generated with `llama3.2:latest` as a stand-in for the production model. Recall@k/MRR are retrieval-only and already reflect production behavior; Citation Precision and Faithfulness should be regenerated against `gemini-2.5-flash` (`--mode full --record`).
-- The metrics table above still reflects **keyword-only** retrieval — the hybrid retriever's real-world Recall@1 improvement depends on building the embeddings artifact with a live API key and re-running `--mode ci`/`--mode full --record`; this repo ships the mechanism, tests, and calibration hooks, not yet a regenerated number.
+- Citation Precision and Faithfulness in the table above are still from the pre-Gemini baseline (generated with `llama3.2:latest` as a stand-in). Regenerating them against `gemini-flash-latest` via `--mode full --record` requires enough free-tier quota to run an agent consultation per golden case — this repo's own key hit its **daily** free-tier request quota partway through a regeneration attempt (a real, worth-knowing constraint: some Gemini model aliases carry very low free-tier daily caps, independent of the per-minute rate limit `gemini_rpm_limit` already handles). Retry on a fresh day or with a paid tier.
 - The LLM judge is the same model family as the generator on the committed baseline (a self-judging limitation); an independent judge model would be a stronger signal.
 
 ## Project Structure

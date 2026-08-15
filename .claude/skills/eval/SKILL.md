@@ -33,7 +33,7 @@ PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ful
 
 Omit `--skip-pubmed` only if the user explicitly wants live PubMed citations exercised too.
 
-Add `--model <name>` to override the model (defaults to `settings.gemini_model`, i.e. `gemini-2.5-flash`). Useful if the committed baseline was generated with a different model — check `intelligence/evaluation/results/latest.json`'s `run.model` field to see what it was actually generated with, and flag it in your summary if it's a stand-in rather than the production model.
+Add `--model <name>` to override the model (defaults to `settings.gemini_model`, i.e. `gemini-flash-latest`). Useful if the committed baseline was generated with a different model — check `intelligence/evaluation/results/latest.json`'s `run.model` field to see what it was actually generated with, and flag it in your summary if it's a stand-in rather than the production model.
 
 ## After a full refresh
 

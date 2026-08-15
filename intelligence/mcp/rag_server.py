@@ -20,7 +20,7 @@ def _default_min_similarity() -> float:
 
         return settings.retrieval_min_similarity
     except Exception:
-        return 0.58
+        return 0.70
 
 
 _pipeline = RAGPipeline(embedding_provider=get_embedding_provider(), min_similarity=_default_min_similarity())

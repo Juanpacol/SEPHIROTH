@@ -37,7 +37,11 @@ class Settings(BaseSettings):
     # see README's privacy notice. Requests are unauthenticated/degraded
     # gracefully when GEMINI_API_KEY is unset (health() returns False).
     gemini_api_key: Optional[str] = None
-    gemini_model: str = "gemini-2.5-flash"
+    # "gemini-flash-latest" is a Google-maintained alias for the current
+    # recommended flash model — pinned model names (e.g. "gemini-2.5-flash")
+    # get deprecated/blocked for new API keys over time; the alias tracks
+    # whatever replaces them automatically.
+    gemini_model: str = "gemini-flash-latest"
     # Multimodal override for medical image description; None -> gemini_model.
     gemini_vision_model: Optional[str] = None
     gemini_max_output_tokens: int = 2048
@@ -59,7 +63,7 @@ class Settings(BaseSettings):
     # Cosine-similarity floor below which a dense hit is dropped entirely —
     # keeps adversarial/off-topic queries returning zero results, since
     # dense embeddings (unlike keyword overlap) almost never score exactly 0.
-    retrieval_min_similarity: float = 0.58
+    retrieval_min_similarity: float = 0.70
     retrieval_mode: Literal["hybrid", "keyword_only"] = "hybrid"
 
     # Feature flags
