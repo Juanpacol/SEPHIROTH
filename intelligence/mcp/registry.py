@@ -16,11 +16,16 @@ no subprocesses, no sockets.
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+import logging
+from typing import Any, Callable, Dict, List, Optional
 
 from fastmcp import Client, FastMCP
 
+from core.config import settings
+
 from . import drug_safety_server, imaging_server, nlp_server, rag_server, vision_server
+
+logger = logging.getLogger("intelligence.mcp.registry")
 
 SERVERS: List[FastMCP] = [
     nlp_server.mcp,
@@ -79,8 +84,40 @@ class MCPRegistry:
         )
         return "\n".join(lines)
 
+    def scoped_executor(self, allowed: Optional[List[str]]) -> Callable[[str, Dict[str, Any]], Any]:
+        """A tool executor bound to a whitelist.
+
+        `llm_tools(allowed)` only controls which schemas the model is *shown*.
+        Nothing stopped a model from naming a tool outside that list and having
+        it executed anyway, because `execute()` checks existence and nothing
+        else. Agents pass this bound executor instead of `execute` so the
+        whitelist is enforced where dispatch actually happens.
+
+        An unauthorized call returns an error *result* rather than raising: the
+        model gets it back as tool output and can recover on the next round,
+        which is the same shape as any other tool failure.
+        """
+
+        async def _execute(tool_name: str, arguments: Dict[str, Any]) -> Any:
+            if allowed is not None and tool_name not in allowed:
+                logger.warning(
+                    "tool_authorization_denied tool=%s allowed=%s enforced=%s",
+                    tool_name,
+                    ",".join(allowed) or "-",
+                    settings.enforce_tool_authorization,
+                )
+                if settings.enforce_tool_authorization:
+                    return {"error": f"Tool not authorized for this agent: {tool_name}"}
+            return await self.execute(tool_name, arguments)
+
+        return _execute
+
     async def execute(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
-        """Execute a tool by name through its owning server (in-memory)."""
+        """Execute a tool by name through its owning server (in-memory).
+
+        Unscoped by design — this is the raw dispatch path. Callers that expose
+        tools to a model must go through `scoped_executor()` instead.
+        """
         server = self._tool_index.get(tool_name)
         if server is None:
             return {"error": f"Unknown tool: {tool_name}"}

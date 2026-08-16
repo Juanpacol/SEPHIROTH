@@ -1,26 +1,14 @@
 """
-Clinical agents — Ollama-powered specialists with MCP tools.
+Clinical agents — Gemini-powered specialists with MCP tools.
 
 Each specialist maps to one MCP server; the ClinicalCoordinator synthesizes
-their outputs (see workflow.py for the LangGraph orchestration).
+their outputs (see workflow.py for the orchestration).
+
+Runtime state lives in `WorkflowState` (workflow.py) today and moves to
+`sephiroth.contracts.RunState` in Phase 3.
 """
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List
-
 from .base import MCPAgent
-
-
-@dataclass
-class AgentState:
-    """State passed between clinical agents in the LangGraph workflow."""
-
-    patient_id: str = ""
-    query: str = ""
-    context: Dict[str, Any] = field(default_factory=dict)
-    agent_outputs: Dict[str, str] = field(default_factory=dict)
-    tool_calls: List[Dict[str, Any]] = field(default_factory=list)
-    final_answer: str = ""
 
 
 class RadiologyAgent(MCPAgent):
@@ -96,7 +84,6 @@ class ClinicalCoordinator(MCPAgent):
 
 
 __all__ = [
-    "AgentState",
     "MCPAgent",
     "ClinicalCoordinator",
     "RadiologyAgent",

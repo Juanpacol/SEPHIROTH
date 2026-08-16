@@ -1,0 +1,989 @@
+{
+  "$defs": {
+    "AbstentionDecision": {
+      "additionalProperties": false,
+      "description": "Whether to answer, hedge, or decline \u2014 and on what evidence.\n\n`reason` is required when abstaining and forbidden otherwise, so a trace can\nnever record a decline without saying why.",
+      "properties": {
+        "confidence": {
+          "default": 1.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "message": {
+          "default": "",
+          "title": "Message",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AbstentionReason"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "$ref": "#/$defs/ResponseStatus",
+          "default": "answer"
+        },
+        "supported_claim_ratio": {
+          "default": 1.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Supported Claim Ratio",
+          "type": "number"
+        }
+      },
+      "title": "AbstentionDecision",
+      "type": "object"
+    },
+    "AbstentionReason": {
+      "description": "Why the runtime declined to answer confidently. Persisted so abstention\nprecision can be measured per reason.",
+      "enum": [
+        "insufficient_evidence",
+        "conflicting_evidence",
+        "unsupported_high_risk_claim",
+        "tool_failure",
+        "model_uncertainty",
+        "policy_restriction"
+      ],
+      "title": "AbstentionReason",
+      "type": "string"
+    },
+    "AgentResult": {
+      "additionalProperties": false,
+      "description": "What one agent produced during one plan step.",
+      "properties": {
+        "agent": {
+          "title": "Agent",
+          "type": "string"
+        },
+        "claim_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "content": {
+          "default": "",
+          "title": "Content",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "latency_ms": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "rounds": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Rounds",
+          "type": "integer"
+        },
+        "step_id": {
+          "default": "",
+          "title": "Step Id",
+          "type": "string"
+        },
+        "tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Tokens",
+          "type": "integer"
+        },
+        "tool_call_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tool Call Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "agent"
+      ],
+      "title": "AgentResult",
+      "type": "object"
+    },
+    "Citation": {
+      "additionalProperties": false,
+      "description": "A source reference as it appears to the reader.\n\n`label` is the human-facing form the model is instructed to emit \u2014\n`[ADA Standards of Care in Diabetes, 2024]` or `[PMID:12345]` \u2014 and is what\ncitation auditing matches against tool output.",
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "locator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Locator"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "title": "Citation",
+      "type": "object"
+    },
+    "CitationReport": {
+      "additionalProperties": false,
+      "description": "The legacy citation-guard verdict.\n\nField names are frozen: this dict is persisted to\n`consultations.citation_report` and rendered by the frontend's Citation\nGuard panel. See `docs/00-migration-charter.md` \u00a72.2.",
+      "properties": {
+        "fabricated": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Fabricated",
+          "type": "array"
+        },
+        "total_checked": {
+          "default": 0,
+          "title": "Total Checked",
+          "type": "integer"
+        },
+        "verified": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Verified",
+          "type": "array"
+        }
+      },
+      "title": "CitationReport",
+      "type": "object"
+    },
+    "Claim": {
+      "additionalProperties": false,
+      "description": "One independently verifiable assertion extracted from an answer.",
+      "properties": {
+        "confidence": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "evidence_ids": {
+          "description": "EvidenceRecord.id values this claim was judged against",
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "originating_agent": {
+          "default": "",
+          "title": "Originating Agent",
+          "type": "string"
+        },
+        "rationale": {
+          "default": "",
+          "title": "Rationale",
+          "type": "string"
+        },
+        "risk": {
+          "$ref": "#/$defs/RiskLevel",
+          "default": "low"
+        },
+        "status": {
+          "$ref": "#/$defs/VerificationStatus",
+          "default": "unknown"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "text"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "Complexity": {
+      "enum": [
+        "simple",
+        "moderate",
+        "complex"
+      ],
+      "title": "Complexity",
+      "type": "string"
+    },
+    "Contradiction": {
+      "additionalProperties": false,
+      "description": "A detected conflict, either between two claims or between a claim and\nthe evidence retrieved for it.",
+      "properties": {
+        "claim_id": {
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "conflicting_claim_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conflicting Claim Id"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "claim_id"
+      ],
+      "title": "Contradiction",
+      "type": "object"
+    },
+    "EvidenceRecord": {
+      "additionalProperties": false,
+      "description": "One retrieved passage, normalized across retrieval strategies.",
+      "properties": {
+        "citation": {
+          "$ref": "#/$defs/Citation"
+        },
+        "content": {
+          "default": "",
+          "title": "Content",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "originating_agent": {
+          "title": "Originating Agent",
+          "type": "string"
+        },
+        "relevance": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Relevance",
+          "type": "number"
+        },
+        "retrieval_method": {
+          "$ref": "#/$defs/RetrievalMethod"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "source_type": {
+          "$ref": "#/$defs/SourceType"
+        },
+        "support_relationship": {
+          "$ref": "#/$defs/SupportRelationship",
+          "default": "neutral"
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "source",
+        "source_type",
+        "retrieval_method",
+        "citation",
+        "originating_agent",
+        "timestamp"
+      ],
+      "title": "EvidenceRecord",
+      "type": "object"
+    },
+    "ExecutionPlan": {
+      "additionalProperties": false,
+      "description": "A DAG of plan steps. `revision` increments on every REPLAN so a trace\nrecords how many times the runtime changed its mind.",
+      "properties": {
+        "max_iterations": {
+          "default": 1,
+          "maximum": 25,
+          "minimum": 1,
+          "title": "Max Iterations",
+          "type": "integer"
+        },
+        "plan_id": {
+          "title": "Plan Id",
+          "type": "string"
+        },
+        "revision": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/PlanStep"
+          },
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "plan_id"
+      ],
+      "title": "ExecutionPlan",
+      "type": "object"
+    },
+    "Failure": {
+      "additionalProperties": false,
+      "description": "A classified failure. Every failure carries a taxonomy category so an\nevaluation run can attribute failures to components.",
+      "properties": {
+        "attempt": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "category": {
+          "$ref": "#/$defs/FailureCategory"
+        },
+        "component": {
+          "title": "Component",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "message": {
+          "default": "",
+          "title": "Message",
+          "type": "string"
+        },
+        "step_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Id"
+        },
+        "timestamp": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "category",
+        "component"
+      ],
+      "title": "Failure",
+      "type": "object"
+    },
+    "FailureCategory": {
+      "description": "Failure taxonomy. Every `Failure` carries one, so failures can be\naggregated by component across an evaluation run.",
+      "enum": [
+        "planning",
+        "routing",
+        "agent",
+        "tool",
+        "retrieval",
+        "evidence",
+        "verification",
+        "safety",
+        "model",
+        "recovery"
+      ],
+      "title": "FailureCategory",
+      "type": "string"
+    },
+    "LifecycleState": {
+      "description": "Agent lifecycle. Transitions are normative in SPEC-003 \u00a76.3; the\ncanonical picture is D2 (`docs/09-diagrams/architecture/D2-agent-lifecycle.md`).",
+      "enum": [
+        "registered",
+        "selected",
+        "planned",
+        "executing",
+        "waiting",
+        "verifying",
+        "completed",
+        "failed",
+        "recovering",
+        "abstained"
+      ],
+      "title": "LifecycleState",
+      "type": "string"
+    },
+    "PlanStep": {
+      "additionalProperties": false,
+      "description": "One agent invocation within a plan.",
+      "properties": {
+        "agent": {
+          "description": "AgentCapability.id of the agent to run",
+          "title": "Agent",
+          "type": "string"
+        },
+        "condition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Condition"
+        },
+        "depends_on": {
+          "description": "PlanStep.id values that must complete first",
+          "items": {
+            "type": "string"
+          },
+          "title": "Depends On",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "max_attempts": {
+          "default": 2,
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Max Attempts",
+          "type": "integer"
+        },
+        "parallel": {
+          "default": true,
+          "title": "Parallel",
+          "type": "boolean"
+        },
+        "recovery_path": {
+          "items": {
+            "$ref": "#/$defs/RecoveryActionType"
+          },
+          "title": "Recovery Path",
+          "type": "array"
+        },
+        "task": {
+          "default": "",
+          "description": "Natural-language sub-task for the agent",
+          "title": "Task",
+          "type": "string"
+        },
+        "verification_required": {
+          "default": false,
+          "title": "Verification Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "agent"
+      ],
+      "title": "PlanStep",
+      "type": "object"
+    },
+    "RecoveryAction": {
+      "additionalProperties": false,
+      "description": "What the runtime did about a failure, and whether it worked.\n\n`succeeded is None` means the action was taken but its outcome is not yet\nknown \u2014 distinct from `False`, which means recovery was attempted and\nfailed. The difference matters when computing recovery success rate.",
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/RecoveryActionType"
+        },
+        "detail": {
+          "default": "",
+          "title": "Detail",
+          "type": "string"
+        },
+        "failure_id": {
+          "title": "Failure Id",
+          "type": "string"
+        },
+        "succeeded": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Succeeded"
+        }
+      },
+      "required": [
+        "failure_id",
+        "action"
+      ],
+      "title": "RecoveryAction",
+      "type": "object"
+    },
+    "RecoveryActionType": {
+      "enum": [
+        "retry",
+        "fallback",
+        "replan",
+        "abstain"
+      ],
+      "title": "RecoveryActionType",
+      "type": "string"
+    },
+    "ResponseStatus": {
+      "enum": [
+        "answer",
+        "partial",
+        "abstain"
+      ],
+      "title": "ResponseStatus",
+      "type": "string"
+    },
+    "RetrievalMethod": {
+      "description": "How a passage reached the agent \u2014 needed to attribute retrieval quality\nto a strategy during evaluation.",
+      "enum": [
+        "lexical",
+        "dense",
+        "hybrid",
+        "tool",
+        "direct_context"
+      ],
+      "title": "RetrievalMethod",
+      "type": "string"
+    },
+    "RiskLevel": {
+      "description": "Clinical risk, used both for routing decisions and safety gating.",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "SafetyFlag": {
+      "additionalProperties": false,
+      "description": "One policy or risk finding raised against a candidate answer.",
+      "properties": {
+        "claim_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claim Id"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "default": "",
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/RiskLevel",
+          "default": "low"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "title": "SafetyFlag",
+      "type": "object"
+    },
+    "SourceType": {
+      "enum": [
+        "guideline",
+        "literature",
+        "patient_record",
+        "tool_output",
+        "model_prior"
+      ],
+      "title": "SourceType",
+      "type": "string"
+    },
+    "SupportRelationship": {
+      "description": "How one evidence record relates to the claim it was retrieved for.",
+      "enum": [
+        "supports",
+        "refutes",
+        "neutral"
+      ],
+      "title": "SupportRelationship",
+      "type": "string"
+    },
+    "TaskAnalysis": {
+      "additionalProperties": false,
+      "description": "Structured classification of a request, produced before planning.",
+      "properties": {
+        "candidate_agents": {
+          "description": "AgentCapability.id references the planner may draw from",
+          "items": {
+            "type": "string"
+          },
+          "title": "Candidate Agents",
+          "type": "array"
+        },
+        "complexity": {
+          "$ref": "#/$defs/Complexity",
+          "default": "simple"
+        },
+        "rationale": {
+          "default": "",
+          "title": "Rationale",
+          "type": "string"
+        },
+        "requires_evidence": {
+          "default": true,
+          "title": "Requires Evidence",
+          "type": "boolean"
+        },
+        "requires_verification": {
+          "default": false,
+          "title": "Requires Verification",
+          "type": "boolean"
+        },
+        "risk": {
+          "$ref": "#/$defs/RiskLevel",
+          "default": "low"
+        },
+        "signals": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "Boolean input signals derived from the request context (has_image, has_lab_results, has_medications). The static planner routes on these alone, reproducing legacy `route_specialists`.",
+          "title": "Signals",
+          "type": "object"
+        },
+        "task_type": {
+          "$ref": "#/$defs/TaskType"
+        }
+      },
+      "required": [
+        "task_type"
+      ],
+      "title": "TaskAnalysis",
+      "type": "object"
+    },
+    "TaskType": {
+      "description": "What kind of clinical question the runtime was handed.",
+      "enum": [
+        "diagnostic",
+        "therapeutic",
+        "interpretive",
+        "informational",
+        "triage"
+      ],
+      "title": "TaskType",
+      "type": "string"
+    },
+    "ToolCall": {
+      "additionalProperties": false,
+      "description": "One tool invocation.\n\n`result` is retained deliberately: citation auditing harvests allowed\ncitations from tool results, so dropping it would make every genuine\ncitation look fabricated. The streaming `agent_completed` event omits it to\nkeep the wire small, but `final` and the persisted record keep it.",
+      "properties": {
+        "agent": {
+          "title": "Agent",
+          "type": "string"
+        },
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "latency_ms": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "ok": {
+          "default": true,
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "result": {
+          "default": null,
+          "title": "Result"
+        },
+        "timestamp": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timestamp"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "tool",
+        "agent"
+      ],
+      "title": "ToolCall",
+      "type": "object"
+    },
+    "VerificationStatus": {
+      "description": "Claim-level verdict.\n\nToday's `citation_guard` is binary (verified / fabricated) and operates on\ncitation *labels*. This five-state vocabulary operates on claim *content*\nagainst retrieved evidence, which is the Phase 4 capability.",
+      "enum": [
+        "supported",
+        "partially_supported",
+        "unsupported",
+        "contradicted",
+        "unknown"
+      ],
+      "title": "VerificationStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Everything one consultation accumulates, start to finish.\n\nSerializable by construction so it can be checkpointed later without\nreadopting a workflow framework \u2014 a checkpointer becomes a Protocol plus a\ntable, not a dependency.",
+  "properties": {
+    "abstention": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AbstentionDecision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "agent_results": {
+      "additionalProperties": {
+        "$ref": "#/$defs/AgentResult"
+      },
+      "title": "Agent Results",
+      "type": "object"
+    },
+    "citation_report": {
+      "$ref": "#/$defs/CitationReport"
+    },
+    "citations": {
+      "items": {
+        "$ref": "#/$defs/Citation"
+      },
+      "title": "Citations",
+      "type": "array"
+    },
+    "claims": {
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Claims",
+      "type": "array"
+    },
+    "confidence": {
+      "default": 0.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "contradictions": {
+      "items": {
+        "$ref": "#/$defs/Contradiction"
+      },
+      "title": "Contradictions",
+      "type": "array"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRecord"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "failures": {
+      "items": {
+        "$ref": "#/$defs/Failure"
+      },
+      "title": "Failures",
+      "type": "array"
+    },
+    "final_answer": {
+      "default": "",
+      "title": "Final Answer",
+      "type": "string"
+    },
+    "lifecycle": {
+      "additionalProperties": {
+        "$ref": "#/$defs/LifecycleState"
+      },
+      "description": "step or agent id -> current lifecycle state",
+      "title": "Lifecycle",
+      "type": "object"
+    },
+    "patient_context": {
+      "additionalProperties": true,
+      "title": "Patient Context",
+      "type": "object"
+    },
+    "patient_id": {
+      "default": "",
+      "title": "Patient Id",
+      "type": "string"
+    },
+    "plan": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExecutionPlan"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "recovery_actions": {
+      "items": {
+        "$ref": "#/$defs/RecoveryAction"
+      },
+      "title": "Recovery Actions",
+      "type": "array"
+    },
+    "request": {
+      "title": "Request",
+      "type": "string"
+    },
+    "retries": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Retries",
+      "type": "object"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/RiskLevel",
+      "default": "low"
+    },
+    "safety_flags": {
+      "items": {
+        "$ref": "#/$defs/SafetyFlag"
+      },
+      "title": "Safety Flags",
+      "type": "array"
+    },
+    "selected_agents": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Selected Agents",
+      "type": "array"
+    },
+    "task": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TaskAnalysis"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "tool_calls": {
+      "items": {
+        "$ref": "#/$defs/ToolCall"
+      },
+      "title": "Tool Calls",
+      "type": "array"
+    },
+    "trace_id": {
+      "title": "Trace Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "request"
+  ],
+  "title": "RunState",
+  "type": "object"
+}

@@ -1,0 +1,133 @@
+{
+  "$defs": {
+    "Citation": {
+      "additionalProperties": false,
+      "description": "A source reference as it appears to the reader.\n\n`label` is the human-facing form the model is instructed to emit \u2014\n`[ADA Standards of Care in Diabetes, 2024]` or `[PMID:12345]` \u2014 and is what\ncitation auditing matches against tool output.",
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "locator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Locator"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "title": "Citation",
+      "type": "object"
+    },
+    "RetrievalMethod": {
+      "description": "How a passage reached the agent \u2014 needed to attribute retrieval quality\nto a strategy during evaluation.",
+      "enum": [
+        "lexical",
+        "dense",
+        "hybrid",
+        "tool",
+        "direct_context"
+      ],
+      "title": "RetrievalMethod",
+      "type": "string"
+    },
+    "SourceType": {
+      "enum": [
+        "guideline",
+        "literature",
+        "patient_record",
+        "tool_output",
+        "model_prior"
+      ],
+      "title": "SourceType",
+      "type": "string"
+    },
+    "SupportRelationship": {
+      "description": "How one evidence record relates to the claim it was retrieved for.",
+      "enum": [
+        "supports",
+        "refutes",
+        "neutral"
+      ],
+      "title": "SupportRelationship",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One retrieved passage, normalized across retrieval strategies.",
+  "properties": {
+    "citation": {
+      "$ref": "#/$defs/Citation"
+    },
+    "content": {
+      "default": "",
+      "title": "Content",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "originating_agent": {
+      "title": "Originating Agent",
+      "type": "string"
+    },
+    "relevance": {
+      "default": 0.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Relevance",
+      "type": "number"
+    },
+    "retrieval_method": {
+      "$ref": "#/$defs/RetrievalMethod"
+    },
+    "source": {
+      "title": "Source",
+      "type": "string"
+    },
+    "source_type": {
+      "$ref": "#/$defs/SourceType"
+    },
+    "support_relationship": {
+      "$ref": "#/$defs/SupportRelationship",
+      "default": "neutral"
+    },
+    "timestamp": {
+      "format": "date-time",
+      "title": "Timestamp",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "source",
+    "source_type",
+    "retrieval_method",
+    "citation",
+    "originating_agent",
+    "timestamp"
+  ],
+  "title": "EvidenceRecord",
+  "type": "object"
+}

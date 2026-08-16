@@ -1,0 +1,64 @@
+{
+  "additionalProperties": false,
+  "description": "What one agent produced during one plan step.",
+  "properties": {
+    "agent": {
+      "title": "Agent",
+      "type": "string"
+    },
+    "claim_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Claim Ids",
+      "type": "array"
+    },
+    "content": {
+      "default": "",
+      "title": "Content",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "latency_ms": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Latency Ms",
+      "type": "integer"
+    },
+    "rounds": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Rounds",
+      "type": "integer"
+    },
+    "step_id": {
+      "default": "",
+      "title": "Step Id",
+      "type": "string"
+    },
+    "tokens": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Tokens",
+      "type": "integer"
+    },
+    "tool_call_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tool Call Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "agent"
+  ],
+  "title": "AgentResult",
+  "type": "object"
+}

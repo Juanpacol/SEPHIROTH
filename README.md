@@ -106,12 +106,12 @@ LangGraph workflow ──► ClinicalCoordinator
    └─► DrugSafetyAgent ──► drug_safety_server
         │
         ▼
-Gemini 2.5 Flash (native tool calling, cloud API)
+Gemini (native tool calling, cloud API) — model set by `GEMINI_MODEL`, default `gemini-flash-latest`
 ```
 
-Each specialist is an `MCPAgent`: a system prompt + a whitelist of MCP tools. The MCP registry feeds tool schemas to Gemini's structured function-calling contract **and** summarizes them in the agent's system prompt.
+Each specialist is an `MCPAgent`: a role prompt + a whitelist of MCP tools. The MCP registry feeds tool schemas to Gemini's structured function-calling contract **and** summarizes them in the agent's system prompt. The whitelist is enforced at dispatch, so an agent cannot invoke a tool outside its declared scope.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) and [CLAUDE.md](CLAUDE.md) for details.
+See [ARCHITECTURE.md](ARCHITECTURE.md), [CLAUDE.md](CLAUDE.md), and [docs/](docs/) for details. The architecture is being migrated to a model-agnostic runtime — see [docs/00-migration-charter.md](docs/00-migration-charter.md).
 
 ## Evaluation
 

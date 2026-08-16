@@ -110,14 +110,20 @@ Registry (`intelligence/mcp/registry.py`) discovers all servers, aggregates thei
 ### Add a New Agent
 
 1. Create a subclass of `MCPAgent` in `intelligence/agents/__init__.py`
-2. Write a system prompt (clinical reasoning for that domain)
+2. Write a `role_prompt` (clinical reasoning for that domain) — the attribute is
+   `role_prompt`, **not** `system_prompt`; the system prompt is assembled in
+   `base.py` from the disclaimer + role prompt + tool catalog
 3. List its allowed MCP tools
 4. Wire it into the LangGraph workflow in `intelligence/agents/workflow.py`
+5. Add an entry to `_ACTION_TEMPLATES`/`_NO_TOOL_ACTIONS` in `explainability.py` —
+   `explanation` is rebuilt on read, so a missing template also degrades how
+   *historical* consultations render
 
-Example (see `docs/INTEGRATION_GUIDE.md` for more):
+Example (see `docs/04-development/setup.md` for more):
 ```python
 class PathologyAgent(MCPAgent):
-    system_prompt = "You are a pathology specialist..."
+    name = "pathology"
+    role_prompt = "You are a pathology specialist..."
     allowed_tools = ["pathology_analyzer", "specimen_database"]
 ```
 
@@ -125,7 +131,10 @@ class PathologyAgent(MCPAgent):
 
 1. Create `intelligence/mcp/my_new_server.py` with a FastMCP app
 2. Declare tools with `@mcp.tool` decorators, calling your implementation from `intelligence/` or `data/`
-3. `registry.py` auto-discovers it on startup
+3. Register the server in `SERVERS` in `registry.py`
+4. Add the tool name to the `allowed_tools` of each agent permitted to call it —
+   the whitelist is enforced at dispatch by `MCPRegistry.scoped_executor()`, so
+   an unlisted tool returns an authorization error instead of running
 
 See existing servers (`nlp_server.py`, `imaging_server.py`) for the pattern.
 
@@ -133,7 +142,7 @@ See existing servers (`nlp_server.py`, `imaging_server.py`) for the pattern.
 
 1. Create router in `platform/api/routers/my_feature.py`
 2. Import and include it in `platform/api/main.py`
-3. Follow the pattern in `docs/INTEGRATION_GUIDE.md`
+3. Follow the pattern in `docs/04-development/setup.md`
 
 ### Update Frontend
 
@@ -214,9 +223,26 @@ Schema is Alembic-managed for both local Postgres and Supabase (`migrations/vers
 - **Vendored code in references/ is read-only.** We don't edit MONAI/MedCAT source; we wrap their classes in our own agents/MCP servers.
 - **Medical accuracy is non-negotiable.** Every agent prompt references clinical guidelines. All recommendations cite sources. The disclaimer is on every page.
 
+## Architecture migration (in progress)
+
+SEPHIROTH is being restructured from a clinical application into a
+model-agnostic agentic runtime, using Spec-Driven Development and a strangler-fig
+migration into `src/sephiroth/`. Before changing anything under `intelligence/`,
+`data/`, or `src/sephiroth/`, read:
+
+- `docs/00-migration-charter.md` — **the frozen external contracts** (SSE events,
+  persistence shape, derived explanation), the shim rules, and the phase order.
+  Breaking a §2 contract breaks the frontend.
+- `docs/specs/SPEC-000-spec-process.md` — the spec template and lifecycle.
+  Implementation starts only after a spec reaches `Approved`.
+- `docs/project-state.yaml` — what is actually implemented versus planned.
+
+The loop is: spec → failing tests → implementation → spec marked `Implemented`.
+
 ## References
 
 - `ARCHITECTURE.md` — detailed system design
-- `docs/INTEGRATION_GUIDE.md` — how to extend each module
+- `docs/04-development/setup.md` — how to extend each module
+- `docs/04-development/testing.md` — test conventions and the gates that matter
 - `CONTRIBUTING.md` — development guidelines
 - Open-source projects: [MONAI](https://docs.monai.io/), [MedCAT](https://github.com/CogStack/MedCAT), [LangGraph](https://langchain-ai.github.io/langgraph/), [Gemini API](https://ai.google.dev/gemini-api/docs)

@@ -16,6 +16,13 @@ COPY data data/
 COPY migrations migrations/
 COPY alembic.ini .
 
+# The SEPHIROTH runtime package. Installed editable so `import sephiroth`
+# resolves identically here, under pytest, and under uvicorn — adding `src` to
+# PYTHONPATH would cover only some of those. See docs/00-migration-charter.md §4.
+COPY src src/
+COPY pyproject.toml .
+RUN pip install --no-cache-dir -e .
+
 # real_data/ is intentionally NOT copied: it's optional dev/demo-only
 # sample data (Synthea patients+notes, DDInter drug interactions, RSNA
 # imaging fixtures — see real_data/README.md), and some of it (DDInter,

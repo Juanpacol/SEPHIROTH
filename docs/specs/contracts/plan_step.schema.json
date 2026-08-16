@@ -1,0 +1,83 @@
+{
+  "$defs": {
+    "RecoveryActionType": {
+      "enum": [
+        "retry",
+        "fallback",
+        "replan",
+        "abstain"
+      ],
+      "title": "RecoveryActionType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One agent invocation within a plan.",
+  "properties": {
+    "agent": {
+      "description": "AgentCapability.id of the agent to run",
+      "title": "Agent",
+      "type": "string"
+    },
+    "condition": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Condition"
+    },
+    "depends_on": {
+      "description": "PlanStep.id values that must complete first",
+      "items": {
+        "type": "string"
+      },
+      "title": "Depends On",
+      "type": "array"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "max_attempts": {
+      "default": 2,
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Max Attempts",
+      "type": "integer"
+    },
+    "parallel": {
+      "default": true,
+      "title": "Parallel",
+      "type": "boolean"
+    },
+    "recovery_path": {
+      "items": {
+        "$ref": "#/$defs/RecoveryActionType"
+      },
+      "title": "Recovery Path",
+      "type": "array"
+    },
+    "task": {
+      "default": "",
+      "description": "Natural-language sub-task for the agent",
+      "title": "Task",
+      "type": "string"
+    },
+    "verification_required": {
+      "default": false,
+      "title": "Verification Required",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "id",
+    "agent"
+  ],
+  "title": "PlanStep",
+  "type": "object"
+}

@@ -1,0 +1,66 @@
+{
+  "$defs": {
+    "AbstentionReason": {
+      "description": "Why the runtime declined to answer confidently. Persisted so abstention\nprecision can be measured per reason.",
+      "enum": [
+        "insufficient_evidence",
+        "conflicting_evidence",
+        "unsupported_high_risk_claim",
+        "tool_failure",
+        "model_uncertainty",
+        "policy_restriction"
+      ],
+      "title": "AbstentionReason",
+      "type": "string"
+    },
+    "ResponseStatus": {
+      "enum": [
+        "answer",
+        "partial",
+        "abstain"
+      ],
+      "title": "ResponseStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Whether to answer, hedge, or decline \u2014 and on what evidence.\n\n`reason` is required when abstaining and forbidden otherwise, so a trace can\nnever record a decline without saying why.",
+  "properties": {
+    "confidence": {
+      "default": 1.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "message": {
+      "default": "",
+      "title": "Message",
+      "type": "string"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AbstentionReason"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "status": {
+      "$ref": "#/$defs/ResponseStatus",
+      "default": "answer"
+    },
+    "supported_claim_ratio": {
+      "default": 1.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Supported Claim Ratio",
+      "type": "number"
+    }
+  },
+  "title": "AbstentionDecision",
+  "type": "object"
+}

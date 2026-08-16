@@ -77,6 +77,12 @@ class Settings(BaseSettings):
     retrieval_mode: Literal["hybrid", "keyword_only"] = "hybrid"
 
     # Feature flags
+    # Enforce each agent's `allowed_tools` whitelist at dispatch time, not just
+    # when advertising schemas to the model. Set False to run permissively
+    # (denials are logged, execution proceeds) when diagnosing whether a
+    # specialist relies on a tool outside its declared scope.
+    enforce_tool_authorization: bool = True
+
     enable_image_analysis: bool = True
     enable_vision_analysis: bool = True
     enable_rag: bool = True

@@ -1,0 +1,79 @@
+{
+  "$defs": {
+    "FailureCategory": {
+      "description": "Failure taxonomy. Every `Failure` carries one, so failures can be\naggregated by component across an evaluation run.",
+      "enum": [
+        "planning",
+        "routing",
+        "agent",
+        "tool",
+        "retrieval",
+        "evidence",
+        "verification",
+        "safety",
+        "model",
+        "recovery"
+      ],
+      "title": "FailureCategory",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A classified failure. Every failure carries a taxonomy category so an\nevaluation run can attribute failures to components.",
+  "properties": {
+    "attempt": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Attempt",
+      "type": "integer"
+    },
+    "category": {
+      "$ref": "#/$defs/FailureCategory"
+    },
+    "component": {
+      "title": "Component",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "message": {
+      "default": "",
+      "title": "Message",
+      "type": "string"
+    },
+    "step_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Step Id"
+    },
+    "timestamp": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Timestamp"
+    }
+  },
+  "required": [
+    "id",
+    "category",
+    "component"
+  ],
+  "title": "Failure",
+  "type": "object"
+}

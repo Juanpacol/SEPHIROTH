@@ -1,122 +1,97 @@
-# Contributing to SEPHIROTH
+# Contributing
 
-## Getting Started
+## Setup
 
-1. Fork the repository
-2. Clone your fork
-3. Create a feature branch
-4. Install development dependencies
-5. Make your changes
-6. Run tests
-7. Submit a pull request
-
-## Setup Development Environment
+See [docs/04-development/setup.md](docs/04-development/setup.md). Short version:
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Dev dependencies (pytest, pytest-cov, ruff, mypy) are already in requirements.txt
-
-# Create .env file
-cp .env.example .env
+python3.11 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -e .
 ```
 
-## Code Standards
+## The loop
 
-### Python
-- Use type hints
-- Follow PEP 8
-- Write docstrings
+SEPHIROTH uses **Spec-Driven Development**. For anything that changes a contract
+— a type, an interface, a wire format, a state transition — the order is:
+
+1. **Spec.** Write or amend a `docs/specs/SPEC-00N`, following
+   [SPEC-000](docs/specs/SPEC-000-spec-process.md). Get it to `Approved`.
+2. **Tests.** Write them from the spec's acceptance criteria. They should fail.
+3. **Code.** Make them pass.
+4. **Mark it.** Set the spec to `Implemented` once its criteria are green.
+
+Bug fixes, dependency bumps and anything that changes no contract skip this
+entirely. The ceremony is for contracts, not for every commit.
+
+## Before opening a pull request
+
+Run the same gate CI runs:
 
 ```bash
-ruff check .
-ruff format .
-mypy .
+.venv/bin/ruff check . && .venv/bin/ruff format --check .
+PYTHONPATH=.:platform .venv/bin/pytest --cov
+PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ci
+.venv/bin/python scripts/docs_check.py
+.venv/bin/python scripts/export_contracts.py --check
 ```
 
-### Medical Accuracy
-- All medical features must be evidence-based
-- Include citations to guidelines/papers
-- Mark experimental features as such
-- Add disclaimers where needed
+Checklist:
 
-### Testing
-- Write tests for new features
-- Maintain the 87% coverage gate (`pytest --cov`; CI fails below this — see `pyproject.toml`)
-- Test edge cases, including adversarial cases for the Citation Guard and RAG retrieval
-- If you touch `data/rag/SEED_GUIDELINES` or the Evidence Agent's prompt, run
-  `python -m intelligence.evaluation.run --mode full --record` and check the
-  [Evaluation](README.md#evaluation) numbers before opening a PR
+- [ ] Coverage ≥ 87%. **Do not lower the threshold** — add tests instead.
+- [ ] New `src/sephiroth/<pkg>/` added to `coverage.run.source` in the same PR.
+- [ ] Contract schemas regenerated if a model changed.
+- [ ] `docs/03-features/feature-registry.md` updated if a feature's status moved.
+- [ ] `docs/project-state.yaml` updated if a component's status moved.
+- [ ] `CHANGELOG.md` entry under `[Unreleased]`.
+- [ ] A dev-log entry in `docs/dev-log/YYYY-MM-DD.md`.
 
-## Commit Messages
+## Things that will bite you
 
-Format: `[type] message`
+**The frozen contracts.** [The migration charter](docs/00-migration-charter.md)
+§2 lists four interfaces the frontend and database depend on: the five SSE
+events, the persisted state shape, `ConsultResponse`, and the derived
+`explanation`. Changing one requires a coordinated frontend change.
+`tests/test_sse_contract.py` will stop you.
 
-Types:
-- `[feature]` - New feature
-- `[fix]` - Bug fix
-- `[docs]` - Documentation
-- `[test]` - Tests
-- `[refactor]` - Code refactoring
-- `[perf]` - Performance improvement
+**The script-key trap.** `FakeLLMClient` picks a script by substring-matching the
+system prompt. Reword a role prompt and dozens of tests fall through to
+`default_script` and **pass while asserting nothing**.
+`tests/test_prompt_contract.py` exists to make that loud.
 
-Example:
-```
-[feature] Add SGLT2i drug interaction checking
+**New agents need explainability templates.** `explanation` is rebuilt on read,
+so a missing `_ACTION_TEMPLATES` entry degrades *historical* consultations, not
+just new ones.
 
-Implements checking for SGLT2 inhibitors with current medications
-based on FDA guidelines. Includes unit tests and documentation.
+**New tools need whitelist entries.** Tool authorization is enforced at
+dispatch; an unlisted tool returns an authorization error rather than running.
 
-Closes #123
-```
+**Coverage entries are per-package.** Never add `src/sephiroth` wholesale — a
+wildcard root silently hides future subpackages from the gate.
 
-## Pull Request Process
+## Conventions
 
-1. Update documentation
-2. Add tests for new functionality
-3. Ensure all tests pass
-4. Update CHANGELOG.md
-5. Reference related issues
-6. Wait for review
+- Ruff, line length 110. `ruff format` is enforced in CI.
+- Tests are flat in `tests/`; new runtime tests go in `tests/sephiroth/<pkg>/`
+  with **globally unique basenames** (collection is rootdir-based).
+- Every test module opens with a docstring saying what it covers *and why it is
+  structured that way*.
+- Mermaid source only in `docs/09-diagrams/`. Everything else links to it.
+- No secrets in code, ever. `.env` is gitignored and gitleaks blocks CI.
 
-## Medical Compliance
+## Where to look
 
-- All medical features must be marked as "research/educational"
-- Include appropriate disclaimers
-- Never claim to provide diagnosis
-- Always recommend professional review
-- Document evidence sources
+| Question | File |
+|---|---|
+| What is this project? | [docs/00-project/vision.md](docs/00-project/vision.md) |
+| What is actually built? | [docs/project-state.yaml](docs/project-state.yaml) |
+| Why is it built that way? | [docs/08-decisions/](docs/08-decisions/) |
+| What are the rules of the migration? | [docs/00-migration-charter.md](docs/00-migration-charter.md) |
+| How do I test this? | [docs/04-development/testing.md](docs/04-development/testing.md) |
+| What proves requirement X? | [docs/traceability.md](docs/traceability.md) |
 
-## Integration with Open Source Projects
+## Medical accuracy is non-negotiable
 
-When integrating open source projects:
-1. Respect original licenses
-2. Maintain attribution
-3. Don't modify core libraries
-4. Create adapters/wrappers
-5. Document integration points
-
-## Areas for Contribution
-
-- [ ] Complete agent implementations
-- [ ] RAG indexing with PubMed
-- [ ] Frontend development (Next.js)
-- [ ] Medical imaging enhancements
-- [ ] Clinical NLP improvements
-- [ ] Testing and documentation
-- [ ] Performance optimization
-- [ ] Deployment automation
-
-## Questions?
-
-- Open an issue for questions
-- Check existing discussions
-- Review documentation
-
-## Code of Conduct
-
-- Be respectful
-- Provide constructive feedback
-- Acknowledge contributions
-- Focus on the medical mission
+Every agent prompt references clinical guidelines. Every recommendation cites
+sources. The disclaimer is on every page. This is decision support for
+professionals, not a diagnostic tool — and no change should blur that.

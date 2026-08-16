@@ -1,0 +1,166 @@
+# Operational state of every component — the source of truth for "what actually
+# works", as opposed to what is designed or hoped for.
+#
+# Updated at the end of every phase and whenever a component's status changes.
+# `scripts/docs_check.py` verifies that every key under `components.*` resolves
+# to a path that exists, so a rename cannot silently rot this file.
+#
+# status: implemented | partial | planned | deprecated
+
+schema_version: 1
+project: SEPHIROTH
+version: 0.2.0
+updated: 2026-08-16
+phase_current: 0
+
+phases:
+  "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: in_progress}
+  "1": {name: "ModelProvider abstraction", status: planned}
+  "2": {name: "Tool Runtime", status: planned}
+  "3": {name: "Agent Runtime (3a parity, 3b dynamic)", status: planned}
+  "4": {name: "Context Engine + Verification & Safety", status: planned}
+  "5": {name: "Observability + shim removal", status: planned}
+
+components:
+  legacy:
+    intelligence/agents/workflow.py:
+      status: implemented
+      description: Fixed LangGraph; static presence-check routing, no checkpointer
+      tests: [tests/test_workflow.py, tests/test_sse_contract.py]
+      strangler_target: src/sephiroth/runtime
+      removed_in_phase: 3
+    intelligence/agents/base.py:
+      status: implemented
+      description: MCPAgent — role_prompt + allowed_tools + one chat() call
+      tests: [tests/test_prompt_contract.py, tests/test_tool_authorization.py]
+      strangler_target: src/sephiroth/runtime/agent.py
+      removed_in_phase: 3
+    intelligence/agents/citation_guard.py:
+      status: implemented
+      description: Citation-label provenance audit; binary verified/fabricated
+      tests: [tests/test_citation_guard.py, tests/test_citation_guard_adversarial.py]
+      strangler_target: src/sephiroth/verification
+      removed_in_phase: 5
+    intelligence/agents/risk_engine.py:
+      status: implemented
+      description: Deterministic lab/medication threshold rules over patient data
+      tests: [tests/test_risk_engine.py]
+      strangler_target: src/sephiroth/safety/risk
+      removed_in_phase: 5
+    intelligence/agents/explainability.py:
+      status: implemented
+      description: Template audit trail, rebuilt on read (never persisted)
+      tests: [tests/test_sse_contract.py]
+      strangler_target: src/sephiroth/telemetry
+      removed_in_phase: 5
+    intelligence/llm:
+      status: implemented
+      description: Gemini primary + optional Groq fallback; no formal interface
+      tests: [tests/test_gemini_client.py, tests/test_groq_client.py,
+              tests/test_fallback_client.py, tests/test_llm_factory.py]
+      strangler_target: src/sephiroth/models
+      removed_in_phase: 2
+    intelligence/mcp:
+      status: implemented
+      description: 5 FastMCP servers; whitelist now enforced at dispatch
+      tests: [tests/test_mcp.py, tests/test_mcp_extra.py, tests/test_tool_authorization.py]
+      strangler_target: src/sephiroth/tools
+      removed_in_phase: 3
+    intelligence/evaluation:
+      status: implemented
+      description: Offline deterministic RAG eval, CI-blocking; RAG-scoped only
+      tests: [tests/test_evaluation.py, tests/test_eval_cli.py, tests/test_eval_runner_full.py]
+    intelligence/nlp/timeline_extractor.py:
+      status: implemented
+      description: LLM-first structured event extraction with lexicon fallback
+      tests: [tests/test_timeline_extractor.py]
+    intelligence/nlp/ner:
+      status: deprecated
+      description: Vendored MedCAT, never wired into any call path
+    data/rag:
+      status: implemented
+      description: Hybrid retrieval — keyword + dense, fused via RRF over 22 seed docs
+      tests: [tests/test_rag_pipeline.py]
+    data/embeddings:
+      status: implemented
+      tests: [tests/test_embeddings.py, tests/test_embeddings_matching.py, tests/test_corpus_hash.py]
+    data/vectors:
+      status: implemented
+      description: In-memory brute-force cosine; no ANN index
+      tests: [tests/test_embeddings.py]
+    data/schemas:
+      status: implemented
+      tests: [tests/test_db_seed.py, tests/test_alembic_migration.py]
+    platform/api:
+      status: implemented
+      tests: [tests/test_api_agents.py, tests/test_api_patients_rag.py, tests/test_main_health.py]
+    platform/auth:
+      status: implemented
+      tests: [tests/test_auth.py]
+    platform/core:
+      status: implemented
+      tests: [tests/test_config.py, tests/test_logging.py]
+    platform/frontend:
+      status: implemented
+      description: Next.js 14; hand-rolled SSE parsing couples it to the wire contract
+
+  runtime:
+    src/sephiroth/contracts:
+      status: implemented
+      phase: 0
+      spec: SPEC-000
+      description: Leaf package of Pydantic domain contracts; JSON Schema drift-gated
+      tests: [tests/test_contracts_schema.py, tests/test_contracts_models.py]
+
+# Capabilities the target architecture requires that have no implementation yet.
+gaps:
+  - {capability: Task analyzer, phase: 3}
+  - {capability: Planner (static then dynamic), phase: 3}
+  - {capability: Capability-based dynamic router, phase: 3}
+  - {capability: Agent registry with declared capabilities, phase: 3}
+  - {capability: Recovery engine, phase: 3}
+  - {capability: ModelProvider interface, phase: 1}
+  - {capability: Reranking / memory / compression / token budgeting, phase: 4}
+  - {capability: Claim extraction and five-state verification, phase: 4}
+  - {capability: Conflict detection, phase: 4}
+  - {capability: Confidence engine, phase: 4}
+  - {capability: Abstention engine, phase: 4}
+  - {capability: Output-facing safety engine (PHI, injection, HITL), phase: 4}
+  - {capability: Structured execution traces, phase: 5}
+
+quality_gates:
+  coverage_fail_under: 87
+  eval_blocking: true
+  ci_jobs: [lint, test, eval, frontend, docker-build-smoke-test, security, security-advisory]
+
+known_debt:
+  - id: DEBT-001
+    item: "Vendored MedCAT under intelligence/nlp/{ner,pipeline,preprocessing} has zero call sites"
+    action: remove
+    status: open
+  - id: DEBT-002
+    item: "Vendored MONAI under intelligence/medical-imaging should be a pip dependency"
+    action: replace with `monai` dependency
+    status: open
+  - id: DEBT-003
+    item: "data/schemas GuidelineDocument persists a pgvector column that is never queried"
+    action: wire ingestion into retrieval, or document as cold storage
+    status: open
+  - id: DEBT-004
+    item: "platform/api/routers/medical.py exposes MCP tools with no authentication"
+    action: route through the tool runtime's permission layer
+    phase: 2
+    status: open
+  - id: DEBT-005
+    item: "intelligence/llm/factory.py::reset_llm_client has zero call sites"
+    action: delete with the Phase 1 shims
+    phase: 2
+    status: open
+  - id: DEBT-006
+    item: "docs/INTEGRATION_GUIDE.md described a structure that never existed"
+    action: deleted; replaced by docs/04-development/setup.md
+    status: resolved
+  - id: DEBT-007
+    item: "Vestigial AgentState dataclass in intelligence/agents/__init__.py"
+    action: deleted alongside its only referent
+    status: resolved

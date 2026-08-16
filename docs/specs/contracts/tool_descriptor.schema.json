@@ -1,0 +1,78 @@
+{
+  "$defs": {
+    "RiskLevel": {
+      "description": "Clinical risk, used both for routing decisions and safety gating.",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "RiskSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "$ref": "#/$defs/RiskLevel",
+          "default": "low"
+        },
+        "requires_human_review": {
+          "default": false,
+          "title": "Requires Human Review",
+          "type": "boolean"
+        }
+      },
+      "title": "RiskSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Capability-based tool access control.\n\n`allowed_agents` is enforced server-side by the tool runtime. The legacy\nregistry enforced nothing at execution time \u2014 the whitelist only filtered\nwhich schemas the model was shown, so a model naming an out-of-scope tool\nwould still have it executed.",
+  "properties": {
+    "allowed_agents": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Agents",
+      "type": "array"
+    },
+    "capabilities": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Capabilities",
+      "type": "array"
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "mcp_server": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mcp Server"
+    },
+    "risk": {
+      "$ref": "#/$defs/RiskSpec"
+    }
+  },
+  "required": [
+    "id"
+  ],
+  "title": "ToolDescriptor",
+  "type": "object"
+}

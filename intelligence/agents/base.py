@@ -48,5 +48,7 @@ class MCPAgent:
             messages=[{"role": "user", "content": user_content}],
             system_prompt="\n\n".join(p for p in system_parts if p),
             tools=tools,
-            tool_executor=registry.execute if tools else None,
+            # Scoped, not the raw dispatcher: advertising a filtered schema list
+            # does not stop a model from naming a tool outside its whitelist.
+            tool_executor=registry.scoped_executor(self.allowed_tools) if tools else None,
         )

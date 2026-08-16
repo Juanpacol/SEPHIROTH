@@ -1,0 +1,144 @@
+{
+  "$defs": {
+    "Claim": {
+      "additionalProperties": false,
+      "description": "One independently verifiable assertion extracted from an answer.",
+      "properties": {
+        "confidence": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "evidence_ids": {
+          "description": "EvidenceRecord.id values this claim was judged against",
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "originating_agent": {
+          "default": "",
+          "title": "Originating Agent",
+          "type": "string"
+        },
+        "rationale": {
+          "default": "",
+          "title": "Rationale",
+          "type": "string"
+        },
+        "risk": {
+          "$ref": "#/$defs/RiskLevel",
+          "default": "low"
+        },
+        "status": {
+          "$ref": "#/$defs/VerificationStatus",
+          "default": "unknown"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "text"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "Contradiction": {
+      "additionalProperties": false,
+      "description": "A detected conflict, either between two claims or between a claim and\nthe evidence retrieved for it.",
+      "properties": {
+        "claim_id": {
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "conflicting_claim_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conflicting Claim Id"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "claim_id"
+      ],
+      "title": "Contradiction",
+      "type": "object"
+    },
+    "RiskLevel": {
+      "description": "Clinical risk, used both for routing decisions and safety gating.",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "VerificationStatus": {
+      "description": "Claim-level verdict.\n\nToday's `citation_guard` is binary (verified / fabricated) and operates on\ncitation *labels*. This five-state vocabulary operates on claim *content*\nagainst retrieved evidence, which is the Phase 4 capability.",
+      "enum": [
+        "supported",
+        "partially_supported",
+        "unsupported",
+        "contradicted",
+        "unknown"
+      ],
+      "title": "VerificationStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Aggregate verdict over an answer's claims.",
+  "properties": {
+    "claims": {
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Claims",
+      "type": "array"
+    },
+    "contradictions": {
+      "items": {
+        "$ref": "#/$defs/Contradiction"
+      },
+      "title": "Contradictions",
+      "type": "array"
+    }
+  },
+  "title": "VerificationReport",
+  "type": "object"
+}

@@ -1,0 +1,48 @@
+{
+  "$defs": {
+    "RecoveryActionType": {
+      "enum": [
+        "retry",
+        "fallback",
+        "replan",
+        "abstain"
+      ],
+      "title": "RecoveryActionType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "What the runtime did about a failure, and whether it worked.\n\n`succeeded is None` means the action was taken but its outcome is not yet\nknown \u2014 distinct from `False`, which means recovery was attempted and\nfailed. The difference matters when computing recovery success rate.",
+  "properties": {
+    "action": {
+      "$ref": "#/$defs/RecoveryActionType"
+    },
+    "detail": {
+      "default": "",
+      "title": "Detail",
+      "type": "string"
+    },
+    "failure_id": {
+      "title": "Failure Id",
+      "type": "string"
+    },
+    "succeeded": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Succeeded"
+    }
+  },
+  "required": [
+    "failure_id",
+    "action"
+  ],
+  "title": "RecoveryAction",
+  "type": "object"
+}

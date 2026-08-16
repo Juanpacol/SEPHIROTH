@@ -1,0 +1,44 @@
+{
+  "additionalProperties": false,
+  "description": "A detected conflict, either between two claims or between a claim and\nthe evidence retrieved for it.",
+  "properties": {
+    "claim_id": {
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "conflicting_claim_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Conflicting Claim Id"
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "claim_id"
+  ],
+  "title": "Contradiction",
+  "type": "object"
+}

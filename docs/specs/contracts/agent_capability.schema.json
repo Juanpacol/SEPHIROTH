@@ -1,0 +1,119 @@
+{
+  "$defs": {
+    "ExecutionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "parallelizable": {
+          "default": true,
+          "title": "Parallelizable",
+          "type": "boolean"
+        },
+        "requires_evidence": {
+          "default": false,
+          "title": "Requires Evidence",
+          "type": "boolean"
+        },
+        "requires_verification": {
+          "default": false,
+          "title": "Requires Verification",
+          "type": "boolean"
+        },
+        "timeout_seconds": {
+          "default": 60.0,
+          "exclusiveMinimum": 0,
+          "title": "Timeout Seconds",
+          "type": "number"
+        }
+      },
+      "title": "ExecutionSpec",
+      "type": "object"
+    },
+    "RiskLevel": {
+      "description": "Clinical risk, used both for routing decisions and safety gating.",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "RiskSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "$ref": "#/$defs/RiskLevel",
+          "default": "low"
+        },
+        "requires_human_review": {
+          "default": false,
+          "title": "Requires Human Review",
+          "type": "boolean"
+        }
+      },
+      "title": "RiskSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "What an agent can do, what it may call, and how risky it is.\n\n`id` is the wire-facing display identity (hyphenated, e.g. `drug-safety`);\n`node_name` is the internal scheduling identity (underscored, e.g.\n`drug_safety`). Both exist today implicitly and the frontend normalises\nbetween them \u2014 see `docs/00-migration-charter.md` \u00a72.1. Carrying both\nexplicitly is what eventually lets that normalisation be removed.",
+  "properties": {
+    "capabilities": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Capabilities",
+      "type": "array"
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "execution": {
+      "$ref": "#/$defs/ExecutionSpec"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "model_hint": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model Hint"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "node_name": {
+      "title": "Node Name",
+      "type": "string"
+    },
+    "risk": {
+      "$ref": "#/$defs/RiskSpec"
+    },
+    "tools": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tools",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "node_name",
+    "name"
+  ],
+  "title": "AgentCapability",
+  "type": "object"
+}
