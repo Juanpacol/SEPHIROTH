@@ -81,3 +81,76 @@ async def test_short_password_rejected(client):
     async with client:
         res = await client.post("/api/auth/register", json={**CREDS, "password": "short"})
         assert res.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_update_profile(client):
+    async with client:
+        token = (await client.post("/api/auth/register", json=CREDS)).json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        res = await client.patch(
+            "/api/auth/me",
+            json={"email": "newmail@example.org", "name": "Dr. New Name"},
+            headers=headers,
+        )
+        assert res.status_code == 200
+        assert res.json() == {
+            "id": res.json()["id"],
+            "email": "newmail@example.org",
+            "name": "Dr. New Name",
+        }
+
+        res = await client.get("/api/auth/me", headers=headers)
+        assert res.json()["email"] == "newmail@example.org"
+
+
+@pytest.mark.asyncio
+async def test_update_profile_duplicate_email_409(client):
+    async with client:
+        other = {**CREDS, "email": "other@example.org"}
+        await client.post("/api/auth/register", json=other)
+        token = (await client.post("/api/auth/register", json=CREDS)).json()["access_token"]
+
+        res = await client.patch(
+            "/api/auth/me",
+            json={"email": other["email"], "name": CREDS["name"]},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert res.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_change_password_success_then_login(client):
+    async with client:
+        token = (await client.post("/api/auth/register", json=CREDS)).json()["access_token"]
+
+        res = await client.post(
+            "/api/auth/change-password",
+            json={"current_password": CREDS["password"], "new_password": "newpassword456"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert res.status_code == 204
+
+        res = await client.post(
+            "/api/auth/login", json={"email": CREDS["email"], "password": "newpassword456"}
+        )
+        assert res.status_code == 200
+
+        res = await client.post(
+            "/api/auth/login", json={"email": CREDS["email"], "password": CREDS["password"]}
+        )
+        assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_change_password_wrong_current_401(client):
+    async with client:
+        token = (await client.post("/api/auth/register", json=CREDS)).json()["access_token"]
+
+        res = await client.post(
+            "/api/auth/change-password",
+            json={"current_password": "wrongcurrent", "new_password": "newpassword456"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert res.status_code == 401

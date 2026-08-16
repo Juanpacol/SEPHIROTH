@@ -2,24 +2,32 @@ import type { Config } from "tailwindcss";
 
 /**
  * Design tokens derived from the Nexura Care healthcare dashboard reference
- * (Behance, Mohammed Agami) + the project's Sephiroth/Platino metallic accent.
- * Reuse these tokens — do not invent new colors.
+ * (Behance, Mohammed Agami) + the project's Sephiroth/Platino metallic accent,
+ * restyled toward Apple's Human Interface Guidelines (large radii, translucency,
+ * light/dark parity). Reuse these tokens — do not invent new colors.
+ *
+ * `ink`/`surface`/`card`/`line`/`muted`/`primary.soft` are backed by CSS custom
+ * properties (see app/globals.css `:root`/`.dark`) so they flip with the theme;
+ * `primary`/`primary.dark`, the status colors, and the Sephiroth gradient stay
+ * identical in both themes — the Sephiroth gradient in particular is the fixed
+ * "AI-generated content" signal (CLAUDE.md decision #4) and must not vary.
  */
 const config: Config = {
+  darkMode: "class",
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
         primary: {
           DEFAULT: "#3683F8",
-          soft: "#EAF2FE",
+          soft: "rgb(var(--color-primary-soft) / <alpha-value>)",
           dark: "#1E62D0",
         },
-        ink: "#060606",
-        surface: "#EBF3FE",
-        card: "#FFFFFF",
-        line: "#D8D8D8",
-        muted: "#8A94A6",
+        ink: "rgb(var(--color-ink) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        card: "rgb(var(--color-card) / <alpha-value>)",
+        line: "rgb(var(--color-line) / <alpha-value>)",
+        muted: "rgb(var(--color-muted) / <alpha-value>)",
         success: "#22C55E",
         warning: "#F59E0B",
         danger: "#EF4444",
@@ -30,6 +38,11 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-manrope)", "sans-serif"],
+      },
+      borderRadius: {
+        // iOS-style "continuous corner" scale — larger than Tailwind's defaults.
+        xl2: "1.25rem",
+        squircle: "1.75rem",
       },
       boxShadow: {
         card: "0 1px 3px rgba(16, 42, 83, 0.06), 0 8px 24px rgba(16, 42, 83, 0.06)",

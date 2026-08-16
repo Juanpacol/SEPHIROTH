@@ -34,6 +34,11 @@ export function clearAuth(): void {
   localStorage.removeItem(USER_KEY);
 }
 
+/** Patch the cached user after a successful profile edit. */
+export function updateStoredUser(user: AuthUser): void {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
 export function authHeaders(): Record<string, string> {
   const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};

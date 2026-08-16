@@ -32,6 +32,16 @@ class UserOut(BaseModel):
     name: str
 
 
+class UpdateProfileRequest(BaseModel):
+    email: EmailStr
+    name: str = Field(..., min_length=1, max_length=120)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+
 class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -73,3 +83,31 @@ async def login(request: LoginRequest, session: AsyncSession = Depends(get_sessi
 @router.get("/me", response_model=UserOut)
 async def me(user: User = Depends(get_current_user)) -> UserOut:
     return UserOut(id=user.id, email=user.email, name=user.name)
+
+
+@router.patch("/me", response_model=UserOut)
+async def update_profile(
+    request: UpdateProfileRequest,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> UserOut:
+    if request.email != user.email:
+        existing = await session.scalar(select(User).where(User.email == request.email))
+        if existing:
+            raise HTTPException(status_code=409, detail="Email already registered")
+    user.email = request.email
+    user.name = request.name
+    await session.commit()
+    return UserOut(id=user.id, email=user.email, name=user.name)
+
+
+@router.post("/change-password", status_code=204)
+async def change_password(
+    request: ChangePasswordRequest,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    if not verify_password(request.current_password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    user.hashed_password = hash_password(request.new_password)
+    await session.commit()

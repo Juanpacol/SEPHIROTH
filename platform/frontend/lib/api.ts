@@ -99,6 +99,12 @@ export interface AuthResponse {
   user: { id: string; email: string; name: string };
 }
 
+export interface UserOut {
+  id: string;
+  email: string;
+  name: string;
+}
+
 export interface DescribeImageResponse {
   status?: string;
   description?: string | null;
@@ -131,6 +137,30 @@ async function post<T>(path: string, body: unknown): Promise<T> {
       body: JSON.stringify(body),
     })
   );
+}
+
+async function patch<T>(path: string, body: unknown): Promise<T> {
+  return handle<T>(
+    await fetch(path, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(body),
+    })
+  );
+}
+
+/** POST expecting a 204 No Content response (no JSON body to parse). */
+async function postNoContent(path: string, body: unknown): Promise<void> {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401) {
+    redirectToLogin();
+    throw new Error("401: not authenticated");
+  }
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
 }
 
 /** Multipart POST — the browser sets the Content-Type boundary itself. */
@@ -180,4 +210,7 @@ export const api = {
     get<{ results: { content: string; citation: string; score: number }[] }>(
       `/api/rag/search?q=${encodeURIComponent(q)}`
     ),
+  updateProfile: (body: { email: string; name: string }) => patch<UserOut>("/api/auth/me", body),
+  changePassword: (body: { current_password: string; new_password: string }) =>
+    postNoContent("/api/auth/change-password", body),
 };

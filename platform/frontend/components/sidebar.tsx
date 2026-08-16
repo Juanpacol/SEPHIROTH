@@ -38,15 +38,15 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line/60 bg-card px-3 py-5 md:flex">
+    <aside className="glass-surface sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line/60 px-3 py-5 md:flex">
       <Link href="/dashboard" className="flex items-center gap-2 px-3">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sephiroth font-extrabold text-ink/80">
+        <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-sephiroth font-extrabold text-ink/80">
           S
         </span>
         <span className="text-[15px] font-bold tracking-tight">SEPHIROTH</span>
       </Link>
 
-      <div className="mt-5 flex items-center gap-2 rounded-xl border border-line/70 px-3 py-2 text-sm text-muted">
+      <div className="mt-5 flex items-center gap-2 rounded-2xl border border-line/70 px-3 py-2 text-sm text-muted">
         <Search size={15} />
         <span>Search</span>
       </div>
@@ -72,7 +72,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="rounded-xl bg-sephiroth p-3 text-xs font-medium text-ink/80">
+      <div className="rounded-2xl bg-sephiroth p-3 text-xs font-medium text-ink/80">
         100% local inference
         <div className="mt-0.5 font-normal text-ink/60">Gemini · 2.5 Flash</div>
       </div>
