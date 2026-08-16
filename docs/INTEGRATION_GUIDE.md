@@ -89,10 +89,12 @@ from fastapi import APIRouter
 
 router = APIRouter()
 
+
 @router.post("/analyze")
 async def analyze(data: AnalyzeRequest):
     # Implementation
     return result
+
 
 # In main.py:
 app.include_router(router, prefix="/api/medical", tags=["medical"])
