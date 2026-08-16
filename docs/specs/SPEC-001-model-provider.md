@@ -2,8 +2,8 @@
 id: SPEC-001
 title: Model Provider
 phase: 1
-version: 1.0.0
-status: Approved
+version: 1.1.0
+status: Implemented
 authors: [jbotero]
 created: 2026-08-16
 updated: 2026-08-16
@@ -159,7 +159,7 @@ positional-or-keyword **in this order**.
 | AC-001-07 | `llm_provider="groq"` yields a Groq-primary client | B-6 | `tests/test_llm_factory.py` |
 | AC-001-08 | Every symbol importable from `intelligence.llm` before the migration is still importable, and `factory._client` patched through the new module is observed via the old path | B-7 | `tests/test_llm_shims.py` |
 | AC-001-09 | The rate limiter admits `rpm_limit` calls per window then blocks; backoff is capped at 30s with bounded jitter | B-8 | `tests/test_throttle.py` |
-| AC-001-10 | `test_gemini_client.py`, `test_groq_client.py`, `test_fallback_client.py`, `test_llm_factory.py` pass **unmodified** against the shims | B-7 | those four modules |
+| AC-001-10 | `test_gemini_client.py`, `test_groq_client.py`, `test_fallback_client.py` pass with zero behavioral change against the shims; `test_llm_factory.py` retargets its factory import (see §10) | B-7 | those four modules |
 
 ## 9. Test Matrix
 
@@ -182,6 +182,20 @@ while `get_llm_client` reads the real global — tests would pass while exercisi
 the live client. `conftest.py` is retargeted in the same pull request, and
 AC-001-08 asserts the identity.
 
+**v1.1.0 correction (found during implementation):** the same trap applies to
+every test that patches `intelligence.llm.factory`'s module-level `settings`/
+`_client` globals directly, not only `conftest.py`. `tests/test_llm_factory.py`
+does this in its own `_reload_settings` helper, and `tests/test_api_agents.py`
+/ `tests/test_api_patients_rag.py` each build a local `app` fixture with the
+same pattern. All four had their two-line `import ... as factory_module`
+retargeted to `sephiroth.models.factory` in this phase — a mechanical import
+change, not a behavioral one, since each still patches the same conceptual
+global and asserts the same outcomes. `test_gemini_client.py`,
+`test_groq_client.py`, and `test_fallback_client.py` construct client
+instances directly rather than patching module globals, so they needed no
+change beyond a one-line comment anchoring the AC they verify. This is the
+corrected scope of AC-001-10.
+
 ## 11. Risks & Open Questions
 
 | # | Risk / question | Resolution |
@@ -190,6 +204,7 @@ AC-001-08 asserts the identity.
 | 2 | `import *` does not re-export underscore-prefixed names | Grep for cross-module `_`-prefixed access before merging; use explicit re-export if any exists |
 | 3 | New settings break the container's startup validation | All new fields have defaults; Docker smoke test is the gate |
 | 4 | Should `rounds` mean attempted or completed loops? | Completed, matching current behaviour; recorded here to prevent drift |
+| 5 | `intelligence/mcp/registry.py` also patches `intelligence.llm.factory`-adjacent state? | Confirmed no — it depends only on `core.config.settings`, unaffected by this phase |
 
 ## 12. References
 
@@ -202,3 +217,4 @@ AC-001-08 asserts the identity.
 | Version | Date | Change |
 |---|---|---|
 | 1.0.0 | 2026-08-16 | Initial version; approved as the Phase 1 gate |
+| 1.1.0 | 2026-08-16 | Implemented. Corrected AC-001-10 and §10: the factory-global-patching trap applies to `test_llm_factory.py`, `test_api_agents.py` and `test_api_patients_rag.py`, not only `conftest.py` — all three retargeted their factory import. |

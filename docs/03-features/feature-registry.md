@@ -36,8 +36,8 @@ what runs today is metadata inspection plus the vision model.
 |---|---|---|---|---|---|---|
 | F-020 | Formal domain contracts + schema drift gate | ✅ | `sephiroth/contracts/` | `test_contracts_schema.py`, `test_contracts_models.py` | — | SPEC-000 |
 | F-021 | Tool authorization enforced at dispatch | ✅ | `mcp/registry.py` | `test_tool_authorization.py` | — | `04-development/setup.md` |
-| F-022 | `ModelProvider` interface | 📋 | `sephiroth/models/` | 📋 `test_model_provider_protocol.py` | — | 📋 SPEC-001 |
-| F-023 | Config-driven provider selection | 📋 | `sephiroth/models/factory.py` | 📋 | — | 📋 SPEC-001 |
+| F-022 | `ModelProvider` interface | ✅ | `sephiroth/models/` | `test_model_provider_protocol.py` | — | SPEC-001 |
+| F-023 | Config-driven provider selection (`llm_provider`) | ✅ | `sephiroth/models/factory.py` | `test_llm_factory.py` | — | SPEC-001 |
 | F-024 | Tool runtime with capability metadata | 📋 | `sephiroth/tools/` | 📋 | — | 📋 SPEC-002 |
 | F-025 | Tool timeout / retry / circuit breaker | 📋 | `sephiroth/tools/` | 📋 | — | 📋 SPEC-002 |
 | F-026 | Agent registry with declared capabilities | 📋 | `sephiroth/runtime/registry.py` | 📋 | — | 📋 SPEC-003 |

@@ -54,6 +54,7 @@ async def test_chat_uses_primary_when_it_succeeds():
 
 @pytest.mark.asyncio
 async def test_chat_falls_back_to_secondary_on_primary_failure():
+    # AC-001-04 (docs/specs/SPEC-001-model-provider.md)
     primary = _FakeClient(chat_exc=LLMUnavailableError("quota exhausted"))
     secondary = _FakeClient(chat_result=ChatResult(content="from secondary"))
     client = FallbackLLMClient(primary=primary, secondary=secondary)

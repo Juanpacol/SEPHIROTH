@@ -5,6 +5,20 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 1 — ModelProvider abstraction
+
+#### Added
+- **`sephiroth.models.ModelProvider`** — a `@runtime_checkable` Protocol every LLM backend now satisfies structurally: `model`/`supports_vision`/`supports_tools` attributes, `chat`/`generate_json`/`describe_image`/`health` methods. `chat`'s parameters after `messages` are keyword-only and `generate_json`'s first two stay positional-or-keyword in order — matching how every call site in the repo already invokes them (`faithfulness.py` positionally, `timeline_extractor.py` by keyword). `GeminiClient`, `GroqClient`, `FallbackLLMClient`, and the test double `FakeLLMClient` all satisfy it (F-022).
+- **`llm_provider` setting** (`"gemini"` default, `"groq"`): `get_llm_client()` now picks its primary from config instead of inferring it from which API key happens to be set. `llm_provider="groq"` returns a bare `GroqClient` — not a client wrapping the other way around, since Groq has no vision endpoint (F-023).
+- **Shared rate limiting and backoff** (`sephiroth.models._throttle`): `RateLimiter` (the exact sliding-window logic that lived only in `GeminiClient`) and `backoff_delay` (the exact `min(2**attempt, cap) + jitter` formula, parameterized by `cap` since Gemini used 30 and Groq used 10). `GeminiClient.describe_image` no longer duplicates its own retry loop — it now reuses `_generate` with an explicit `model` override.
+- Three new settings, all defaulting to the pre-Phase-1 behavior: `groq_timeout_seconds=60`, `groq_max_output_tokens=2048`, `groq_rpm_limit=0` (disables throttling — Groq had none before).
+- `tests/test_model_provider_protocol.py`, `tests/test_throttle.py`, `tests/test_llm_shims.py`.
+
+#### Changed
+- `intelligence/llm/{__init__,gemini_client,groq_client,fallback_client,factory}.py` are now re-export shims over `src/sephiroth/models/`; deleted in Phase 2 per the migration charter's shim schedule. All four pre-existing LLM test modules pass with zero behavioral change against the shims.
+- `tests/conftest.py::patch_llm_factory`, `tests/test_llm_factory.py`, `tests/test_api_agents.py`, and `tests/test_api_patients_rag.py` retarget their `factory_module` import from `intelligence.llm.factory` to `sephiroth.models.factory` — a two-line import change in each, not a behavioral one. Necessary because these tests patch the factory's module-level `_client`/`settings` globals directly, and `get_llm_client()` reads those globals from wherever it is *defined* (now `sephiroth.models.factory`), not wherever it was imported from; patching the shim's copy of the binding would have silently done nothing. Documented as a v1.1.0 correction to `SPEC-001` §10.
+- `docs/specs/SPEC-001-model-provider.md` → `Implemented` (v1.1.0).
+
 ### Phase 0 — SDD foundation and tool-authorization hotfix
 
 #### Security

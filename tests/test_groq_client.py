@@ -234,6 +234,7 @@ async def test_health_false_on_error():
 
 @pytest.mark.asyncio
 async def test_describe_image_not_supported():
+    # AC-001-05 (docs/specs/SPEC-001-model-provider.md)
     client = GroqClient(api_key="fake-key", sleep=_noop_sleep)
     with pytest.raises(LLMUnavailableError):
         await client.describe_image(image_bytes=b"", mime_type="image/png", prompt="describe")

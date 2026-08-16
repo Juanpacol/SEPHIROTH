@@ -1,6 +1,6 @@
-"""Cloud LLM layer — Gemini client with MCP tool-calling support, with an
-optional Groq fallback for text/tool-calling when Gemini's free-tier quota
-is exhausted (see fallback_client.py)."""
+"""DEPRECATED — moved to `sephiroth.models` in Phase 1. Re-exports for
+backward compatibility only; removed in Phase 2. See
+`docs/specs/SPEC-001-model-provider.md`."""
 
 from .factory import get_llm_client, reset_llm_client
 from .fallback_client import FallbackLLMClient

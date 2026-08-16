@@ -1,9 +1,10 @@
 """API tests for /api/agents/* — the consultation endpoints.
 
 `api.routers.agents` resolves its LLM client via `get_llm_client()`, a lazy
-singleton in `intelligence.llm.factory`, so tests swap it by setting that
-module's `_client` global (see `patch_llm_factory` in conftest.py) rather
-than `dependency_overrides`.
+singleton defined in `sephiroth.models.factory` (moved there in Phase 1;
+`intelligence.llm.factory` is now a re-export shim), so tests swap it by
+setting that module's `_client` global (see `patch_llm_factory` in
+conftest.py) rather than `dependency_overrides`.
 """
 
 import pytest
@@ -30,7 +31,7 @@ COORDINATOR_SCRIPT = [
 
 @pytest.fixture
 def app(db_session, monkeypatch):
-    import intelligence.llm.factory as factory_module
+    import sephiroth.models.factory as factory_module
 
     fake_client = FakeLLMClient(
         scripts={

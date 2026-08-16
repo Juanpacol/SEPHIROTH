@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     gemini_rpm_limit: int = 10
     llm_max_tool_rounds: int = 6
 
+    # Which provider `get_llm_client()` builds as primary. "gemini" (default)
+    # preserves all pre-Phase-1 behavior, including Groq fallback below.
+    # "groq" returns a bare GroqClient with no fallback (Groq has no vision
+    # equivalent, so a symmetric fallback would tangle describe_image).
+    llm_provider: Literal["gemini", "groq"] = "gemini"
+
     # Fallback LLM — Groq (OpenAI-compatible API), free tier. Used only for
     # text/tool-calling when Gemini is unavailable (rate-limited or its
     # daily request quota is exhausted — a real constraint observed on
@@ -59,6 +65,12 @@ class Settings(BaseSettings):
     groq_api_key: Optional[str] = None
     groq_model: str = "llama-3.3-70b-versatile"
     groq_max_retries: int = 3
+    # Defaults match the values the factory borrowed from Gemini/GroqClient
+    # before these existed, so default behavior is unchanged.
+    groq_timeout_seconds: int = 60
+    groq_max_output_tokens: int = 2048
+    # 0 disables rate limiting entirely — Groq had no throttle before Phase 1.
+    groq_rpm_limit: int = 0
     llm_enable_fallback: bool = True
 
     # Medical AI model weights (optional — features degrade gracefully)

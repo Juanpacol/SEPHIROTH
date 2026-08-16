@@ -20,7 +20,7 @@ NOTE_EVENTS_PAYLOAD = {
 
 @pytest.fixture
 def app(db_session, monkeypatch):
-    import intelligence.llm.factory as factory_module
+    import sephiroth.models.factory as factory_module
 
     monkeypatch.setattr(factory_module, "_client", FakeLLMClient())
 
@@ -124,7 +124,7 @@ async def test_dashboard_stats_shape(client, seeded_patient):
 
 @pytest.mark.asyncio
 async def test_add_clinical_note_extracts_entities_and_timeline(client, seeded_patient, monkeypatch):
-    import intelligence.llm.factory as factory_module
+    import sephiroth.models.factory as factory_module
 
     monkeypatch.setattr(
         factory_module,
@@ -161,7 +161,7 @@ async def test_add_clinical_note_requires_auth(client, seeded_patient):
 
 @pytest.mark.asyncio
 async def test_add_clinical_note_unknown_patient_404(client, monkeypatch):
-    import intelligence.llm.factory as factory_module
+    import sephiroth.models.factory as factory_module
 
     monkeypatch.setattr(factory_module, "_client", FakeLLMClient(json_payloads=[{"events": []}]))
     async with client:

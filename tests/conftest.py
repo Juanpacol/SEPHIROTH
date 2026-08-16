@@ -9,7 +9,7 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from data.schemas import Base
-from intelligence.llm.gemini_client import ChatResult
+from sephiroth.models import ChatResult
 
 
 @pytest_asyncio.fixture
@@ -52,6 +52,8 @@ class FakeLLMClient:
     """
 
     model = "fake-model"
+    supports_vision = True
+    supports_tools = True
 
     def __init__(
         self,
@@ -121,11 +123,13 @@ def patch_llm_factory(fake_llm_client, monkeypatch):
     """Swap the `get_llm_client()` singleton for a scripted fake.
 
     `get_llm_client()` closes over the module-level `_client` global in
-    `intelligence.llm.factory`, so setting that global (rather than
-    replacing the function object) makes every caller — regardless of
-    where they imported `get_llm_client` from — return the fake.
+    `sephiroth.models.factory` (moved there in Phase 1 — `intelligence.llm.factory`
+    is now a re-export shim), so setting that global — not the shim's copy of
+    the binding — makes every caller, regardless of where they imported
+    `get_llm_client` from, return the fake. See
+    `docs/specs/SPEC-001-model-provider.md` §10.
     """
-    import intelligence.llm.factory as factory_module
+    import sephiroth.models.factory as factory_module
 
     monkeypatch.setattr(factory_module, "_client", fake_llm_client)
     return fake_llm_client

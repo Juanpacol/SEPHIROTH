@@ -38,6 +38,7 @@ markers = [
 # 87% gate while CI stayed green. Enforced by tests/test_coverage_config.py.
 source = [
     "src/sephiroth/contracts",
+    "src/sephiroth/models",
     "intelligence/agents",
     "intelligence/llm",
     "intelligence/mcp",
@@ -56,6 +57,10 @@ omit = [
     "*/__pycache__/*",
     "*/tests/*",
     "data/embeddings/build_artifact.py",
+    # Phase 1 shims (docs/00-migration-charter.md §3) — trivial re-exports,
+    # counting them would inflate coverage while hiding real gaps. Deleted
+    # in Phase 2 per the shim schedule.
+    "intelligence/llm/*",
 ]
 
 [tool.coverage.report]

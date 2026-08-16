@@ -23,8 +23,8 @@ Requirements are defined in [scope.md](00-project/scope.md); features in
 | **R-002** Decline rather than answer unsafely | F-040 abstention engine | `sephiroth/safety/` | 📋 | H3 | abstention rate **and** precision | 📋 phase 4 |
 | | F-041 output safety engine | `sephiroth/safety/` | 📋 | — | unsafe answer rate | 📋 phase 4 |
 | | F-038 conflict detection | `sephiroth/verification/` | 📋 | — | contradiction detection rate | 📋 phase 4 |
-| **R-003** Provider-independent | F-022 `ModelProvider` interface | `sephiroth/models/` | 📋 | H5 | all metrics, per provider | 📋 phase 1 |
-| | F-023 config-driven selection | `sephiroth/models/factory.py` | 📋 | H5 | — | 📋 phase 1 |
+| **R-003** Provider-independent | F-022 `ModelProvider` interface | `sephiroth/models/` | `test_model_provider_protocol.py` | H5 | all metrics, per provider | ✅ implemented; H5 experiment not yet run |
+| | F-023 config-driven selection | `sephiroth/models/factory.py` | `test_llm_factory.py` | H5 | — | ✅ implemented |
 | **R-004** Capability-based selection | F-026 agent registry | `sephiroth/runtime/registry.py` | 📋 | H1 | agent selection accuracy | 📋 phase 3 |
 | | F-028 static planner (parity) | `sephiroth/runtime/planner.py` | 📋 `test_runtime_parity.py` | — | — | 📋 phase 3a |
 | | F-029 dynamic planner | `sephiroth/runtime/planner.py` | 📋 | H1 | unnecessary invocation rate | 📋 phase 3b |
@@ -68,12 +68,12 @@ Three uses, in order of how often they come up:
 |---|---|---|
 | R-001 | Partially | Provenance checked today; claim-level content verification is phase 4 |
 | R-002 | No | No abstention mechanism exists; this is the largest gap |
-| R-003 | No | Two providers exist but share an interface only by convention |
+| R-003 | Partially | Formal interface closed in phase 1; the H5 cross-provider experiment itself hasn't run |
 | R-004 | No | Routing is a static key-presence check |
 | R-005 | Partially | LLM-level fallback only; no agent or tool recovery |
 | R-006 | No | Contracts defined; nothing emits traces yet |
 | R-007 | **Yes** | Closed in phase 0 |
 | R-008 | **Yes** | Enforced continuously by the suite and the three gates |
 
-Two of eight requirements are met. That is the honest starting point, and it is
-what the phases exist to change.
+Two of eight requirements are fully met, one (R-003) partially so as of Phase 1.
+That is the honest starting point, and it is what the phases exist to change.
