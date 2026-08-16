@@ -1,5 +1,9 @@
 """LangGraph workflow tests — routing, end-to-end consultation with a
-scripted Ollama double, citation sanitization, and SSE event order."""
+scripted Ollama double, citation sanitization, and SSE event order.
+
+Runs unmodified against the Phase 3 executor via the `intelligence.agents.workflow`
+shim — passing unmodified is the parity proof (AC-003-01,
+docs/specs/SPEC-003-agent-runtime.md)."""
 
 import pytest
 

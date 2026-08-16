@@ -5,7 +5,7 @@ patients in `real_data/patients/sample_patients.json`.
 This plays the same role as `synthetichealth/chatty-notes` (Apache 2.0,
 https://github.com/synthetichealth/chatty-notes) — turning structured
 synthetic patient data into narrative clinical text via an LLM — but
-reuses SEPHIROTH's own Gemini client (`intelligence.llm.get_llm_client()`)
+reuses SEPHIROTH's own Gemini client (`sephiroth.models.get_llm_client()`)
 directly on the timeline data this project already parsed, instead of
 re-implementing chatty-notes' FHIR-bundle ingestion from scratch.
 
@@ -52,7 +52,7 @@ def _patient_summary(patient: Dict[str, Any]) -> Dict[str, str]:
 
 
 async def generate_all(limit: int = 15) -> List[Dict[str, str]]:
-    from intelligence.llm import get_llm_client  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
+    from sephiroth.models import get_llm_client  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
 
     client = get_llm_client()
     patients = json.loads(SAMPLE_PATIENTS_PATH.read_text())[:limit]

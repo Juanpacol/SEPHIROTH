@@ -1,7 +1,7 @@
 """FastMCP server exposing multimodal (vision) medical image description.
 
 Uses the shared Gemini client's one-shot ``describe_image()`` call — unlike
-the chat/tool-calling loop in ``intelligence/llm/gemini_client.py``, vision
+the chat/tool-calling loop in ``sephiroth/models/gemini.py``, vision
 description needs no tools. Sharing the client (rather than talking to the
 provider directly) means vision competes for the same rate-limit budget and
 retry/backoff logic as the agents.
@@ -13,7 +13,7 @@ from typing import Any, Dict
 
 from fastmcp import FastMCP
 
-from intelligence.llm import LLMUnavailableError, get_llm_client
+from sephiroth.models import LLMUnavailableError, get_llm_client
 
 mcp = FastMCP(
     name="vision",

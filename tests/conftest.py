@@ -123,9 +123,9 @@ def patch_llm_factory(fake_llm_client, monkeypatch):
     """Swap the `get_llm_client()` singleton for a scripted fake.
 
     `get_llm_client()` closes over the module-level `_client` global in
-    `sephiroth.models.factory` (moved there in Phase 1 — `intelligence.llm.factory`
-    is now a re-export shim), so setting that global — not the shim's copy of
-    the binding — makes every caller, regardless of where they imported
+    `sephiroth.models.factory` (moved there in Phase 1; the old
+    `intelligence.llm.factory` shim was deleted in Phase 3, DEBT-008), so
+    setting that global makes every caller, regardless of where they imported
     `get_llm_client` from, return the fake. See
     `docs/specs/SPEC-001-model-provider.md` §10.
     """

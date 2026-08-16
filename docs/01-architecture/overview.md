@@ -7,26 +7,30 @@
 Two architectures coexist during the migration. Both are described here, clearly
 labelled, because confusing them is the main way this document could mislead.
 
-## Current (what runs today)
+## Current (what runs today, as of Phase 3)
 
 ```
-Next.js  →  FastAPI  →  LangGraph workflow  →  Gemini (+ Groq fallback)
+Next.js  →  FastAPI  →  sephiroth.runtime executor  →  Gemini (+ Groq fallback)
                              │
-                    static presence-check routing
-                             ├── EvidenceAgent    → guidelines + PubMed
-                             ├── RadiologyAgent   → imaging + vision
-                             ├── LabAgent         → patient context only
-                             └── DrugSafetyAgent  → interaction table
-                             ↓
-                      ClinicalCoordinator
+                    static presence-check routing (route_specialists)
+                             ├── radiology    → imaging + vision
+                             ├── laboratory   → patient context only
+                             ├── drug-safety  → interaction table
+                             └── evidence     → guidelines + PubMed
+                             ↓ asyncio.gather / asyncio.as_completed
+                          coordinator
                              ↓
                   citation guard → sanitize → explanation
 ```
 
-**Characteristics.** Depth is fixed at two. The graph compiles without a
-checkpointer and is rebuilt per request. Routing is a key-presence check over the
-request context. Specialists are Python classes named directly by the graph
-builder. Verification means auditing citation *labels* against tool output.
+**Characteristics.** Depth is fixed at two. Routing is still a key-presence
+check over the request context (`route_specialists`, unchanged in behavior,
+relocated to `src/sephiroth/runtime/planner.py`) — dynamic, capability-matching
+routing is a later phase. Specialists are `AgentCapability` records
+(`src/sephiroth/runtime/registry.py`), not hardcoded classes; LangGraph is gone
+(`ADR-001`) in favour of a plain `asyncio`-based executor. Verification still
+means auditing citation *labels* against tool output — claim-content
+verification is Phase 4.
 
 **What works well and is being kept:** hybrid retrieval with RRF fusion, the MCP
 tool layer, the evaluation harness, citation provenance checking, the risk

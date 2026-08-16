@@ -1,86 +1,44 @@
 """
-Clinical agents — Gemini-powered specialists with MCP tools.
+Clinical agents — thin wrappers over `sephiroth.runtime.Agent`.
 
-Each specialist maps to one MCP server; the ClinicalCoordinator synthesizes
-their outputs (see workflow.py for the orchestration).
-
-Runtime state lives in `WorkflowState` (workflow.py) today and moves to
-`sephiroth.contracts.RunState` in Phase 3.
+Moved to `sephiroth.runtime` in Phase 3
+(`docs/specs/SPEC-003-agent-runtime.md`): each class here used to carry its
+own `name`/`role_prompt`/`allowed_tools` class attributes; now it's a
+one-line adapter binding `Agent` to a capability record, kept only so
+`platform/api/routers/agents.py::/ask` and any direct importer can keep doing
+`RadiologyAgent(client)`.
 """
 
-from .base import MCPAgent
+from sephiroth.models import ModelProvider
+from sephiroth.runtime.agent import Agent
+from sephiroth.runtime.registry import COORDINATOR, DRUG_SAFETY, EVIDENCE, LABORATORY, RADIOLOGY
+
+MCPAgent = Agent
 
 
-class RadiologyAgent(MCPAgent):
-    """Analyzes medical images through the imaging + vision MCP servers."""
-
-    name = "radiology"
-    role_prompt = (
-        "You are the radiology specialist. When the patient context includes "
-        "an image_path, FIRST call describe_medical_image to get an AI visual "
-        "description, then reason over that description together with any "
-        "structured analysis. Report findings with modality, location, and "
-        "confidence. Clearly attribute what came from the vision model versus "
-        "your clinical reasoning. Flag anything requiring urgent review."
-    )
-    allowed_tools = [
-        "inspect_medical_image",
-        "analyze_medical_image",
-        "describe_medical_image",
-    ]
+class RadiologyAgent(Agent):
+    def __init__(self, client: ModelProvider):
+        super().__init__(RADIOLOGY, client)
 
 
-class LabAgent(MCPAgent):
-    """Interprets laboratory values present in the patient context."""
-
-    name = "laboratory"
-    role_prompt = (
-        "You are the laboratory medicine specialist. Interpret the lab values "
-        "in the patient context: flag values outside reference ranges, "
-        "describe clinical significance, and note trends when prior values "
-        "are available. Do not invent values that are not provided."
-    )
-    allowed_tools = None  # works purely from the provided patient context
+class LabAgent(Agent):
+    def __init__(self, client: ModelProvider):
+        super().__init__(LABORATORY, client)
 
 
-class DrugSafetyAgent(MCPAgent):
-    """Screens medication lists for interactions via the drug-safety server."""
-
-    name = "drug-safety"
-    role_prompt = (
-        "You are the medication safety specialist. Screen the patient's "
-        "medication list for drug-drug interactions and summarize severity "
-        "and recommended actions."
-    )
-    allowed_tools = ["check_drug_interactions"]
+class DrugSafetyAgent(Agent):
+    def __init__(self, client: ModelProvider):
+        super().__init__(DRUG_SAFETY, client)
 
 
-class EvidenceAgent(MCPAgent):
-    """Retrieves clinical guidelines and PubMed evidence — always cited."""
-
-    name = "evidence"
-    role_prompt = (
-        "You are the clinical evidence specialist. Ground every statement in "
-        "retrieved guidelines or PubMed results. ALWAYS include the citation "
-        "for each claim in the form [Source, Year] or [PMID:xxxx]. If no "
-        "evidence is found, say so explicitly — never fabricate a citation."
-    )
-    allowed_tools = ["search_clinical_guidelines", "search_pubmed"]
+class EvidenceAgent(Agent):
+    def __init__(self, client: ModelProvider):
+        super().__init__(EVIDENCE, client)
 
 
-class ClinicalCoordinator(MCPAgent):
-    """Synthesizes the specialists' outputs into one clinical summary."""
-
-    name = "coordinator"
-    role_prompt = (
-        "You are the coordinating physician-assistant. You receive analyses "
-        "from specialist agents (radiology, laboratory, drug safety, "
-        "evidence). Synthesize them into a single structured response with "
-        "sections: Summary, Findings, Evidence (with citations), "
-        "Recommendations. End with: 'This is decision support, not a "
-        "diagnosis — professional review required.'"
-    )
-    allowed_tools = ["extract_medical_entities", "summarize_clinical_note"]
+class ClinicalCoordinator(Agent):
+    def __init__(self, client: ModelProvider):
+        super().__init__(COORDINATOR, client)
 
 
 __all__ = [

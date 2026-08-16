@@ -2,7 +2,7 @@
 
 ## Overview
 
-A clinical decision-support platform whose LLM reasoning runs on the Google Gemini API (AI Studio free tier); clinical capabilities are packaged as MCP tool servers; specialist agents are orchestrated with LangGraph and always ground their answers in tool output and citations.
+A clinical decision-support platform whose LLM reasoning runs on the Google Gemini API (AI Studio free tier); clinical capabilities are packaged as MCP tool servers; specialist agents are orchestrated by a purpose-built async executor (`src/sephiroth/runtime/`, replacing LangGraph as of Phase 3 — see [ADR-001](docs/08-decisions/ADR-001-remove-langgraph.md)) and always ground their answers in tool output and citations.
 
 ⚠️ **Privacy:** clinical text and images are sent to Google's Gemini API. Not HIPAA/GDPR-compliant as-is — see README's privacy notice before using real patient data.
 
@@ -26,7 +26,7 @@ clinical-ai-copilot/
 │   │   ├── rag_server.py     #   guideline search + PubMed (always cited)
 │   │   ├── drug_safety_server.py  # interaction screening
 │   │   └── vision_server.py  #   multimodal image description via GeminiClient.describe_image()
-│   ├── agents/               # MCPAgent base + 5 agents + LangGraph workflow
+│   ├── agents/               # thin Agent wrappers + citation guard + explainability (shims into src/sephiroth/runtime/)
 │   ├── medical-imaging/      # MONAI reference code (transforms, networks)
 │   ├── nlp/                  # MedCAT reference code (ner, pipeline, preprocessing)
 │   └── evaluation/           # RAG eval harness — Recall@k, MRR, Citation Precision, Faithfulness (see README § Evaluation)
@@ -74,7 +74,7 @@ Execution is in-process via FastMCP's in-memory client — no subprocesses or so
 | DrugSafetyAgent | check_drug_interactions | Runs when `context.medications` present |
 | ClinicalCoordinator | extract_medical_entities, summarize_clinical_note | Synthesizes everything |
 
-The LangGraph workflow (`intelligence/agents/workflow.py`) fans out conditionally from START to the relevant specialists **in parallel**, then merges their outputs (dict/list reducers on the shared state) into the coordinator, which produces the final structured, cited answer.
+The executor (`src/sephiroth/runtime/executor.py`) fans out to the relevant specialists **in parallel**, then merges their outputs into the coordinator, which produces the final structured, cited answer.
 
 ## API Layer
 

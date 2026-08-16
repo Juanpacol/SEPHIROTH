@@ -18,7 +18,7 @@ from core.db import SessionLocal, get_session
 from data.schemas import Consultation, User
 from intelligence.agents.explainability import build_explanation
 from intelligence.agents.workflow import run_consultation, stream_consultation
-from intelligence.llm import get_llm_client
+from sephiroth.models import get_llm_client
 
 router = APIRouter()
 

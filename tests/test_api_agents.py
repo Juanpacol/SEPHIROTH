@@ -1,10 +1,12 @@
 """API tests for /api/agents/* — the consultation endpoints.
 
 `api.routers.agents` resolves its LLM client via `get_llm_client()`, a lazy
-singleton defined in `sephiroth.models.factory` (moved there in Phase 1;
-`intelligence.llm.factory` is now a re-export shim), so tests swap it by
+singleton defined in `sephiroth.models.factory`, so tests swap it by
 setting that module's `_client` global (see `patch_llm_factory` in
 conftest.py) rather than `dependency_overrides`.
+
+Passing unmodified against the Phase 3 executor is part of that phase's
+parity proof (AC-003-03, docs/specs/SPEC-003-agent-runtime.md).
 """
 
 import pytest

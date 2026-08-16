@@ -2,7 +2,7 @@
 id: SPEC-001
 title: Model Provider
 phase: 1
-version: 1.1.0
+version: 1.2.0
 status: Implemented
 authors: [jbotero]
 created: 2026-08-16
@@ -157,7 +157,7 @@ positional-or-keyword **in this order**.
 | AC-001-05 | `describe_image` on a `supports_vision is False` provider raises `LLMUnavailableError` | B-4 | `tests/test_groq_client.py` |
 | AC-001-06 | Exhausting `max_tool_rounds` returns a `ChatResult`, raising nothing | B-5 | `tests/test_gemini_client.py` |
 | AC-001-07 | `llm_provider="groq"` yields a Groq-primary client | B-6 | `tests/test_llm_factory.py` |
-| AC-001-08 | Every symbol importable from `intelligence.llm` before the migration is still importable, and `factory._client` patched through the new module is observed via the old path | B-7 | `tests/test_llm_shims.py` |
+| _(retired)_ | **The eighth criterion, originally about shim import-surface identity, was retired in Phase 3 (DEBT-008)** — the `intelligence.llm` shim it verified was deleted; there is no longer an import surface to check identity against. See §10. | B-7 | — |
 | AC-001-09 | The rate limiter admits `rpm_limit` calls per window then blocks; backoff is capped at 30s with bounded jitter | B-8 | `tests/test_throttle.py` |
 | AC-001-10 | `test_gemini_client.py`, `test_groq_client.py`, `test_fallback_client.py` pass with zero behavioral change against the shims; `test_llm_factory.py` retargets its factory import (see §10) | B-7 | those four modules |
 
@@ -172,15 +172,17 @@ positional-or-keyword **in this order**.
 
 ## 10. Migration & Compatibility
 
-Shadows `intelligence/llm/*`, which becomes re-export shims in this phase and is
-**deleted in Phase 2**.
+Shadowed `intelligence/llm/*`, which became re-export shims in this phase.
+Scheduled for deletion in Phase 2, actually deleted in **Phase 3 (DEBT-008)**
+— see the v1.2.0 entry below.
 
 **The known trap:** `tests/conftest.py::patch_llm_factory` does
-`monkeypatch.setattr(factory_module, "_client", fake)`. If the old module becomes
-`from sephiroth.models.factory import *`, patching the old path binds a copy
-while `get_llm_client` reads the real global — tests would pass while exercising
-the live client. `conftest.py` is retargeted in the same pull request, and
-AC-001-08 asserts the identity.
+`monkeypatch.setattr(factory_module, "_client", fake)`. If the old module
+became `from sephiroth.models.factory import *`, patching the old path bound a
+copy while `get_llm_client` read the real global — tests would pass while
+exercising the live client. `conftest.py` was retargeted in this phase, and
+the (now-retired) eighth acceptance criterion asserted the identity while the
+shim existed.
 
 **v1.1.0 correction (found during implementation):** the same trap applies to
 every test that patches `intelligence.llm.factory`'s module-level `settings`/
@@ -200,7 +202,7 @@ corrected scope of AC-001-10.
 
 | # | Risk / question | Resolution |
 |---|---|---|
-| 1 | Shim global-state indirection silently disables the fake client | AC-001-08 |
+| 1 | Shim global-state indirection silently disables the fake client | Resolved while the shim existed (retired criterion, see §10); moot since Phase 3 deleted the shim entirely |
 | 2 | `import *` does not re-export underscore-prefixed names | Grep for cross-module `_`-prefixed access before merging; use explicit re-export if any exists |
 | 3 | New settings break the container's startup validation | All new fields have defaults; Docker smoke test is the gate |
 | 4 | Should `rounds` mean attempted or completed loops? | Completed, matching current behaviour; recorded here to prevent drift |
@@ -218,3 +220,4 @@ corrected scope of AC-001-10.
 |---|---|---|
 | 1.0.0 | 2026-08-16 | Initial version; approved as the Phase 1 gate |
 | 1.1.0 | 2026-08-16 | Implemented. Corrected AC-001-10 and §10: the factory-global-patching trap applies to `test_llm_factory.py`, `test_api_agents.py` and `test_api_patients_rag.py`, not only `conftest.py` — all three retargeted their factory import. |
+| 1.2.0 | 2026-08-19 | `intelligence/llm/*` deleted in Phase 3 (DEBT-008), one phase later than this spec's original §10 schedule (see `docs/project-state.yaml` DEBT-008 for why Phase 2's approved scope didn't include it). The eighth acceptance criterion, which verified the shim's import-surface identity, is retired — there is nothing left to shim. |

@@ -25,12 +25,12 @@ Requirements are defined in [scope.md](00-project/scope.md); features in
 | | F-038 conflict detection | `sephiroth/verification/` | 📋 | — | contradiction detection rate | 📋 phase 4 |
 | **R-003** Provider-independent | F-022 `ModelProvider` interface | `sephiroth/models/` | `test_model_provider_protocol.py` | H5 | all metrics, per provider | ✅ implemented; H5 experiment not yet run |
 | | F-023 config-driven selection | `sephiroth/models/factory.py` | `test_llm_factory.py` | H5 | — | ✅ implemented |
-| **R-004** Capability-based selection | F-026 agent registry | `sephiroth/runtime/registry.py` | 📋 | H1 | agent selection accuracy | 📋 phase 3 |
-| | F-028 static planner (parity) | `sephiroth/runtime/planner.py` | 📋 `test_runtime_parity.py` | — | — | 📋 phase 3a |
-| | F-029 dynamic planner | `sephiroth/runtime/planner.py` | 📋 | H1 | unnecessary invocation rate | 📋 phase 3b |
-| | F-030 capability router | `sephiroth/runtime/router.py` | 📋 | H1 | tool selection accuracy | 📋 phase 3 |
-| **R-005** Failures classified and handled | F-033 recovery engine | `sephiroth/runtime/recovery.py` | 📋 | H4 | recovery success rate | 📋 phase 3 |
-| | F-032 lifecycle state machine | `sephiroth/runtime/` | 📋 | H4 | completion under fault injection | 📋 phase 3 |
+| **R-004** Capability-based selection | F-026 agent registry | `sephiroth/runtime/registry.py` | `test_agent_registry.py` | H1 | agent selection accuracy | ✅ implemented (phase 3); H1 experiment not yet run |
+| | F-028 static planner (parity) | `sephiroth/runtime/planner.py` | `test_workflow.py` (unmodified parity gate) | — | — | ✅ implemented (phase 3) |
+| | F-029 dynamic planner | `sephiroth/runtime/planner.py` | 📋 | H1 | unnecessary invocation rate | 📋 deferred (SPEC-003 NG-1); no phase committed |
+| | F-030 capability router | `sephiroth/runtime/router.py` | `test_agent_registry.py` | H1 | tool selection accuracy | ⚠️ static lookup only, not capability-matching (phase 3) |
+| **R-005** Failures classified and handled | F-033 recovery engine | `sephiroth/runtime/recovery.py` | 📋 | H4 | recovery success rate | 📋 phase 4 |
+| | F-032 lifecycle state machine | `sephiroth/runtime/` | 📋 | H4 | completion under fault injection | 📋 phase 4 |
 | | F-025 tool call timeout | `sephiroth/tools/runtime.py` | `test_tool_runtime.py` | H4 | tool success rate | ⚠️ timeout only; retry/fallback deferred |
 | **R-006** Replayable traces | F-042 execution traces | `sephiroth/telemetry/` | 📋 | H6 | latency, tokens, cost | 📋 phase 5 |
 | | F-043 span redaction | `sephiroth/contracts/trace.py` | `test_contracts_models.py` | — | zero PHI in spans | 🚧 contract done |
@@ -69,8 +69,8 @@ Three uses, in order of how often they come up:
 | R-001 | Partially | Provenance checked today; claim-level content verification is phase 4 |
 | R-002 | No | No abstention mechanism exists; this is the largest gap |
 | R-003 | Partially | Formal interface closed in phase 1; the H5 cross-provider experiment itself hasn't run |
-| R-004 | No | Routing is a static key-presence check |
-| R-005 | Partially | LLM-level fallback only; no agent or tool recovery |
+| R-004 | Partially | Agent set is now data-driven (`AgentCapability` records), but selection is still a static key-presence check, not real capability matching (SPEC-003 NG-1) |
+| R-005 | Partially | LLM-level fallback + per-call tool timeout only; no agent-level recovery or lifecycle state machine |
 | R-006 | No | Contracts defined; nothing emits traces yet |
 | R-007 | **Yes** | Closed in phase 0 |
 | R-008 | **Yes** | Enforced continuously by the suite and the three gates |

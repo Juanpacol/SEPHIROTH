@@ -5,6 +5,24 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 3 — Agent Runtime + DEBT-008 closure
+
+#### Added
+- **`src/sephiroth/runtime/`** — the purpose-built executor replacing the LangGraph-compiled graph (`ADR-001`, `docs/specs/SPEC-003-agent-runtime.md`): `registry.py` (5 `AgentCapability` records — radiology, laboratory, drug-safety, evidence, coordinator — with `role_prompt` copied byte-for-byte from the pre-Phase-3 hardcoded classes), `agent.py` (`Agent`, constructed from a capability + `ModelProvider` instead of subclassing), `analyzer.py`/`planner.py` (`route_specialists` relocated verbatim), `router.py` (capability lookup), and `executor.py` (`run_consultation`/`stream_consultation`: fan-out with `asyncio.gather`/`asyncio.as_completed`, merge, coordinate — same shape as the old graph, same 5 frozen SSE events, unchanged casing/field names).
+- **`role_prompt: str = ""`** added to `sephiroth.contracts.capability.AgentCapability` (additive, MINOR schema bump) so the agent registry can hold what used to be five hardcoded class attributes as data.
+- `tests/test_agent_registry.py`, `tests/test_runtime_executor.py`, `tests/test_no_langgraph.py`.
+- `docs/specs/SPEC-003-agent-runtime.md` (`Implemented`, v1.0.0).
+
+#### Changed
+- `intelligence/agents/{workflow,base}.py` are now re-export shims over `src/sephiroth/runtime/`; deleted in Phase 4. `intelligence/agents/__init__.py`'s five agent classes (`RadiologyAgent`, etc.) are now thin `Agent` subclass wrappers constructed from the registry's capability records, not independent classes with their own hardcoded prompts.
+- `tests/test_prompt_contract.py` rewritten to read `role_prompt`/`id` from `sephiroth.runtime.registry.AGENTS` (an `AgentCapability` instance attribute) instead of `agent_cls.role_prompt`/`agent_cls.name` as class attributes, which no longer exist now that `Agent.name` is an instance property.
+- **`langgraph` removed from `requirements.txt` and the dependency tree entirely**, in this same phase rather than a deferred "3b" — see `ADR-001`'s revised Migration section. The three frozen parity test files (`test_workflow.py`, `test_sse_contract.py`, `test_api_agents.py`) passing unmodified against the new executor serves as the parity proof; no side-by-side comparison harness was built.
+- **Closed `DEBT-008`**: `intelligence/llm/*` (the Phase 1 shim, originally scheduled for Phase 2 deletion, deferred because Phase 2's approved scope didn't include it) is deleted in this phase — one phase later than scheduled, not further, per the migration charter's rule that a shim surviving two phases becomes permanent. All ~16 call sites (`intelligence/agents/{workflow,base}.py`, `intelligence/mcp/vision_server.py`, `intelligence/nlp/timeline_extractor.py`, `intelligence/evaluation/run.py`, `real_data/notes/generate_notes.py`, `platform/api/routers/{agents,dashboard,patients}.py`, `examples/{agents_example,real_data_example}.py`) retargeted to `sephiroth.models`. `tests/test_llm_shims.py` deleted (nothing left to test). `docs/specs/SPEC-001-model-provider.md` bumped to v1.2.0, retiring the acceptance criterion that verified the deleted shim's import identity.
+
+#### Known deviations (documented in `docs/specs/SPEC-003-agent-runtime.md` §10)
+- **`sephiroth.contracts.RunState`/`ToolCall`/`AgentResult` not adopted as the executor's internal state.** Those strict (`extra="forbid"`) contracts already existed from Phase 0, but `ToolCall`'s fields (`id, tool, agent, arguments, result, ok, latency_ms, timestamp`) don't match the frozen wire shape (`agent, name, arguments, result`) — adopting them now would mean building instances only to immediately flatten them back for the wire. The executor's internal state stays a plain dict shaped like the pre-Phase-3 `WorkflowState`; `RunState` gets adopted in the phase that actually accumulates evidence/claims/safety data.
+- **New debt opened, `DEBT-009`**: `intelligence/mcp/registry.py` (the Phase 2 shim) was scheduled for Phase 3 deletion per the charter but fell outside this phase's approved scope (Agent Runtime + DEBT-008). Tracked for Phase 4, same pattern as `DEBT-008`.
+
 ### Phase 2 — Tool Runtime
 
 #### Security

@@ -10,7 +10,7 @@ import asyncio
 
 from core.config import settings
 from intelligence.agents.workflow import run_consultation
-from intelligence.llm import get_llm_client
+from sephiroth.models import get_llm_client
 
 
 async def main() -> None:

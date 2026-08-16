@@ -40,12 +40,12 @@ what runs today is metadata inspection plus the vision model.
 | F-023 | Config-driven provider selection (`llm_provider`) | ✅ | `sephiroth/models/factory.py` | `test_llm_factory.py` | — | SPEC-001 |
 | F-024 | Tool runtime with capability metadata | ✅ | `sephiroth/tools/` | `test_tool_runtime.py` | — | SPEC-002 |
 | F-025 | Tool call timeout | ⚠️ | `sephiroth/tools/runtime.py` | `test_tool_runtime.py` | — | SPEC-002 |
-| F-026 | Agent registry with declared capabilities | 📋 | `sephiroth/runtime/registry.py` | 📋 | — | 📋 SPEC-003 |
-| F-027 | Task analyzer | 📋 | `sephiroth/runtime/analyzer.py` | 📋 | — | 📋 SPEC-003 |
-| F-028 | Static planner (parity with `route_specialists`) | 📋 | `sephiroth/runtime/planner.py` | 📋 `test_runtime_parity.py` | — | 📋 SPEC-003 |
-| F-029 | Dynamic LLM planner | 📋 | `sephiroth/runtime/planner.py` | 📋 | — | 📋 SPEC-003 |
-| F-030 | Capability-based router | 📋 | `sephiroth/runtime/router.py` | 📋 | — | 📋 SPEC-003 |
-| F-031 | Executor with deterministic merge | 📋 | `sephiroth/runtime/executor.py` | 📋 `test_runtime_state.py` | — | 📋 SPEC-003 |
+| F-026 | Agent registry with declared capabilities | ✅ | `sephiroth/runtime/registry.py` | `test_agent_registry.py` | — | SPEC-003 |
+| F-027 | Task analyzer | ✅ | `sephiroth/runtime/analyzer.py` | `test_agent_registry.py` (via planner) | — | SPEC-003 |
+| F-028 | Static planner (parity with `route_specialists`) | ✅ | `sephiroth/runtime/planner.py` | `test_workflow.py` (unmodified parity gate) | — | SPEC-003 |
+| F-029 | Dynamic LLM planner | 📋 | `sephiroth/runtime/planner.py` | 📋 | — | 📋 (deferred, SPEC-003 NG-1) |
+| F-030 | Capability-based router | ⚠️ | `sephiroth/runtime/router.py` | `test_agent_registry.py` | — | SPEC-003 §4 NG-1 |
+| F-031 | Executor (fan-out/merge/coordinate, LangGraph removed) | ✅ | `sephiroth/runtime/executor.py` | `test_runtime_executor.py`, `test_sse_contract.py` | — | SPEC-003 |
 | F-032 | Agent lifecycle state machine | 📋 | `sephiroth/runtime/` | 📋 | — | 📋 SPEC-003, D2 |
 | F-033 | Recovery engine (retry/fallback/replan/abstain) | 📋 | `sephiroth/runtime/recovery.py` | 📋 | — | 📋 SPEC-003, ADR-007 |
 | F-034 | Typed `RunContext` + per-agent views | 📋 | `sephiroth/context/` | 📋 | — | 📋 SPEC-004 |

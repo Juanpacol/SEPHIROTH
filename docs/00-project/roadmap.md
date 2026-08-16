@@ -10,10 +10,9 @@ mechanisms exist.
 |---|---|---|
 | **0** | SDD system, domain contracts, characterization tests, tool-authorization hotfix | Suite green, contracts schema-locked, wire contract pinned |
 | **1** | `ModelProvider` interface; Gemini/Groq retrofitted; config-driven selection | Existing LLM tests pass unmodified against shims |
-| **2** | Tool runtime: capability metadata, permissions, timeout/retry/fallback | Adversarial authorization tests; prompt-summary snapshot unchanged |
-| **3a** | Analyzer → Planner → Router → Executor, **reproducing current behaviour exactly** | `test_runtime_parity.py`: deep equality vs the old graph |
-| **3b** | Dynamic LLM planner; LangGraph removed | Both planners green; no `langgraph` import remains |
-| **4** | Context engine; claim verification; conflict detection; confidence; abstention; safety engine | Citation/risk/PDF suites pass unmodified |
+| **2** | Tool runtime: capability metadata, per-call timeout; closed an unauthenticated-endpoint gap (DEBT-004) | Adversarial authorization tests; direct tool endpoints require auth |
+| **3** | Analyzer → Planner → Router → Executor, **reproducing current behaviour exactly**; LangGraph removed in the same phase (`ADR-001`, revised — no reason to keep a second dead implementation around when git is the real rollback) | `test_workflow.py`/`test_sse_contract.py`/`test_api_agents.py` pass unmodified; no `langgraph` import remains |
+| **4** | Dynamic, capability-matching planner; context engine; claim verification; conflict detection; confidence; abstention; safety engine | Citation/risk/PDF suites pass unmodified |
 | **5** | Execution traces; span redaction; shim removal; coverage ratchet | Nested traces; no PHI in spans; `intelligence/` shims gone |
 
 **Invariant across every phase:** the clinical application never breaks (R-008).

@@ -1,7 +1,7 @@
 # ADR-001 — Remove LangGraph in favour of a purpose-built executor
 
 **Status:** Accepted
-**Date:** 2026-08-16
+**Date:** 2026-08-16 (decided); revised 2026-08-19 (removal timing, see Migration)
 **Phase:** decided in 0, executed in 3
 **Supersedes:** the assumption in `SEPHIROTH_Transformation_Plan.md` §15 that this
 ADR would be titled "Why LangGraph?"
@@ -54,8 +54,9 @@ plus a table rather than a framework re-adoption.
 
 ## Decision
 
-**D.** Remove `langgraph` in Phase 3b, after the parity phase proves the new
-executor produces byte-identical output.
+**D.** Remove `langgraph` in Phase 3, in the same commit that replaces the
+executor — not a phase later, as originally planned below. See the
+**Migration** section's revision note.
 
 ## Rationale
 
@@ -86,12 +87,15 @@ than the adapters option A or B would require.
 One fewer large transitive dependency tree. The executor's behaviour is fully
 ours to specify in SPEC-003.
 
-**Negative.** We give up a well-tested scheduler for one we must test ourselves —
-mitigated by `tests/test_runtime_parity.py`, which runs the old graph and the new
-executor against the same scripted client and asserts deep equality across a
-matrix of contexts. We also give up LangGraph's ecosystem (LangSmith tracing,
-Studio); Phase 5 builds tracing on our own `ExecutionTrace` instead, which we
-need anyway for reproducible evaluation.
+**Negative.** We give up a well-tested scheduler for one we must test
+ourselves — mitigated by `tests/test_workflow.py`, `test_sse_contract.py`, and
+`test_api_agents.py`, which exercise the new executor through the exact same
+public API, scripted client, and assertions as before, unmodified. Passing
+unmodified **is** the parity proof; no separate side-by-side comparison
+harness against the old graph was built (see Migration, below — the old graph
+was not kept alive for one). We also give up LangGraph's ecosystem (LangSmith
+tracing, Studio); Phase 5 builds tracing on our own `ExecutionTrace` instead,
+which we need anyway for reproducible evaluation.
 
 **Risk accepted.** If durable, resumable execution becomes a requirement, we
 implement a checkpointer against `RunState`. This is a real cost, consciously
@@ -105,7 +109,25 @@ the factual grounds that the durability benefit is not currently realised.
 
 ## Migration
 
-`langgraph>=0.2` stays in `requirements.txt` through Phase 3a, so a rollback of
-3b can still install and run the old graph. It is removed in the same pull
-request that deletes `intelligence/agents/workflow.py`, gated by
-`tests/test_no_langgraph.py`.
+**Revised during implementation (2026-08-19).** The plan below — keep
+`langgraph` installed through a "3a" parity phase, remove it only in a later
+"3b" — assumed the old graph would be kept alive alongside the new executor
+for an explicit side-by-side comparison. It wasn't needed: `test_workflow.py`,
+`test_sse_contract.py`, and `test_api_agents.py` already exercise the exact
+same public API with the exact same scripted client and assertions the old
+graph was tested against, so those tests passing unmodified against the new
+executor **is** the parity proof — a separate comparison harness would
+duplicate that proof, not strengthen it. Maintaining a second, unused
+implementation "in case of rollback" is exactly the complexity without
+measurable benefit `docs/00-project/scope.md` rules out; `git revert` is the
+real rollback mechanism.
+
+`langgraph>=0.2` was therefore removed from `requirements.txt` in the same
+phase (Phase 3) that replaced the executor, not deferred to a "3b." Gated by
+`tests/test_no_langgraph.py`, which asserts no module under `intelligence/`,
+`platform/`, or `src/` imports it.
+
+~~Original plan (superseded): `langgraph>=0.2` stays in `requirements.txt`
+through Phase 3a, so a rollback of 3b can still install and run the old graph.
+It is removed in the same pull request that deletes
+`intelligence/agents/workflow.py`.~~

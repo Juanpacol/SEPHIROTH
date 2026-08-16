@@ -15,7 +15,7 @@ from auth.deps import get_current_user
 from core.db import get_session
 from data.schemas import ClinicalNote, Patient, TimelineEvent, User
 from intelligence.agents.risk_engine import assess_patient_risk, assess_risk_level
-from intelligence.llm import get_llm_client
+from sephiroth.models import get_llm_client
 
 router = APIRouter()
 

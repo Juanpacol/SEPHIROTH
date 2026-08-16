@@ -14,7 +14,8 @@ The frontend silently ignores unknown events, so *adding* an event type is
 backward-compatible. Changing these five is not.
 
 This module is never deleted — it outlives the migration and remains the
-permanent contract test.
+permanent contract test. Passing unmodified against the Phase 3 executor is
+part of that phase's parity proof (AC-003-02, docs/specs/SPEC-003-agent-runtime.md).
 """
 
 import json

@@ -4,8 +4,8 @@ fallback logic itself."""
 
 import pytest
 
-from intelligence.llm.fallback_client import FallbackLLMClient
-from intelligence.llm.gemini_client import ChatResult, LLMUnavailableError
+from sephiroth.models import ChatResult, LLMUnavailableError
+from sephiroth.models.fallback import FallbackLLMClient
 
 
 class _FakeClient:

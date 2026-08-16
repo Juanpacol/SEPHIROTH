@@ -7,8 +7,8 @@ import json as json_mod
 import httpx
 import pytest
 
-from intelligence.llm.gemini_client import LLMUnavailableError
-from intelligence.llm.groq_client import GroqClient
+from sephiroth.models import LLMUnavailableError
+from sephiroth.models.groq import GroqClient
 
 
 async def _noop_sleep(_seconds):

@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 from google.genai import errors
 
-from intelligence.llm.gemini_client import (
+from sephiroth.models.gemini import (
     DEFAULT_MAX_TOOL_ROUNDS,
     GeminiClient,
     LLMUnavailableError,

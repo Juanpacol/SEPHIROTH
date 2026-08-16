@@ -139,7 +139,7 @@ async def test_describe_medical_image_happy_path(monkeypatch, tmp_path):
 
 @pytest.mark.asyncio
 async def test_describe_medical_image_llm_unavailable(monkeypatch, tmp_path):
-    from intelligence.llm import LLMUnavailableError
+    from sephiroth.models import LLMUnavailableError
 
     monkeypatch.setattr(vision_server, "_settings", lambda: _Settings())
     img_path = tmp_path / "chest.jpg"

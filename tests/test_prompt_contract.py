@@ -6,13 +6,15 @@ is a *substring of the assembled system prompt*. Two keys are canonical across
 the suite — "clinical evidence specialist" (EvidenceAgent) and
 "coordinating physician-assistant" (ClinicalCoordinator).
 
-If a role prompt is reworded, or the system-prompt assembly in
-`MCPAgent.run()` changes shape, every workflow and API test silently falls
-through to `default_script` and *still passes while asserting nothing*. That is
-a silent failure, so it gets a loud test.
+If a role prompt is reworded, or the system-prompt assembly in `Agent.run()`
+changes shape, every workflow and API test silently falls through to
+`default_script` and *still passes while asserting nothing*. That is a silent
+failure, so it gets a loud test.
 
 These assertions must stay green through the whole runtime migration; the role
-prompt strings are moved byte-for-byte, never reflowed.
+prompt strings are moved byte-for-byte, never reflowed. Since Phase 3
+(`docs/specs/SPEC-003-agent-runtime.md`), `role_prompt` lives on the
+`AgentCapability` record, not as a class attribute — agents became data.
 """
 
 from typing import Dict, List, Tuple
@@ -26,6 +28,7 @@ from intelligence.agents import (
     LabAgent,
     RadiologyAgent,
 )
+from sephiroth.runtime.registry import AGENTS
 from tests.conftest import FakeLLMClient
 
 # The two keys real test modules script against. Keep in sync with
@@ -42,6 +45,8 @@ ALL_AGENTS = [
     EvidenceAgent,
     ClinicalCoordinator,
 ]
+
+ALL_CAPABILITIES = list(AGENTS.values())
 
 
 async def _assembled_system_prompt(agent_cls) -> str:
@@ -70,11 +75,11 @@ async def test_canonical_script_key_present_in_system_prompt(agent_cls, key):
     )
 
 
-@pytest.mark.parametrize("agent_cls", ALL_AGENTS)
-async def test_agent_role_prompt_is_non_empty(agent_cls):
+@pytest.mark.parametrize("capability", ALL_CAPABILITIES, ids=lambda c: c.id)
+def test_agent_role_prompt_is_non_empty(capability):
     """An agent with an empty role_prompt is indistinguishable from any other
     agent to the script selector."""
-    assert agent_cls.role_prompt.strip(), f"{agent_cls.__name__}.role_prompt is empty"
+    assert capability.role_prompt.strip(), f"{capability.id}.role_prompt is empty"
 
 
 @pytest.mark.parametrize(
@@ -100,18 +105,18 @@ async def test_script_selection_does_not_fall_through_to_default(agent_cls, key)
     )
 
 
-async def test_agent_names_are_distinct():
+def test_agent_names_are_distinct():
     """Agent identities double as dict keys in `agent_outputs` and as the
     `agent` field on the wire; a collision would silently drop an output."""
-    names = [cls.name for cls in ALL_AGENTS]
-    assert len(names) == len(set(names)), f"duplicate agent names: {names}"
+    ids = [c.id for c in ALL_CAPABILITIES]
+    assert len(ids) == len(set(ids)), f"duplicate agent ids: {ids}"
 
 
-async def test_role_prompts_are_mutually_distinguishable():
+def test_role_prompts_are_mutually_distinguishable():
     """Script selection is substring-based and order-dependent. If one agent's
     role prompt were a substring of another's, `_script_for` could match the
     wrong script depending on dict ordering."""
-    prompts = {cls.name: cls.role_prompt for cls in ALL_AGENTS}
+    prompts = {c.id: c.role_prompt for c in ALL_CAPABILITIES}
     for name, prompt in prompts.items():
         for other_name, other_prompt in prompts.items():
             if name == other_name:

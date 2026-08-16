@@ -40,8 +40,8 @@ source = [
     "src/sephiroth/contracts",
     "src/sephiroth/models",
     "src/sephiroth/tools",
+    "src/sephiroth/runtime",
     "intelligence/agents",
-    "intelligence/llm",
     "intelligence/mcp",
     "intelligence/evaluation",
     "intelligence/nlp/__init__.py",
@@ -58,13 +58,16 @@ omit = [
     "*/__pycache__/*",
     "*/tests/*",
     "data/embeddings/build_artifact.py",
-    # Phase 1/2 shims (docs/00-migration-charter.md §3) — trivial re-exports,
-    # counting them would inflate coverage while hiding real gaps. Deleted
-    # one phase after they were created, per the shim schedule. Only
-    # registry.py is a shim — the five FastMCP servers in intelligence/mcp/
-    # remain real implementation and stay in `source` above.
-    "intelligence/llm/*",
+    # Shims (docs/00-migration-charter.md §3) — trivial re-exports, counting
+    # them would inflate coverage while hiding real gaps. In intelligence/mcp/,
+    # only registry.py is a shim; the five FastMCP servers remain real
+    # implementation. In intelligence/agents/, only base.py and workflow.py
+    # are shims; __init__.py (thin Agent wrappers), citation_guard.py, and
+    # explainability.py remain real implementation. (The Phase 1
+    # intelligence/llm/* shim was deleted in Phase 3, DEBT-008.)
     "intelligence/mcp/registry.py",
+    "intelligence/agents/base.py",
+    "intelligence/agents/workflow.py",
 ]
 
 [tool.coverage.report]

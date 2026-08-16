@@ -32,7 +32,7 @@ async def main(use_llm: bool) -> None:
         print(note["content"][:150] + "...")
 
         if use_llm:
-            from intelligence.llm import get_llm_client
+            from sephiroth.models import get_llm_client
 
             events = await extract_events(get_llm_client(), note["content"], note["note_date"])
         else:

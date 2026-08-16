@@ -14,7 +14,7 @@
 - 🧠 **Cloud LLM via Google Gemini** — `gemini-flash-latest` with native tool calling and JSON-Schema structured output; free tier, no local GPU required
 - 👁️ **Vision-enabled image reasoning** — the same Gemini model describes medical images multimodally; the Radiology agent reasons over the description
 - 🔧 **MCP tool layer** — clinical capabilities exposed as FastMCP servers (NLP, imaging, vision, evidence, drug safety)
-- 🤖 **Multi-agent workflow** — 4 specialists + a coordinator orchestrated with LangGraph, fanning out in parallel
+- 🤖 **Multi-agent workflow** — 4 specialists + a coordinator orchestrated by a purpose-built async executor, fanning out in parallel
 - 📡 **Live streaming consultations** — SSE stream shows each agent and tool call as it completes
 - 🛡️ **Citation Guard** — every citation in an answer is verified against actual tool output; fabricated references are stripped and reported (an anti-hallucination firewall)
 - 🧭 **Explainability panel** — a deterministic reasoning trace under every answer: which agent did what, with which tool, and how many citations survived the guard
@@ -98,7 +98,7 @@ Next.js frontend (3100)
 FastAPI backend (8000)
         │
         ▼
-LangGraph workflow ──► ClinicalCoordinator
+Agent executor ──► ClinicalCoordinator
    │ parallel fan-out
    ├─► EvidenceAgent ────► rag_server (guidelines + PubMed, cited)
    ├─► RadiologyAgent ───► imaging_server (MONAI) + vision_server (Gemini)
@@ -177,8 +177,9 @@ GROQ_MODEL=llama-3.3-70b-versatile   # default
 ```
 clinical-ai-copilot/
 ├── platform/          # FastAPI backend (api/, core/, auth/) + Next.js frontend
-├── intelligence/      # llm/ (Gemini client), mcp/ (FastMCP servers), agents/ (LangGraph),
+├── intelligence/      # mcp/ (FastMCP servers), agents/ (shims into src/sephiroth/),
 │                      # evaluation/ (RAG eval harness — see Evaluation above)
+├── src/sephiroth/     # the runtime: models/ (providers), tools/ (MCP dispatch), runtime/ (agents, executor)
 ├── data/              # rag/ (evidence retrieval), schemas/ (SQLAlchemy models)
 ├── examples/          # Runnable examples per module
 ├── docs/              # Integration guide
@@ -214,7 +215,6 @@ The API reaches Gemini over the internet — no host GPU or local model server r
 |---|---|---|
 | [Google Gemini API](https://ai.google.dev/gemini-api/docs) | Cloud LLM (reasoning, tool calling, vision) | [Terms](https://ai.google.dev/gemini-api/terms) |
 | [FastMCP](https://github.com/jlowin/fastmcp) | MCP tool servers | Apache 2.0 |
-| [LangGraph](https://github.com/langchain-ai/langgraph) | Agent orchestration | MIT |
 | [MONAI](https://github.com/Project-MONAI/MONAI) | Medical imaging | Apache 2.0 |
 | [MedCAT](https://github.com/CogStack/MedCAT) | Clinical NLP | Apache 2.0 |
 | [FastAPI](https://github.com/fastapi/fastapi) | Backend framework | MIT |

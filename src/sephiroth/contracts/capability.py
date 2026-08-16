@@ -47,6 +47,16 @@ class AgentCapability(BaseModel):
     node_name: str
     name: str
     description: str = ""
+    role_prompt: str = Field(
+        default="",
+        description=(
+            "The agent's system-prompt fragment, moved byte-for-byte from the "
+            "pre-Phase-3 hardcoded classes. Substrings of this string are what "
+            "tests/conftest.py::FakeLLMClient._script_for matches against — "
+            "rewording it silently degrades those tests to their default "
+            "script (see docs/00-migration-charter.md, the FakeLLMClient trap)."
+        ),
+    )
     capabilities: list[str] = Field(default_factory=list)
     tools: list[str] = Field(default_factory=list)
     risk: RiskSpec = Field(default_factory=RiskSpec)

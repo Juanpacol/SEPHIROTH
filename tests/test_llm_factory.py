@@ -1,13 +1,12 @@
 """Tests for get_llm_client()'s composition logic: bare GeminiClient unless
 GROQ_API_KEY is configured, in which case it wraps a FallbackLLMClient.
 
-Imports `sephiroth.models.factory` directly, not the `intelligence.llm.factory`
-shim: this module patches the factory's module-level `settings`/`_client`
-globals, and `get_llm_client()` is defined in — and reads its globals from —
-`sephiroth.models.factory` regardless of which path it was imported through.
-Patching the shim's copy of those bindings would silently do nothing. See
-`docs/specs/SPEC-001-model-provider.md` §10 (v1.1.0 clarification) and
-`tests/test_llm_shims.py` for the mechanical version of this trap.
+This module patches the factory's module-level `settings`/`_client` globals
+directly on `sephiroth.models.factory`, where `get_llm_client()` is defined and
+reads them from. Through Phase 2, `intelligence.llm.factory` was a re-export
+shim over this module (patching the shim's copy of those bindings would have
+silently done nothing — see `docs/specs/SPEC-001-model-provider.md` §10); the
+shim was deleted in Phase 3 (DEBT-008).
 """
 
 import sephiroth.models.factory as factory_module
