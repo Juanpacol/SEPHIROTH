@@ -6,19 +6,18 @@ import pytest
 
 from intelligence.mcp import rag_server
 from intelligence.mcp.drug_safety_server import find_interactions
-from intelligence.mcp.registry import MCPRegistry, get_registry
+from sephiroth.tools import get_tool_runtime
+from sephiroth.tools.runtime import ToolRuntime
 
 
 @pytest.mark.asyncio
 async def test_registry_singleton_returns_same_instance():
-    # AC-002-05 (docs/specs/SPEC-002-tool-runtime.md) — this whole module
-    # passes unmodified against the Phase 2 shim.
-    assert get_registry() is get_registry()
+    assert get_tool_runtime() is get_tool_runtime()
 
 
 @pytest.mark.asyncio
 async def test_registry_load_is_idempotent():
-    registry = MCPRegistry()
+    registry = ToolRuntime()
     await registry.load()
     tool_count = len(registry._schemas)
     await registry.load()
@@ -27,7 +26,7 @@ async def test_registry_load_is_idempotent():
 
 @pytest.mark.asyncio
 async def test_registry_discovers_expected_tools():
-    registry = MCPRegistry()
+    registry = ToolRuntime()
     await registry.load()
     names = {s["function"]["name"] for s in registry.llm_tools()}
     assert "search_clinical_guidelines" in names
@@ -37,7 +36,7 @@ async def test_registry_discovers_expected_tools():
 
 @pytest.mark.asyncio
 async def test_llm_tools_filters_to_allowed():
-    registry = MCPRegistry()
+    registry = ToolRuntime()
     await registry.load()
     filtered = registry.llm_tools(["check_drug_interactions"])
     assert len(filtered) == 1
@@ -46,7 +45,7 @@ async def test_llm_tools_filters_to_allowed():
 
 @pytest.mark.asyncio
 async def test_system_prompt_summary_mentions_tool_names():
-    registry = MCPRegistry()
+    registry = ToolRuntime()
     await registry.load()
     summary = registry.system_prompt_summary(["check_drug_interactions"])
     assert "check_drug_interactions" in summary
@@ -54,7 +53,7 @@ async def test_system_prompt_summary_mentions_tool_names():
 
 @pytest.mark.asyncio
 async def test_execute_search_clinical_guidelines_real_offline():
-    registry = MCPRegistry()
+    registry = ToolRuntime()
     await registry.load()
     result = await registry.execute(
         "search_clinical_guidelines", {"query": "A1C goal type 2 diabetes", "top_k": 1}
@@ -65,7 +64,7 @@ async def test_execute_search_clinical_guidelines_real_offline():
 
 @pytest.mark.asyncio
 async def test_execute_unknown_tool_returns_error():
-    registry = MCPRegistry()
+    registry = ToolRuntime()
     await registry.load()
     result = await registry.execute("not_a_real_tool", {})
     assert "error" in result
@@ -73,7 +72,7 @@ async def test_execute_unknown_tool_returns_error():
 
 @pytest.mark.asyncio
 async def test_execute_check_drug_interactions_known_pair():
-    registry = MCPRegistry()
+    registry = ToolRuntime()
     await registry.load()
     result = await registry.execute("check_drug_interactions", {"medications": ["warfarin", "aspirin"]})
     assert result["interactions_found"] == 1

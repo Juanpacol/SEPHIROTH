@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 from auth.deps import get_current_user
 from data.schemas import User
-from intelligence.mcp import get_registry
+from sephiroth.tools import get_tool_runtime
 
 router = APIRouter()
 
@@ -33,7 +33,7 @@ class ExtractRequest(BaseModel):
 @router.post("/nlp/extract")
 async def extract_entities(request: ExtractRequest, user: User = Depends(get_current_user)) -> Dict[str, Any]:
     """Extract medical entities (diseases, medications, symptoms, procedures)."""
-    registry = get_registry()
+    registry = get_tool_runtime()
     await registry.load()
     return await registry.execute("extract_medical_entities", {"text": request.text})
 
@@ -41,7 +41,7 @@ async def extract_entities(request: ExtractRequest, user: User = Depends(get_cur
 @router.post("/nlp/summarize")
 async def summarize_note(request: ExtractRequest, user: User = Depends(get_current_user)) -> Dict[str, Any]:
     """Summarize a clinical note."""
-    registry = get_registry()
+    registry = get_tool_runtime()
     await registry.load()
     return await registry.execute("summarize_clinical_note", {"text": request.text})
 
@@ -55,7 +55,7 @@ class ImagingRequest(BaseModel):
 @router.post("/imaging/analyze")
 async def analyze_image(request: ImagingRequest, user: User = Depends(get_current_user)) -> Dict[str, Any]:
     """Analyze a medical image (returns structured findings)."""
-    registry = get_registry()
+    registry = get_tool_runtime()
     await registry.load()
     return await registry.execute(
         "analyze_medical_image",
@@ -71,7 +71,7 @@ class DescribeRequest(BaseModel):
 @router.post("/imaging/describe", summary="Describe a medical image with the local vision model")
 async def describe_image(request: DescribeRequest, user: User = Depends(get_current_user)) -> Dict[str, Any]:
     """Generate an AI clinical description of a medical image (LLaVA via Ollama)."""
-    registry = get_registry()
+    registry = get_tool_runtime()
     await registry.load()
     return await registry.execute(
         "describe_medical_image",
@@ -105,6 +105,6 @@ async def check_interactions(
     request: DrugCheckRequest, user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """Screen a medication list for drug-drug interactions."""
-    registry = get_registry()
+    registry = get_tool_runtime()
     await registry.load()
     return await registry.execute("check_drug_interactions", {"medications": request.medications})

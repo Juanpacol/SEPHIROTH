@@ -10,7 +10,7 @@
 
 schema_version: 1
 project: SEPHIROTH
-version: 0.3.0
+version: 0.3.1
 updated: 2026-08-19
 phase_current: 3
 
@@ -56,20 +56,13 @@ components:
       tests: [tests/test_sse_contract.py]
       strangler_target: src/sephiroth/telemetry
       removed_in_phase: 5
-    intelligence/mcp/registry.py:
-      status: shim
-      description: >-
-        Phase 2 re-export shim over src/sephiroth/tools; no logic of its own.
-        Deletion deferred out of Phase 3's approved scope — see DEBT-009.
-      tests: [tests/test_mcp_shims.py]
-      strangler_target: src/sephiroth/tools
-      removed_in_phase: 4
     intelligence/mcp:
       status: implemented
       description: >-
-        The 5 FastMCP servers (nlp, imaging, rag, drug_safety, vision) —
-        real implementation, not shimmed; only registry.py (above) moved
-        in Phase 2
+        The 5 FastMCP servers (nlp, imaging, rag, drug_safety, vision).
+        registry.py (the Phase 2 shim over src/sephiroth/tools) was deleted
+        in Phase 4 (DEBT-009); all call sites now import
+        sephiroth.tools.get_tool_runtime/ToolRuntime directly.
       tests: [tests/test_mcp.py, tests/test_mcp_extra.py, tests/test_tool_authorization.py]
     intelligence/evaluation:
       status: implemented
@@ -135,9 +128,9 @@ components:
         ToolRuntime (relocated MCPRegistry) + capability tags + per-call
         timeout, retrofitted from intelligence/mcp/registry.py. Closed
         DEBT-004 (unauthenticated direct-tool HTTP endpoints) in the same phase.
-      tests: [tests/test_tool_runtime.py, tests/test_mcp_shims.py,
-              tests/test_mcp.py, tests/test_mcp_extra.py,
-              tests/test_tool_authorization.py, tests/test_medical_router.py]
+      tests: [tests/test_tool_runtime.py, tests/test_mcp.py,
+              tests/test_mcp_extra.py, tests/test_tool_authorization.py,
+              tests/test_medical_router.py]
     src/sephiroth/runtime:
       status: implemented
       phase: 3
@@ -222,9 +215,11 @@ known_debt:
       Phase 3. Phase 3's approved plan scoped Agent Runtime + DEBT-008 and
       did not include this.
     action: >-
-      Delete intelligence/mcp/registry.py and retarget its callers to
-      src/sephiroth/tools in Phase 4 — one phase later than scheduled,
-      same pattern as DEBT-008. Per the charter's rule, this must not slip
-      past Phase 4 or the shim becomes permanent.
+      Deleted intelligence/mcp/registry.py and retargeted all callers
+      (platform/api/routers/{medical,rag,patients}.py,
+      tests/{test_mcp,test_tool_authorization}.py,
+      examples/{tools_example,imaging_example}.py) onto
+      src/sephiroth/tools directly, one phase later than originally
+      scheduled — did not slip further, same pattern as DEBT-008.
     phase: 4
-    status: open
+    status: resolved

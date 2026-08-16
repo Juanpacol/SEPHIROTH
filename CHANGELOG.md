@@ -5,6 +5,13 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### DEBT-009 — remove `intelligence/mcp/registry.py` shim
+
+#### Changed
+- **Closed `DEBT-009`**: `intelligence/mcp/registry.py` (the Phase 2 re-export shim over `sephiroth.tools`) is deleted, one phase later than the migration charter originally scheduled (Phase 3's approved scope covered Agent Runtime + `DEBT-008` and didn't include this). All call sites — `platform/api/routers/{medical,rag,patients}.py`, `tests/{test_mcp,test_tool_authorization}.py`, `examples/{tools_example,imaging_example}.py` — retargeted directly onto `sephiroth.tools.get_tool_runtime`/`ToolRuntime`.
+- `intelligence/mcp/__init__.py`'s PEP 562 `__getattr__` (added in Phase 2 to break a circular import between `intelligence.mcp` and `sephiroth.tools`) removed — no longer needed once nothing requests `MCPRegistry`/`get_registry` from that package; it now just imports the five FastMCP server submodules.
+- `tests/test_mcp_shims.py` deleted (nothing left to test); `docs/specs/SPEC-002-tool-runtime.md` bumped to v1.2.0, retiring the two acceptance criteria that verified the deleted shim's identity and the legacy test modules passing unmodified against it.
+
 ### Phase 3 — Agent Runtime + DEBT-008 closure
 
 #### Added

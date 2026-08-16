@@ -2,11 +2,11 @@
 id: SPEC-002
 title: Tool Runtime
 phase: 2
-version: 1.1.0
+version: 1.2.0
 status: Implemented
 authors: [jbotero]
 created: 2026-08-17
-updated: 2026-08-17
+updated: 2026-08-19
 supersedes: []
 superseded_by: null
 depends_on: [SPEC-000, SPEC-001]
@@ -164,24 +164,30 @@ design (NG-4).
 | AC-002-01 | A tool call exceeding `tool_call_timeout_seconds` returns `{"error": "... timed out ..."}` and does not raise | B-1 | `tests/test_tool_runtime.py` |
 | AC-002-02 | `tags_for()` returns the declared tags for each of the 8 tagged tools, and `[]` for an untagged/unknown name | B-2 | `tests/test_tool_runtime.py` |
 | AC-002-03 | Every `medical.py`/`rag.py` endpoint returns 401 without a bearer token | B-3 | `tests/test_medical_router.py`, `tests/test_api_patients_rag.py` |
-| AC-002-04 | `intelligence.mcp.registry.MCPRegistry is sephiroth.tools.runtime.ToolRuntime` | B-4 | `tests/test_mcp_shims.py` |
-| AC-002-05 | `test_mcp.py`, `test_mcp_extra.py`, `test_tool_authorization.py` pass unmodified against the shim | B-5 | those three modules |
+| _(retired)_ | **The fourth and fifth criteria, originally about the `intelligence.mcp.registry` shim's class identity and the three legacy test modules passing unmodified against it, were retired in Phase 4 (DEBT-009)** — the shim they verified was deleted; there is no longer an import surface to check identity against, and the affected modules were retargeted directly onto `sephiroth.tools` instead of staying frozen against a shim. See §10. | B-4, B-5 | — |
 
 ## 9. Test Matrix
 
 | Layer | What | Where |
 |---|---|---|
 | Unit | timeout wrapping, `tags_for` | `tests/test_tool_runtime.py` |
-| Shim | class/function identity | `tests/test_mcp_shims.py` |
+| Shim | class/function identity | _(retired — shim deleted in Phase 4, DEBT-009)_ |
 | Integration | auth on direct tool endpoints | `tests/test_medical_router.py`, `tests/test_api_patients_rag.py` |
 | Characterization | existing registry behavior, unmodified | the three legacy MCP test modules |
 
 ## 10. Migration & Compatibility
 
-Shadows `intelligence/mcp/registry.py`, which becomes a re-export shim in this
-phase (`MCPRegistry = ToolRuntime`, `get_registry = get_tool_runtime`) and is
-**deleted in Phase 3**, per the shim schedule in
-`docs/00-migration-charter.md` §3.
+Shadowed `intelligence/mcp/registry.py`, which became a re-export shim in this
+phase (`MCPRegistry = ToolRuntime`, `get_registry = get_tool_runtime`). The
+shim schedule in `docs/00-migration-charter.md` §3 called for deleting it in
+Phase 3; Phase 3's approved scope was Agent Runtime + `DEBT-008` and did not
+include it, so its deletion was tracked as `DEBT-009` and closed in **Phase
+4** instead — one phase later than scheduled, not further, per the charter's
+own rule that a shim surviving two phases becomes permanent. All call sites
+(`platform/api/routers/{medical,rag,patients}.py`,
+`tests/{test_mcp,test_tool_authorization}.py`,
+`examples/{tools_example,imaging_example}.py`) were retargeted directly onto
+`sephiroth.tools.get_tool_runtime`/`ToolRuntime`.
 
 **Scope correction to that schedule's own prose**: §3 item 4 says shims go in
 "`[tool.coverage.report] omit`" — the actual table is `[tool.coverage.run]
@@ -212,3 +218,4 @@ implementation and stay in `coverage.run.source` unchanged.
 |---|---|---|
 | 1.0.0 | 2026-08-17 | Initial version; approved as the Phase 2 gate |
 | 1.1.0 | 2026-08-17 | Implemented. `sephiroth.tools.servers` importing the five FastMCP server objects back from `intelligence.mcp` created a genuine bidirectional package cycle with the `intelligence/mcp/registry.py` shim (each package needed the other fully initialized). Resolved by making `intelligence/mcp/__init__.py` resolve `MCPRegistry`/`get_registry` lazily via `__getattr__` (PEP 562) instead of importing them eagerly — the shim module itself (`registry.py`) stays a pure two-line re-export; only the package `__init__` gained the lazy-resolution logic. No contract in §6 changed. |
+| 1.2.0 | 2026-08-19 | `DEBT-009` closed in Phase 4: `intelligence/mcp/registry.py` deleted (one phase later than the charter's original Phase 3 schedule), all call sites retargeted onto `sephiroth.tools` directly, `intelligence/mcp/__init__.py`'s PEP 562 `__getattr__` removed (no longer needed once nothing requests `MCPRegistry`/`get_registry` from that package). The fourth and fifth acceptance criteria retired — see §8, §10. |

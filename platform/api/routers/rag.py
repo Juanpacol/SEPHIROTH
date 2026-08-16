@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Query
 
 from auth.deps import get_current_user
 from data.schemas import User
-from intelligence.mcp import get_registry
+from sephiroth.tools import get_tool_runtime
 
 router = APIRouter()
 
@@ -23,7 +23,7 @@ async def search_evidence(
     user: User = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """Search indexed clinical guidelines (always returns citations)."""
-    registry = get_registry()
+    registry = get_tool_runtime()
     await registry.load()
     return await registry.execute("search_clinical_guidelines", {"query": q, "top_k": top_k})
 
@@ -35,6 +35,6 @@ async def search_pubmed(
     user: User = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """Search PubMed for peer-reviewed evidence (requires internet)."""
-    registry = get_registry()
+    registry = get_tool_runtime()
     await registry.load()
     return await registry.execute("search_pubmed", {"query": q, "max_results": max_results})

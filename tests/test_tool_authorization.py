@@ -16,7 +16,7 @@ from typing import Any, Dict, List
 import pytest
 
 from intelligence.agents import DrugSafetyAgent, EvidenceAgent
-from intelligence.mcp import get_registry
+from sephiroth.tools import get_tool_runtime
 from tests.conftest import FakeLLMClient
 
 pytestmark = pytest.mark.contract
@@ -27,7 +27,7 @@ OUT_OF_SCOPE = "check_drug_interactions"  # real tool, wrong agent
 
 @pytest.fixture
 async def registry():
-    reg = get_registry()
+    reg = get_tool_runtime()
     await reg.load()
     return reg
 
