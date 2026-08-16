@@ -166,6 +166,37 @@ async def test_chat_400_does_not_retry():
 
 
 @pytest.mark.asyncio
+async def test_tool_use_failed_retries_round_without_tools():
+    calls = {"n": 0}
+
+    def handler(request):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            assert b"tools" in request.content
+            return httpx.Response(
+                400,
+                json={
+                    "error": {
+                        "message": "Failed to call a function.",
+                        "type": "invalid_request_error",
+                        "code": "tool_use_failed",
+                        "failed_generation": "<function=search [...]>",
+                    }
+                },
+            )
+        assert b'"tools"' not in request.content
+        return httpx.Response(200, json=_openai_response(content="answered without tools"))
+
+    client = _make_client(handler)
+    result = await client.chat(
+        messages=[{"role": "user", "content": "hi"}],
+        tools=[{"type": "function", "function": {"name": "search"}}],
+    )
+    assert result.content == "answered without tools"
+    assert calls["n"] == 2
+
+
+@pytest.mark.asyncio
 async def test_no_api_key_raises_unavailable():
     client = GroqClient(api_key=None, sleep=_noop_sleep)
     with pytest.raises(LLMUnavailableError):

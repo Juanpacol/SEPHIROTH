@@ -29,6 +29,12 @@ DEFAULT_MAX_TOOL_ROUNDS = 6
 DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
 
 
+class GroqToolUseFailedError(Exception):
+    """Groq's own model malformed a tool call (its `tool_use_failed` 400) —
+    distinct from LLMUnavailableError because it isn't an outage: retrying
+    the same round without tools usually recovers a plain-text answer."""
+
+
 class GroqClient:
     """Thin wrapper around Groq's OpenAI-compatible chat completions API."""
 
@@ -81,6 +87,14 @@ class GroqClient:
                 await self._sleep(min(2**attempt, 10))
                 last_exc = LLMUnavailableError(response.text)
                 continue
+            if response.status_code == 400:
+                try:
+                    code = response.json().get("error", {}).get("code")
+                except (json.JSONDecodeError, AttributeError):
+                    code = None
+                if code == "tool_use_failed":
+                    raise GroqToolUseFailedError(response.text)
+                raise LLMUnavailableError(f"{response.status_code}: {response.text}")
             if response.status_code >= 400:
                 raise LLMUnavailableError(f"{response.status_code}: {response.text}")
             return response.json()
@@ -117,7 +131,16 @@ class GroqClient:
                 payload["tools"] = tools
                 payload["tool_choice"] = "auto"
 
-            data = await self._post(payload)
+            try:
+                data = await self._post(payload)
+            except GroqToolUseFailedError:
+                logger.warning(
+                    "groq mangled a tool call (tool_use_failed); retrying round %s without tools",
+                    round_idx + 1,
+                )
+                payload.pop("tools", None)
+                payload.pop("tool_choice", None)
+                data = await self._post(payload)
             message = data["choices"][0]["message"]
             tool_calls = message.get("tool_calls") or []
 
