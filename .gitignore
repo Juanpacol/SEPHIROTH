@@ -58,8 +58,10 @@ Thumbs.db
 tmp/
 /scratch/
 
-# Models (large binaries)
-models/
+# Model weight downloads (large binaries) — anchored to repo root so this
+# never shadows a source package that happens to be named "models" (e.g.
+# src/sephiroth/models/). Bit us once already: see the Phase 1 dev-log.
+/models/
 
 # Coverage
 .coverage
