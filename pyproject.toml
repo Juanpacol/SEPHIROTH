@@ -39,6 +39,7 @@ markers = [
 source = [
     "src/sephiroth/contracts",
     "src/sephiroth/models",
+    "src/sephiroth/tools",
     "intelligence/agents",
     "intelligence/llm",
     "intelligence/mcp",
@@ -57,10 +58,13 @@ omit = [
     "*/__pycache__/*",
     "*/tests/*",
     "data/embeddings/build_artifact.py",
-    # Phase 1 shims (docs/00-migration-charter.md §3) — trivial re-exports,
+    # Phase 1/2 shims (docs/00-migration-charter.md §3) — trivial re-exports,
     # counting them would inflate coverage while hiding real gaps. Deleted
-    # in Phase 2 per the shim schedule.
+    # one phase after they were created, per the shim schedule. Only
+    # registry.py is a shim — the five FastMCP servers in intelligence/mcp/
+    # remain real implementation and stay in `source` above.
     "intelligence/llm/*",
+    "intelligence/mcp/registry.py",
 ]
 
 [tool.coverage.report]

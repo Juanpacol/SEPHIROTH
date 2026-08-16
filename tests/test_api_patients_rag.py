@@ -103,11 +103,31 @@ async def test_get_unknown_patient_404(client):
 @pytest.mark.asyncio
 async def test_rag_search_returns_cited_results(client):
     async with client:
-        res = await client.get("/api/rag/search", params={"q": "A1C goal type 2 diabetes"})
+        register = await client.post(
+            "/api/auth/register",
+            json={"email": "rag@example.org", "name": "Dr. Rag", "password": "password123"},
+        )
+        token = register.json()["access_token"]
+
+        res = await client.get(
+            "/api/rag/search",
+            params={"q": "A1C goal type 2 diabetes"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert res.status_code == 200
         body = res.json()
         assert body["results"]
         assert body["results"][0]["citation"]
+
+
+@pytest.mark.asyncio
+async def test_rag_search_requires_auth(client):
+    """DEBT-004 (docs/specs/SPEC-002-tool-runtime.md): search_pubmed makes a
+    real network call per request, so an unauthenticated search endpoint is
+    also an open door to consuming that quota."""
+    async with client:
+        res = await client.get("/api/rag/search", params={"q": "A1C goal type 2 diabetes"})
+        assert res.status_code == 401
 
 
 @pytest.mark.asyncio

@@ -31,12 +31,12 @@ Requirements are defined in [scope.md](00-project/scope.md); features in
 | | F-030 capability router | `sephiroth/runtime/router.py` | 📋 | H1 | tool selection accuracy | 📋 phase 3 |
 | **R-005** Failures classified and handled | F-033 recovery engine | `sephiroth/runtime/recovery.py` | 📋 | H4 | recovery success rate | 📋 phase 3 |
 | | F-032 lifecycle state machine | `sephiroth/runtime/` | 📋 | H4 | completion under fault injection | 📋 phase 3 |
-| | F-025 tool timeout/retry/fallback | `sephiroth/tools/` | 📋 | H4 | tool success rate | 📋 phase 2 |
+| | F-025 tool call timeout | `sephiroth/tools/runtime.py` | `test_tool_runtime.py` | H4 | tool success rate | ⚠️ timeout only; retry/fallback deferred |
 | **R-006** Replayable traces | F-042 execution traces | `sephiroth/telemetry/` | 📋 | H6 | latency, tokens, cost | 📋 phase 5 |
 | | F-043 span redaction | `sephiroth/contracts/trace.py` | `test_contracts_models.py` | — | zero PHI in spans | 🚧 contract done |
 | | F-020 domain contracts | `sephiroth/contracts/` | `test_contracts_schema.py` | — | — | ✅ implemented |
-| **R-007** Tools confined to authorised agents | F-021 dispatch-time authorization | `intelligence/mcp/registry.py` | `test_tool_authorization.py` | — | policy violation rate | ✅ implemented |
-| | F-024 tool capability metadata | `sephiroth/tools/` | 📋 | — | — | 📋 phase 2 |
+| **R-007** Tools confined to authorised agents | F-021 dispatch-time authorization | `sephiroth/tools/runtime.py` | `test_tool_authorization.py` | — | policy violation rate | ✅ implemented |
+| | F-024 tool capability metadata | `sephiroth/tools/servers.py` | `test_tool_runtime.py` | — | — | ✅ implemented |
 | **R-008** Application never breaks | F-001, F-014 existing behaviour | `intelligence/agents/workflow.py` | `test_sse_contract.py`, `test_workflow.py` | — | suite green | ✅ continuously |
 | | F-009 evaluation regression gate | `intelligence/evaluation/` | `test_eval_cli.py` | — | eval job PASS | ✅ implemented |
 

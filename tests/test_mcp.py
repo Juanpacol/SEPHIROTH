@@ -11,6 +11,8 @@ from intelligence.mcp.registry import MCPRegistry, get_registry
 
 @pytest.mark.asyncio
 async def test_registry_singleton_returns_same_instance():
+    # AC-002-05 (docs/specs/SPEC-002-tool-runtime.md) — this whole module
+    # passes unmodified against the Phase 2 shim.
     assert get_registry() is get_registry()
 
 

@@ -5,7 +5,28 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 2 — Tool Runtime
+
+#### Security
+- **Closed DEBT-004**: `platform/api/routers/medical.py` (6 endpoints) and `rag.py` (2 endpoints) called `registry.execute(...)` directly from FastAPI routes with zero authentication — anyone could trigger image analysis, entity extraction, drug-interaction checks, or a real PubMed network call, at will. Every endpoint in both routers now requires `Depends(get_current_user)`, matching every other endpoint that touches clinical data or tools.
+
+#### Added
+- **`sephiroth.tools.ToolRuntime`** — the MCP dispatcher relocated from `intelligence/mcp/registry.py::MCPRegistry`. `scoped_executor()`'s dispatch-time whitelist enforcement (Phase 0) is unchanged; `execute()` now bounds every call to `tool_call_timeout_seconds` (new setting, default 30s) so a hang in `search_pubmed` (network) or `describe_medical_image` (a model call) degrades to an error result instead of blocking a consultation indefinitely.
+- **`tags_for(tool_name)`** — capability tags for each of the 8 tools (`TOOL_CAPABILITIES` in `sephiroth/tools/servers.py`), for the Phase 3 router to consume. A hand-authored literal dict, not a YAML loader — that generality belongs to the Phase 3 agent registry.
+- `tests/test_tool_runtime.py`, `tests/test_mcp_shims.py`.
+
+#### Changed
+- `intelligence/mcp/registry.py` is now a re-export shim over `sephiroth.tools`; deleted in Phase 3. Only `registry.py` is shimmed — the five FastMCP servers remain real implementation.
+- `intelligence/mcp/__init__.py` resolves `MCPRegistry`/`get_registry` lazily via `__getattr__` (PEP 562) rather than importing them eagerly. `sephiroth.tools.servers` imports the five server objects back from this package, and the shim imports `sephiroth.tools` — an eager import created a genuine bidirectional circular dependency between the two packages, caught immediately by running the new tests. The shim module itself stays a pure two-line re-export.
+- `tests/test_medical_router.py` and the RAG search test in `tests/test_api_patients_rag.py` updated to register/authenticate first, mirroring the pattern already used by `test_api_agents.py`.
+
+#### Known deviation from the migration charter
+- `docs/00-migration-charter.md`'s original shim schedule had `intelligence/llm/*` (created Phase 1) deleted in Phase 2. This phase's approved scope was Tool Runtime only; deleting the LLM shims would have meant rewriting imports across ~16 unrelated files. Deferred to Phase 3 and tracked as `DEBT-008` — must not slip further, per the charter's own rule that a shim surviving two phases becomes permanent.
+
 ### Phase 1 — ModelProvider abstraction
+
+#### Fixed
+- **`.gitignore`'s `models/` rule silently excluded all of `src/sephiroth/models/`** from the Phase 1 commit — the rule (meant for future model-weight downloads) matched any directory named `models` at any depth. `git add -A` skipped all seven files; the pushed commit contained only the shim changes that import from them, so a fresh checkout was broken. Every verification that session passed anyway because git leaves ignored/untracked files on disk across branch switches. Anchored the rule to the repo root (`/models/`) and added the missing files as a follow-up commit, verified this time from a clean `git worktree`, not the working directory.
 
 #### Added
 - **`sephiroth.models.ModelProvider`** — a `@runtime_checkable` Protocol every LLM backend now satisfies structurally: `model`/`supports_vision`/`supports_tools` attributes, `chat`/`generate_json`/`describe_image`/`health` methods. `chat`'s parameters after `messages` are keyword-only and `generate_json`'s first two stay positional-or-keyword in order — matching how every call site in the repo already invokes them (`faithfulness.py` positionally, `timeline_extractor.py` by keyword). `GeminiClient`, `GroqClient`, `FallbackLLMClient`, and the test double `FakeLLMClient` all satisfy it (F-022).

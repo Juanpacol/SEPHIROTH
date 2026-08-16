@@ -1,13 +1,23 @@
-"""Direct medical tool endpoints (NLP extraction, imaging analysis)."""
+"""Direct medical tool endpoints (NLP extraction, imaging analysis).
+
+Every endpoint requires authentication (`docs/specs/SPEC-002-tool-runtime.md`
+DEBT-004): these call tools directly with attacker-controlled arguments — an
+unauthenticated caller could run image analysis, entity extraction, or drug
+interaction checks, or read arbitrary local image files via `/imaging/preview`,
+at will. Every other endpoint touching clinical data or tools already requires
+auth; this brings these six in line.
+"""
 
 import mimetypes
 from pathlib import Path
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from auth.deps import get_current_user
+from data.schemas import User
 from intelligence.mcp import get_registry
 
 router = APIRouter()
@@ -21,7 +31,7 @@ class ExtractRequest(BaseModel):
 
 
 @router.post("/nlp/extract")
-async def extract_entities(request: ExtractRequest) -> Dict[str, Any]:
+async def extract_entities(request: ExtractRequest, user: User = Depends(get_current_user)) -> Dict[str, Any]:
     """Extract medical entities (diseases, medications, symptoms, procedures)."""
     registry = get_registry()
     await registry.load()
@@ -29,7 +39,7 @@ async def extract_entities(request: ExtractRequest) -> Dict[str, Any]:
 
 
 @router.post("/nlp/summarize")
-async def summarize_note(request: ExtractRequest) -> Dict[str, Any]:
+async def summarize_note(request: ExtractRequest, user: User = Depends(get_current_user)) -> Dict[str, Any]:
     """Summarize a clinical note."""
     registry = get_registry()
     await registry.load()
@@ -43,7 +53,7 @@ class ImagingRequest(BaseModel):
 
 
 @router.post("/imaging/analyze")
-async def analyze_image(request: ImagingRequest) -> Dict[str, Any]:
+async def analyze_image(request: ImagingRequest, user: User = Depends(get_current_user)) -> Dict[str, Any]:
     """Analyze a medical image (returns structured findings)."""
     registry = get_registry()
     await registry.load()
@@ -59,7 +69,7 @@ class DescribeRequest(BaseModel):
 
 
 @router.post("/imaging/describe", summary="Describe a medical image with the local vision model")
-async def describe_image(request: DescribeRequest) -> Dict[str, Any]:
+async def describe_image(request: DescribeRequest, user: User = Depends(get_current_user)) -> Dict[str, Any]:
     """Generate an AI clinical description of a medical image (LLaVA via Ollama)."""
     registry = get_registry()
     await registry.load()
@@ -70,7 +80,7 @@ async def describe_image(request: DescribeRequest) -> Dict[str, Any]:
 
 
 @router.get("/imaging/preview", summary="Stream a local image file for the side-by-side viewer")
-async def preview_image(path: str) -> FileResponse:
+async def preview_image(path: str, user: User = Depends(get_current_user)) -> FileResponse:
     """Serve a browser-renderable image so the imaging page can show it next to the AI findings.
 
     Same trust boundary as `describe_medical_image`/`analyze_medical_image` — this is a
@@ -91,7 +101,9 @@ class DrugCheckRequest(BaseModel):
 
 
 @router.post("/drugs/check")
-async def check_interactions(request: DrugCheckRequest) -> Dict[str, Any]:
+async def check_interactions(
+    request: DrugCheckRequest, user: User = Depends(get_current_user)
+) -> Dict[str, Any]:
     """Screen a medication list for drug-drug interactions."""
     registry = get_registry()
     await registry.load()

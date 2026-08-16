@@ -11,13 +11,13 @@
 schema_version: 1
 project: SEPHIROTH
 version: 0.2.0
-updated: 2026-08-16
-phase_current: 1
+updated: 2026-08-17
+phase_current: 2
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
   "1": {name: "ModelProvider abstraction", status: done}
-  "2": {name: "Tool Runtime", status: planned}
+  "2": {name: "Tool Runtime", status: done}
   "3": {name: "Agent Runtime (3a parity, 3b dynamic)", status: planned}
   "4": {name: "Context Engine + Verification & Safety", status: planned}
   "5": {name: "Observability + shim removal", status: planned}
@@ -60,12 +60,19 @@ components:
       tests: [tests/test_llm_shims.py]
       strangler_target: src/sephiroth/models
       removed_in_phase: 2
-    intelligence/mcp:
-      status: implemented
-      description: 5 FastMCP servers; whitelist now enforced at dispatch
-      tests: [tests/test_mcp.py, tests/test_mcp_extra.py, tests/test_tool_authorization.py]
+    intelligence/mcp/registry.py:
+      status: shim
+      description: Phase 2 re-export shim over src/sephiroth/tools; no logic of its own
+      tests: [tests/test_mcp_shims.py]
       strangler_target: src/sephiroth/tools
       removed_in_phase: 3
+    intelligence/mcp:
+      status: implemented
+      description: >-
+        The 5 FastMCP servers (nlp, imaging, rag, drug_safety, vision) —
+        real implementation, not shimmed; only registry.py (above) moved
+        in Phase 2
+      tests: [tests/test_mcp.py, tests/test_mcp_extra.py, tests/test_tool_authorization.py]
     intelligence/evaluation:
       status: implemented
       description: Offline deterministic RAG eval, CI-blocking; RAG-scoped only
@@ -123,6 +130,17 @@ components:
               tests/test_llm_shims.py, tests/test_gemini_client.py,
               tests/test_groq_client.py, tests/test_fallback_client.py,
               tests/test_llm_factory.py]
+    src/sephiroth/tools:
+      status: implemented
+      phase: 2
+      spec: SPEC-002
+      description: >-
+        ToolRuntime (relocated MCPRegistry) + capability tags + per-call
+        timeout, retrofitted from intelligence/mcp/registry.py. Closed
+        DEBT-004 (unauthenticated direct-tool HTTP endpoints) in the same phase.
+      tests: [tests/test_tool_runtime.py, tests/test_mcp_shims.py,
+              tests/test_mcp.py, tests/test_mcp_extra.py,
+              tests/test_tool_authorization.py, tests/test_medical_router.py]
 
 # Capabilities the target architecture requires that have no implementation yet.
 gaps:
@@ -159,10 +177,10 @@ known_debt:
     action: wire ingestion into retrieval, or document as cold storage
     status: open
   - id: DEBT-004
-    item: "platform/api/routers/medical.py exposes MCP tools with no authentication"
-    action: route through the tool runtime's permission layer
+    item: "platform/api/routers/medical.py and rag.py exposed MCP tools with no authentication"
+    action: "Depends(get_current_user) added to all 8 endpoints across both routers"
     phase: 2
-    status: open
+    status: resolved
   - id: DEBT-005
     item: "intelligence/llm/factory.py::reset_llm_client has zero call sites"
     action: delete with the Phase 1 shims
@@ -176,3 +194,17 @@ known_debt:
     item: "Vestigial AgentState dataclass in intelligence/agents/__init__.py"
     action: deleted alongside its only referent
     status: resolved
+  - id: DEBT-008
+    item: >-
+      docs/00-migration-charter.md's shim schedule said intelligence/llm/*
+      (created Phase 1) would be deleted in Phase 2. Phase 2's approved plan
+      scoped only the Tool Runtime and did not include this — deleting it
+      would have meant rewriting imports in ~16 files (agents, routers,
+      evaluation, examples) outside that plan's approved scope.
+    action: >-
+      delete intelligence/llm/* and rewrite its ~16 import sites in Phase 3,
+      one phase later than originally scheduled. Must not slip past Phase 3 —
+      docs/00-migration-charter.md §3 rule 3: "a shim that survives two
+      phases becomes permanent."
+    phase: 3
+    status: open

@@ -38,8 +38,8 @@ what runs today is metadata inspection plus the vision model.
 | F-021 | Tool authorization enforced at dispatch | ✅ | `mcp/registry.py` | `test_tool_authorization.py` | — | `04-development/setup.md` |
 | F-022 | `ModelProvider` interface | ✅ | `sephiroth/models/` | `test_model_provider_protocol.py` | — | SPEC-001 |
 | F-023 | Config-driven provider selection (`llm_provider`) | ✅ | `sephiroth/models/factory.py` | `test_llm_factory.py` | — | SPEC-001 |
-| F-024 | Tool runtime with capability metadata | 📋 | `sephiroth/tools/` | 📋 | — | 📋 SPEC-002 |
-| F-025 | Tool timeout / retry / circuit breaker | 📋 | `sephiroth/tools/` | 📋 | — | 📋 SPEC-002 |
+| F-024 | Tool runtime with capability metadata | ✅ | `sephiroth/tools/` | `test_tool_runtime.py` | — | SPEC-002 |
+| F-025 | Tool call timeout | ⚠️ | `sephiroth/tools/runtime.py` | `test_tool_runtime.py` | — | SPEC-002 |
 | F-026 | Agent registry with declared capabilities | 📋 | `sephiroth/runtime/registry.py` | 📋 | — | 📋 SPEC-003 |
 | F-027 | Task analyzer | 📋 | `sephiroth/runtime/analyzer.py` | 📋 | — | 📋 SPEC-003 |
 | F-028 | Static planner (parity with `route_specialists`) | 📋 | `sephiroth/runtime/planner.py` | 📋 `test_runtime_parity.py` | — | 📋 SPEC-003 |
@@ -61,6 +61,12 @@ what runs today is metadata inspection plus the vision model.
 
 F-043 is 🚧 because the contract and its enforcement exist, but nothing emits
 spans yet.
+
+F-025 is ⚠️ because only the timeout was built — retry and circuit-breaker
+were explicitly deferred (`SPEC-002` NG-1/NG-2): the two I/O-performing tools
+already retry inside their own logic (httpx / `GeminiClient`), so a second
+generic retry layer would double-retry the same failure with no measured
+benefit.
 
 ## Removed
 

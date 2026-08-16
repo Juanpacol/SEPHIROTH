@@ -95,6 +95,11 @@ class Settings(BaseSettings):
     # specialist relies on a tool outside its declared scope.
     enforce_tool_authorization: bool = True
 
+    # Bounds a single tool dispatch (intelligence/mcp -> FastMCP call). Two
+    # tools perform real I/O (search_pubmed over the network, describe_medical_image
+    # via a model call) and could otherwise hang a consultation indefinitely.
+    tool_call_timeout_seconds: float = 30.0
+
     enable_image_analysis: bool = True
     enable_vision_analysis: bool = True
     enable_rag: bool = True
