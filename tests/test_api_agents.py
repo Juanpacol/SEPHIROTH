@@ -7,6 +7,11 @@ conftest.py) rather than `dependency_overrides`.
 
 Passing unmodified against the Phase 3 executor is part of that phase's
 parity proof (AC-003-03, docs/specs/SPEC-003-agent-runtime.md).
+
+Phase 4 (SPEC-004) added `verification_report`/`abstention` as additive,
+optional response fields — `test_consult_returns_citation_report` below gained
+one additive assertion for them; no existing assertion changed. Verifies
+AC-004-08 (docs/specs/SPEC-004-verification-safety.md).
 """
 
 import pytest
@@ -88,6 +93,8 @@ async def test_consult_returns_citation_report(client):
         assert body["answer"]
         assert "citation_report" in body
         assert body["citation_report"]["fabricated"] == []
+        assert "verification_report" in body
+        assert body["abstention"]["status"] == "answer"
 
 
 @pytest.mark.asyncio

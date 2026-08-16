@@ -5,6 +5,9 @@ progressive streaming as each specialist actually finishes.
 concurrency *mechanics* the wire contract doesn't directly observe — that a
 raising agent doesn't take down the rest, and that streaming is genuinely
 progressive (`asyncio.as_completed`), not a burst after everyone finishes.
+
+Also verifies AC-004-07, AC-004-09 (docs/specs/SPEC-004-verification-safety.md)
+— the RunState-adoption and abstain/partial wiring tests near the bottom.
 """
 
 import asyncio
@@ -105,3 +108,85 @@ async def test_final_event_agents_involved_is_sorted_regardless_of_completion_or
     assert final["event"] == "final"
     assert final["agents_involved"] == sorted(final["agents_involved"])
     assert set(final["agents_involved"]) == {"evidence", "laboratory", "radiology"}
+
+
+async def test_run_consultation_default_answers_when_no_claims_extracted():
+    """No `json_payloads` queued (the default) means `extract_claims` sees an
+    empty payload and returns no claims — `supported_claim_ratio` stays 1.0
+    and the run answers normally. This is SPEC-004's RunState-adoption gate:
+    every pre-existing test in the suite exercises exactly this path, which
+    is why they all kept passing unmodified."""
+    client = FakeLLMClient(default_script=[("answer", "A plain answer with no claims scripted.")])
+    state = await run_consultation(client, "test query")
+
+    assert state["abstention"]["status"] == "answer"
+    assert state["abstention"]["reason"] is None
+    assert state["verification_report"] == {"claims": [], "contradictions": []}
+    assert state["final_answer"] == "A plain answer with no claims scripted."
+
+
+async def test_run_consultation_abstains_on_unsupported_high_risk_claim(monkeypatch):
+    """End-to-end: verify_claims is patched to return one unsupported
+    high-risk claim (the extraction/verification logic itself is unit-tested
+    separately in tests/test_verification_verify.py) — the run must decline
+    rather than surface the coordinator's raw answer."""
+    import sephiroth.runtime.executor as executor_module
+    from sephiroth.contracts import Claim, RiskLevel, VerificationReport, VerificationStatus
+
+    async def fake_verify_claims(claims, evidence, client):
+        return VerificationReport(
+            claims=[
+                Claim(
+                    id="c1",
+                    text="unsupported claim",
+                    risk=RiskLevel.CRITICAL,
+                    status=VerificationStatus.UNSUPPORTED,
+                )
+            ]
+        )
+
+    async def fake_extract_claims(answer, client):
+        return [Claim(id="c1", text="unsupported claim", risk=RiskLevel.CRITICAL)]
+
+    monkeypatch.setattr(executor_module, "extract_claims", fake_extract_claims)
+    monkeypatch.setattr(executor_module, "verify_claims", fake_verify_claims)
+
+    client = FakeLLMClient(default_script=[("answer", "Double the warfarin dose immediately.")])
+    state = await run_consultation(client, "test query")
+
+    assert state["abstention"]["status"] == "abstain"
+    assert state["abstention"]["reason"] == "unsupported_high_risk_claim"
+    assert state["final_answer"] == state["abstention"]["message"]
+    assert "Double the warfarin dose" not in state["final_answer"]
+
+
+async def test_stream_consultation_final_event_carries_verification_and_abstention():
+    client = FakeLLMClient(default_script=[("answer", "ok")])
+    events = [e async for e in stream_consultation(client, "test query")]
+    final = events[-1]
+
+    assert "verification_report" in final
+    assert "abstention" in final
+    assert final["abstention"]["status"] == "answer"
+
+
+async def test_run_consultation_partial_status_prepends_caveat_banner(monkeypatch):
+    """A PARTIAL abstention decision keeps the coordinator's answer but
+    prepends a fixed caveat banner — unlike ABSTAIN, which replaces it."""
+    import sephiroth.runtime.executor as executor_module
+    from sephiroth.contracts import AbstentionDecision, ResponseStatus
+    from sephiroth.safety.abstention import PARTIAL_BANNER
+
+    def fake_decide(report, confidence, input_flags):
+        return AbstentionDecision(
+            status=ResponseStatus.PARTIAL, confidence=confidence, supported_claim_ratio=1.0
+        )
+
+    monkeypatch.setattr(executor_module, "decide_abstention", fake_decide)
+
+    client = FakeLLMClient(default_script=[("answer", "The coordinator's real answer.")])
+    state = await run_consultation(client, "test query")
+
+    assert state["abstention"]["status"] == "partial"
+    assert state["final_answer"].startswith(PARTIAL_BANNER)
+    assert "The coordinator's real answer." in state["final_answer"]

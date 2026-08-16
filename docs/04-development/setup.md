@@ -53,31 +53,33 @@ subpackages import as top-level (`from core.config import settings`).
 1. Create `intelligence/mcp/my_server.py` with a FastMCP app.
 2. Declare tools with `@mcp.tool`, delegating to an implementation under
    `intelligence/` or `data/`.
-3. Register the server in `SERVERS` in `intelligence/mcp/registry.py`.
-4. Add the tool name to the `allowed_tools` of every agent permitted to call it.
+3. Register the server in `SERVERS` in `src/sephiroth/tools/servers.py`.
+4. Add the tool name to the `allowed_tools` of every agent capability permitted to call it.
 
 Step 4 is not optional. `allowed_tools` is enforced at dispatch by
-`MCPRegistry.scoped_executor()`; a tool absent from an agent's whitelist returns
+`ToolRuntime.scoped_executor()`; a tool absent from an agent's whitelist returns
 `{"error": "Tool not authorized for this agent: ..."}` instead of running.
 
 ### Add an agent
 
-1. Subclass `MCPAgent` in `intelligence/agents/__init__.py`.
-2. Set `name`, `role_prompt`, and `allowed_tools`.
-   The attribute is **`role_prompt`**, not `system_prompt`.
-3. Wire it into `intelligence/agents/workflow.py`.
-4. Add an entry to `_ACTION_TEMPLATES` / `_NO_TOOL_ACTIONS` in
+1. Add an `AgentCapability` record to `src/sephiroth/runtime/registry.py` —
+   `id`, `role_prompt`, and `tools`. The field is **`role_prompt`**, not
+   `system_prompt`; the system prompt is assembled in `agent.py` from the
+   disclaimer + `role_prompt` + tool catalog.
+2. Select it from `route_specialists` in `src/sephiroth/runtime/planner.py`.
+3. Add an entry to `_ACTION_TEMPLATES` / `_NO_TOOL_ACTIONS` in
    `intelligence/agents/explainability.py`.
 
-Step 4 is easy to miss and degrades **historical** consultations: `explanation`
+Step 3 is easy to miss and degrades **historical** consultations: `explanation`
 is rebuilt on read rather than persisted, so a missing template changes how past
 consultations render in history and PDF export.
 
 ```python
-class PathologyAgent(MCPAgent):
-    name = "pathology"
-    role_prompt = "You are the pathology specialist..."
-    allowed_tools = ["analyze_specimen"]
+PATHOLOGY = AgentCapability(
+    id="pathology",
+    role_prompt="You are the pathology specialist...",
+    tools=["analyze_specimen"],
+)
 ```
 
 ### Add an API endpoint

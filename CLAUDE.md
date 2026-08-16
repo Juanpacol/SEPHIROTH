@@ -27,8 +27,10 @@ An **AI-powered clinical decision support platform** for healthcare professional
 | `platform/frontend/` | Next.js app (pages in `app/`, components in `components/`, design tokens in Tailwind config) |
 | `src/sephiroth/models/` | `GeminiClient` (chat/tool-call loop, structured output, vision) + `GroqClient` (text-only fallback) + `FallbackLLMClient` (composes both) + `factory.py` (`get_llm_client()` singleton), all behind the `ModelProvider` protocol |
 | `src/sephiroth/tools/` | `ToolRuntime` (relocated MCP registry — capability tags, per-call timeout, dispatch-time whitelist enforcement) |
-| `src/sephiroth/runtime/` | `Agent` + 5 capability records + the async executor (fan-out/merge/coordinate, replacing LangGraph — see `docs/08-decisions/ADR-001-remove-langgraph.md`) |
-| `intelligence/mcp/` | FastMCP servers (nlp, imaging, rag, drug_safety, vision — vision shares the same Gemini client, model override via `gemini_vision_model`); `registry.py` is a re-export shim over `src/sephiroth/tools/` |
+| `src/sephiroth/runtime/` | `Agent` + 5 capability records + the async executor (fan-out/merge/coordinate, replacing LangGraph — see `docs/08-decisions/ADR-001-remove-langgraph.md`); internal state is a real `RunState` since Phase 4 |
+| `src/sephiroth/verification/` | Claim extraction, evidence harvesting, 5-state claim verification (`VerificationStatus`), deterministic confidence scoring — `citation_guard` feeds it as a pre-filter (ADR-006) |
+| `src/sephiroth/safety/` | Abstention gating (`answer`/`partial`/`abstain`, ADR-008) + a minimal input prompt-injection heuristic |
+| `intelligence/mcp/` | FastMCP servers (nlp, imaging, rag, drug_safety, vision — vision shares the same Gemini client, model override via `gemini_vision_model`); the registry/dispatcher itself lives in `src/sephiroth/tools/` |
 | `intelligence/agents/` | Thin `Agent` wrappers (shim into `src/sephiroth/runtime/`) + Citation Guard (`citation_guard.py`) + explainability trace (`explainability.py`) + rule-based risk engine (`risk_engine.py`) |
 | `intelligence/medical-imaging/` | MONAI transforms + networks (cloned from ref-monai-medical-imaging) |
 | `intelligence/nlp/` | MedCAT NER + pipeline (cloned) + `timeline_extractor.py` (note → timeline events via structured LLM output) |
@@ -86,7 +88,7 @@ MCP tools are FastMCP servers in `intelligence/mcp/`:
 - `drug_safety_server.py` → drug interaction checking
 - `vision_server.py` → wraps `GeminiClient.describe_image()` (multimodal image description)
 
-Registry (`intelligence/mcp/registry.py`) discovers all servers, aggregates their tool schemas into:
+`ToolRuntime` (`src/sephiroth/tools/runtime.py`) discovers all servers (`SERVERS` in `src/sephiroth/tools/servers.py`), aggregates their tool schemas into:
 1. **`llm_tools()`** — OpenAI-style function-calling schemas, converted to Gemini's `FunctionDeclaration` format inside `GeminiClient`
 2. **System prompt summary** (human-readable tool descriptions, prepended to agent's system prompt)
 
@@ -97,7 +99,8 @@ Registry (`intelligence/mcp/registry.py`) discovers all servers, aggregates thei
 3. **One agent per MCP server.** Specialist agents are small and focused; the executor in `src/sephiroth/runtime/` orchestrates them.
 4. **Sephiroth gradient = AI signal.** Whenever the UI shows AI-generated content, that gradient appears (badge, card border, etc.). Helps users trust the source.
 5. **All answers must cite sources.** EvidenceAgent always returns `(finding, [source_citation1, source_citation2, ...])`. This is baked into the RAG pipeline.
-6. **Citation Guard on every answer.** `intelligence/agents/citation_guard.py` audits the coordinator's final answer against actual tool output; fabricated citations are stripped (`[unverified — removed]`) and reported in `citation_report` (shown in the UI).
+6. **Citation Guard on every answer.** `intelligence/agents/citation_guard.py` audits the coordinator's final answer against actual tool output; fabricated citations are stripped (`[unverified — removed]`) and reported in `citation_report` (shown in the UI). Since Phase 4 it's a pre-filter feeding claim-level verification, not the terminal check — see #15.
+15. **Claim verification and abstention gate every consultation.** `src/sephiroth/verification/` decomposes the (citation-sanitized) answer into claims and classifies each against retrieved evidence content (5-state `VerificationStatus`, not citation_guard's binary check); `src/sephiroth/safety/abstention.py` gates on the result — an unsupported high-risk claim, a contradiction, or low confidence overrides a plain `answer` with `partial` (caveat banner) or `abstain` (declines, replacing the answer). Confidence is always derived from existing signals, never self-reported by the model.
 7. **Auth = JWT, single clinician role.** Consultations are persisted per user (`consultations` table); patients are shared. Protected routes use `Depends(get_current_user)`. `JWT_SECRET` must be a strong, non-default value in staging/production — `Settings` fails fast at startup otherwise (see `platform/core/config.py`).
 8. **Streaming via SSE.** `POST /api/agents/consult/stream` emits `routing` → `agent_completed`(×N) → `final` → `persisted` (carries the consultation id so Export PDF works without a reload); the frontend parses it with fetch+ReadableStream (EventSource can't POST).
 9. **Explainability is derived, never stored.** `intelligence/agents/explainability.py` builds the reasoning trace on read from persisted `agents`/`tool_calls`/`citation_report` — template-based, no LLM call, so improving templates needs no backfill.
@@ -133,9 +136,9 @@ PATHOLOGY = AgentCapability(
 
 1. Create `intelligence/mcp/my_new_server.py` with a FastMCP app
 2. Declare tools with `@mcp.tool` decorators, calling your implementation from `intelligence/` or `data/`
-3. Register the server in `SERVERS` in `registry.py`
-4. Add the tool name to the `allowed_tools` of each agent permitted to call it —
-   the whitelist is enforced at dispatch by `MCPRegistry.scoped_executor()`, so
+3. Register the server in `SERVERS` in `src/sephiroth/tools/servers.py`
+4. Add the tool name to the `allowed_tools` of each agent's `AgentCapability` —
+   the whitelist is enforced at dispatch by `ToolRuntime.scoped_executor()`, so
    an unlisted tool returns an authorization error instead of running
 
 See existing servers (`nlp_server.py`, `imaging_server.py`) for the pattern.

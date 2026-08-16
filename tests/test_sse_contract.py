@@ -16,6 +16,12 @@ backward-compatible. Changing these five is not.
 This module is never deleted — it outlives the migration and remains the
 permanent contract test. Passing unmodified against the Phase 3 executor is
 part of that phase's parity proof (AC-003-02, docs/specs/SPEC-003-agent-runtime.md).
+
+Phase 4 (SPEC-004) added two additive, optional keys to `final` —
+`verification_report` and `abstention` — the frontend ignores unknown keys,
+so `test_final_event_shape`'s exact-set assertion below was extended to
+include them; no existing key/casing changed. Verifies AC-004-08
+(docs/specs/SPEC-004-verification-safety.md).
 """
 
 import json
@@ -145,6 +151,8 @@ async def test_final_event_shape():
         "tool_calls",
         "citation_report",
         "explanation",
+        "verification_report",
+        "abstention",
     }, f"final field set drifted: {sorted(final.keys())}"
     assert isinstance(final["answer"], str) and final["answer"]
     assert final["agents_involved"] == sorted(final["agents_involved"]), (

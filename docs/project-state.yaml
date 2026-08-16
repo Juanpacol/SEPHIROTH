@@ -10,16 +10,16 @@
 
 schema_version: 1
 project: SEPHIROTH
-version: 0.3.1
+version: 0.4.0
 updated: 2026-08-19
-phase_current: 3
+phase_current: 4
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
   "1": {name: "ModelProvider abstraction", status: done}
   "2": {name: "Tool Runtime", status: done}
   "3": {name: "Agent Runtime + DEBT-008 closure (LangGraph removed in the same phase)", status: done}
-  "4": {name: "Context Engine + Verification & Safety", status: planned}
+  "4": {name: "Context Engine (4a, planned) + Verification & Safety (4b, done — SPEC-004)", status: partial}
   "5": {name: "Observability + shim removal", status: planned}
 
 components:
@@ -40,7 +40,11 @@ components:
       removed_in_phase: 4
     intelligence/agents/citation_guard.py:
       status: implemented
-      description: Citation-label provenance audit; binary verified/fabricated
+      description: >-
+        Citation-label provenance audit; binary verified/fabricated. Since
+        Phase 4 (SPEC-004), composed as a pre-filter feeding
+        src/sephiroth/verification's 5-state claim verifier (ADR-006), not
+        replaced by it — unmodified in this phase.
       tests: [tests/test_citation_guard.py, tests/test_citation_guard_adversarial.py]
       strangler_target: src/sephiroth/verification
       removed_in_phase: 5
@@ -139,23 +143,44 @@ components:
         Analyzer/Planner/Router + Agent (capability-bound) + async executor
         (fan-out/merge/coordinate), replacing the LangGraph-compiled graph
         entirely in this phase (ADR-001). route_specialists relocated
-        verbatim (NG-1: no dynamic capability-matching planner yet). RunState
-        deliberately not adopted as internal state (NG-2, SPEC-003 §10).
+        verbatim (NG-1: no dynamic capability-matching planner yet). Since
+        Phase 4 (SPEC-004), the executor's internal state is a real
+        RunState — the SPEC-003 §10 deferral is resolved; ToolCall.tool vs.
+        the frozen wire's name is projected at one function, _tool_call_wire.
       tests: [tests/test_agent_registry.py, tests/test_runtime_executor.py,
               tests/test_no_langgraph.py, tests/test_workflow.py,
               tests/test_sse_contract.py, tests/test_api_agents.py,
               tests/test_prompt_contract.py]
+    src/sephiroth/verification:
+      status: implemented
+      phase: 4
+      spec: SPEC-004
+      description: >-
+        Claim extraction, evidence harvesting, batched 5-state claim
+        verification (VerificationStatus), and deterministic confidence
+        scoring. citation_guard remains a pre-filter feeding this, per
+        ADR-006. Context Engine (reranking/memory/compression, Phase 4a) is
+        a separate, not-yet-written spec.
+      tests: [tests/test_verification_claims.py, tests/test_verification_evidence.py,
+              tests/test_verification_verify.py, tests/test_verification_confidence.py]
+    src/sephiroth/safety:
+      status: implemented
+      phase: 4
+      spec: SPEC-004
+      description: >-
+        Abstention gating (answer/partial/abstain, priority-ordered per
+        ADR-008) and a minimal input-facing prompt-injection heuristic
+        (F-041). PHI redaction, output-side toxicity/jailbreak classifiers,
+        and rate limiting are explicitly deferred (SPEC-004 NG-2).
+      tests: [tests/test_safety_abstention.py, tests/test_safety_output_safety.py]
 
 # Capabilities the target architecture requires that have no implementation yet.
 gaps:
   - {capability: Dynamic, capability-matching planner (NG-1, SPEC-003), phase: 4}
   - {capability: Recovery engine, phase: 4}
-  - {capability: Reranking / memory / compression / token budgeting, phase: 4}
-  - {capability: Claim extraction and five-state verification, phase: 4}
-  - {capability: Conflict detection, phase: 4}
-  - {capability: Confidence engine, phase: 4}
-  - {capability: Abstention engine, phase: 4}
-  - {capability: Output-facing safety engine (PHI, injection, HITL), phase: 4}
+  - {capability: Reranking / memory / compression / token budgeting (Context Engine, Phase 4a), phase: 4}
+  - {capability: Confidence/abstention threshold tuning against the eval harness (SPEC-004 NG-3), phase: 4}
+  - {capability: Output-facing safety beyond the prompt-injection heuristic — PHI/toxicity/jailbreak/HITL (SPEC-004 NG-2), phase: 5}
   - {capability: Structured execution traces, phase: 5}
 
 quality_gates:

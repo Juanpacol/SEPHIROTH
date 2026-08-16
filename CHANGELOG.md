@@ -5,6 +5,25 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 4b — Verification & Safety
+
+#### Added
+- **`src/sephiroth/verification/`** (`docs/specs/SPEC-004-verification-safety.md`): claim-level content verification, replacing the assumption that citation-provenance checking alone was sufficient. `claims.py::extract_claims` decomposes a coordinator answer into `Claim`s via one `generate_json` call; `evidence.py::harvest_evidence` normalizes tool results into `EvidenceRecord`s (real passage content from `search_clinical_guidelines`, metadata-only from `search_pubmed` — a documented limitation, not a bug); `verify.py::verify_claims` judges every claim against evidence in a single batched `generate_json` call (not one per claim — ADR-006's dominant-cost concern), with a deterministic token-overlap rule that downgrades a `supported` verdict lacking real overlap with its cited evidence to `partially_supported` (never trust the judge alone); `confidence.py::compute_confidence` is a pure, deterministic function of `supported_claim_ratio`, citation-fabrication rate, and capped tool failures — never LLM self-reported (ADR-008).
+- **`src/sephiroth/safety/`**: `abstention.py::decide` gates every consultation into `answer`/`partial`/`abstain`, with `has_unsupported_high_risk_claim` (and any contradiction, or a policy-restriction flag) overriding any confidence threshold — a high-confidence-looking answer asserting one unsupported high-risk claim must still abstain. `output_safety.py::check_input` is a minimal, deliberately narrow prompt-injection heuristic on the input query (F-041); PHI redaction, output-side toxicity/jailbreak classifiers, and rate limiting are explicitly deferred (SPEC-004 NG-2) — the product exists to show a clinician their own patient's clinical content back to them, so redacting it would break the product.
+- Two new `Consultation` columns, `verification_report`/`abstention` (JSON, default `{}`), mirroring the existing `citation_report` pattern; new Alembic migration `eef6397408fa` (hand-corrected from autogenerate's default `NOT NULL` with no default, which would have failed against any pre-existing row, to `server_default='{}'`).
+- `ConsultResponse`, the SSE `final` event, and `/history` all gain `verification_report`/`abstention` as additive, optional fields — the five frozen SSE events keep identical shape/casing otherwise.
+- Tests: `tests/test_verification_{claims,evidence,verify,confidence}.py`, `tests/test_safety_{abstention,output_safety}.py`, plus new RunState/abstention-path cases in `tests/test_runtime_executor.py`.
+
+#### Changed
+- **`src/sephiroth/runtime/executor.py` adopts `RunState` as its real internal state**, resolving the deferral documented in `SPEC-003` §10. The one friction point flagged there — `ToolCall.tool` vs. the frozen wire's `name` — is resolved by a single projection function (`_tool_call_wire`) at the SSE-yield/return boundary; nothing else in the wire shape changes.
+- `citation_guard.py` is unchanged but recomposed: it now runs as a fast pre-filter feeding the new verifier (its `fabrication_rate` is one input to `compute_confidence`), not the terminal check, per ADR-006's own framing.
+- `tests/test_sse_contract.py` and `tests/test_api_agents.py` gained additive-only assertions for the two new keys; no existing assertion changed.
+
+#### Known deviations (documented in `docs/specs/SPEC-004-verification-safety.md` §4, §10, and `docs/00-migration-charter.md`'s shim schedule)
+- **`intelligence/agents/citation_guard.py` is *not* shimmed this phase**, unlike the charter's original Phase-4 shim schedule for `{citation_guard,explainability,risk_engine}.py`. It stays real, unmodified implementation, composed ahead of the new verifier — shimming/deleting it is deferred until the new verifier has demonstrably absorbed its role in production evals.
+- Confidence weights and abstention thresholds (`FABRICATION_WEIGHT`, `TOOL_FAILURE_WEIGHT`, `ABSTAIN_THRESHOLD`, `PARTIAL_THRESHOLD`) are explicit placeholders — ADR-008 calls tuning them "itself an experiment," not something to guess once and freeze.
+- Context Engine (Phase 4a — reranking, memory, compression, token budgeting) is out of scope; this phase covers Verification & Safety (4b) only.
+
 ### DEBT-009 — remove `intelligence/mcp/registry.py` shim
 
 #### Changed

@@ -96,6 +96,8 @@ class Consultation(Base):
     agents: Mapped[List[str]] = mapped_column(JSON, default=list)
     tool_calls: Mapped[List[Dict[str, Any]]] = mapped_column(JSON, default=list)
     citation_report: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    verification_report: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    abstention: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="consultations")

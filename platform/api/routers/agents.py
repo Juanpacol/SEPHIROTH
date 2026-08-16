@@ -43,6 +43,8 @@ class ConsultResponse(BaseModel):
     tool_calls: List[Dict[str, Any]]
     citation_report: Dict[str, Any] = {}
     explanation: Dict[str, Any] = {}
+    verification_report: Dict[str, Any] = {}
+    abstention: Optional[Dict[str, Any]] = None
     disclaimer: str = DISCLAIMER
 
 
@@ -72,6 +74,8 @@ async def _persist(
         agents=sorted(state.get("agent_outputs", {}).keys()),
         tool_calls=state.get("tool_calls", []),
         citation_report=state.get("citation_report", {}),
+        verification_report=state.get("verification_report", {}),
+        abstention=state.get("abstention") or {},
     )
     session.add(consultation)
     await session.commit()
@@ -113,6 +117,8 @@ async def consult(
         tool_calls=consultation.tool_calls,
         citation_report=consultation.citation_report,
         explanation=dict(state).get("explanation", {}),
+        verification_report=consultation.verification_report,
+        abstention=consultation.abstention or None,
     )
 
 
@@ -145,6 +151,8 @@ async def consult_stream(
                         "agent_outputs": {a: "" for a in event["agents_involved"]},
                         "tool_calls": event["tool_calls"],
                         "citation_report": event["citation_report"],
+                        "verification_report": event.get("verification_report", {}),
+                        "abstention": event.get("abstention"),
                     }
                 yield f"data: {json.dumps(event, default=str)}\n\n"
         except Exception as exc:  # surface errors as an SSE event, not a dropped socket
@@ -188,6 +196,8 @@ async def history(
             "agents_involved": c.agents,
             "tool_calls": c.tool_calls,
             "citation_report": c.citation_report,
+            "verification_report": c.verification_report,
+            "abstention": c.abstention or None,
             # Derived on read — improving the templates needs no backfill.
             "explanation": build_explanation(c.agents, c.tool_calls, c.citation_report),
             "patient_id": c.patient_id,

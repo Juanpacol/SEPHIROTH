@@ -18,11 +18,11 @@ Requirements are defined in [scope.md](00-project/scope.md); features in
 |---|---|---|---|---|---|---|
 | **R-001** Claims traceable to evidence | F-003 citation guard | `intelligence/agents/citation_guard.py` | `test_citation_guard.py`, `_adversarial` | — | citation precision | ✅ implemented |
 | | F-006 hybrid retrieval | `data/rag/` | `test_rag_pipeline.py` | H2 | Recall@k, MRR | ✅ implemented |
-| | F-036 claim extraction | `sephiroth/verification/` | 📋 | H3 | claim support rate | 📋 phase 4 |
-| | F-037 five-state verification | `sephiroth/verification/` | 📋 | H3 | unsupported claim rate | 📋 phase 4 |
-| **R-002** Decline rather than answer unsafely | F-040 abstention engine | `sephiroth/safety/` | 📋 | H3 | abstention rate **and** precision | 📋 phase 4 |
-| | F-041 output safety engine | `sephiroth/safety/` | 📋 | — | unsafe answer rate | 📋 phase 4 |
-| | F-038 conflict detection | `sephiroth/verification/` | 📋 | — | contradiction detection rate | 📋 phase 4 |
+| | F-036 claim extraction | `sephiroth/verification/claims.py` | `test_verification_claims.py` | H3 | claim support rate | ✅ implemented (phase 4); H3 experiment not yet run |
+| | F-037 five-state verification | `sephiroth/verification/verify.py` | `test_verification_verify.py` | H3 | unsupported claim rate | ✅ implemented (phase 4); H3 experiment not yet run |
+| **R-002** Decline rather than answer unsafely | F-040 abstention engine | `sephiroth/safety/abstention.py` | `test_safety_abstention.py` | H3 | abstention rate **and** precision | ✅ implemented (phase 4); thresholds are placeholders (SPEC-004 NG-3), precision not yet measured |
+| | F-041 output safety engine | `sephiroth/safety/output_safety.py` | `test_safety_output_safety.py` | — | unsafe answer rate | ⚠️ input prompt-injection heuristic only (phase 4); PHI/toxicity/jailbreak/HITL deferred (SPEC-004 NG-2) |
+| | F-038 conflict detection | `sephiroth/verification/verify.py` | `test_verification_verify.py` | — | contradiction detection rate | ✅ implemented (phase 4) |
 | **R-003** Provider-independent | F-022 `ModelProvider` interface | `sephiroth/models/` | `test_model_provider_protocol.py` | H5 | all metrics, per provider | ✅ implemented; H5 experiment not yet run |
 | | F-023 config-driven selection | `sephiroth/models/factory.py` | `test_llm_factory.py` | H5 | — | ✅ implemented |
 | **R-004** Capability-based selection | F-026 agent registry | `sephiroth/runtime/registry.py` | `test_agent_registry.py` | H1 | agent selection accuracy | ✅ implemented (phase 3); H1 experiment not yet run |
@@ -66,8 +66,8 @@ Three uses, in order of how often they come up:
 
 | Requirement | Fully satisfied | Notes |
 |---|---|---|
-| R-001 | Partially | Provenance checked today; claim-level content verification is phase 4 |
-| R-002 | No | No abstention mechanism exists; this is the largest gap |
+| R-001 | Yes | Citation guard (provenance) feeds a 5-state claim-content verifier (phase 4); the LLM judge's own accuracy is unmeasured (SPEC-004 risk 5) |
+| R-002 | Yes | Abstention engine gates every consultation (phase 4); thresholds are placeholders pending tuning (SPEC-004 NG-3) |
 | R-003 | Partially | Formal interface closed in phase 1; the H5 cross-provider experiment itself hasn't run |
 | R-004 | Partially | Agent set is now data-driven (`AgentCapability` records), but selection is still a static key-presence check, not real capability matching (SPEC-003 NG-1) |
 | R-005 | Partially | LLM-level fallback + per-call tool timeout only; no agent-level recovery or lifecycle state machine |

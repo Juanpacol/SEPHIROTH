@@ -1,4 +1,4 @@
-"""The executor — fan-out, merge, coordinate. LangGraph, gone.
+"""The executor — fan-out, merge, coordinate, verify, decide. LangGraph, gone.
 
 Replaces `intelligence/agents/workflow.py`'s compiled graph
 (`docs/specs/SPEC-003-agent-runtime.md`, `ADR-001`). The graph's shape is
@@ -6,8 +6,8 @@ preserved exactly:
 
     ┬─> radiology ───┐
     ├─> laboratory ──┤
-    ├─> drug_safety ─┼─> coordinator ─> (verify, sanitize, explain)
-    └─> evidence ────┘
+    ├─> drug_safety ─┼─> coordinator ─> citation guard ─> claim verification
+    └─> evidence ────┘                                  ─> abstention gate
 
 `run_consultation` fans out with `asyncio.gather` (order doesn't matter for
 its return value — nothing downstream is order-sensitive there).
@@ -16,23 +16,27 @@ its return value — nothing downstream is order-sensitive there).
 actually finishes — the same streaming UX the LangGraph implementation gave
 for free, not something to regress on a relocation.
 
-Internal state is a plain dict shaped exactly like the pre-Phase-3
-`WorkflowState`, not `sephiroth.contracts.RunState` — adopting that richer,
-strict contract now would mean building `ToolCall`/`AgentResult` instances
-only to immediately flatten them back into the frozen wire shape
-(`{"agent","name","arguments","result"}`, which doesn't match `ToolCall`'s
-`{"id","tool","agent","arguments","result",...}`). `RunState` gets adopted in
-the phase that actually needs its extra fields (evidence, claims, safety).
-See SPEC-003 §10.
+Internal state is a real `sephiroth.contracts.RunState` (SPEC-004 §1) — the
+deferral documented in SPEC-003 §10 ends here, now that evidence/claims/
+safety are actually populated. The one friction point flagged there
+(`ToolCall.tool` vs. the frozen wire's `name`) is resolved by `_tool_call_wire`,
+a single projection at the SSE-yield/return boundary — nothing else changes
+shape.
 """
 
 from __future__ import annotations
 
 import asyncio
-from typing import Any, AsyncIterator, Dict, List, Optional
+import uuid
+from datetime import datetime, timezone
+from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
 
-from sephiroth.contracts import AgentCapability
+from sephiroth.contracts import AgentCapability, AgentResult, RunState, ToolCall
 from sephiroth.models import ModelProvider
+from sephiroth.safety import check_input
+from sephiroth.safety import decide as decide_abstention
+from sephiroth.safety.abstention import PARTIAL_BANNER
+from sephiroth.verification import compute_confidence, extract_claims, harvest_evidence, verify_claims
 
 from .agent import Agent
 from .planner import route_specialists
@@ -49,12 +53,81 @@ def _initial_context(context: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     return context or {}
 
 
+def _tool_call_wire(tc: ToolCall) -> Dict[str, Any]:
+    """Projects a typed `ToolCall` to the frozen wire/persistence shape
+    (`{"agent", "name", "arguments", "result"}`) — the only place the
+    `tool`/`name` naming mismatch (SPEC-003 §10) is resolved."""
+    return {"agent": tc.agent, "name": tc.tool, "arguments": tc.arguments, "result": tc.result}
+
+
+def _call_ok(result: Any) -> bool:
+    return not (isinstance(result, dict) and "error" in result)
+
+
+def _to_tool_calls(capability_id: str, raw_calls: List[Dict[str, Any]]) -> List[ToolCall]:
+    now = datetime.now(timezone.utc)
+    return [
+        ToolCall(
+            id=uuid.uuid4().hex,
+            tool=call.get("name", ""),
+            agent=capability_id,
+            arguments=call.get("arguments") or {},
+            result=call.get("result"),
+            ok=_call_ok(call.get("result")),
+            timestamp=now,
+        )
+        for call in raw_calls
+    ]
+
+
 async def _run_specialist(
     capability: AgentCapability, client: ModelProvider, query: str, context: Dict[str, Any]
-):
+) -> Tuple[AgentCapability, AgentResult, List[ToolCall]]:
     agent = Agent(capability, client)
     result = await agent.run(query, context)
-    return capability, result
+    tool_calls = _to_tool_calls(capability.id, result.tool_calls)
+    agent_result = AgentResult(
+        agent=capability.id,
+        content=result.content,
+        tool_call_ids=[tc.id for tc in tool_calls],
+        rounds=result.rounds,
+    )
+    return capability, agent_result, tool_calls
+
+
+async def _verify_and_decide(
+    state: RunState, client: ModelProvider, query: str, sanitized_answer: str
+) -> None:
+    """Populates `state.evidence/claims/contradictions/confidence/abstention`
+    from the coordinator's (already citation-sanitized) answer. Mutates
+    `state` in place — this is the one function both entry points share."""
+    claims = await extract_claims(sanitized_answer, client)
+    evidence = harvest_evidence(state.tool_calls)
+    report = await verify_claims(claims, evidence, client)
+    tool_failures = sum(1 for tc in state.tool_calls if not tc.ok)
+    confidence = compute_confidence(report, state.citation_report, tool_failures)
+    input_flags = check_input(query)
+    abstention = decide_abstention(report, confidence, input_flags)
+
+    state.evidence = evidence
+    state.claims = report.claims
+    state.contradictions = report.contradictions
+    state.safety_flags = input_flags
+    state.confidence = confidence
+    state.abstention = abstention
+
+
+def _final_answer(sanitized_answer: str, state: RunState) -> str:
+    """Abstention overrides the coordinator's answer; a partial verdict keeps
+    it with a caveat banner prepended. Never surface a possibly-fabricated
+    answer alongside a decline. Called only after `_verify_and_decide` has
+    set `state.abstention`, so it is never `None` here."""
+    abstention = state.abstention
+    if abstention.status.value == "abstain":
+        return abstention.message
+    if abstention.status.value == "partial":
+        return f"{PARTIAL_BANNER}\n\n{sanitized_answer}"
+    return sanitized_answer
 
 
 async def run_consultation(
@@ -68,36 +141,48 @@ async def run_consultation(
     from intelligence.agents.explainability import build_explanation
 
     context = _initial_context(context)
+    state = RunState(trace_id=uuid.uuid4().hex, request=query, patient_id=patient_id, patient_context=context)
     node_names = route_specialists(context)
     capabilities = resolve(node_names)
 
     results = await asyncio.gather(*(_run_specialist(cap, client, query, context) for cap in capabilities))
+    for capability, agent_result, tool_calls in results:
+        state.agent_results[capability.id] = agent_result
+        state.tool_calls.extend(tool_calls)
 
-    agent_outputs: Dict[str, str] = {}
-    tool_calls: List[Dict[str, Any]] = []
-    for capability, result in results:
-        agent_outputs[capability.id] = result.content
-        tool_calls.extend({"agent": capability.id, **call} for call in result.tool_calls)
-
-    sections = "\n\n".join(f"### {name} agent\n{output}" for name, output in agent_outputs.items())
+    sections = "\n\n".join(f"### {name} agent\n{output}" for name, output in state.agent_outputs.items())
     coordinator = Agent(COORDINATOR, client)
     coord_result = await coordinator.run(
         f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}", context
     )
-    tool_calls.extend({"agent": coordinator.name, **call} for call in coord_result.tool_calls)
+    coord_tool_calls = _to_tool_calls(coordinator.name, coord_result.tool_calls)
+    state.tool_calls.extend(coord_tool_calls)
 
-    report = audit(coord_result.content, tool_calls)
-    agents_involved = sorted(agent_outputs.keys())
+    citation_report = audit(coord_result.content, [_tool_call_wire(tc) for tc in state.tool_calls])
+    sanitized = sanitize(coord_result.content, citation_report)
+    state.citation_report = state.citation_report.__class__(**citation_report.as_dict())
+
+    await _verify_and_decide(state, client, query, sanitized)
+    final_answer = _final_answer(sanitized, state)
+    state.final_answer = final_answer
+
+    agents_involved = state.agents_involved
+    tool_calls_wire = [_tool_call_wire(tc) for tc in state.tool_calls]
 
     return {
         "patient_id": patient_id,
         "query": query,
         "context": context,
-        "agent_outputs": agent_outputs,
-        "tool_calls": tool_calls,
-        "final_answer": sanitize(coord_result.content, report),
-        "citation_report": report.as_dict(),
-        "explanation": build_explanation(agents_involved, tool_calls, report.as_dict()),
+        "agent_outputs": state.agent_outputs,
+        "tool_calls": tool_calls_wire,
+        "final_answer": final_answer,
+        "citation_report": citation_report.as_dict(),
+        "verification_report": {
+            "claims": [c.model_dump(mode="json") for c in state.claims],
+            "contradictions": [c.model_dump(mode="json") for c in state.contradictions],
+        },
+        "abstention": state.abstention.model_dump(mode="json") if state.abstention else None,
+        "explanation": build_explanation(agents_involved, tool_calls_wire, citation_report.as_dict()),
     }
 
 
@@ -113,49 +198,63 @@ async def stream_consultation(
     Events:
       {"event": "routing", "agents": [...]}
       {"event": "agent_completed", "agent", "summary", "tool_calls"}
-      {"event": "final", "answer", "agents_involved", "tool_calls", "citation_report", "explanation"}
+      {"event": "final", "answer", "agents_involved", "tool_calls", "citation_report",
+       "explanation", "verification_report", "abstention"}
     """
     from intelligence.agents.citation_guard import audit, sanitize
     from intelligence.agents.explainability import build_explanation
 
     context = _initial_context(context)
+    state = RunState(trace_id=uuid.uuid4().hex, request=query, patient_id=patient_id, patient_context=context)
     node_names = route_specialists(context)
     capabilities = resolve(node_names)
 
     yield {"event": "routing", "agents": node_names}
 
-    agent_outputs: Dict[str, str] = {}
-    tool_calls: List[Dict[str, Any]] = []
-
     tasks = [asyncio.ensure_future(_run_specialist(cap, client, query, context)) for cap in capabilities]
     for finished in asyncio.as_completed(tasks):
-        capability, result = await finished
-        agent_outputs[capability.id] = result.content
-        node_calls = [{"agent": capability.id, **call} for call in result.tool_calls]
-        tool_calls.extend(node_calls)
+        capability, agent_result, tool_calls = await finished
+        state.agent_results[capability.id] = agent_result
+        state.tool_calls.extend(tool_calls)
+        node_calls_wire = [_tool_call_wire(tc) for tc in tool_calls]
         yield {
             "event": "agent_completed",
             "agent": capability.id,
-            "summary": (result.content or "")[:280],
-            "tool_calls": [{"name": c.get("name"), "arguments": c.get("arguments")} for c in node_calls],
+            "summary": (agent_result.content or "")[:280],
+            "tool_calls": [{"name": c.get("name"), "arguments": c.get("arguments")} for c in node_calls_wire],
         }
 
-    sections = "\n\n".join(f"### {name} agent\n{output}" for name, output in agent_outputs.items())
+    sections = "\n\n".join(f"### {name} agent\n{output}" for name, output in state.agent_outputs.items())
     coordinator = Agent(COORDINATOR, client)
     coord_result = await coordinator.run(
         f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}", context
     )
-    tool_calls.extend({"agent": coordinator.name, **call} for call in coord_result.tool_calls)
+    coord_tool_calls = _to_tool_calls(coordinator.name, coord_result.tool_calls)
+    state.tool_calls.extend(coord_tool_calls)
 
-    report = audit(coord_result.content, tool_calls)
-    agents_involved = sorted(agent_outputs.keys())
+    citation_report = audit(coord_result.content, [_tool_call_wire(tc) for tc in state.tool_calls])
+    sanitized = sanitize(coord_result.content, citation_report)
+    state.citation_report = state.citation_report.__class__(**citation_report.as_dict())
+
+    await _verify_and_decide(state, client, query, sanitized)
+    final_answer = _final_answer(sanitized, state)
+    state.final_answer = final_answer
+
+    agents_involved = state.agents_involved
+    tool_calls_wire = [_tool_call_wire(tc) for tc in state.tool_calls]
+
     yield {
         "event": "final",
-        "answer": sanitize(coord_result.content, report),
+        "answer": final_answer,
         "agents_involved": agents_involved,
-        "tool_calls": tool_calls,
-        "citation_report": report.as_dict(),
-        "explanation": build_explanation(agents_involved, tool_calls, report.as_dict()),
+        "tool_calls": tool_calls_wire,
+        "citation_report": citation_report.as_dict(),
+        "verification_report": {
+            "claims": [c.model_dump(mode="json") for c in state.claims],
+            "contradictions": [c.model_dump(mode="json") for c in state.contradictions],
+        },
+        "abstention": state.abstention.model_dump(mode="json") if state.abstention else None,
+        "explanation": build_explanation(agents_involved, tool_calls_wire, citation_report.as_dict()),
     }
 
 

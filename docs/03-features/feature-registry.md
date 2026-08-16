@@ -50,12 +50,12 @@ what runs today is metadata inspection plus the vision model.
 | F-033 | Recovery engine (retry/fallback/replan/abstain) | 📋 | `sephiroth/runtime/recovery.py` | 📋 | — | 📋 SPEC-003, ADR-007 |
 | F-034 | Typed `RunContext` + per-agent views | 📋 | `sephiroth/context/` | 📋 | — | 📋 SPEC-004 |
 | F-035 | Reranking, compression, token budgeting | 📋 | `sephiroth/context/` | 📋 | — | 📋 SPEC-004 |
-| F-036 | Claim extraction | 📋 | `sephiroth/verification/claims.py` | 📋 | — | 📋 SPEC-004, ADR-006 |
-| F-037 | Five-state claim verification | 📋 | `sephiroth/verification/` | 📋 | — | 📋 SPEC-004, ADR-006 |
-| F-038 | Conflict detection | 📋 | `sephiroth/verification/` | 📋 | — | 📋 SPEC-004 |
-| F-039 | Confidence engine | 📋 | `sephiroth/verification/` | 📋 | — | 📋 SPEC-004 |
-| F-040 | Abstention engine | 📋 | `sephiroth/safety/abstention.py` | 📋 | — | 📋 SPEC-004, ADR-008 |
-| F-041 | Output safety engine (PHI, injection, HITL) | 📋 | `sephiroth/safety/` | 📋 | — | 📋 SPEC-004 |
+| F-036 | Claim extraction | ✅ | `sephiroth/verification/claims.py` | `test_verification_claims.py` | — | SPEC-004, ADR-006 |
+| F-037 | Five-state claim verification | ✅ | `sephiroth/verification/verify.py` | `test_verification_verify.py` | — | SPEC-004, ADR-006 |
+| F-038 | Conflict detection | ✅ | `sephiroth/verification/verify.py` | `test_verification_verify.py` | — | SPEC-004 |
+| F-039 | Confidence engine | ✅ | `sephiroth/verification/confidence.py` | `test_verification_confidence.py` | — | SPEC-004 |
+| F-040 | Abstention engine | ✅ | `sephiroth/safety/abstention.py` | `test_safety_abstention.py` | — | SPEC-004, ADR-008 |
+| F-041 | Output safety engine (PHI, injection, HITL) | ⚠️ | `sephiroth/safety/output_safety.py` | `test_safety_output_safety.py` | — | SPEC-004 (input prompt-injection heuristic only; PHI/toxicity/jailbreak/HITL deferred, NG-2) |
 | F-042 | Structured execution traces | 📋 | `sephiroth/telemetry/` | 📋 | — | 📋 SPEC-005, ADR-009 |
 | F-043 | Span attribute redaction (allow-list) | 🚧 | `contracts/trace.py` | `test_contracts_models.py` | — | 📋 SPEC-005 |
 
