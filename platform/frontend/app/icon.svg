@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32">
+  <!--
+    SEPHIROTH favicon — simplified 2-rib form of the wing mark in
+    components/brand/wing-mark.tsx (full 4-rib form, used at >=24px on
+    the page itself). At favicon sizes the extra ribs mush together, so
+    this keeps only the spine plus 2 ribs, stroke-width bumped to 2.25.
+    Original geometry — see wing-mark.tsx for the construction rules.
+  -->
+  <style>
+    path { stroke: #3683F8; }
+    @media (prefers-color-scheme: dark) {
+      path { stroke: #7FB0FF; }
+    }
+  </style>
+  <g fill="none" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 20 Q9 7 21 4" />
+    <path d="M6.5 21 Q13 16 21 9.5" />
+    <path d="M7 19 Q9 17.4 10.4 15" />
+    <path d="M11.5 15.8 Q13.2 14.6 14.2 12.6" />
+  </g>
+</svg>

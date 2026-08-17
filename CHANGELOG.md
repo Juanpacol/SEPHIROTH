@@ -5,6 +5,21 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase E — landing page, brand icon, entry flow (landing/icon/portal/scheduling plan — final phase)
+
+#### Added
+- `app/(marketing)/` route group: an English landing page at `/` with its own nav/footer (`components/landing/{landing-nav,landing-footer}.tsx`), escaping `AppShell`'s chrome via `isChromelessRoute()`.
+- 4 interactive explanations, zero new dependencies: `ConsultationWalkthrough` (5-stage stepper, autoplay off by default, full `prefers-reduced-motion` support), `ClaimVerifier` (expand-in-place 5-state claim inspector), `CitationGuardToggle` (raw-vs-guarded segmented control, same markup pattern as `ThemeToggle`), `AbstentionGate` (a confidence slider that flips the output card to a decline below threshold).
+- Original brand mark: `components/brand/wing-mark.tsx` — a single-wing signature built from stated construction rules (one quadratic-arc spine + feather-rib arcs on a 24×24 grid), stroke-based, `currentColor`. `app/icon.svg` (simplified 2-rib favicon form), `app/apple-icon.tsx`/`app/opengraph-image.tsx` via Next's built-in `next/og` `ImageResponse` (no new dependency, no `public/` directory, no custom font fetch — hermetic in CI).
+- Entry flow: `lib/auth-gate.ts::AUTH_GATE_SCRIPT`, an inline `<head>` script (same pre-paint pattern as the existing `THEME_INIT_SCRIPT`) that redirects a logged-in visitor away from `/` before first paint, paired with a `visibility:hidden` CSS rule to prevent any landing-page flash; `components/landing/auth-redirect-gate.tsx` is the client-side fallback for soft navigation back to `/`.
+- `app/layout.tsx` gains `metadataBase`/`openGraph`/`twitter` metadata.
+- The "S" gradient-square brand mark is replaced by `WingMark` in `sidebar.tsx`, `login/page.tsx`, and `portal/claim/page.tsx`.
+
+#### Verification
+- `npm run build`: clean, all 18 routes compile; `/` now shows as `○ Static` (was `redirect()`-only before) — the regression guard that it didn't accidentally become dynamic.
+- Production server (`next start`) curled: `/`, `/icon.svg`, `/apple-icon`, `/opengraph-image`, `/login`, `/portal/claim` all return 200; the landing page's actual server-rendered HTML contains the hero copy and the wing-mark SVG, confirming real content renders, not just a shell.
+- **UI not verified in a live browser** — no browser automation tool was available in this environment, same limitation as Phase D. The pre-paint redirect mechanism (inline script + CSS rule) cannot be confirmed to eliminate the flash without watching it happen; it follows the exact pattern the existing, working `THEME_INIT_SCRIPT` already uses, which is the basis for confidence here, not a visual check.
+
 ### Phase D — frontend: patient portal, schedule UI, role-aware shell (landing/icon/portal/scheduling plan)
 
 #### Added

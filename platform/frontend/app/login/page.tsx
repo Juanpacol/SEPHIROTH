@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { homeFor, storeAuth } from "@/lib/auth";
+import WingMark from "@/components/brand/wing-mark";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,11 +42,15 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-surface p-6">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex items-center justify-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sephiroth font-extrabold text-ink/80">
-            S
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-soft text-primary">
+            <WingMark size={20} />
           </span>
           <span className="text-lg font-bold tracking-tight">SEPHIROTH</span>
         </div>
+
+        <Link href="/" className="mb-2 block text-center text-sm font-medium text-muted hover:text-primary">
+          ← Back to home
+        </Link>
 
         <form onSubmit={submit} className="card space-y-4">
           <div>

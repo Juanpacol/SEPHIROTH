@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { homeFor, storeAuth } from "@/lib/auth";
+import WingMark from "@/components/brand/wing-mark";
 
 export default function ClaimInvitePage() {
   const router = useRouter();
@@ -42,8 +43,8 @@ export default function ClaimInvitePage() {
     <div className="flex min-h-screen items-center justify-center bg-surface p-6">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex items-center justify-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sephiroth font-extrabold text-ink/80">
-            S
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-soft text-primary">
+            <WingMark size={20} />
           </span>
           <span className="text-lg font-bold tracking-tight">SEPHIROTH</span>
         </div>

@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { useUser } from "@/lib/auth";
+import WingMark from "@/components/brand/wing-mark";
 
 const CLINICIAN_NAV = [
   {
@@ -59,8 +60,8 @@ export default function Sidebar() {
   return (
     <aside className="glass-surface sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line/60 px-3 py-5 md:flex">
       <Link href={homeHref} className="flex items-center gap-2 px-3">
-        <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-sephiroth font-extrabold text-ink/80">
-          S
+        <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+          <WingMark size={18} />
         </span>
         <span className="text-[15px] font-bold tracking-tight">SEPHIROTH</span>
       </Link>

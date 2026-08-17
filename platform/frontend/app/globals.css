@@ -25,6 +25,20 @@ body {
   @apply bg-surface text-ink antialiased transition-colors duration-200;
 }
 
+/* Set by AUTH_GATE_SCRIPT (lib/auth-gate.ts) the instant it decides to
+   redirect a logged-in visitor away from "/" — hides the landing page's
+   own body so it's never painted, even for one frame, before the
+   redirect completes. */
+html[data-auth-redirect] body {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 @layer components {
   .card {
     @apply bg-card rounded-squircle shadow-card p-5;
