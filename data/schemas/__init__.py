@@ -10,10 +10,25 @@ demo store; relational tables are used where querying matters
 from __future__ import annotations
 
 from datetime import date, datetime
+from datetime import time as time_
 from typing import Any, Dict, List, Optional
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, CheckConstraint, Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    Time,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -126,6 +141,146 @@ class ClinicalNote(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class AvailabilityRule(Base):
+    """A clinician's recurring weekly working-hours window.
+
+    Stored in **wall-clock time + IANA timezone**, not UTC — "Tuesdays
+    09:00-17:00" must stay 09:00 local across a DST transition; storing
+    the rule pre-converted to UTC would silently shift it by an hour
+    twice a year. `platform/api/scheduling.py::expand_slots` is the one
+    place this gets localized and converted to UTC instants.
+    """
+
+    __tablename__ = "availability_rules"
+    __table_args__ = (
+        CheckConstraint("start_time < end_time", name="ck_availability_rule_time_order"),
+        CheckConstraint("weekday BETWEEN 0 AND 6", name="ck_availability_rule_weekday"),
+        UniqueConstraint(
+            "clinician_id", "weekday", "start_time", "end_time", name="uq_availability_rule_window"
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    clinician_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    weekday: Mapped[int] = mapped_column(Integer)  # 0=Mon .. 6=Sun (date.weekday())
+    start_time: Mapped[time_] = mapped_column(Time)
+    end_time: Mapped[time_] = mapped_column(Time)
+    timezone: Mapped[str] = mapped_column(String(64), default="UTC", server_default="UTC")
+    slot_minutes: Mapped[int] = mapped_column(Integer, default=30, server_default="30")
+    effective_from: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    effective_to: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    active: Mapped[bool] = mapped_column(default=True, server_default="true")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class AvailabilityException(Base):
+    """A one-off block (time off) or extra opening for a clinician, as an
+    absolute UTC instant — unlike `AvailabilityRule`, this describes a
+    specific day, not a recurring pattern, so UTC is the right storage
+    shape here."""
+
+    __tablename__ = "availability_exceptions"
+    __table_args__ = (CheckConstraint("start_at < end_at", name="ck_availability_exception_time_order"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    clinician_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    start_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    end_at: Mapped[datetime] = mapped_column(DateTime)
+    kind: Mapped[str] = mapped_column(String(10))  # "block" | "open"
+    reason: Mapped[str] = mapped_column(String(200), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class Appointment(Base):
+    """A booked slot between a clinician and a patient.
+
+    No DB-level exclusion constraint against double-booking — Postgres's
+    `EXCLUDE USING gist` has no SQLite equivalent and would break
+    `Base.metadata.create_all` in the test fixture. Overlap is enforced in
+    a single transaction in `platform/api/routers/scheduling.py` instead
+    (documented residual: a genuinely simultaneous race is possible at
+    demo scale). Cancellation is a status change, never a row delete, so
+    history and a later rebook both work.
+    """
+
+    __tablename__ = "appointments"
+    __table_args__ = (
+        CheckConstraint("start_at < end_at", name="ck_appointment_time_order"),
+        Index("ix_appointments_clinician_start", "clinician_id", "start_at"),
+        Index("ix_appointments_patient_start", "patient_id", "start_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    clinician_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"))
+    start_at: Mapped[datetime] = mapped_column(DateTime)
+    end_at: Mapped[datetime] = mapped_column(DateTime)
+    status: Mapped[str] = mapped_column(
+        String(12), default="booked", server_default="booked", index=True
+    )  # booked|completed|cancelled|no_show
+    mode: Mapped[str] = mapped_column(String(12), default="in_person", server_default="in_person")
+    reason: Mapped[str] = mapped_column(String(200), default="")
+    notes: Mapped[str] = mapped_column(Text, default="")  # clinician-only, never returned to a patient
+    created_by_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    cancellation_reason: Mapped[str] = mapped_column(String(200), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    patient: Mapped["Patient"] = relationship()
+
+
+class ResultShare(Base):
+    """A clinician sharing one `TimelineEvent` (a lab or imaging result)
+    with the patient it belongs to. Deliberately references the existing
+    timeline rather than inventing a third "lab result" concept —
+    `Patient.lab_results` is a denormalized current-values panel with no
+    row identity to reference, `TimelineEvent` already has identity, a
+    date, and a narrative. Sharing is restricted at the API layer to
+    `type in ("lab", "imaging")` events belonging to the same patient."""
+
+    __tablename__ = "result_shares"
+    __table_args__ = (UniqueConstraint("timeline_event_id", "patient_id", name="uq_result_share_event"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    timeline_event_id: Mapped[int] = mapped_column(ForeignKey("timeline_events.id"), index=True)
+    shared_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    message: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(10), default="sent", server_default="sent")  # sent|revoked
+    shared_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    viewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    event: Mapped["TimelineEvent"] = relationship()
+    attachments: Mapped[List["ResultAttachment"]] = relationship(
+        back_populates="share", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class ResultAttachment(Base):
+    """One file attached to a `ResultShare`. Bytes live in Postgres
+    (`LargeBinary`, `deferred=True` so a list query never drags them into
+    memory) rather than the filesystem (Render's free tier has no
+    persistent disk — a redeploy would destroy uploaded files) or S3 (no
+    new infra for an MVP shipping zero files today). Capped at 10MB/file,
+    3 files/share, enforced at the API layer."""
+
+    __tablename__ = "result_attachments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    result_share_id: Mapped[str] = mapped_column(
+        ForeignKey("result_shares.id", ondelete="CASCADE"), index=True
+    )
+    filename: Mapped[str] = mapped_column(String(255))
+    content_type: Mapped[str] = mapped_column(String(100))
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64), index=True)
+    content: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
+    uploaded_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    share: Mapped["ResultShare"] = relationship(back_populates="attachments")
+
+
 class Consultation(Base):
     """One multi-agent consultation, owned by the requesting clinician."""
 
@@ -192,6 +347,11 @@ __all__ = [
     "PatientInvite",
     "TimelineEvent",
     "ClinicalNote",
+    "AvailabilityRule",
+    "AvailabilityException",
+    "Appointment",
+    "ResultShare",
+    "ResultAttachment",
     "Consultation",
     "GuidelineDocument",
 ]
