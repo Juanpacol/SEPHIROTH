@@ -2,51 +2,12 @@
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Eye, ImageOff, ScanEye } from "lucide-react";
+import { Eye, ScanEye } from "lucide-react";
 import { api } from "@/lib/api";
 import AgentBadge from "@/components/agent-badge";
+import ImageDropzone from "@/components/image-dropzone";
 
 const modalities = ["xray", "ct", "mri", "ultrasound", "pathology"];
-const PREVIEWABLE = /\.(png|jpe?g|gif|webp|bmp)$/i;
-
-function ImagePreview({ path }: { path: string }) {
-  const [failed, setFailed] = useState(false);
-  const previewable = PREVIEWABLE.test(path);
-
-  if (!path) {
-    return (
-      <div className="flex h-full min-h-[220px] flex-col items-center justify-center gap-2 text-muted">
-        <ImageOff size={28} />
-        <p className="text-sm">Enter an image path to preview it here</p>
-      </div>
-    );
-  }
-
-  if (!previewable || failed) {
-    return (
-      <div className="flex h-full min-h-[220px] flex-col items-center justify-center gap-2 p-4 text-center text-muted">
-        <ImageOff size={28} />
-        <p className="text-sm">
-          {previewable ? "File not found on the server" : "Preview unsupported for this format"}
-        </p>
-        <p className="max-w-[220px] truncate text-xs" title={path}>
-          {path}
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    // Cache-bust with the path itself so switching images always refetches.
-    <img
-      key={path}
-      src={api.imagePreviewUrl(path)}
-      onError={() => setFailed(true)}
-      alt="Selected medical image"
-      className="max-h-[420px] w-full rounded-lg object-contain"
-    />
-  );
-}
 
 export default function ImagingPage() {
   const [imagePath, setImagePath] = useState("");
@@ -74,15 +35,6 @@ export default function ImagingPage() {
       </div>
 
       <div className="card space-y-4">
-        <div>
-          <label className="mb-1 block text-sm font-semibold">Image path</label>
-          <input
-            value={imagePath}
-            onChange={(e) => setImagePath(e.target.value)}
-            placeholder="/path/to/study.png"
-            className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
-          />
-        </div>
         <div className="flex gap-4">
           <div className="flex-1">
             <label className="mb-1 block text-sm font-semibold">Modality</label>
@@ -132,7 +84,7 @@ export default function ImagingPage() {
       {/* Side-by-side: original image on the left, AI findings on the right */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="card flex items-center justify-center !p-3">
-          <ImagePreview path={imagePath} />
+          <ImageDropzone onUploaded={setImagePath} />
         </div>
 
         <div className="space-y-4">

@@ -9,10 +9,12 @@ auth; this brings these six in line.
 """
 
 import mimetypes
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List
+from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -24,6 +26,12 @@ router = APIRouter()
 
 # Browser-renderable formats only — this is not a general file-download route.
 _PREVIEWABLE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
+_MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20 MB
+# System temp dir, not a repo path: this whole imaging flow is explicitly a
+# local-first, single-user tool (see preview_image's docstring) — an upload
+# just needs *some* real path on disk for analyze/describe/preview to read
+# back, the same way a typed-in path always has.
+_UPLOAD_DIR = Path(tempfile.gettempdir()) / "sephiroth-imaging-uploads"
 
 
 class ExtractRequest(BaseModel):
@@ -77,6 +85,34 @@ async def describe_image(request: DescribeRequest, user: User = Depends(get_curr
         "describe_medical_image",
         {"image_path": request.image_path, "clinical_focus": request.clinical_focus},
     )
+
+
+@router.post("/imaging/upload", summary="Upload an image file for analysis, in place of typing a path")
+async def upload_image(file: UploadFile, user: User = Depends(get_current_user)) -> Dict[str, str]:
+    """Drag-and-drop replacement for typing a server-side file path — saves
+    the uploaded bytes to a scratch directory and returns the resulting
+    path, which `analyze_image`/`describe_image`/`preview_image` all
+    already accept unchanged. Same extension allow-list as the preview
+    route: this is a demo-scope imaging flow, not a general file store."""
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in _PREVIEWABLE_EXTENSIONS:
+        raise HTTPException(status_code=415, detail=f"Unsupported file type: {ext or 'unknown'}")
+
+    chunks = []
+    total = 0
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > _MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File exceeds the 20 MB limit")
+        chunks.append(chunk)
+
+    _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _UPLOAD_DIR / f"{uuid4().hex}{ext}"
+    dest.write_bytes(b"".join(chunks))
+    return {"path": str(dest)}
 
 
 @router.get("/imaging/preview", summary="Stream a local image file for the side-by-side viewer")
