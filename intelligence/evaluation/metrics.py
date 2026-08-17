@@ -10,8 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
-from intelligence.agents.citation_guard import audit
 from intelligence.evaluation.dataset import GoldenCase
+from sephiroth.verification.citation_guard import audit
 
 
 def recall_at_k(

@@ -1,6 +1,10 @@
-"""Citation Guard unit tests — the anti-hallucination layer."""
+"""Citation Guard unit tests — the anti-hallucination layer.
 
-from intelligence.agents.citation_guard import audit, collect_allowed_citations, sanitize
+Retargeted (Phase 5) to `src/sephiroth/verification/citation_guard.py`, the
+relocated implementation; `intelligence/agents/citation_guard.py` is now a
+shim."""
+
+from sephiroth.verification.citation_guard import audit, collect_allowed_citations, sanitize
 
 TOOL_CALLS = [
     {

@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.db import get_session
 from data.schemas import Consultation, Patient
-from intelligence.agents.risk_engine import assess_patient_risk, assess_risk_level
 from sephiroth.models import get_llm_client
+from sephiroth.safety.risk import assess_patient_risk, assess_risk_level
 
 router = APIRouter()
 

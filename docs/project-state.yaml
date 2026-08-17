@@ -10,7 +10,7 @@
 
 schema_version: 1
 project: SEPHIROTH
-version: 0.7.0
+version: 0.8.0
 updated: 2026-08-19
 phase_current: 5
 
@@ -25,27 +25,32 @@ phases:
 components:
   legacy:
     intelligence/agents/citation_guard.py:
-      status: implemented
+      status: shim
       description: >-
-        Citation-label provenance audit; binary verified/fabricated. Since
-        Phase 4 (SPEC-004), composed as a pre-filter feeding
-        src/sephiroth/verification's 5-state claim verifier (ADR-006), not
-        replaced by it — unmodified in this phase.
-      tests: [tests/test_citation_guard.py, tests/test_citation_guard_adversarial.py]
-      strangler_target: src/sephiroth/verification
-      removed_in_phase: 5
+        Phase 5, Part 3: relocated verbatim to
+        src/sephiroth/verification/citation_guard.py. This path is now a
+        pure re-export (identity-tested), not real implementation.
+      tests: [tests/test_shim_identity_relocation.py]
+      strangler_target: src/sephiroth/verification/citation_guard.py
+      removed_in_phase: 6
     intelligence/agents/risk_engine.py:
-      status: implemented
-      description: Deterministic lab/medication threshold rules over patient data
-      tests: [tests/test_risk_engine.py]
-      strangler_target: src/sephiroth/safety/risk
-      removed_in_phase: 5
+      status: shim
+      description: >-
+        Phase 5, Part 3: relocated verbatim to
+        src/sephiroth/safety/risk.py. This path is now a pure re-export
+        (identity-tested), not real implementation.
+      tests: [tests/test_shim_identity_relocation.py]
+      strangler_target: src/sephiroth/safety/risk.py
+      removed_in_phase: 6
     intelligence/agents/explainability.py:
-      status: implemented
-      description: Template audit trail, rebuilt on read (never persisted)
-      tests: [tests/test_sse_contract.py]
-      strangler_target: src/sephiroth/telemetry
-      removed_in_phase: 5
+      status: shim
+      description: >-
+        Phase 5, Part 3: relocated verbatim to
+        src/sephiroth/telemetry/explain.py. This path is now a pure
+        re-export (identity-tested), not real implementation.
+      tests: [tests/test_shim_identity_relocation.py]
+      strangler_target: src/sephiroth/telemetry/explain.py
+      removed_in_phase: 6
     intelligence/mcp:
       status: implemented
       description: >-
@@ -150,10 +155,12 @@ components:
       description: >-
         Claim extraction, evidence harvesting, batched 5-state claim
         verification (VerificationStatus), and deterministic confidence
-        scoring. citation_guard remains a pre-filter feeding this, per
-        ADR-006.
+        scoring. citation_guard.py relocated here in Phase 5, Part 3 (still
+        a distinct pre-filter feeding this, per ADR-006 — not merged into
+        claims/evidence).
       tests: [tests/test_verification_claims.py, tests/test_verification_evidence.py,
-              tests/test_verification_verify.py, tests/test_verification_confidence.py]
+              tests/test_verification_verify.py, tests/test_verification_confidence.py,
+              tests/test_citation_guard.py, tests/test_citation_guard_adversarial.py]
     src/sephiroth/safety:
       status: implemented
       phase: 4
@@ -163,7 +170,10 @@ components:
         ADR-008) and a minimal input-facing prompt-injection heuristic
         (F-041). PHI redaction, output-side toxicity/jailbreak classifiers,
         and rate limiting are explicitly deferred (SPEC-004 NG-2).
-      tests: [tests/test_safety_abstention.py, tests/test_safety_output_safety.py]
+        risk_engine.py relocated here in Phase 5, Part 3 (src/sephiroth/
+        safety/risk.py), read at request-time by patients.py/dashboard.py.
+      tests: [tests/test_safety_abstention.py, tests/test_safety_output_safety.py,
+              tests/test_risk_engine.py]
     src/sephiroth/context:
       status: implemented
       phase: 4
@@ -188,9 +198,12 @@ components:
         Verifier.check only (NG-1) — ModelProvider.chat and
         ToolRuntime.execute are not independently instrumented this cycle;
         token/cost accounting is a placeholder (NG-2). No pluggable
-        Tracer/OTel backend yet (NG-3).
+        Tracer/OTel backend yet (NG-3). explainability.py relocated here in
+        Phase 5, Part 3 (src/sephiroth/telemetry/explain.py) — still the
+        template-based (agents, tool_calls, citation_report) function, not
+        yet reimplemented as an ExecutionTrace projection.
       tests: [tests/test_telemetry_span.py, tests/test_telemetry_build_trace.py,
-              tests/test_runtime_executor.py]
+              tests/test_runtime_executor.py, tests/test_shim_identity_relocation.py]
 
 # Capabilities the target architecture requires that have no implementation yet.
 gaps:
@@ -200,7 +213,6 @@ gaps:
   - {capability: Generic conversational/session memory — no validated product need yet (SPEC-005 NG-1), phase: null}
   - {capability: Output-facing safety beyond the prompt-injection heuristic — PHI/toxicity/jailbreak/HITL (SPEC-004 NG-2), phase: 5}
   - {capability: Live spans for ModelProvider.chat/ToolRuntime.execute + token/cost accounting + pluggable Tracer backend (SPEC-006 NG-1/2/3), phase: 5}
-  - {capability: Relocate risk_engine.py to src/sephiroth/safety/risk; shim citation_guard.py/risk_engine.py/explainability.py, phase: 5}
 
 quality_gates:
   coverage_fail_under: 87

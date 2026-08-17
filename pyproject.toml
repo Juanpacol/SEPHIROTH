@@ -81,6 +81,12 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
 ]
+omit = [
+    # Shims (docs/00-migration-charter.md rule 4) — pure re-export, no logic.
+    "intelligence/agents/risk_engine.py",
+    "intelligence/agents/citation_guard.py",
+    "intelligence/agents/explainability.py",
+]
 
 [tool.ruff]
 line-length = 110

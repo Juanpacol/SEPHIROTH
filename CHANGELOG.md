@@ -5,6 +5,26 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 5, Part 3 — Relocate `risk_engine`/`citation_guard`/`explainability`
+
+#### Added
+- **`src/sephiroth/safety/risk.py`**, **`src/sephiroth/verification/citation_guard.py`**, **`src/sephiroth/telemetry/explain.py`** — byte-for-byte relocations of `intelligence/agents/{risk_engine,citation_guard,explainability}.py`. No logic changed.
+- `intelligence/agents/{risk_engine,citation_guard,explainability}.py` are now pure re-export shims (`docs/00-migration-charter.md` rule 1), deleted in Phase 6 per rule 3.
+- `tests/test_shim_identity_relocation.py` — identity assertions (`shim.x is new.x`) for all 3, per charter rule 2.
+- `[tool.coverage.report] omit` added for the 3 shim paths (charter rule 4).
+- `src/sephiroth/runtime/executor.py` promotes `citation_guard`/`explainability` from deferred, function-local imports to normal module-level imports — the cross-package ordering hazard that justified deferring them (`intelligence.agents` importing at module scope) no longer applies once both live under `src/sephiroth/`.
+
+#### Changed
+- `platform/api/routers/{patients,dashboard,agents}.py` and `intelligence/evaluation/metrics.py` import from the new `src/sephiroth/` paths directly instead of through the shim.
+- `tests/test_risk_engine.py`, `tests/test_citation_guard.py`, `tests/test_citation_guard_adversarial.py` retargeted to the new import paths (same assertions).
+
+#### Verification
+- `pytest --cov`: 522 passed, 1 skipped, 93.17% coverage; all 3 relocated modules at 98-100%; shims correctly absent from the coverage report (`omit`).
+- `intelligence.evaluation.run --mode ci`: PASS, all 6 metrics unchanged.
+- `docs_check.py`: OK. `export_contracts.py --check`: OK, 24 schemas, no shape change.
+- `bandit`: 0 High severity/confidence findings.
+- Docker build + smoke test verified from a clean `git worktree`.
+
 ### Phase 5, Part 2 — Recovery engine + lifecycle state machine
 
 #### Added
