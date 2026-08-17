@@ -1,20 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
-import { homeFor, storeAuth } from "@/lib/auth";
+import { getStoredUser, homeFor, storeAuth } from "@/lib/auth";
 import WingMark from "@/components/brand/wing-mark";
 
 export default function ClaimInvitePage() {
+  return (
+    <Suspense fallback={null}>
+      <ClaimInviteForm />
+    </Suspense>
+  );
+}
+
+function ClaimInviteForm() {
   const router = useRouter();
-  const [code, setCode] = useState("");
+  const searchParams = useSearchParams();
+  // The raw "{invite_id}.{secret}" code is meaningless to a patient asked
+  // to paste it in by hand — it travels silently in the invite link's
+  // query param instead (see app/patients/[id]/page.tsx's invite button),
+  // never shown or typed. A patient who opens this page without that
+  // param has an incomplete/broken link, not a code to enter.
+  const code = searchParams.get("code") ?? "";
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // Mirrors AuthGuard's "don't render until we know" pattern — a patient
+  // who already claimed this invite (or is otherwise logged in) and
+  // reopens the same link should land back in their portal without a
+  // flash of a dead-end form with no way back, which is what happened
+  // before this check existed at all.
+  const [redirecting, setRedirecting] = useState(true);
+
+  useEffect(() => {
+    const user = getStoredUser();
+    if (user) {
+      router.replace(homeFor(user.role));
+      return;
+    }
+    setRedirecting(false);
+  }, [router]);
+
+  if (redirecting) return null;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +57,7 @@ export default function ClaimInvitePage() {
       router.push(homeFor(res.user.role));
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {
-        setError("That claim code is invalid or has expired. Ask your clinician for a new one.");
+        setError("This invite link is invalid or has expired. Ask your clinician to send a new one.");
       } else if (err instanceof ApiError && err.status === 409) {
         setError("That email is already registered.");
       } else if (err instanceof ApiError && err.status === 422) {
@@ -49,75 +80,76 @@ export default function ClaimInvitePage() {
           <span className="text-lg font-bold tracking-tight">SEPHIROTH</span>
         </div>
 
-        <form onSubmit={submit} className="card space-y-4">
-          <div>
-            <h1 className="font-extrabold">Set up your portal account</h1>
+        {!code ? (
+          <div className="card space-y-3 text-center">
+            <h1 className="font-extrabold">This invite link is incomplete</h1>
             <p className="text-sm text-muted">
-              Enter the claim code your clinician gave you, along with your email and a password.
+              Ask your clinician to resend your portal invite link, then open it directly.
+            </p>
+            <p className="text-sm text-muted">
+              Already have an account? <Link href="/login" className="font-semibold text-primary">Sign in</Link>
             </p>
           </div>
+        ) : (
+          <form onSubmit={submit} className="card space-y-4">
+            <div>
+              <h1 className="font-extrabold">Set up your portal account</h1>
+              <p className="text-sm text-muted">
+                Your clinician's invite is ready — add your name, email, and a password to finish.
+              </p>
+            </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-semibold">Claim code</label>
-            <input
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              required
-              placeholder="Paste the code from your clinician"
-              className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold">Full name</label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                placeholder="Jane Smith"
+                className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+              />
+            </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-semibold">Full name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="Jane Smith"
-              className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="you@example.org"
+                className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+              />
+            </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-semibold">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="you@example.org"
-              className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                placeholder="At least 8 characters"
+                className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+              />
+            </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-semibold">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              placeholder="At least 8 characters"
-              className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
-            />
-          </div>
+            {error && <p className="text-sm text-danger">{error}</p>}
 
-          {error && <p className="text-sm text-danger">{error}</p>}
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+            >
+              {busy ? "Please wait…" : "Set up my account"}
+            </button>
 
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white disabled:opacity-40"
-          >
-            {busy ? "Please wait…" : "Set up my account"}
-          </button>
-
-          <p className="text-center text-sm text-muted">
-            Already have an account? <Link href="/login" className="font-semibold text-primary">Sign in</Link>
-          </p>
-        </form>
+            <p className="text-center text-sm text-muted">
+              Already have an account? <Link href="/login" className="font-semibold text-primary">Sign in</Link>
+            </p>
+          </form>
+        )}
 
         <p className="mt-4 text-center text-xs text-muted">
           Research and education use only — not a medical device.

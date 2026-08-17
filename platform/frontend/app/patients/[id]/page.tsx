@@ -137,8 +137,12 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
   const invitePatient = useMutation({
     mutationFn: () => api.createInvite(id),
     onSuccess: (invite) => {
-      navigator.clipboard?.writeText(invite.code).catch(() => {});
-      showToast(`Claim code copied to clipboard: ${invite.code}`);
+      // A raw "{invite_id}.{secret}" string is meaningless to a patient
+      // asked to paste it in — hand them a plain link instead, with the
+      // code embedded as a query param that /portal/claim reads silently.
+      const link = `${window.location.origin}/portal/claim?code=${encodeURIComponent(invite.code)}`;
+      navigator.clipboard?.writeText(link).catch(() => {});
+      showToast("Invite link copied — send it to your patient.");
     },
     onError: (err) => {
       showToast(err instanceof ApiError ? err.message : "Could not create an invite.", "error");
