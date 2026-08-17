@@ -92,10 +92,6 @@ omit = [
 line-length = 110
 exclude = [
     "references",
-    "intelligence/medical-imaging",
-    "intelligence/nlp/ner",
-    "intelligence/nlp/pipeline",
-    "intelligence/nlp/preprocessing",
     "platform/frontend",
     ".venv",
 ]
@@ -111,10 +107,6 @@ known-first-party = ["api", "auth", "core", "data", "intelligence", "sephiroth",
 [tool.bandit]
 exclude_dirs = [
     "references",
-    "intelligence/medical-imaging",
-    "intelligence/nlp/ner",
-    "intelligence/nlp/pipeline",
-    "intelligence/nlp/preprocessing",
     "platform/frontend",
     ".venv",
     "tests",

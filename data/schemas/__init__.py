@@ -112,19 +112,21 @@ class Consultation(Base):
 
 
 class GuidelineDocument(Base):
-    """Persisted clinical guideline document, ingested via `/api/rag`.
+    """Schema for a future clinical guideline ingestion endpoint — no route
+    reads or writes this table today (`DEBT-003`, resolved by documenting
+    this as intentional cold storage, not by building the endpoint).
+    Retrieval scoring always runs against the in-memory vector store
+    (`data.vectors.InMemoryVectorStore`, seeded at startup), not a query
+    against this table — see `data/rag/__init__.py`.
 
     `embedding` uses `JSON` on SQLite (the in-memory test DB — pgvector has
     no SQLite equivalent) and `pgvector`'s native type on Postgres, so
-    `Base.metadata.create_all` keeps working in both. Retrieval scoring
-    itself always runs against the in-memory vector store
-    (`data.vectors.InMemoryVectorStore`), not a live query against this
-    table — see `data/rag/__init__.py`. This table exists purely so
-    API-ingested documents survive a restart.
+    `Base.metadata.create_all` keeps working in both, ready for whichever
+    dialect a real ingestion endpoint eventually targets.
 
-    No HNSW/IVFFlat index yet -- intentional while this table is empty (no
-    ingestion endpoint writes to it today). Add one once real rows start
-    landing here via `/api/rag` ingestion, not before.
+    No HNSW/IVFFlat index — intentionally deferred until a real ingestion
+    endpoint exists and rows actually land here; indexing an empty table
+    has no use case to validate against.
     """
 
     __tablename__ = "guideline_documents"
