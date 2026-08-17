@@ -5,6 +5,30 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase B — roles + patient portal auth (landing/icon/portal/scheduling plan)
+
+#### Added
+- `User.role` (default `"clinician"`, `server_default` backfills every existing row) and `User.patient_id` (nullable, unique FK → `patients.id`) — a `CheckConstraint` makes a patient role with no bound chart unrepresentable at the DB level.
+- New table `PatientInvite` — a clinician-issued, one-time, 72h-expiring claim code (bcrypt-hashed secret) letting a known `Patient` create a portal login. **No patient self-registration path exists**; identity proofing is a human, in-clinic step this system doesn't attempt to verify from form fields.
+- `platform/auth/deps.py`: `require_clinician`, `require_patient`, `current_patient_record` (derives the patient from the token, never a path/query param), `require_clinician_for_registration` (gates `POST /api/auth/register` behind a clinician token once `settings.allow_bootstrap_registration` — default on — is turned off).
+- `POST /api/patients/{id}/invites` (clinician-only) issues a claim code; `POST /api/auth/portal/claim` (public) redeems it. Every claim failure mode (unknown id, already redeemed, expired, wrong secret) returns the identical generic 400 — distinguishing them would make the endpoint an oracle for enumerating invite ids.
+- New router `platform/api/routers/portal.py`: `GET /api/portal/{me,timeline,labs}` — the patient's own chart, trimmed (no rule-derived `risk_level`/`risk_flags`; AI-generated timeline events filtered out unless explicitly shared).
+- `UserOut` gains `role`, `patient_id`.
+- New migration `3b2f5725233c` on top of `233988357f83`. Hand-fixed: autogenerate named `users.patient_id`'s FK `None` in both directions (no `naming_convention` configured) — `op.drop_constraint(None, ...)` isn't droppable by name, so `downgrade()` would have failed; named it explicitly.
+- Tests: `tests/test_portal_isolation.py` (patient A can't read B, patient can't reach any clinician route, clinician keeps full access, plus a route-shape meta-test asserting every clinician route carries `require_clinician` and no portal route takes a `patient_id`), `tests/test_patient_invite.py` (happy path, replay, expiry, wrong secret, unique-FK double-claim, extra-field rejection), `tests/test_portal_endpoints.py` (portal reads, the bootstrap-flag-off path, a 404 when a portal login's bound chart has been deleted).
+
+#### Changed
+- `platform/api/main.py`: the clinician-only routers now carry `dependencies=[Depends(require_clinician)]` (was the Phase A placeholder `get_current_user`) — swapping in the real role check was the one-line change Phase A's commit message promised.
+- `tests/test_auth.py`: `test_update_profile`'s exact-set assertion extended for the two new additive `UserOut` fields; added `test_registration_defaults_to_clinician_role` and `test_register_rejects_role_and_patient_id_fields`.
+
+#### Verification
+- `pytest --cov`: 578 passed, 93% coverage.
+- `intelligence.evaluation.run --mode ci`: PASS, unchanged.
+- `docs_check.py` / `export_contracts.py --check`: OK, no contract shape change (SQLAlchemy models, not `sephiroth.contracts`).
+- `bandit`: 0 High severity/confidence findings.
+- Migration applied, downgraded, and re-applied against a real local Postgres; `tests/test_alembic_migration.py`'s drift guard ran (not skipped) and passed.
+- Docker build + smoke test verified from a clean `git worktree`.
+
 ### Phase A — close unauthenticated PHI exposure (patient portal/scheduling plan)
 
 #### Security

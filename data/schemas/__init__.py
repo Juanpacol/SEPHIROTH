@@ -13,7 +13,7 @@ from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import JSON, CheckConstraint, Date, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -22,17 +22,37 @@ class Base(DeclarativeBase):
 
 
 class User(Base):
-    """Clinician account (single role)."""
+    """A clinician or patient-portal account.
+
+    `role` distinguishes the two ("clinician" | "patient"); `patient_id`
+    binds a patient login to exactly one `Patient` record. Both are
+    additive since Phase B of the patient-portal plan — every pre-existing
+    row backfills to `role="clinician"` via `server_default` (see the
+    migration), so no data migration step is needed. Role is re-read from
+    the DB on every request (`auth.deps`), never carried in the JWT, so a
+    role change takes effect immediately.
+    """
 
     __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint(
+            "role != 'patient' OR patient_id IS NOT NULL",
+            name="ck_users_patient_has_record",
+        ),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(120))
     hashed_password: Mapped[str] = mapped_column(String(128))
+    role: Mapped[str] = mapped_column(String(20), default="clinician", server_default="clinician", index=True)
+    patient_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("patients.id"), nullable=True, unique=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     consultations: Mapped[List["Consultation"]] = relationship(back_populates="user")
+    patient: Mapped[Optional["Patient"]] = relationship()
 
 
 class Patient(Base):
@@ -53,6 +73,29 @@ class Patient(Base):
     timeline: Mapped[List["TimelineEvent"]] = relationship(
         back_populates="patient", order_by="TimelineEvent.date"
     )
+
+
+class PatientInvite(Base):
+    """A one-time, clinician-issued claim code letting a known `Patient`
+    create a portal login. There is deliberately no patient
+    self-registration path — identity proofing (confirming the person
+    claiming a chart is actually that patient) is a human, in-clinic step,
+    not something this system can verify from form fields alone. The
+    bearer secret is hashed (bcrypt, via `auth.security`) since it is a
+    credential to a full medical record; redemption looks it up by `id`
+    (indexed PK) and verifies only the secret half, so lookup never scans.
+    """
+
+    __tablename__ = "patient_invites"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    code_hash: Mapped[str] = mapped_column(String(128))
+    issued_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    redeemed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    redeemed_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class TimelineEvent(Base):
@@ -146,6 +189,7 @@ __all__ = [
     "Base",
     "User",
     "Patient",
+    "PatientInvite",
     "TimelineEvent",
     "ClinicalNote",
     "Consultation",

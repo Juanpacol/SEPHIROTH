@@ -15,9 +15,9 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import agents, dashboard, medical, patients, rag
+from api.routers import agents, dashboard, medical, patients, portal, rag
 from auth import router as auth_router_module
-from auth.deps import get_current_user
+from auth.deps import require_clinician
 from core.config import settings
 from core.db import init_db
 from core.logging import setup_logging
@@ -72,20 +72,23 @@ async def request_logging(request: Request, call_next):
 
 
 # Every route in these five routers carries PHI (patient records,
-# consultations, or aggregates derived from them). `get_current_user` here
-# is a temporary stand-in for `require_clinician` — Phase B of the
-# patient-portal plan swaps it in once roles exist; the point of this
-# router-level `dependencies=` (rather than per-handler `Depends(...)`) is
-# that a new route added to any of these files is protected the moment it
-# exists, closing the class of bug, not just today's instances of it.
-_authenticated = [Depends(get_current_user)]
+# consultations, or aggregates derived from them) and is clinician-only.
+# `dependencies=` at the router level (rather than per-handler
+# `Depends(...)`) means a new route added to any of these files is
+# protected the moment it exists, closing the class of bug rather than
+# today's instances of it.
+_clinician_only = [Depends(require_clinician)]
 
 app.include_router(auth_router_module.router, prefix="/api/auth", tags=["auth"])
-app.include_router(agents.router, prefix="/api/agents", tags=["agents"], dependencies=_authenticated)
-app.include_router(patients.router, prefix="/api/patients", tags=["patients"], dependencies=_authenticated)
-app.include_router(medical.router, prefix="/api/medical", tags=["medical"], dependencies=_authenticated)
-app.include_router(rag.router, prefix="/api/rag", tags=["rag"], dependencies=_authenticated)
-app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"], dependencies=_authenticated)
+app.include_router(agents.router, prefix="/api/agents", tags=["agents"], dependencies=_clinician_only)
+app.include_router(patients.router, prefix="/api/patients", tags=["patients"], dependencies=_clinician_only)
+app.include_router(medical.router, prefix="/api/medical", tags=["medical"], dependencies=_clinician_only)
+app.include_router(rag.router, prefix="/api/rag", tags=["rag"], dependencies=_clinician_only)
+app.include_router(
+    dashboard.router, prefix="/api/dashboard", tags=["dashboard"], dependencies=_clinician_only
+)
+# Patient portal: mixes roles per-route (no blanket guard) — see portal.py.
+app.include_router(portal.router, prefix="/api/portal", tags=["portal"])
 
 
 @app.get("/health")

@@ -1,7 +1,8 @@
 """Patient endpoints — CRUD + Intelligent Timeline, backed by Postgres."""
 
+import secrets
 from datetime import date as date_cls
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
@@ -12,10 +13,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from auth.deps import get_current_user
+from auth.security import hash_password
 from core.db import get_session
-from data.schemas import ClinicalNote, Patient, TimelineEvent, User
+from data.schemas import ClinicalNote, Patient, PatientInvite, TimelineEvent, User
 from sephiroth.models import get_llm_client
 from sephiroth.safety.risk import assess_patient_risk, assess_risk_level
+
+INVITE_TTL = timedelta(hours=72)
 
 router = APIRouter()
 
@@ -224,3 +228,37 @@ async def get_timeline(
     if event_type:
         events = [e for e in events if e.type == event_type]
     return {"patient_id": patient_id, "events": [_event(e) for e in events]}
+
+
+@router.post("/{patient_id}/invites", status_code=201, summary="Issue a patient-portal claim code")
+async def create_invite(
+    patient_id: str,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Issue a one-time, expiring code a patient redeems at
+    `POST /api/auth/portal/claim` to create their own portal login.
+    There is no patient self-registration — a clinician who has already
+    identity-proofed the patient in clinic is the only source of this
+    code. Returned once, in this response, never again; the code is
+    hashed at rest (`PatientInvite.code_hash`), so losing it means
+    issuing a new one, not looking the old one up."""
+    await _get_patient(session, patient_id)  # 404 if the chart doesn't exist
+
+    invite = PatientInvite(
+        id=str(uuid4()),
+        patient_id=patient_id,
+        code_hash="",  # set below, once `secret` is known
+        issued_by_user_id=user.id,
+        expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + INVITE_TTL,
+    )
+    secret = secrets.token_urlsafe(16)
+    invite.code_hash = hash_password(secret)
+    session.add(invite)
+    await session.commit()
+
+    return {
+        "invite_id": invite.id,
+        "code": f"{invite.id}.{secret}",
+        "expires_at": invite.expires_at.isoformat(),
+    }

@@ -33,6 +33,15 @@ class Settings(BaseSettings):
     jwt_secret: str = DEFAULT_JWT_SECRET  # >=32 bytes for HS256
     jwt_expires_minutes: int = 1440
 
+    # POST /api/auth/register is clinician-only once a clinician account
+    # exists (a patient account is created only via the invite/claim
+    # flow — see PatientInvite). This flag lets the *first* account on a
+    # fresh database be created without one; default on in dev/test so
+    # local setup and the test suite don't need a bootstrap step, off in
+    # staging/production where an operator provisions the first account
+    # out of band.
+    allow_bootstrap_registration: bool = True
+
     # LLM — Google Gemini API (AI Studio free tier). PHI leaves the machine;
     # see README's privacy notice. Requests are unauthenticated/degraded
     # gracefully when GEMINI_API_KEY is unset (health() returns False).
