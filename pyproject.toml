@@ -1,12 +1,51 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sephiroth"
+version = "0.2.0"
+description = "Evidence-grounded, model-agnostic multi-agent AI runtime for clinical decision support"
+requires-python = ">=3.11"
+# Runtime dependencies stay in requirements.txt (the deployment contract);
+# this table exists so `pip install -e .` puts `src/sephiroth` on the path for
+# uvicorn, `python -m`, and Docker alike — not just pytest. See
+# docs/00-migration-charter.md §4.
+dependencies = []
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+# Explicit, never autodiscovery: autodiscovery would try to package the legacy
+# roots (intelligence/, data/, platform/) and change what is importable.
+where = ["src"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = [".", "platform"]
+markers = [
+    "spec: verifies an acceptance criterion from a docs/specs/SPEC-*.md",
+    "contract: locks an externally-observable contract (wire format, schema)",
+    "integration: exercises more than one subsystem together",
+    "legacy: characterizes pre-migration behaviour; deleted with its shim",
+]
 
 [tool.coverage.run]
+# One entry per package. Never add "src/sephiroth" wholesale — a wildcard root
+# silently absorbs future subpackages, so new code would be invisible to the
+# 87% gate while CI stayed green. Enforced by tests/test_coverage_config.py.
 source = [
+    "src/sephiroth/contracts",
+    "src/sephiroth/models",
+    "src/sephiroth/tools",
+    "src/sephiroth/runtime",
+    "src/sephiroth/verification",
+    "src/sephiroth/safety",
+    "src/sephiroth/context",
+    "src/sephiroth/telemetry",
     "intelligence/agents",
-    "intelligence/llm",
     "intelligence/mcp",
     "intelligence/evaluation",
     "intelligence/nlp/__init__.py",
@@ -23,6 +62,15 @@ omit = [
     "*/__pycache__/*",
     "*/tests/*",
     "data/embeddings/build_artifact.py",
+    # Shims (docs/00-migration-charter.md §3) — trivial re-exports, counting
+    # them would inflate coverage while hiding real gaps. Nothing left to
+    # omit here today: intelligence/agents/{base,workflow}.py (Phase 3
+    # shims) were deleted in Phase 5, DEBT-010 (one phase later than
+    # scheduled). The Phase 1 intelligence/llm/* shim was deleted in Phase
+    # 3, DEBT-008. The Phase 2 intelligence/mcp/registry.py shim was
+    # deleted in Phase 4, DEBT-009. intelligence/agents/{__init__,
+    # citation_guard,risk_engine,explainability}.py remain real
+    # implementation, not shims.
 ]
 
 [tool.coverage.report]
@@ -52,7 +100,7 @@ select = ["E", "F", "I"]
 [tool.ruff.lint.isort]
 # `platform/` is on PYTHONPATH rather than a normal src layout (see
 # CLAUDE.md), so ruff can't infer these first-party roots on its own.
-known-first-party = ["api", "auth", "core", "data", "intelligence", "tests"]
+known-first-party = ["api", "auth", "core", "data", "intelligence", "sephiroth", "tests"]
 
 [tool.bandit]
 exclude_dirs = [

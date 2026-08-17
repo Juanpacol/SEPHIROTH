@@ -1,0 +1,281 @@
+# Operational state of every component — the source of truth for "what actually
+# works", as opposed to what is designed or hoped for.
+#
+# Updated at the end of every phase and whenever a component's status changes.
+# `scripts/docs_check.py` verifies that every key under `components.*` resolves
+# to a path that exists, so a rename cannot silently rot this file.
+#
+# status: implemented | partial | planned | deprecated | shim
+#   shim = strangler-fig re-export only; see strangler_target/removed_in_phase
+
+schema_version: 1
+project: SEPHIROTH
+version: 0.6.0
+updated: 2026-08-19
+phase_current: 5
+
+phases:
+  "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
+  "1": {name: "ModelProvider abstraction", status: done}
+  "2": {name: "Tool Runtime", status: done}
+  "3": {name: "Agent Runtime + DEBT-008 closure (LangGraph removed in the same phase)", status: done}
+  "4": {name: "Context Engine (4a, done — SPEC-005) + Verification & Safety (4b, done — SPEC-004)", status: done}
+  "5": {name: "Observability + shim removal", status: partial}
+
+components:
+  legacy:
+    intelligence/agents/citation_guard.py:
+      status: implemented
+      description: >-
+        Citation-label provenance audit; binary verified/fabricated. Since
+        Phase 4 (SPEC-004), composed as a pre-filter feeding
+        src/sephiroth/verification's 5-state claim verifier (ADR-006), not
+        replaced by it — unmodified in this phase.
+      tests: [tests/test_citation_guard.py, tests/test_citation_guard_adversarial.py]
+      strangler_target: src/sephiroth/verification
+      removed_in_phase: 5
+    intelligence/agents/risk_engine.py:
+      status: implemented
+      description: Deterministic lab/medication threshold rules over patient data
+      tests: [tests/test_risk_engine.py]
+      strangler_target: src/sephiroth/safety/risk
+      removed_in_phase: 5
+    intelligence/agents/explainability.py:
+      status: implemented
+      description: Template audit trail, rebuilt on read (never persisted)
+      tests: [tests/test_sse_contract.py]
+      strangler_target: src/sephiroth/telemetry
+      removed_in_phase: 5
+    intelligence/mcp:
+      status: implemented
+      description: >-
+        The 5 FastMCP servers (nlp, imaging, rag, drug_safety, vision).
+        registry.py (the Phase 2 shim over src/sephiroth/tools) was deleted
+        in Phase 4 (DEBT-009); all call sites now import
+        sephiroth.tools.get_tool_runtime/ToolRuntime directly.
+      tests: [tests/test_mcp.py, tests/test_mcp_extra.py, tests/test_tool_authorization.py]
+    intelligence/evaluation:
+      status: implemented
+      description: Offline deterministic RAG eval, CI-blocking; RAG-scoped only
+      tests: [tests/test_evaluation.py, tests/test_eval_cli.py, tests/test_eval_runner_full.py]
+    intelligence/nlp/timeline_extractor.py:
+      status: implemented
+      description: LLM-first structured event extraction with lexicon fallback
+      tests: [tests/test_timeline_extractor.py]
+    intelligence/nlp/ner:
+      status: deprecated
+      description: Vendored MedCAT, never wired into any call path
+    data/rag:
+      status: implemented
+      description: Hybrid retrieval — keyword + dense, fused via RRF over 22 seed docs
+      tests: [tests/test_rag_pipeline.py]
+    data/embeddings:
+      status: implemented
+      tests: [tests/test_embeddings.py, tests/test_embeddings_matching.py, tests/test_corpus_hash.py]
+    data/vectors:
+      status: implemented
+      description: In-memory brute-force cosine; no ANN index
+      tests: [tests/test_embeddings.py]
+    data/schemas:
+      status: implemented
+      tests: [tests/test_db_seed.py, tests/test_alembic_migration.py]
+    platform/api:
+      status: implemented
+      tests: [tests/test_api_agents.py, tests/test_api_patients_rag.py, tests/test_main_health.py]
+    platform/auth:
+      status: implemented
+      tests: [tests/test_auth.py]
+    platform/core:
+      status: implemented
+      tests: [tests/test_config.py, tests/test_logging.py]
+    platform/frontend:
+      status: implemented
+      description: Next.js 14; hand-rolled SSE parsing couples it to the wire contract
+
+  runtime:
+    src/sephiroth/contracts:
+      status: implemented
+      phase: 0
+      spec: SPEC-000
+      description: Leaf package of Pydantic domain contracts; JSON Schema drift-gated
+      tests: [tests/test_contracts_schema.py, tests/test_contracts_models.py]
+    src/sephiroth/models:
+      status: implemented
+      phase: 1
+      spec: SPEC-001
+      description: >-
+        ModelProvider Protocol + GeminiClient/GroqClient/FallbackLLMClient/
+        factory, retrofitted from intelligence/llm. llm_provider setting
+        selects the primary; default config is byte-identical to pre-Phase-1.
+      tests: [tests/test_model_provider_protocol.py, tests/test_throttle.py,
+              tests/test_gemini_client.py, tests/test_groq_client.py,
+              tests/test_fallback_client.py, tests/test_llm_factory.py]
+    src/sephiroth/tools:
+      status: implemented
+      phase: 2
+      spec: SPEC-002
+      description: >-
+        ToolRuntime (relocated MCPRegistry) + capability tags + per-call
+        timeout, retrofitted from intelligence/mcp/registry.py. Closed
+        DEBT-004 (unauthenticated direct-tool HTTP endpoints) in the same phase.
+      tests: [tests/test_tool_runtime.py, tests/test_mcp.py,
+              tests/test_mcp_extra.py, tests/test_tool_authorization.py,
+              tests/test_medical_router.py]
+    src/sephiroth/runtime:
+      status: implemented
+      phase: 3
+      spec: SPEC-003
+      description: >-
+        Analyzer/Planner/Router + Agent (capability-bound) + async executor
+        (fan-out/merge/coordinate), replacing the LangGraph-compiled graph
+        entirely in this phase (ADR-001). route_specialists relocated
+        verbatim (NG-1: no dynamic capability-matching planner yet). Since
+        Phase 4 (SPEC-004), the executor's internal state is a real
+        RunState — the SPEC-003 §10 deferral is resolved; ToolCall.tool vs.
+        the frozen wire's name is projected at one function, _tool_call_wire.
+      tests: [tests/test_agent_registry.py, tests/test_runtime_executor.py,
+              tests/test_no_langgraph.py, tests/test_workflow.py,
+              tests/test_sse_contract.py, tests/test_api_agents.py,
+              tests/test_prompt_contract.py]
+    src/sephiroth/verification:
+      status: implemented
+      phase: 4
+      spec: SPEC-004
+      description: >-
+        Claim extraction, evidence harvesting, batched 5-state claim
+        verification (VerificationStatus), and deterministic confidence
+        scoring. citation_guard remains a pre-filter feeding this, per
+        ADR-006.
+      tests: [tests/test_verification_claims.py, tests/test_verification_evidence.py,
+              tests/test_verification_verify.py, tests/test_verification_confidence.py]
+    src/sephiroth/safety:
+      status: implemented
+      phase: 4
+      spec: SPEC-004
+      description: >-
+        Abstention gating (answer/partial/abstain, priority-ordered per
+        ADR-008) and a minimal input-facing prompt-injection heuristic
+        (F-041). PHI redaction, output-side toxicity/jailbreak classifiers,
+        and rate limiting are explicitly deferred (SPEC-004 NG-2).
+      tests: [tests/test_safety_abstention.py, tests/test_safety_output_safety.py]
+    src/sephiroth/context:
+      status: implemented
+      phase: 4
+      spec: SPEC-005
+      description: >-
+        Per-agent context views (RunContext + AgentCapability.context_fields),
+        lexical MMR reranking (no embeddings required), per-patient
+        consultation memory (not a generic multi-turn session — see
+        ADR-011), and character-budget truncation. Sibling to SPEC-004;
+        depends only on SPEC-003's executor.
+      tests: [tests/test_context_views.py, tests/test_context_rerank.py,
+              tests/test_context_memory.py, tests/test_context_budget.py,
+              tests/test_rag_pipeline.py, tests/test_api_agents.py]
+    src/sephiroth/telemetry:
+      status: partial
+      phase: 5
+      spec: SPEC-006
+      description: >-
+        Executes ADR-009: build_trace projects a populated RunState into
+        the persisted ExecutionTrace contract (existing since Phase 0).
+        traced_span records real spans for Executor.step and
+        Verifier.check only (NG-1) — ModelProvider.chat and
+        ToolRuntime.execute are not independently instrumented this cycle;
+        token/cost accounting is a placeholder (NG-2). No pluggable
+        Tracer/OTel backend yet (NG-3).
+      tests: [tests/test_telemetry_span.py, tests/test_telemetry_build_trace.py,
+              tests/test_runtime_executor.py]
+
+# Capabilities the target architecture requires that have no implementation yet.
+gaps:
+  - {capability: Dynamic, capability-matching planner (NG-1, SPEC-003), phase: 5}
+  - {capability: Recovery engine + agent lifecycle state machine (F-032/F-033, ADR-007), phase: 5}
+  - {capability: Confidence/abstention threshold tuning against the eval harness (SPEC-004 NG-3) — requires a live GEMINI_API_KEY run, not a build cycle, phase: null}
+  - {capability: Context Engine tuning — max_context_chars/lambda_mult against real data (SPEC-005 NG-5) — requires a live GEMINI_API_KEY run, not a build cycle, phase: null}
+  - {capability: Generic conversational/session memory — no validated product need yet (SPEC-005 NG-1), phase: null}
+  - {capability: Output-facing safety beyond the prompt-injection heuristic — PHI/toxicity/jailbreak/HITL (SPEC-004 NG-2), phase: 5}
+  - {capability: Live spans for ModelProvider.chat/ToolRuntime.execute + token/cost accounting + pluggable Tracer backend (SPEC-006 NG-1/2/3), phase: 5}
+  - {capability: Relocate risk_engine.py to src/sephiroth/safety/risk; shim citation_guard.py/risk_engine.py/explainability.py, phase: 5}
+
+quality_gates:
+  coverage_fail_under: 87
+  eval_blocking: true
+  ci_jobs: [lint, test, eval, frontend, docker-build-smoke-test, security, security-advisory]
+
+known_debt:
+  - id: DEBT-001
+    item: "Vendored MedCAT under intelligence/nlp/{ner,pipeline,preprocessing} has zero call sites"
+    action: remove
+    status: open
+  - id: DEBT-002
+    item: "Vendored MONAI under intelligence/medical-imaging should be a pip dependency"
+    action: replace with `monai` dependency
+    status: open
+  - id: DEBT-003
+    item: "data/schemas GuidelineDocument persists a pgvector column that is never queried"
+    action: wire ingestion into retrieval, or document as cold storage
+    status: open
+  - id: DEBT-004
+    item: "platform/api/routers/medical.py and rag.py exposed MCP tools with no authentication"
+    action: "Depends(get_current_user) added to all 8 endpoints across both routers"
+    phase: 2
+    status: resolved
+  - id: DEBT-005
+    item: "intelligence/llm/factory.py::reset_llm_client had zero call sites"
+    action: deleted along with all of intelligence/llm/* in Phase 3 (DEBT-008)
+    phase: 3
+    status: resolved
+  - id: DEBT-006
+    item: "docs/INTEGRATION_GUIDE.md described a structure that never existed"
+    action: deleted; replaced by docs/04-development/setup.md
+    status: resolved
+  - id: DEBT-007
+    item: "Vestigial AgentState dataclass in intelligence/agents/__init__.py"
+    action: deleted alongside its only referent
+    status: resolved
+  - id: DEBT-008
+    item: >-
+      docs/00-migration-charter.md's shim schedule said intelligence/llm/*
+      (created Phase 1) would be deleted in Phase 2. Phase 2's approved plan
+      scoped only the Tool Runtime and did not include this — deleting it
+      would have meant rewriting imports in ~16 files (agents, routers,
+      evaluation, examples) outside that plan's approved scope.
+    action: >-
+      Deleted intelligence/llm/* and its ~16 import sites in Phase 3, one
+      phase later than originally scheduled — did not slip further, per
+      docs/00-migration-charter.md §3 rule 3: "a shim that survives two
+      phases becomes permanent."
+    phase: 3
+    status: resolved
+  - id: DEBT-009
+    item: >-
+      docs/00-migration-charter.md's shim schedule said
+      intelligence/mcp/registry.py (created Phase 2) would be deleted in
+      Phase 3. Phase 3's approved plan scoped Agent Runtime + DEBT-008 and
+      did not include this.
+    action: >-
+      Deleted intelligence/mcp/registry.py and retargeted all callers
+      (platform/api/routers/{medical,rag,patients}.py,
+      tests/{test_mcp,test_tool_authorization}.py,
+      examples/{tools_example,imaging_example}.py) onto
+      src/sephiroth/tools directly, one phase later than originally
+      scheduled — did not slip further, same pattern as DEBT-008.
+    phase: 4
+    status: resolved
+  - id: DEBT-010
+    item: >-
+      docs/00-migration-charter.md's shim schedule said
+      intelligence/agents/{base,workflow}.py (created Phase 3) would be
+      deleted in Phase 4. Phase 4's approved scope was Context Engine
+      (SPEC-005) + Verification & Safety (SPEC-004), not shim cleanup.
+    action: >-
+      Deleted intelligence/agents/{base,workflow}.py and retargeted all
+      callers (platform/api/routers/agents.py,
+      tests/{test_workflow,test_sse_contract}.py,
+      examples/agents_example.py) onto src/sephiroth/runtime directly, one
+      phase later than originally scheduled — did not slip further, same
+      pattern as DEBT-008/DEBT-009. Also deleted
+      tests/test_agent_registry.py::test_workflow_shim_run_consultation_is_the_real_executor
+      (shim-identity test, nothing left to check identity against).
+    phase: 5
+    status: resolved

@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 from google.genai import errors
 
-from intelligence.llm.gemini_client import (
+from sephiroth.models.gemini import (
     DEFAULT_MAX_TOOL_ROUNDS,
     GeminiClient,
     LLMUnavailableError,
@@ -156,6 +156,8 @@ async def test_chat_tool_executor_none_returns_text_without_executing():
 
 @pytest.mark.asyncio
 async def test_chat_hits_max_tool_rounds_cap():
+    # AC-001-06, AC-001-10 (docs/specs/SPEC-001-model-provider.md) — this
+    # whole module passes unmodified against the Phase 1 shims.
     looping = _response([_function_call_part("loop_tool", {})])
     fake = _FakeModels(responses=[looping] * DEFAULT_MAX_TOOL_ROUNDS)
     client = _make_client(fake)

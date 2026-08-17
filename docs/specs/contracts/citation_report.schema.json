@@ -1,0 +1,27 @@
+{
+  "additionalProperties": false,
+  "description": "The legacy citation-guard verdict.\n\nField names are frozen: this dict is persisted to\n`consultations.citation_report` and rendered by the frontend's Citation\nGuard panel. See `docs/00-migration-charter.md` \u00a72.2.",
+  "properties": {
+    "fabricated": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Fabricated",
+      "type": "array"
+    },
+    "total_checked": {
+      "default": 0,
+      "title": "Total Checked",
+      "type": "integer"
+    },
+    "verified": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Verified",
+      "type": "array"
+    }
+  },
+  "title": "CitationReport",
+  "type": "object"
+}

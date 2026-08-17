@@ -1,0 +1,73 @@
+# Feature Registry
+
+The single source of truth for what SEPHIROTH can do. Every row is a capability
+a reader could ask "does it do X?" about.
+
+**Status:** 📋 planned · 🚧 in progress · ✅ done · ⚠️ partial or degraded · ❌ blocked
+
+The `Experiment` column stays `—` throughout the architecture migration;
+evaluation is out of scope for Phases 0–5 and gets filled in afterwards.
+
+## Shipped
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-001 | Multi-agent clinical consultation (static fan-out) | ✅ | `intelligence/agents/workflow.py` | `test_workflow.py` | — | `ARCHITECTURE.md` |
+| F-002 | MCP tool access for agents | ✅ | `intelligence/mcp/` | `test_mcp.py` | — | `04-development/setup.md` |
+| F-003 | Citation guard (label provenance audit) | ✅ | `citation_guard.py` | `test_citation_guard.py`, `_adversarial` | — | `06-security/safety.md` |
+| F-004 | Rule-based patient risk engine | ✅ | `risk_engine.py` | `test_risk_engine.py` | — | `06-security/safety.md` |
+| F-005 | Explainability trace (derived on read) | ✅ | `explainability.py` | `test_sse_contract.py` | — | `00-migration-charter.md` §2.4 |
+| F-006 | Hybrid RAG retrieval (keyword + dense, RRF) | ✅ | `data/rag/` | `test_rag_pipeline.py` | — | 📋 `01-architecture/context-engine.md` |
+| F-007 | Gemini provider | ✅ | `intelligence/llm/gemini_client.py` | `test_gemini_client.py` | — | ADR-003 |
+| F-008 | Groq text-only fallback | ✅ | `fallback_client.py` | `test_fallback_client.py` | — | ADR-003 |
+| F-009 | Offline deterministic RAG evaluation (CI gate) | ✅ | `intelligence/evaluation/` | `test_eval_cli.py` | — | `04-development/testing.md` |
+| F-010 | JWT auth, single clinician role | ✅ | `platform/auth/` | `test_auth.py` | — | `06-security/threat-model.md` |
+| F-011 | Consultation persistence + PDF export | ✅ | `platform/api/` | `test_pdf_export.py` | — | — |
+| F-012 | Clinical timeline extraction | ✅ | `timeline_extractor.py` | `test_timeline_extractor.py` | — | — |
+| F-013 | Medical imaging analysis | ⚠️ | `imaging_server.py` | — | — | 📋 `02-agents/radiology-agent.md` |
+| F-014 | SSE streaming consultation | ✅ | `workflow.py`, `routers/agents.py` | `test_sse_contract.py` | — | `00-migration-charter.md` §2.1 |
+
+F-013 is ⚠️ because MONAI inference is gated behind an unset `monai_model_path`;
+what runs today is metadata inspection plus the vision model.
+
+## Migration (Phases 0–5)
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-020 | Formal domain contracts + schema drift gate | ✅ | `sephiroth/contracts/` | `test_contracts_schema.py`, `test_contracts_models.py` | — | SPEC-000 |
+| F-021 | Tool authorization enforced at dispatch | ✅ | `mcp/registry.py` | `test_tool_authorization.py` | — | `04-development/setup.md` |
+| F-022 | `ModelProvider` interface | ✅ | `sephiroth/models/` | `test_model_provider_protocol.py` | — | SPEC-001 |
+| F-023 | Config-driven provider selection (`llm_provider`) | ✅ | `sephiroth/models/factory.py` | `test_llm_factory.py` | — | SPEC-001 |
+| F-024 | Tool runtime with capability metadata | ✅ | `sephiroth/tools/` | `test_tool_runtime.py` | — | SPEC-002 |
+| F-025 | Tool call timeout | ⚠️ | `sephiroth/tools/runtime.py` | `test_tool_runtime.py` | — | SPEC-002 |
+| F-026 | Agent registry with declared capabilities | ✅ | `sephiroth/runtime/registry.py` | `test_agent_registry.py` | — | SPEC-003 |
+| F-027 | Task analyzer | ✅ | `sephiroth/runtime/analyzer.py` | `test_agent_registry.py` (via planner) | — | SPEC-003 |
+| F-028 | Static planner (parity with `route_specialists`) | ✅ | `sephiroth/runtime/planner.py` | `test_workflow.py` (unmodified parity gate) | — | SPEC-003 |
+| F-029 | Dynamic LLM planner | 📋 | `sephiroth/runtime/planner.py` | 📋 | — | 📋 (deferred, SPEC-003 NG-1) |
+| F-030 | Capability-based router | ⚠️ | `sephiroth/runtime/router.py` | `test_agent_registry.py` | — | SPEC-003 §4 NG-1 |
+| F-031 | Executor (fan-out/merge/coordinate, LangGraph removed) | ✅ | `sephiroth/runtime/executor.py` | `test_runtime_executor.py`, `test_sse_contract.py` | — | SPEC-003 |
+| F-032 | Agent lifecycle state machine | 📋 | `sephiroth/runtime/` | 📋 | — | 📋 SPEC-003, D2 |
+| F-033 | Recovery engine (retry/fallback/replan/abstain) | 📋 | `sephiroth/runtime/recovery.py` | 📋 | — | 📋 SPEC-003, ADR-007 |
+| F-034 | Typed `RunContext` + per-agent views | ✅ | `sephiroth/context/views.py` | `test_context_views.py` | — | SPEC-005, ADR-011 |
+| F-035 | Reranking, memory, token budgeting | ✅ | `sephiroth/context/{rerank,memory,budget}.py` | `test_context_{rerank,memory,budget}.py` | — | SPEC-005, ADR-011 (memory scoped to per-patient recall, not generic session — NG-1) |
+| F-036 | Claim extraction | ✅ | `sephiroth/verification/claims.py` | `test_verification_claims.py` | — | SPEC-004, ADR-006 |
+| F-037 | Five-state claim verification | ✅ | `sephiroth/verification/verify.py` | `test_verification_verify.py` | — | SPEC-004, ADR-006 |
+| F-038 | Conflict detection | ✅ | `sephiroth/verification/verify.py` | `test_verification_verify.py` | — | SPEC-004 |
+| F-039 | Confidence engine | ✅ | `sephiroth/verification/confidence.py` | `test_verification_confidence.py` | — | SPEC-004 |
+| F-040 | Abstention engine | ✅ | `sephiroth/safety/abstention.py` | `test_safety_abstention.py` | — | SPEC-004, ADR-008 |
+| F-041 | Output safety engine (PHI, injection, HITL) | ⚠️ | `sephiroth/safety/output_safety.py` | `test_safety_output_safety.py` | — | SPEC-004 (input prompt-injection heuristic only; PHI/toxicity/jailbreak/HITL deferred, NG-2) |
+| F-042 | Structured execution traces | ⚠️ | `sephiroth/telemetry/` | `test_telemetry_build_trace.py` | — | SPEC-006, ADR-009 (spans recorded for 2 of 4 named seams, NG-1) |
+| F-043 | Span attribute redaction (allow-list) | ✅ | `contracts/trace.py`, `sephiroth/telemetry/span.py` | `test_contracts_models.py`, `test_telemetry_span.py` | — | SPEC-006 |
+
+F-025 is ⚠️ because only the timeout was built — retry and circuit-breaker
+were explicitly deferred (`SPEC-002` NG-1/NG-2): the two I/O-performing tools
+already retry inside their own logic (httpx / `GeminiClient`), so a second
+generic retry layer would double-retry the same failure with no measured
+benefit.
+
+## Removed
+
+| ID | Feature | Status | Note |
+|---|---|---|---|
+| F-050 | Vestigial `AgentState` dataclass | ⚠️ | Deleted in Phase 0 — zero call sites; superseded by `sephiroth.contracts.RunState` |
+| F-051 | `docs/INTEGRATION_GUIDE.md` | ⚠️ | Deleted in Phase 0 — described a structure that never existed |

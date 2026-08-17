@@ -1,0 +1,58 @@
+{
+  "additionalProperties": false,
+  "description": "One tool invocation.\n\n`result` is retained deliberately: citation auditing harvests allowed\ncitations from tool results, so dropping it would make every genuine\ncitation look fabricated. The streaming `agent_completed` event omits it to\nkeep the wire small, but `final` and the persisted record keep it.",
+  "properties": {
+    "agent": {
+      "title": "Agent",
+      "type": "string"
+    },
+    "arguments": {
+      "additionalProperties": true,
+      "title": "Arguments",
+      "type": "object"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "latency_ms": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Latency Ms",
+      "type": "integer"
+    },
+    "ok": {
+      "default": true,
+      "title": "Ok",
+      "type": "boolean"
+    },
+    "result": {
+      "default": null,
+      "title": "Result"
+    },
+    "timestamp": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Timestamp"
+    },
+    "tool": {
+      "title": "Tool",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tool",
+    "agent"
+  ],
+  "title": "ToolCall",
+  "type": "object"
+}

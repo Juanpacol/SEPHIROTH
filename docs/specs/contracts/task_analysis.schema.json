@@ -1,0 +1,87 @@
+{
+  "$defs": {
+    "Complexity": {
+      "enum": [
+        "simple",
+        "moderate",
+        "complex"
+      ],
+      "title": "Complexity",
+      "type": "string"
+    },
+    "RiskLevel": {
+      "description": "Clinical risk, used both for routing decisions and safety gating.",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "TaskType": {
+      "description": "What kind of clinical question the runtime was handed.",
+      "enum": [
+        "diagnostic",
+        "therapeutic",
+        "interpretive",
+        "informational",
+        "triage"
+      ],
+      "title": "TaskType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Structured classification of a request, produced before planning.",
+  "properties": {
+    "candidate_agents": {
+      "description": "AgentCapability.id references the planner may draw from",
+      "items": {
+        "type": "string"
+      },
+      "title": "Candidate Agents",
+      "type": "array"
+    },
+    "complexity": {
+      "$ref": "#/$defs/Complexity",
+      "default": "simple"
+    },
+    "rationale": {
+      "default": "",
+      "title": "Rationale",
+      "type": "string"
+    },
+    "requires_evidence": {
+      "default": true,
+      "title": "Requires Evidence",
+      "type": "boolean"
+    },
+    "requires_verification": {
+      "default": false,
+      "title": "Requires Verification",
+      "type": "boolean"
+    },
+    "risk": {
+      "$ref": "#/$defs/RiskLevel",
+      "default": "low"
+    },
+    "signals": {
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "description": "Boolean input signals derived from the request context (has_image, has_lab_results, has_medications). The static planner routes on these alone, reproducing legacy `route_specialists`.",
+      "title": "Signals",
+      "type": "object"
+    },
+    "task_type": {
+      "$ref": "#/$defs/TaskType"
+    }
+  },
+  "required": [
+    "task_type"
+  ],
+  "title": "TaskAnalysis",
+  "type": "object"
+}

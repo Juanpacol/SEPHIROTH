@@ -11,7 +11,7 @@ An **AI-powered clinical decision support platform** for healthcare professional
 ## Tech Stack
 
 - **LLM**: Google Gemini API (`gemini-flash-latest`, a Google-maintained alias for the current recommended flash model), free AI Studio tier — no local model to run. Optional Groq fallback for text/tool-calling when Gemini's quota is exhausted (`GROQ_API_KEY`).
-- **Agents**: `MCPAgent` subclasses orchestrated via LangGraph, each with MCP tools
+- **Agents**: `Agent` instances (bound to a capability record, `src/sephiroth/runtime/`) orchestrated by a purpose-built async executor, each with MCP tools
 - **Tools (MCP servers)**: Clinical NLP, medical imaging analysis, evidence retrieval, drug safety checks — all in `intelligence/mcp/`
 - **Backend**: FastAPI + PostgreSQL + pgvector
 - **Frontend**: Next.js 14 (TypeScript, Tailwind, Radix) — design system from Nexura Care (healthcare dashboard), adapted for AI copilot domain
@@ -25,9 +25,15 @@ An **AI-powered clinical decision support platform** for healthcare professional
 | `platform/core/` | Config (`config.py`) + async DB engine/sessions/seed (`db.py`) |
 | `platform/auth/` | JWT auth: `security.py` (bcrypt+pyjwt), `deps.py` (`get_current_user`), `router.py` (register/login/me) |
 | `platform/frontend/` | Next.js app (pages in `app/`, components in `components/`, design tokens in Tailwind config) |
-| `intelligence/llm/` | `GeminiClient` (chat/tool-call loop, structured output, vision) + `GroqClient` (text-only fallback) + `FallbackLLMClient` (composes both) + `factory.py` (`get_llm_client()` singleton) |
-| `intelligence/mcp/` | FastMCP servers (registry.py + nlp, imaging, rag, drug_safety, and vision servers — vision shares the same Gemini client, model override via `gemini_vision_model`) |
-| `intelligence/agents/` | Agent base class + 5 specialists + LangGraph workflow (`workflow.py`, blocking + SSE streaming) + Citation Guard (`citation_guard.py`) + explainability trace (`explainability.py`) + rule-based risk engine (`risk_engine.py`) |
+| `src/sephiroth/models/` | `GeminiClient` (chat/tool-call loop, structured output, vision) + `GroqClient` (text-only fallback) + `FallbackLLMClient` (composes both) + `factory.py` (`get_llm_client()` singleton), all behind the `ModelProvider` protocol |
+| `src/sephiroth/tools/` | `ToolRuntime` (relocated MCP registry — capability tags, per-call timeout, dispatch-time whitelist enforcement) |
+| `src/sephiroth/runtime/` | `Agent` + 5 capability records + the async executor (fan-out/merge/coordinate, replacing LangGraph — see `docs/08-decisions/ADR-001-remove-langgraph.md`); internal state is a real `RunState` since Phase 4 |
+| `src/sephiroth/verification/` | Claim extraction, evidence harvesting, 5-state claim verification (`VerificationStatus`), deterministic confidence scoring — `citation_guard` feeds it as a pre-filter (ADR-006) |
+| `src/sephiroth/safety/` | Abstention gating (`answer`/`partial`/`abstain`, ADR-008) + a minimal input prompt-injection heuristic |
+| `src/sephiroth/context/` | Per-agent context views, lexical MMR reranking, per-patient consultation memory, character-budget truncation (ADR-011) |
+| `src/sephiroth/telemetry/` | `build_trace` projects `RunState` into the persisted `ExecutionTrace`; `traced_span` records real spans for the executor/verifier seams (ADR-009) |
+| `intelligence/mcp/` | FastMCP servers (nlp, imaging, rag, drug_safety, vision — vision shares the same Gemini client, model override via `gemini_vision_model`); the registry/dispatcher itself lives in `src/sephiroth/tools/` |
+| `intelligence/agents/` | Thin `Agent` wrappers (shim into `src/sephiroth/runtime/`) + Citation Guard (`citation_guard.py`) + explainability trace (`explainability.py`) + rule-based risk engine (`risk_engine.py`) |
 | `intelligence/medical-imaging/` | MONAI transforms + networks (cloned from ref-monai-medical-imaging) |
 | `intelligence/nlp/` | MedCAT NER + pipeline (cloned) + `timeline_extractor.py` (note → timeline events via structured LLM output) |
 | `data/rag/` | Evidence retrieval with mandatory citations (seeded guideline corpus + PubMed) |
@@ -59,9 +65,9 @@ User Query
     ↓
 FastAPI endpoint (agents.py, patients.py, etc.)
     ↓
-ClinicalCoordinator agent (MCPAgent subclass)
+ClinicalCoordinator agent (Agent bound to the coordinator capability)
     ↓
-Gemini (tool-calling loop in intelligence/llm/gemini_client.py)
+Gemini (tool-calling loop in src/sephiroth/models/gemini.py)
     ↓
 ├─ RadiologyAgent + imaging_server → MONAI inference + vision description
 ├─ LabAgent + patient data → lab result interpretation
@@ -72,7 +78,7 @@ Gemini (tool-calling loop in intelligence/llm/gemini_client.py)
 Frontend displays agent badges (Sephiroth gradient), cites sources
 ```
 
-Each agent is an `MCPAgent` subclass with:
+Each agent is an `Agent` (`src/sephiroth/runtime/agent.py`) bound to an `AgentCapability` record with:
 - A **system prompt** (clinical reasoning instructions)
 - A list of **allowed MCP tools** (what it can call)
 - A `.run(query, context)` method (calls `client.chat(...)`)
@@ -84,18 +90,21 @@ MCP tools are FastMCP servers in `intelligence/mcp/`:
 - `drug_safety_server.py` → drug interaction checking
 - `vision_server.py` → wraps `GeminiClient.describe_image()` (multimodal image description)
 
-Registry (`intelligence/mcp/registry.py`) discovers all servers, aggregates their tool schemas into:
+`ToolRuntime` (`src/sephiroth/tools/runtime.py`) discovers all servers (`SERVERS` in `src/sephiroth/tools/servers.py`), aggregates their tool schemas into:
 1. **`llm_tools()`** — OpenAI-style function-calling schemas, converted to Gemini's `FunctionDeclaration` format inside `GeminiClient`
 2. **System prompt summary** (human-readable tool descriptions, prepended to agent's system prompt)
 
 ## Key Design Decisions
 
 1. **Cloud LLM via Gemini, not local Ollama.** Migrated from a fully local Ollama setup to the free Google Gemini API — the only free tier covering native multi-round tool-calling, JSON-Schema structured output, and vision in one provider. PHI now leaves the machine; see the privacy notice above.
-2. **One shared `GeminiClient`, no host/Docker split.** `intelligence/llm/factory.py::get_llm_client()` is a lazy singleton used by agents, timeline extraction, and vision alike — one API key, one rate limiter, one retry/backoff path.
-3. **One agent per MCP server.** Specialist agents are small and focused; LangGraph orchestrates them.
+2. **One shared `GeminiClient`, no host/Docker split.** `sephiroth.models.factory::get_llm_client()` is a lazy singleton used by agents, timeline extraction, and vision alike — one API key, one rate limiter, one retry/backoff path.
+3. **One agent per MCP server.** Specialist agents are small and focused; the executor in `src/sephiroth/runtime/` orchestrates them.
 4. **Sephiroth gradient = AI signal.** Whenever the UI shows AI-generated content, that gradient appears (badge, card border, etc.). Helps users trust the source.
 5. **All answers must cite sources.** EvidenceAgent always returns `(finding, [source_citation1, source_citation2, ...])`. This is baked into the RAG pipeline.
-6. **Citation Guard on every answer.** `intelligence/agents/citation_guard.py` audits the coordinator's final answer against actual tool output; fabricated citations are stripped (`[unverified — removed]`) and reported in `citation_report` (shown in the UI).
+6. **Citation Guard on every answer.** `intelligence/agents/citation_guard.py` audits the coordinator's final answer against actual tool output; fabricated citations are stripped (`[unverified — removed]`) and reported in `citation_report` (shown in the UI). Since Phase 4 it's a pre-filter feeding claim-level verification, not the terminal check — see #15.
+15. **Claim verification and abstention gate every consultation.** `src/sephiroth/verification/` decomposes the (citation-sanitized) answer into claims and classifies each against retrieved evidence content (5-state `VerificationStatus`, not citation_guard's binary check); `src/sephiroth/safety/abstention.py` gates on the result — an unsupported high-risk claim, a contradiction, or low confidence overrides a plain `answer` with `partial` (caveat banner) or `abstain` (declines, replacing the answer). Confidence is always derived from existing signals, never self-reported by the model.
+16. **Each agent sees only the context fields it declares.** `AgentCapability.context_fields` (`src/sephiroth/runtime/registry.py`) names which `RunContext` fields an agent needs; `src/sephiroth/context/views.py::context_for_agent` projects down to just those before the executor calls it. "Memory" is scoped narrowly to a patient's own recent consultations (`src/sephiroth/context/memory.py`, injected by the router into `context["recent_consultations"]`, seen only by the coordinator) — not a generic multi-turn chat session, which doesn't exist in this product yet (see ADR-011).
+17. **Every consultation builds a replayable trace, persisted alongside it.** `src/sephiroth/telemetry/build_trace` projects the executor's `RunState` into `ExecutionTrace` (`sephiroth.contracts.trace`) at the end of a run; `traced_span` records real timing spans around each agent turn and the verification pass, redacted via an attribute allow-list (never patient content). Toggled by `settings.enable_tracing` — disabling it must not change anything else about a run's result (ADR-009).
 7. **Auth = JWT, single clinician role.** Consultations are persisted per user (`consultations` table); patients are shared. Protected routes use `Depends(get_current_user)`. `JWT_SECRET` must be a strong, non-default value in staging/production — `Settings` fails fast at startup otherwise (see `platform/core/config.py`).
 8. **Streaming via SSE.** `POST /api/agents/consult/stream` emits `routing` → `agent_completed`(×N) → `final` → `persisted` (carries the consultation id so Export PDF works without a reload); the frontend parses it with fetch+ReadableStream (EventSource can't POST).
 9. **Explainability is derived, never stored.** `intelligence/agents/explainability.py` builds the reasoning trace on read from persisted `agents`/`tool_calls`/`citation_report` — template-based, no LLM call, so improving templates needs no backfill.
@@ -103,29 +112,38 @@ Registry (`intelligence/mcp/registry.py`) discovers all servers, aggregates thei
 11. **Vision = one MCP tool, same client.** `describe_medical_image` (vision_server.py) does one-shot `GeminiClient.describe_image()`; the RadiologyAgent is prompted to call it first when `image_path` is in context. It reads rendered images (PNG/JPG…), not raw DICOM. Degrades gracefully (`status: "unavailable"`) if the API key is missing or the request fails.
 12. **Image preview shares the imaging trust boundary.** `GET /api/medical/imaging/preview` (medical.py) streams back the same local file `describe_medical_image`/`analyze_medical_image` already read, hard-restricted to browser-renderable extensions (png/jpg/jpeg/gif/webp/bmp) so it can't become a general file-download route. Powers the side-by-side viewer on `/imaging`.
 13. **Free-tier quota is a real constraint.** `llm_max_tool_rounds` (default 6) and a shared per-client rate limiter (`gemini_rpm_limit`) keep a single consultation (5 agents, each doing several tool-call rounds) inside the AI Studio free tier. See README's Gemini quota section before raising these.
-14. **Optional Groq fallback, text-only.** `intelligence/llm/factory.py::get_llm_client()` returns a `FallbackLLMClient` instead of a bare `GeminiClient` when `GROQ_API_KEY` is set: `chat()`/`generate_json()` try Gemini first, then Groq on any `LLMUnavailableError` (rate limit, daily quota exhaustion, outage). `describe_image()` (vision) and embeddings always stay on Gemini — Groq has no comparable endpoints.
+14. **Optional Groq fallback, text-only.** `sephiroth.models.factory::get_llm_client()` returns a `FallbackLLMClient` instead of a bare `GeminiClient` when `GROQ_API_KEY` is set: `chat()`/`generate_json()` try Gemini first, then Groq on any `LLMUnavailableError` (rate limit, daily quota exhaustion, outage). `describe_image()` (vision) and embeddings always stay on Gemini — Groq has no comparable endpoints.
 
 ## How to Extend
 
 ### Add a New Agent
 
-1. Create a subclass of `MCPAgent` in `intelligence/agents/__init__.py`
-2. Write a system prompt (clinical reasoning for that domain)
-3. List its allowed MCP tools
-4. Wire it into the LangGraph workflow in `intelligence/agents/workflow.py`
+1. Add an `AgentCapability` record to `src/sephiroth/runtime/registry.py` — `id`
+   (hyphenated display name), `role_prompt` (clinical reasoning for that
+   domain; the system prompt is assembled in `agent.py` from the disclaimer +
+   `role_prompt` + tool catalog), and `tools` (allowed MCP tools)
+2. Select it from `route_specialists` in `planner.py`
+3. Add an entry to `_ACTION_TEMPLATES`/`_NO_TOOL_ACTIONS` in `explainability.py` —
+   `explanation` is rebuilt on read, so a missing template also degrades how
+   *historical* consultations render
 
-Example (see `docs/INTEGRATION_GUIDE.md` for more):
+Example (see `docs/04-development/setup.md` for more):
 ```python
-class PathologyAgent(MCPAgent):
-    system_prompt = "You are a pathology specialist..."
-    allowed_tools = ["pathology_analyzer", "specimen_database"]
+PATHOLOGY = AgentCapability(
+    id="pathology",
+    role_prompt="You are a pathology specialist...",
+    tools=["pathology_analyzer", "specimen_database"],
+)
 ```
 
 ### Add a New MCP Tool
 
 1. Create `intelligence/mcp/my_new_server.py` with a FastMCP app
 2. Declare tools with `@mcp.tool` decorators, calling your implementation from `intelligence/` or `data/`
-3. `registry.py` auto-discovers it on startup
+3. Register the server in `SERVERS` in `src/sephiroth/tools/servers.py`
+4. Add the tool name to the `allowed_tools` of each agent's `AgentCapability` —
+   the whitelist is enforced at dispatch by `ToolRuntime.scoped_executor()`, so
+   an unlisted tool returns an authorization error instead of running
 
 See existing servers (`nlp_server.py`, `imaging_server.py`) for the pattern.
 
@@ -133,7 +151,7 @@ See existing servers (`nlp_server.py`, `imaging_server.py`) for the pattern.
 
 1. Create router in `platform/api/routers/my_feature.py`
 2. Import and include it in `platform/api/main.py`
-3. Follow the pattern in `docs/INTEGRATION_GUIDE.md`
+3. Follow the pattern in `docs/04-development/setup.md`
 
 ### Update Frontend
 
@@ -214,9 +232,26 @@ Schema is Alembic-managed for both local Postgres and Supabase (`migrations/vers
 - **Vendored code in references/ is read-only.** We don't edit MONAI/MedCAT source; we wrap their classes in our own agents/MCP servers.
 - **Medical accuracy is non-negotiable.** Every agent prompt references clinical guidelines. All recommendations cite sources. The disclaimer is on every page.
 
+## Architecture migration (in progress)
+
+SEPHIROTH is being restructured from a clinical application into a
+model-agnostic agentic runtime, using Spec-Driven Development and a strangler-fig
+migration into `src/sephiroth/`. Before changing anything under `intelligence/`,
+`data/`, or `src/sephiroth/`, read:
+
+- `docs/00-migration-charter.md` — **the frozen external contracts** (SSE events,
+  persistence shape, derived explanation), the shim rules, and the phase order.
+  Breaking a §2 contract breaks the frontend.
+- `docs/specs/SPEC-000-spec-process.md` — the spec template and lifecycle.
+  Implementation starts only after a spec reaches `Approved`.
+- `docs/project-state.yaml` — what is actually implemented versus planned.
+
+The loop is: spec → failing tests → implementation → spec marked `Implemented`.
+
 ## References
 
 - `ARCHITECTURE.md` — detailed system design
-- `docs/INTEGRATION_GUIDE.md` — how to extend each module
+- `docs/04-development/setup.md` — how to extend each module
+- `docs/04-development/testing.md` — test conventions and the gates that matter
 - `CONTRIBUTING.md` — development guidelines
-- Open-source projects: [MONAI](https://docs.monai.io/), [MedCAT](https://github.com/CogStack/MedCAT), [LangGraph](https://langchain-ai.github.io/langgraph/), [Gemini API](https://ai.google.dev/gemini-api/docs)
+- Open-source projects: [MONAI](https://docs.monai.io/), [MedCAT](https://github.com/CogStack/MedCAT), [Gemini API](https://ai.google.dev/gemini-api/docs)

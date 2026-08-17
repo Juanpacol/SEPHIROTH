@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "completion_tokens": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Completion Tokens",
+      "type": "integer"
+    },
+    "prompt_tokens": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Prompt Tokens",
+      "type": "integer"
+    }
+  },
+  "title": "TokenUsage",
+  "type": "object"
+}

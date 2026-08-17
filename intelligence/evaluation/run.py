@@ -61,7 +61,7 @@ def _run_ci() -> int:
 
 def _run_full(record: bool, skip_pubmed: bool, model: str) -> int:
     from core.config import settings  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
-    from intelligence.llm.gemini_client import GeminiClient
+    from sephiroth.models.gemini import GeminiClient
 
     async def _main() -> int:
         client = GeminiClient(api_key=settings.gemini_api_key, model=model)

@@ -15,7 +15,7 @@ from auth.deps import get_current_user
 from core.db import get_session
 from data.schemas import ClinicalNote, Patient, TimelineEvent, User
 from intelligence.agents.risk_engine import assess_patient_risk, assess_risk_level
-from intelligence.llm import get_llm_client
+from sephiroth.models import get_llm_client
 
 router = APIRouter()
 
@@ -114,12 +114,12 @@ async def _ingest_note(
 ) -> Dict[str, Any]:
     """Shared note pipeline: persist the note, extract entities, and add
     AI-extracted Intelligent Timeline events (deduped on date+title)."""
-    from intelligence.mcp import get_registry
     from intelligence.nlp.timeline_extractor import extract_events
+    from sephiroth.tools import get_tool_runtime
 
     resolved_date = note_date or datetime.now(timezone.utc).date().isoformat()
 
-    registry = get_registry()
+    registry = get_tool_runtime()
     await registry.load()
     entities = await registry.execute("extract_medical_entities", {"text": content})
 

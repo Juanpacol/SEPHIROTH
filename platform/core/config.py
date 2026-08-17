@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     gemini_rpm_limit: int = 10
     llm_max_tool_rounds: int = 6
 
+    # Which provider `get_llm_client()` builds as primary. "gemini" (default)
+    # preserves all pre-Phase-1 behavior, including Groq fallback below.
+    # "groq" returns a bare GroqClient with no fallback (Groq has no vision
+    # equivalent, so a symmetric fallback would tangle describe_image).
+    llm_provider: Literal["gemini", "groq"] = "gemini"
+
     # Fallback LLM — Groq (OpenAI-compatible API), free tier. Used only for
     # text/tool-calling when Gemini is unavailable (rate-limited or its
     # daily request quota is exhausted — a real constraint observed on
@@ -59,6 +65,12 @@ class Settings(BaseSettings):
     groq_api_key: Optional[str] = None
     groq_model: str = "llama-3.3-70b-versatile"
     groq_max_retries: int = 3
+    # Defaults match the values the factory borrowed from Gemini/GroqClient
+    # before these existed, so default behavior is unchanged.
+    groq_timeout_seconds: int = 60
+    groq_max_output_tokens: int = 2048
+    # 0 disables rate limiting entirely — Groq had no throttle before Phase 1.
+    groq_rpm_limit: int = 0
     llm_enable_fallback: bool = True
 
     # Medical AI model weights (optional — features degrade gracefully)
@@ -77,6 +89,28 @@ class Settings(BaseSettings):
     retrieval_mode: Literal["hybrid", "keyword_only"] = "hybrid"
 
     # Feature flags
+    # Enforce each agent's `allowed_tools` whitelist at dispatch time, not just
+    # when advertising schemas to the model. Set False to run permissively
+    # (denials are logged, execution proceeds) when diagnosing whether a
+    # specialist relies on a tool outside its declared scope.
+    enforce_tool_authorization: bool = True
+
+    # Bounds a single tool dispatch (intelligence/mcp -> FastMCP call). Two
+    # tools perform real I/O (search_pubmed over the network, describe_medical_image
+    # via a model call) and could otherwise hang a consultation indefinitely.
+    tool_call_timeout_seconds: float = 30.0
+
+    # Character-count budget (approximate, not a real tokenizer) for the
+    # coordinator's assembled specialist sections (src/sephiroth/context/budget.py) —
+    # bounds what was previously an unbounded concatenation of up to 4
+    # specialist answers.
+    max_context_chars: int = 4000
+
+    # SPEC-006 (ADR-009): when False, sephiroth.telemetry.traced_span is a
+    # pure no-op — a run must produce an identical RunState with tracing
+    # disabled vs. enabled, apart from the (then-empty) .spans list.
+    enable_tracing: bool = True
+
     enable_image_analysis: bool = True
     enable_vision_analysis: bool = True
     enable_rag: bool = True

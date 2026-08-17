@@ -14,11 +14,11 @@ Run from the repo root:
 import asyncio
 import sys
 
-from intelligence.mcp import get_registry
+from sephiroth.tools import get_tool_runtime
 
 
 async def main(image_path: str) -> None:
-    registry = get_registry()
+    registry = get_tool_runtime()
     await registry.load()
 
     print(f"--- inspect_medical_image({image_path}) ---")

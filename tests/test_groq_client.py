@@ -7,8 +7,8 @@ import json as json_mod
 import httpx
 import pytest
 
-from intelligence.llm.gemini_client import LLMUnavailableError
-from intelligence.llm.groq_client import GroqClient
+from sephiroth.models import LLMUnavailableError
+from sephiroth.models.groq import GroqClient
 
 
 async def _noop_sleep(_seconds):
@@ -234,6 +234,7 @@ async def test_health_false_on_error():
 
 @pytest.mark.asyncio
 async def test_describe_image_not_supported():
+    # AC-001-05 (docs/specs/SPEC-001-model-provider.md)
     client = GroqClient(api_key="fake-key", sleep=_noop_sleep)
     with pytest.raises(LLMUnavailableError):
         await client.describe_image(image_bytes=b"", mime_type="image/png", prompt="describe")

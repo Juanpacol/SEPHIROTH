@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "parallelizable": {
+      "default": true,
+      "title": "Parallelizable",
+      "type": "boolean"
+    },
+    "requires_evidence": {
+      "default": false,
+      "title": "Requires Evidence",
+      "type": "boolean"
+    },
+    "requires_verification": {
+      "default": false,
+      "title": "Requires Verification",
+      "type": "boolean"
+    },
+    "timeout_seconds": {
+      "default": 60.0,
+      "exclusiveMinimum": 0,
+      "title": "Timeout Seconds",
+      "type": "number"
+    }
+  },
+  "title": "ExecutionSpec",
+  "type": "object"
+}

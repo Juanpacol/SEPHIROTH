@@ -18,7 +18,6 @@ pyjwt>=2.8
 # machine, see README's privacy notice.
 google-genai>=1.0
 fastmcp>=2.0
-langgraph>=0.2
 
 # RAG (optional heavy extras; core retrieval works without them)
 # llama-index>=0.11

@@ -44,7 +44,7 @@ def test_run_full_uses_model_override(monkeypatch, tmp_path):
         captured["model"] = model
         return FakeLLMClient(default_script=[("answer", "ok")])
 
-    monkeypatch.setattr("intelligence.llm.gemini_client.GeminiClient", fake_gemini_client_ctor)
+    monkeypatch.setattr("sephiroth.models.gemini.GeminiClient", fake_gemini_client_ctor)
 
     async def fake_run_full_mode(client, **kwargs):
         return {

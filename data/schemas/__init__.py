@@ -96,6 +96,16 @@ class Consultation(Base):
     agents: Mapped[List[str]] = mapped_column(JSON, default=list)
     tool_calls: Mapped[List[Dict[str, Any]]] = mapped_column(JSON, default=list)
     citation_report: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    verification_report: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    abstention: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    # SPEC-006 (ADR-009): the replayable ExecutionTrace, plus the 4 indexed
+    # scalars ADR-009 names — nullable so pre-Phase-5 rows (and any future
+    # run with tracing disabled) don't need a backfill.
+    trace: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=None)
+    trace_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    risk_level: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, index=True)
+    abstained: Mapped[Optional[bool]] = mapped_column(nullable=True, index=True)
+    supported_claim_ratio: Mapped[Optional[float]] = mapped_column(nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="consultations")

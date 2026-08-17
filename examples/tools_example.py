@@ -8,11 +8,11 @@ Run from the repo root:
 
 import asyncio
 
-from intelligence.mcp import get_registry
+from sephiroth.tools import get_tool_runtime
 
 
 async def main() -> None:
-    registry = get_registry()
+    registry = get_tool_runtime()
     await registry.load()
 
     print("Discovered tools:")

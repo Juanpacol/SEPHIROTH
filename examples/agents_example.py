@@ -9,8 +9,8 @@ Run from the repo root (requires GEMINI_API_KEY set in .env):
 import asyncio
 
 from core.config import settings
-from intelligence.agents.workflow import run_consultation
-from intelligence.llm import get_llm_client
+from sephiroth.models import get_llm_client
+from sephiroth.runtime import run_consultation
 
 
 async def main() -> None:

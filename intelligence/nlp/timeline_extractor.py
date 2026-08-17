@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass
 from typing import List
 
-from intelligence.llm import GeminiClient
+from sephiroth.models import GeminiClient
 
 logger = logging.getLogger(__name__)
 

@@ -157,6 +157,7 @@ def run_ci_mode(
         )
         if not stale:
             observed["faithfulness_llm_judge"] = results_data.get("faithfulness", {}).get("llm_judge")
+            observed["abstention_recall"] = results_data.get("abstention", {}).get("abstention_recall")
 
     embeddings_stale, embeddings_warning = _check_embeddings_artifact_staleness()
 
@@ -213,6 +214,7 @@ async def run_full_mode(
     golden case. With `record=True`, overwrites `transcripts/<case_id>.json`
     and `results/latest.json` — this is the only path that touches Ollama."""
     from intelligence.agents import EvidenceAgent
+    from intelligence.evaluation.abstention_replay import compute_abstention_metrics, replay_abstention
     from intelligence.evaluation.faithfulness import judge_llm
 
     cases = load_dataset(dataset_path)
@@ -254,6 +256,14 @@ async def run_full_mode(
         sum(faithfulness_scores) / len(faithfulness_scores) if faithfulness_scores else 0.0
     )
 
+    transcripts_by_case = {t["case_id"]: t for t in transcripts}
+    abstention_results = [
+        await replay_abstention(case, transcripts_by_case[case.id], client)
+        for case in cases
+        if case.id in transcripts_by_case
+    ]
+    abstention_metrics = compute_abstention_metrics(abstention_results)
+
     results = {
         "run": {
             "mode": "full",
@@ -272,6 +282,7 @@ async def run_full_mode(
             "claims_checked": sum(f["claims_checked"] for f in per_case_faithfulness),
         },
         "per_case": per_case_faithfulness,
+        "abstention": abstention_metrics,
     }
 
     if record:

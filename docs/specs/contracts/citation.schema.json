@@ -1,0 +1,39 @@
+{
+  "additionalProperties": false,
+  "description": "A source reference as it appears to the reader.\n\n`label` is the human-facing form the model is instructed to emit \u2014\n`[ADA Standards of Care in Diabetes, 2024]` or `[PMID:12345]` \u2014 and is what\ncitation auditing matches against tool output.",
+  "properties": {
+    "label": {
+      "title": "Label",
+      "type": "string"
+    },
+    "locator": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Locator"
+    },
+    "url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Url"
+    }
+  },
+  "required": [
+    "label"
+  ],
+  "title": "Citation",
+  "type": "object"
+}
