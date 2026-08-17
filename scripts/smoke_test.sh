@@ -47,8 +47,8 @@ if [ "$PATIENTS_CODE" != "200" ]; then
   exit 1
 fi
 
-echo "--> GET /api/dashboard/stats"
-DASH_CODE=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/api/dashboard/stats")
+echo "--> GET /api/dashboard/stats (authenticated)"
+DASH_CODE=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/api/dashboard/stats" -H "Authorization: Bearer $TOKEN")
 if [ "$DASH_CODE" != "200" ]; then
   echo "FAIL: /api/dashboard/stats returned $DASH_CODE"
   exit 1

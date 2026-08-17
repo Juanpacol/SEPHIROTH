@@ -5,6 +5,26 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase A — close unauthenticated PHI exposure (patient portal/scheduling plan)
+
+#### Security
+- **`GET/POST /api/patients`, `GET /api/patients/{id}`, `GET /api/patients/{id}/timeline`, and `GET /api/dashboard/stats` had no authentication at all** — any unauthenticated caller could list every patient's PHI or read aggregate risk counts. Fixed via a router-level `dependencies=[Depends(get_current_user)]` on the `agents`, `patients`, `medical`, `rag`, and `dashboard` router includes in `platform/api/main.py`, so a future route added to any of these files is protected the moment it exists rather than requiring a per-handler audit.
+- `get_current_user` is a deliberate stand-in for a `require_clinician` dependency landing in a later phase (roles/patient-portal auth) — swapping it in is a one-line change once that exists.
+
+#### Added
+- 6 regression-lock tests in `tests/test_api_patients_rag.py` (`test_unauthenticated_cannot_*`), written to fail against the pre-fix code and confirmed they did.
+
+#### Changed
+- `tests/test_api_patients_rag.py` builds its own `FastAPI()` app rather than importing `api.main`'s — mirrored the same `dependencies=` there, and updated every existing test that hit `/api/patients*`/`/api/dashboard/stats` unauthenticated to register a clinician and pass a Bearer header.
+- `scripts/smoke_test.sh`: its dashboard check now sends the Bearer token it already has from registering, instead of an unauthenticated request.
+
+#### Verification
+- `pytest --cov`: 537 passed, 1 skipped, 93.23% coverage.
+- `intelligence.evaluation.run --mode ci`: PASS, unchanged.
+- `docs_check.py` / `export_contracts.py --check`: OK, no contract shape change.
+- `bandit`: 0 High severity/confidence findings.
+- Docker build + smoke test verified from a clean `git worktree`.
+
 ### Phase 5, Part 5 — DEBT-001/002/003 cleanup (final part of the 5-part plan)
 
 #### Removed
