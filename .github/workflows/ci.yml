@@ -87,6 +87,7 @@ jobs:
           cache: npm
           cache-dependency-path: platform/frontend/package-lock.json
       - run: npm ci
+      - run: npm run test
       - run: npm run build
 
   # Builds the real production Docker image and boots it against a real
