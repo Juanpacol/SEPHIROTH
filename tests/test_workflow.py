@@ -1,13 +1,17 @@
-"""LangGraph workflow tests — routing, end-to-end consultation with a
-scripted Ollama double, citation sanitization, and SSE event order.
+"""Executor characterization tests — routing, end-to-end consultation with a
+scripted LLM double, citation sanitization, and SSE event order.
 
-Runs unmodified against the Phase 3 executor via the `intelligence.agents.workflow`
-shim — passing unmodified is the parity proof (AC-003-01,
-docs/specs/SPEC-003-agent-runtime.md)."""
+Runs directly against `sephiroth.runtime` (the Phase 3 executor). Originally
+written against the pre-Phase-3 LangGraph workflow, then kept passing
+unmodified through the `intelligence.agents.workflow` shim as the parity
+proof — the shim was deleted in Phase 5 (`DEBT-010`, one phase later than
+scheduled) once nothing else needed it; this module's import retargeted in
+the same commit and is kept permanently as the executor's characterization
+test."""
 
 import pytest
 
-from intelligence.agents.workflow import route_specialists, run_consultation, stream_consultation
+from sephiroth.runtime import route_specialists, run_consultation, stream_consultation
 from tests.conftest import FakeLLMClient
 
 

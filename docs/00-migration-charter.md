@@ -104,7 +104,7 @@ are deleted one phase later.
 |---|---|---|
 | `intelligence/llm/*` | Phase 1 | Phase 2 (actual: Phase 3, `DEBT-008`) |
 | `intelligence/mcp/registry.py` | Phase 2 | Phase 3 (actual: Phase 4, `DEBT-009`) |
-| `intelligence/agents/{base,workflow}.py` | Phase 3 | Phase 4 |
+| `intelligence/agents/{base,workflow}.py` | Phase 3 | Phase 4 (actual: Phase 5, `DEBT-010`) — **already deleted** |
 | `intelligence/agents/{citation_guard,explainability,risk_engine}.py` | not shimmed in Phase 4 (deviation — see below) | Phase 5 |
 
 **Deviation found during Phase 4 implementation (`SPEC-004` NG-4):** the plan

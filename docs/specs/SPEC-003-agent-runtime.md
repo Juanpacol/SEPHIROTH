@@ -2,7 +2,7 @@
 id: SPEC-003
 title: Agent Runtime
 phase: 3
-version: 1.0.0
+version: 1.1.0
 status: Implemented
 authors: [jbotero]
 created: 2026-08-19
@@ -175,29 +175,40 @@ silently assumed solved by this relocation).
 
 | ID | Criterion (assertable) | Verifies | Test |
 |---|---|---|---|
-| AC-003-01 | `tests/test_workflow.py` passes unmodified | B-1 | that module, run as-is |
+| _(retired)_ | **The first criterion, originally that `tests/test_workflow.py` passes unmodified against the `intelligence.agents.workflow` shim, was retired in Phase 5 (`DEBT-010`)** — the shim it ran through was deleted, so "unmodified" no longer applies; the module's import was retargeted directly onto `sephiroth.runtime` in the same commit and it remains a permanent characterization test of the executor. See §10. | B-1 | `tests/test_workflow.py` |
 | AC-003-02 | `tests/test_sse_contract.py` passes unmodified | B-1, B-2 | that module, run as-is |
 | AC-003-03 | `tests/test_api_agents.py` passes unmodified | B-1 | that module, run as-is |
 | AC-003-04 | Each of the 5 `AgentCapability` records has a non-empty `role_prompt`, and the two canonical substrings are present on their respective agents | B-4 | `tests/test_prompt_contract.py` |
 | AC-003-05 | No module under `intelligence/`, `platform/`, `src/` imports `langgraph` | B-5 | `tests/test_no_langgraph.py` |
-| AC-003-06 | `intelligence.agents.workflow.run_consultation is sephiroth.runtime.run_consultation` (shim identity) | — | manual verification + Docker check (this phase did not add a dedicated shim-identity test file, unlike Phases 1–2 — see §10) |
+| _(retired)_ | **The sixth criterion, originally verifying `intelligence.agents.workflow.run_consultation is sephiroth.runtime.run_consultation` (shim identity), was retired in Phase 5 (`DEBT-010`)** — the shim was deleted; there is no longer an import surface to check identity against. See §10. | — | — |
 
 ## 9. Test Matrix
 
 | Layer | What | Where |
 |---|---|---|
-| Parity (frozen) | Exact pre-existing assertions against the new executor | `test_workflow.py`, `test_sse_contract.py`, `test_api_agents.py` |
+| Characterization (permanent) | Exact pre-existing assertions against the executor | `test_workflow.py`, `test_sse_contract.py`, `test_api_agents.py` |
 | Contract | Role prompts non-empty, canonical substrings present, mutually distinguishable | `test_prompt_contract.py` (updated to read `AgentCapability.role_prompt` instead of a class attribute) |
 | Dependency hygiene | No `langgraph` import anywhere | `test_no_langgraph.py` |
 
 ## 10. Migration & Compatibility
 
-Shadows `intelligence/agents/{base,workflow}.py`, which become re-export shims
-in this phase (deleted in Phase 4, per the shim schedule). Also resolves
-`DEBT-008`: `intelligence/llm/*` (Phase 1 shim, scheduled for Phase 2 deletion
-per the original charter, deferred) is deleted in this phase, one phase later
-than scheduled — did not slip further, per the charter's rule that a shim
-surviving two phases becomes permanent.
+Shadowed `intelligence/agents/{base,workflow}.py`, which became re-export
+shims in this phase. The charter's shim schedule called for deleting them
+in Phase 4; that didn't happen (Phase 4's approved scope was Context Engine
++ Verification & Safety, not shim cleanup), so their deletion was tracked as
+`DEBT-010` and closed in **Phase 5** instead — one phase later than
+scheduled, not further, per the charter's own rule that a shim surviving
+two phases becomes permanent. `tests/test_workflow.py` and
+`tests/test_sse_contract.py` were retargeted directly onto
+`sephiroth.runtime` in the same commit;
+`tests/test_agent_registry.py::test_workflow_shim_run_consultation_is_the_real_executor`
+(the shim-identity test) was deleted, since there's no shim left to check
+identity against.
+
+Also resolves `DEBT-008`: `intelligence/llm/*` (Phase 1 shim, scheduled for
+Phase 2 deletion per the original charter, deferred) is deleted in this
+phase, one phase later than scheduled — did not slip further, per the
+charter's rule that a shim surviving two phases becomes permanent.
 
 **Deviation found during implementation: `RunState` is not adopted yet.**
 `sephiroth.contracts.state.RunState` and `results.ToolCall` already existed
@@ -239,3 +250,4 @@ modules passing unmodified serve that purpose.
 | Version | Date | Change |
 |---|---|---|
 | 1.0.0 | 2026-08-19 | Initial version; implemented in the same phase it was approved, including the RunState-deferral and LangGraph-removal-timing deviations found during implementation |
+| 1.1.0 | 2026-08-19 | `DEBT-010` closed in Phase 5: `intelligence/agents/{base,workflow}.py` deleted (one phase later than the charter's original Phase 4 schedule), callers retargeted onto `sephiroth.runtime` directly. The first and sixth acceptance criteria retired — see §8, §10. |

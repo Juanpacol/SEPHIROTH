@@ -36,7 +36,7 @@ import sephiroth.models.factory as factory_module
 from api.routers import agents as agents_router_module
 from auth import router as auth_router_module
 from core.db import get_session
-from intelligence.agents.workflow import stream_consultation
+from sephiroth.runtime import stream_consultation
 from tests.conftest import FakeLLMClient
 
 pytestmark = pytest.mark.contract

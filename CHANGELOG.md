@@ -5,6 +5,14 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### DEBT-010 — remove `intelligence/agents/{base,workflow}.py` shims
+
+#### Changed
+- **Closed `DEBT-010`**: `intelligence/agents/{base,workflow}.py` (Phase 3 re-export shims) are deleted, one phase later than the migration charter originally scheduled (Phase 4's approved scope was Context Engine + Verification & Safety, not shim cleanup). All call sites — `platform/api/routers/agents.py`, `tests/{test_workflow,test_sse_contract}.py`, `examples/agents_example.py` — retargeted directly onto `sephiroth.runtime`.
+- `tests/test_agent_registry.py::test_workflow_shim_run_consultation_is_the_real_executor` deleted (nothing left to check identity against). `tests/test_workflow.py` kept permanently as the executor's characterization test, with its docstring updated to reflect that it no longer runs through a shim.
+- `docs/specs/SPEC-003-agent-runtime.md` bumped to v1.1.0, retiring the acceptance criteria that verified the deleted shim's parity/identity.
+- Docs hygiene: `docs/08-decisions/ADR-007-explicit-recovery.md`'s status line incorrectly said "executed phase 3" — the recovery engine was never built (confirmed: no `src/sephiroth/runtime/recovery.py` exists); corrected with an explicit note. `docs/project-state.yaml`'s `gaps` list re-tagged: recovery engine and the dynamic planner move to phase 5 (phase 4 is done, and there's no phase 6); the confidence/context-engine tuning gaps move to no fixed phase, since they require a live `GEMINI_API_KEY` run the assistant cannot perform, not a build cycle.
+
 ### Phase 4a — Context Engine
 
 #### Added

@@ -10,9 +10,9 @@
 
 schema_version: 1
 project: SEPHIROTH
-version: 0.5.0
+version: 0.5.1
 updated: 2026-08-19
-phase_current: 4
+phase_current: 5
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
@@ -20,24 +20,10 @@ phases:
   "2": {name: "Tool Runtime", status: done}
   "3": {name: "Agent Runtime + DEBT-008 closure (LangGraph removed in the same phase)", status: done}
   "4": {name: "Context Engine (4a, done — SPEC-005) + Verification & Safety (4b, done — SPEC-004)", status: done}
-  "5": {name: "Observability + shim removal", status: planned}
+  "5": {name: "Observability + shim removal", status: partial}
 
 components:
   legacy:
-    intelligence/agents/workflow.py:
-      status: shim
-      description: >-
-        Phase 3 re-export shim over src/sephiroth/runtime (route_specialists,
-        run_consultation, stream_consultation); LangGraph removed
-      tests: [tests/test_workflow.py, tests/test_sse_contract.py]
-      strangler_target: src/sephiroth/runtime
-      removed_in_phase: 4
-    intelligence/agents/base.py:
-      status: shim
-      description: Re-export shim over src/sephiroth/runtime/agent.py (MEDICAL_DISCLAIMER, Agent)
-      tests: [tests/test_prompt_contract.py, tests/test_tool_authorization.py]
-      strangler_target: src/sephiroth/runtime/agent.py
-      removed_in_phase: 4
     intelligence/agents/citation_guard.py:
       status: implemented
       description: >-
@@ -188,10 +174,10 @@ components:
 
 # Capabilities the target architecture requires that have no implementation yet.
 gaps:
-  - {capability: Dynamic, capability-matching planner (NG-1, SPEC-003), phase: 4}
-  - {capability: Recovery engine, phase: 4}
-  - {capability: Confidence/abstention threshold tuning against the eval harness (SPEC-004 NG-3), phase: 4}
-  - {capability: Context Engine tuning — max_context_chars/lambda_mult against real data (SPEC-005 NG-5), phase: 4}
+  - {capability: Dynamic, capability-matching planner (NG-1, SPEC-003), phase: 5}
+  - {capability: Recovery engine + agent lifecycle state machine (F-032/F-033, ADR-007), phase: 5}
+  - {capability: Confidence/abstention threshold tuning against the eval harness (SPEC-004 NG-3) — requires a live GEMINI_API_KEY run, not a build cycle, phase: null}
+  - {capability: Context Engine tuning — max_context_chars/lambda_mult against real data (SPEC-005 NG-5) — requires a live GEMINI_API_KEY run, not a build cycle, phase: null}
   - {capability: Generic conversational/session memory — no validated product need yet (SPEC-005 NG-1), phase: null}
   - {capability: Output-facing safety beyond the prompt-injection heuristic — PHI/toxicity/jailbreak/HITL (SPEC-004 NG-2), phase: 5}
   - {capability: Structured execution traces, phase: 5}
@@ -260,4 +246,21 @@ known_debt:
       src/sephiroth/tools directly, one phase later than originally
       scheduled — did not slip further, same pattern as DEBT-008.
     phase: 4
+    status: resolved
+  - id: DEBT-010
+    item: >-
+      docs/00-migration-charter.md's shim schedule said
+      intelligence/agents/{base,workflow}.py (created Phase 3) would be
+      deleted in Phase 4. Phase 4's approved scope was Context Engine
+      (SPEC-005) + Verification & Safety (SPEC-004), not shim cleanup.
+    action: >-
+      Deleted intelligence/agents/{base,workflow}.py and retargeted all
+      callers (platform/api/routers/agents.py,
+      tests/{test_workflow,test_sse_contract}.py,
+      examples/agents_example.py) onto src/sephiroth/runtime directly, one
+      phase later than originally scheduled — did not slip further, same
+      pattern as DEBT-008/DEBT-009. Also deleted
+      tests/test_agent_registry.py::test_workflow_shim_run_consultation_is_the_real_executor
+      (shim-identity test, nothing left to check identity against).
+    phase: 5
     status: resolved

@@ -66,11 +66,3 @@ def test_get_capability_raises_on_unknown_node_name():
     degrade silently — relevant once a future planner can hallucinate names."""
     with pytest.raises(KeyError):
         get_capability("not_a_real_agent")
-
-
-def test_workflow_shim_run_consultation_is_the_real_executor():
-    # AC-003-06 (docs/specs/SPEC-003-agent-runtime.md)
-    from intelligence.agents.workflow import run_consultation as legacy_run_consultation
-    from sephiroth.runtime import run_consultation
-
-    assert run_consultation is legacy_run_consultation

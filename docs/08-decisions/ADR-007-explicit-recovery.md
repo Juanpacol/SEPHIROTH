@@ -1,6 +1,13 @@
 # ADR-007 — Explicit, classified recovery
 
-**Status:** Accepted · **Date:** 2026-08-16 · **Phase:** decided 0, executed 3
+**Status:** Accepted · **Date:** 2026-08-16 · **Phase:** decided 0, not yet executed
+
+> **Correction (2026-08-19):** this line originally read "executed 3." It
+> wasn't — Phase 3 (Agent Runtime) relocated the executor but never built
+> `src/sephiroth/runtime/recovery.py`; an agent raising still propagates
+> uncaught today, exactly as it did before the migration. Tracked as an
+> open gap in `docs/project-state.yaml` (`Recovery engine`), not assumed
+> done. See `docs/03-features/feature-registry.md` F-032/F-033.
 
 ## Context
 
