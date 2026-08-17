@@ -24,6 +24,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.deps import get_current_user, require_clinician
@@ -314,6 +315,42 @@ async def delete_exception(
 # ---------------------------------------------------------------------------
 
 
+async def _check_booking_conflicts(
+    session: AsyncSession,
+    *,
+    clinician_id: str,
+    patient_id: str,
+    start_at: datetime,
+    end_at: datetime,
+    exclude_appointment_id: Optional[str] = None,
+) -> None:
+    """Shared by `book_appointment` and `update_appointment` (reschedule) —
+    the latter previously had no overlap check at all. Raises 409 on
+    either a patient or clinician double-booking; `exclude_appointment_id`
+    lets a reschedule check against every *other* booked appointment
+    without tripping over its own still-`booked` row."""
+    patient_stmt = select(Appointment).where(
+        Appointment.patient_id == patient_id,
+        Appointment.status == "booked",
+        Appointment.start_at < end_at,
+        Appointment.end_at > start_at,
+    )
+    clinician_stmt = select(Appointment).where(
+        Appointment.clinician_id == clinician_id,
+        Appointment.status == "booked",
+        Appointment.start_at < end_at,
+        Appointment.end_at > start_at,
+    )
+    if exclude_appointment_id is not None:
+        patient_stmt = patient_stmt.where(Appointment.id != exclude_appointment_id)
+        clinician_stmt = clinician_stmt.where(Appointment.id != exclude_appointment_id)
+
+    if await session.scalar(patient_stmt) is not None:
+        raise HTTPException(status_code=409, detail="Patient already has an appointment in this window")
+    if await session.scalar(clinician_stmt) is not None:
+        raise HTTPException(status_code=409, detail="Clinician already has an appointment in this window")
+
+
 async def _load_clinician_schedule(session: AsyncSession, clinician_id: str, start: date_cls, end: date_cls):
     rules = (
         await session.scalars(select(AvailabilityRule).where(AvailabilityRule.clinician_id == clinician_id))
@@ -438,27 +475,13 @@ async def book_appointment(
         raise HTTPException(status_code=422, detail="Requested time is outside working hours")
     end_at = matching.end_at if matching is not None else start_at + timedelta(minutes=30)
 
-    patient_conflict = await session.scalar(
-        select(Appointment).where(
-            Appointment.patient_id == body.patient_id,
-            Appointment.status == "booked",
-            Appointment.start_at < end_at,
-            Appointment.end_at > start_at,
-        )
+    await _check_booking_conflicts(
+        session,
+        clinician_id=body.clinician_id,
+        patient_id=body.patient_id,
+        start_at=start_at,
+        end_at=end_at,
     )
-    if patient_conflict is not None:
-        raise HTTPException(status_code=409, detail="Patient already has an appointment in this window")
-
-    clinician_conflict = await session.scalar(
-        select(Appointment).where(
-            Appointment.clinician_id == body.clinician_id,
-            Appointment.status == "booked",
-            Appointment.start_at < end_at,
-            Appointment.end_at > start_at,
-        )
-    )
-    if clinician_conflict is not None:
-        raise HTTPException(status_code=409, detail="Clinician already has an appointment in this window")
 
     appt = Appointment(
         id=str(uuid4()),
@@ -471,7 +494,16 @@ async def book_appointment(
         created_by_user_id=user.id,
     )
     session.add(appt)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        # Last-resort integrity net: the Postgres-only `EXCLUDE USING gist`
+        # constraint catching a race the two SELECT-then-check queries
+        # above missed (no row locking). The app-level check above is
+        # still the primary, UX-facing mechanism — this only fires when
+        # two requests interleaved inside the same tiny window.
+        await session.rollback()
+        raise HTTPException(status_code=409, detail="This slot was just booked by someone else")
     return _appointment_out(appt, for_patient=user.role == "patient")
 
 
@@ -502,15 +534,29 @@ async def update_appointment(
             raise HTTPException(status_code=422, detail="start_at must be timezone-aware")
         new_start = body.start_at.astimezone(timezone.utc).replace(tzinfo=None)
         duration = appt.end_at - appt.start_at
+        new_end = new_start + duration
+        if appt.status == "booked":
+            await _check_booking_conflicts(
+                session,
+                clinician_id=appt.clinician_id,
+                patient_id=appt.patient_id,
+                start_at=new_start,
+                end_at=new_end,
+                exclude_appointment_id=appt.id,
+            )
         appt.start_at = new_start
-        appt.end_at = new_start + duration
+        appt.end_at = new_end
     if body.status is not None:
         appt.status = body.status
     if body.mode is not None:
         appt.mode = body.mode
     if body.notes is not None:
         appt.notes = body.notes
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(status_code=409, detail="This slot was just booked by someone else")
     return _appointment_out(appt, for_patient=False)
 
 
