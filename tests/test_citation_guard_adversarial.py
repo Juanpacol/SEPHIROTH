@@ -1,7 +1,9 @@
 """Adversarial coverage for the Citation Guard — the anti-hallucination
-firewall that strips citations no tool result actually returned."""
+firewall that strips citations no tool result actually returned.
 
-from intelligence.agents.citation_guard import audit, collect_allowed_citations, sanitize
+Retargeted (Phase 5) to `src/sephiroth/verification/citation_guard.py`."""
+
+from sephiroth.verification.citation_guard import audit, collect_allowed_citations, sanitize
 
 TOOL_CALLS = [
     {

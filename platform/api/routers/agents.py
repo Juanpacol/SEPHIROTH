@@ -16,10 +16,10 @@ from auth.deps import get_current_user
 from core.config import settings
 from core.db import SessionLocal, get_session
 from data.schemas import Consultation, User
-from intelligence.agents.explainability import build_explanation
 from sephiroth.context import recent_consultation_summaries
 from sephiroth.models import get_llm_client
 from sephiroth.runtime import run_consultation, stream_consultation
+from sephiroth.telemetry.explain import build_explanation
 
 router = APIRouter()
 

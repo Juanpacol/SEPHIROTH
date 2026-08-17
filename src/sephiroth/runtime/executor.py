@@ -49,18 +49,15 @@ from sephiroth.safety import check_input
 from sephiroth.safety import decide as decide_abstention
 from sephiroth.safety.abstention import PARTIAL_BANNER
 from sephiroth.telemetry import build_trace, traced_span
+from sephiroth.telemetry.explain import build_explanation
 from sephiroth.verification import compute_confidence, extract_claims, harvest_evidence, verify_claims
+from sephiroth.verification.citation_guard import audit, sanitize
 
 from .agent import Agent
 from .planner import route_specialists
 from .recovery import classify, decide_recovery
 from .registry import COORDINATOR
 from .router import resolve
-
-# Deferred imports of citation_guard/explainability happen inside the
-# functions below — they still live under intelligence/agents/ (shimmed in a
-# later phase, not this one) and importing them at module scope would create
-# the same cross-package ordering hazard Phase 2 hit with intelligence.mcp.
 
 #: Matches PlanStep.max_attempts' default (src/sephiroth/contracts/plan.py) —
 #: a specialist gets one retry before the run continues without its section.
@@ -187,9 +184,6 @@ async def run_consultation(
     context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Blocking entry point used by the non-streaming API and examples."""
-    from intelligence.agents.citation_guard import audit, sanitize
-    from intelligence.agents.explainability import build_explanation
-
     context = _initial_context(context)
     run_context = RunContext.from_dict(context)
     state = RunState(trace_id=uuid.uuid4().hex, request=query, patient_id=patient_id, patient_context=context)
@@ -261,9 +255,6 @@ async def stream_consultation(
       {"event": "final", "answer", "agents_involved", "tool_calls", "citation_report",
        "explanation", "verification_report", "abstention", "trace"}
     """
-    from intelligence.agents.citation_guard import audit, sanitize
-    from intelligence.agents.explainability import build_explanation
-
     context = _initial_context(context)
     run_context = RunContext.from_dict(context)
     state = RunState(trace_id=uuid.uuid4().hex, request=query, patient_id=patient_id, patient_context=context)

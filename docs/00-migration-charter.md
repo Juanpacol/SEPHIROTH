@@ -105,7 +105,7 @@ are deleted one phase later.
 | `intelligence/llm/*` | Phase 1 | Phase 2 (actual: Phase 3, `DEBT-008`) |
 | `intelligence/mcp/registry.py` | Phase 2 | Phase 3 (actual: Phase 4, `DEBT-009`) |
 | `intelligence/agents/{base,workflow}.py` | Phase 3 | Phase 4 (actual: Phase 5, `DEBT-010`) — **already deleted** |
-| `intelligence/agents/{citation_guard,explainability,risk_engine}.py` | not shimmed in Phase 4 (deviation — see below) | Phase 5 |
+| `intelligence/agents/{citation_guard,explainability,risk_engine}.py` | Phase 5 (was: not shimmed in Phase 4, deviation — see below) | Phase 6 |
 
 **Deviation found during Phase 4 implementation (`SPEC-004` NG-4):** the plan
 above called for shimming `citation_guard`/`explainability`/`risk_engine` in
@@ -115,6 +115,14 @@ implementation — composed as a pre-filter feeding the new
 Shimming/deleting it is deferred until the new verifier has demonstrably
 absorbed its role in production evals, not assumed complete on day one of
 the phase that introduced it.
+
+**Update (Phase 5, Part 3):** all three relocated verbatim —
+`risk_engine.py` → `src/sephiroth/safety/risk.py`,
+`citation_guard.py` → `src/sephiroth/verification/citation_guard.py`,
+`explainability.py` → `src/sephiroth/telemetry/explain.py`. The old
+`intelligence/agents/` paths are now pure re-export shims (identity-tested
+in `tests/test_shim_identity_relocation.py`, omitted from the coverage
+gate per rule 4). Per rule 3, deleted in Phase 6, not before.
 
 ---
 

@@ -1,6 +1,9 @@
-"""Risk engine tests — deterministic rule table, no LLM or DB needed."""
+"""Risk engine tests — deterministic rule table, no LLM or DB needed.
 
-from intelligence.agents.risk_engine import assess_patient_risk, assess_risk_level
+Retargeted (Phase 5) to `src/sephiroth/safety/risk.py`, the relocated
+implementation; `intelligence/agents/risk_engine.py` is now a shim."""
+
+from sephiroth.safety.risk import assess_patient_risk, assess_risk_level
 
 
 def test_hypokalemia_flags_high():
