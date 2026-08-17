@@ -52,6 +52,27 @@ async def test_register_login_me_roundtrip(client):
 
 
 @pytest.mark.asyncio
+async def test_registration_defaults_to_clinician_role(client):
+    """Proves the User.role server_default: a freshly registered user
+    gets role="clinician" without the request ever naming a role."""
+    async with client:
+        res = await client.post("/api/auth/register", json=CREDS)
+        assert res.status_code == 201
+        body = res.json()["user"]
+        assert body["role"] == "clinician"
+        assert body["patient_id"] is None
+
+
+@pytest.mark.asyncio
+async def test_register_rejects_role_and_patient_id_fields(client):
+    """RegisterRequest forbids extra fields — a caller must never be able
+    to smuggle role/patient_id into a clinician registration."""
+    async with client:
+        res = await client.post("/api/auth/register", json={**CREDS, "role": "patient"})
+        assert res.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_duplicate_email_409(client):
     async with client:
         assert (await client.post("/api/auth/register", json=CREDS)).status_code == 201
@@ -99,6 +120,8 @@ async def test_update_profile(client):
             "id": res.json()["id"],
             "email": "newmail@example.org",
             "name": "Dr. New Name",
+            "role": "clinician",
+            "patient_id": None,
         }
 
         res = await client.get("/api/auth/me", headers=headers)

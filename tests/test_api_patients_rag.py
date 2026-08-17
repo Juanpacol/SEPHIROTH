@@ -91,6 +91,26 @@ async def test_list_patients_returns_summary(client, seeded_patient):
 
 
 @pytest.mark.asyncio
+async def test_create_patient_returns_full_record_with_empty_timeline(client):
+    """No test exercised the successful creation path before — it's what
+    caught a real Postgres-only bug (`patient.timeline = []` after
+    `commit()` triggered an implicit lazy-load `MissingGreenlet` under
+    asyncpg; SQLite's driver tolerated it silently, so this suite never
+    saw it fail). The `session.refresh(..., attribute_names=["timeline"])`
+    fix should return the same shape on both dialects."""
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.post(
+            "/api/patients", json={"name": "New Patient", "age": 61, "sex": "F"}, headers=headers
+        )
+        assert res.status_code == 201
+        body = res.json()
+        assert body["name"] == "New Patient"
+        assert body["timeline"] == []
+        assert body["medical_record_number"]
+
+
+@pytest.mark.asyncio
 async def test_get_patient_detail_includes_full_fields(client, seeded_patient):
     async with client:
         headers = await _auth_headers(client)
