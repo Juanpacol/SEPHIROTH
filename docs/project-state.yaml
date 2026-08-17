@@ -10,7 +10,7 @@
 
 schema_version: 1
 project: SEPHIROTH
-version: 0.4.0
+version: 0.5.0
 updated: 2026-08-19
 phase_current: 4
 
@@ -19,7 +19,7 @@ phases:
   "1": {name: "ModelProvider abstraction", status: done}
   "2": {name: "Tool Runtime", status: done}
   "3": {name: "Agent Runtime + DEBT-008 closure (LangGraph removed in the same phase)", status: done}
-  "4": {name: "Context Engine (4a, planned) + Verification & Safety (4b, done — SPEC-004)", status: partial}
+  "4": {name: "Context Engine (4a, done — SPEC-005) + Verification & Safety (4b, done — SPEC-004)", status: done}
   "5": {name: "Observability + shim removal", status: planned}
 
 components:
@@ -159,8 +159,7 @@ components:
         Claim extraction, evidence harvesting, batched 5-state claim
         verification (VerificationStatus), and deterministic confidence
         scoring. citation_guard remains a pre-filter feeding this, per
-        ADR-006. Context Engine (reranking/memory/compression, Phase 4a) is
-        a separate, not-yet-written spec.
+        ADR-006.
       tests: [tests/test_verification_claims.py, tests/test_verification_evidence.py,
               tests/test_verification_verify.py, tests/test_verification_confidence.py]
     src/sephiroth/safety:
@@ -173,13 +172,27 @@ components:
         (F-041). PHI redaction, output-side toxicity/jailbreak classifiers,
         and rate limiting are explicitly deferred (SPEC-004 NG-2).
       tests: [tests/test_safety_abstention.py, tests/test_safety_output_safety.py]
+    src/sephiroth/context:
+      status: implemented
+      phase: 4
+      spec: SPEC-005
+      description: >-
+        Per-agent context views (RunContext + AgentCapability.context_fields),
+        lexical MMR reranking (no embeddings required), per-patient
+        consultation memory (not a generic multi-turn session — see
+        ADR-011), and character-budget truncation. Sibling to SPEC-004;
+        depends only on SPEC-003's executor.
+      tests: [tests/test_context_views.py, tests/test_context_rerank.py,
+              tests/test_context_memory.py, tests/test_context_budget.py,
+              tests/test_rag_pipeline.py, tests/test_api_agents.py]
 
 # Capabilities the target architecture requires that have no implementation yet.
 gaps:
   - {capability: Dynamic, capability-matching planner (NG-1, SPEC-003), phase: 4}
   - {capability: Recovery engine, phase: 4}
-  - {capability: Reranking / memory / compression / token budgeting (Context Engine, Phase 4a), phase: 4}
   - {capability: Confidence/abstention threshold tuning against the eval harness (SPEC-004 NG-3), phase: 4}
+  - {capability: Context Engine tuning — max_context_chars/lambda_mult against real data (SPEC-005 NG-5), phase: 4}
+  - {capability: Generic conversational/session memory — no validated product need yet (SPEC-005 NG-1), phase: null}
   - {capability: Output-facing safety beyond the prompt-injection heuristic — PHI/toxicity/jailbreak/HITL (SPEC-004 NG-2), phase: 5}
   - {capability: Structured execution traces, phase: 5}
 

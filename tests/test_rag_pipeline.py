@@ -29,13 +29,14 @@ def test_retrieve_stopword_only_query_returns_empty():
 
 
 def test_retrieve_ranks_more_relevant_document_first():
+    """The single most relevant document must still rank first even after
+    MMR reranking (Phase 4a, SPEC-005) — MMR trades off pure relevance-order
+    for diversity among the *rest* of the results, so scores past the top
+    hit are no longer guaranteed strictly descending."""
     pipeline = RAGPipeline()
     results = pipeline.retrieve("A1C goal nonpregnant adults type 2 diabetes", top_k=5)
     assert results
     assert results[0]["id"] == "ada-2024-hba1c"
-    # scores should be sorted descending
-    scores = [r["score"] for r in results]
-    assert scores == sorted(scores, reverse=True)
 
 
 def test_retrieve_respects_top_k():

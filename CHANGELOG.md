@@ -5,6 +5,33 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 4a — Context Engine
+
+#### Added
+- **`src/sephiroth/context/`** (`docs/specs/SPEC-005-context-engine.md`, `ADR-011`): per-agent context views (`views.py::context_for_agent`, projecting `RunContext` down to only the fields an `AgentCapability.context_fields` declares — additive `[]` default means "every field"), lexical MMR reranking over `RAGPipeline`'s fused results (`rerank.py::mmr_rerank`, token-overlap similarity so it works identically with or without an embedding provider configured — no new dependency), per-patient consultation memory (`memory.py::recent_consultation_summaries`, called from the API router so the executor stays free of any DB dependency, injected into `context["recent_consultations"]` and seen only by the coordinator), and character-budget truncation (`budget.py::truncate`, bounding the previously-unbounded concatenation of up to 4 specialist answers feeding the coordinator prompt).
+- **`sephiroth.contracts.context.RunContext`** — new contract typing the context dict (`medications`, `lab_results`, `image_path`, `conditions`, `history`, `recent_consultations`); `AgentCapability` gains `context_fields: list[str] = []` (additive, MINOR schema bump).
+- New setting `max_context_chars` (default 4000, `platform/core/config.py`).
+- Tests: `tests/test_context_{views,rerank,memory,budget}.py`, plus an end-to-end integration test in `test_api_agents.py` confirming `recent_consultations` reaches the coordinator but not the evidence specialist.
+
+#### Changed
+- **`src/sephiroth/runtime/executor.py`** now builds a `RunContext` once per consultation and calls `context_for_agent` before every specialist/coordinator call — switched straight to enforcing (not staged as a separate permissive-logging commit) because the full pre-existing test suite, including the three frozen contract files, served as the verification that no agent depended on a field outside its declared scope. See `ADR-011` for why this adapts the migration charter's two-commit rollout requirement to an environment with no live-model access.
+- **`data/rag/__init__.py::RAGPipeline.retrieve`** reranks and content-truncates its results before returning (`_finalize`) — the first time `data/` has imported from `src/sephiroth/`, noted in `SPEC-005` §10 as a new (not prohibited) import direction.
+- `tests/test_rag_pipeline.py::test_retrieve_ranks_more_relevant_document_first` relaxed to check only that the single most relevant document ranks first — MMR trades relevance-order for diversity among the rest.
+
+#### Known deviations (`SPEC-005` §4, §11; `ADR-011`)
+- **Memory is scoped to per-patient consultation recall, not a generic multi-turn/session abstraction** — there is no validated product need for conversational memory today (confirmed by direct inspection: no `session_id` anywhere, the frontend never replays prior turns). Building one speculatively was rejected as premature complexity.
+- **`max_context_chars` and MMR's `lambda_mult` are untuned placeholders**, same status as Phase 4b's confidence/abstention constants.
+
+### Abstention threshold tuning — wiring (no data-driven calibration yet)
+
+#### Added
+- **`intelligence/evaluation/abstention_replay.py`**: replays `src/sephiroth/verification`/`safety` over committed eval transcripts (same pattern as `faithfulness.py::judge_llm` — requires a live model, so it only runs in `--mode full --record` and is read from the committed `results/latest.json` snapshot in `--mode ci`). `compute_abstention_metrics` is a pure, deterministic function computing `abstention_recall`/`abstention_precision` against the golden dataset's 4 `adversarial-negative` (`expects_abstention`) cases — the only branch of `decide()` (`INSUFFICIENT_EVIDENCE`) the dataset currently exercises; there are no cases yet for `CONFLICTING_EVIDENCE` or `UNSUPPORTED_HIGH_RISK_CLAIM`.
+- `src/sephiroth/runtime/executor.py::_to_tool_calls` renamed to public `to_tool_calls` and exported, so the eval harness can reuse the same transcript→`ToolCall` conversion the executor uses live, without duplicating it.
+- `tests/test_abstention_replay.py`.
+
+#### Known deviation
+- **`abstention_recall` is deliberately not added to `thresholds.json`** despite this session's plan calling for gating it at 1.0 — the committed `results/latest.json` snapshot has no abstention data yet (regenerating it requires a live Gemini key this session doesn't have), and gating on an absent value would hard-fail every CI run immediately. Left reported-but-ungated, matching the existing precedent of `citation_recall`/`fabrication_rate_on_adversarial`. Real calibration is a follow-up once the user runs `--mode full --record` with their own key.
+
 ### Phase 4b — Verification & Safety
 
 #### Added

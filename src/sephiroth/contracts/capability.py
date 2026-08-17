@@ -62,6 +62,15 @@ class AgentCapability(BaseModel):
     risk: RiskSpec = Field(default_factory=RiskSpec)
     execution: ExecutionSpec = Field(default_factory=ExecutionSpec)
     model_hint: str | None = None
+    context_fields: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Which sephiroth.contracts.context.RunContext field names this "
+            "agent actually needs. Empty list (the default) means every "
+            "field — backward compatible with agents that don't declare a "
+            "narrower view. See src/sephiroth/context/views.py."
+        ),
+    )
 
 
 class ToolDescriptor(BaseModel):

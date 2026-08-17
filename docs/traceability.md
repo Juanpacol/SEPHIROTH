@@ -18,6 +18,8 @@ Requirements are defined in [scope.md](00-project/scope.md); features in
 |---|---|---|---|---|---|---|
 | **R-001** Claims traceable to evidence | F-003 citation guard | `intelligence/agents/citation_guard.py` | `test_citation_guard.py`, `_adversarial` | — | citation precision | ✅ implemented |
 | | F-006 hybrid retrieval | `data/rag/` | `test_rag_pipeline.py` | H2 | Recall@k, MRR | ✅ implemented |
+| | F-034 per-agent context views | `sephiroth/context/views.py` | `test_context_views.py` | — | — | ✅ implemented (phase 4a) |
+| | F-035 reranking/memory/budgeting | `sephiroth/context/{rerank,memory,budget}.py` | `test_context_{rerank,memory,budget}.py` | H2 | Recall@k, MRR (reranked) | ✅ implemented (phase 4a); H2 experiment not yet run against reranked results specifically |
 | | F-036 claim extraction | `sephiroth/verification/claims.py` | `test_verification_claims.py` | H3 | claim support rate | ✅ implemented (phase 4); H3 experiment not yet run |
 | | F-037 five-state verification | `sephiroth/verification/verify.py` | `test_verification_verify.py` | H3 | unsupported claim rate | ✅ implemented (phase 4); H3 experiment not yet run |
 | **R-002** Decline rather than answer unsafely | F-040 abstention engine | `sephiroth/safety/abstention.py` | `test_safety_abstention.py` | H3 | abstention rate **and** precision | ✅ implemented (phase 4); thresholds are placeholders (SPEC-004 NG-3), precision not yet measured |

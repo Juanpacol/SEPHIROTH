@@ -31,7 +31,9 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
 
-from sephiroth.contracts import AgentCapability, AgentResult, RunState, ToolCall
+from core.config import settings
+from sephiroth.context import context_for_agent, truncate
+from sephiroth.contracts import AgentCapability, AgentResult, RunContext, RunState, ToolCall
 from sephiroth.models import ModelProvider
 from sephiroth.safety import check_input
 from sephiroth.safety import decide as decide_abstention
@@ -64,7 +66,7 @@ def _call_ok(result: Any) -> bool:
     return not (isinstance(result, dict) and "error" in result)
 
 
-def _to_tool_calls(capability_id: str, raw_calls: List[Dict[str, Any]]) -> List[ToolCall]:
+def to_tool_calls(capability_id: str, raw_calls: List[Dict[str, Any]]) -> List[ToolCall]:
     now = datetime.now(timezone.utc)
     return [
         ToolCall(
@@ -81,11 +83,11 @@ def _to_tool_calls(capability_id: str, raw_calls: List[Dict[str, Any]]) -> List[
 
 
 async def _run_specialist(
-    capability: AgentCapability, client: ModelProvider, query: str, context: Dict[str, Any]
+    capability: AgentCapability, client: ModelProvider, query: str, run_context: RunContext
 ) -> Tuple[AgentCapability, AgentResult, List[ToolCall]]:
     agent = Agent(capability, client)
-    result = await agent.run(query, context)
-    tool_calls = _to_tool_calls(capability.id, result.tool_calls)
+    result = await agent.run(query, context_for_agent(capability, run_context))
+    tool_calls = to_tool_calls(capability.id, result.tool_calls)
     agent_result = AgentResult(
         agent=capability.id,
         content=result.content,
@@ -141,21 +143,26 @@ async def run_consultation(
     from intelligence.agents.explainability import build_explanation
 
     context = _initial_context(context)
+    run_context = RunContext.from_dict(context)
     state = RunState(trace_id=uuid.uuid4().hex, request=query, patient_id=patient_id, patient_context=context)
     node_names = route_specialists(context)
     capabilities = resolve(node_names)
 
-    results = await asyncio.gather(*(_run_specialist(cap, client, query, context) for cap in capabilities))
+    results = await asyncio.gather(
+        *(_run_specialist(cap, client, query, run_context) for cap in capabilities)
+    )
     for capability, agent_result, tool_calls in results:
         state.agent_results[capability.id] = agent_result
         state.tool_calls.extend(tool_calls)
 
     sections = "\n\n".join(f"### {name} agent\n{output}" for name, output in state.agent_outputs.items())
+    sections = truncate(sections, settings.max_context_chars)
     coordinator = Agent(COORDINATOR, client)
     coord_result = await coordinator.run(
-        f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}", context
+        f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}",
+        context_for_agent(COORDINATOR, run_context),
     )
-    coord_tool_calls = _to_tool_calls(coordinator.name, coord_result.tool_calls)
+    coord_tool_calls = to_tool_calls(coordinator.name, coord_result.tool_calls)
     state.tool_calls.extend(coord_tool_calls)
 
     citation_report = audit(coord_result.content, [_tool_call_wire(tc) for tc in state.tool_calls])
@@ -205,13 +212,14 @@ async def stream_consultation(
     from intelligence.agents.explainability import build_explanation
 
     context = _initial_context(context)
+    run_context = RunContext.from_dict(context)
     state = RunState(trace_id=uuid.uuid4().hex, request=query, patient_id=patient_id, patient_context=context)
     node_names = route_specialists(context)
     capabilities = resolve(node_names)
 
     yield {"event": "routing", "agents": node_names}
 
-    tasks = [asyncio.ensure_future(_run_specialist(cap, client, query, context)) for cap in capabilities]
+    tasks = [asyncio.ensure_future(_run_specialist(cap, client, query, run_context)) for cap in capabilities]
     for finished in asyncio.as_completed(tasks):
         capability, agent_result, tool_calls = await finished
         state.agent_results[capability.id] = agent_result
@@ -225,11 +233,13 @@ async def stream_consultation(
         }
 
     sections = "\n\n".join(f"### {name} agent\n{output}" for name, output in state.agent_outputs.items())
+    sections = truncate(sections, settings.max_context_chars)
     coordinator = Agent(COORDINATOR, client)
     coord_result = await coordinator.run(
-        f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}", context
+        f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}",
+        context_for_agent(COORDINATOR, run_context),
     )
-    coord_tool_calls = _to_tool_calls(coordinator.name, coord_result.tool_calls)
+    coord_tool_calls = to_tool_calls(coordinator.name, coord_result.tool_calls)
     state.tool_calls.extend(coord_tool_calls)
 
     citation_report = audit(coord_result.content, [_tool_call_wire(tc) for tc in state.tool_calls])
@@ -258,4 +268,4 @@ async def stream_consultation(
     }
 
 
-__all__ = ["run_consultation", "stream_consultation"]
+__all__ = ["run_consultation", "stream_consultation", "to_tool_calls"]

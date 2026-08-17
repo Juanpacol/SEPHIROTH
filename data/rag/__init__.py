@@ -474,22 +474,33 @@ class RAGPipeline:
         """Return the top_k documents as dicts with content, source,
         citation, and score. Hybrid when an embedding provider is
         configured and available; keyword-only otherwise — the output
-        shape never changes."""
+        shape never changes. Reranked for diversity and content-budgeted
+        (`src/sephiroth/context/`) before returning."""
         query_tokens = set(_tokenize(query))
         if not query_tokens:
             return []
 
         keyword_hits = self._retrieve_keyword(query_tokens)
         if self._embedding_provider is None:
-            return keyword_hits[:top_k]
+            return self._finalize(keyword_hits, top_k)
 
         try:
             query_vector = self._embedding_provider.embed_query(query)
         except EmbeddingUnavailable:
-            return keyword_hits[:top_k]  # full fallback — never raises to the caller
+            return self._finalize(keyword_hits, top_k)  # full fallback — never raises to the caller
 
         dense_hits = self._vector_store.search(query_vector, top_k=top_k * 2, min_score=self._min_similarity)
-        return self._fuse(keyword_hits, dense_hits, top_k)
+        return self._finalize(self._fuse(keyword_hits, dense_hits, top_k), top_k)
+
+    def _finalize(self, hits: List[Dict[str, Any]], top_k: int) -> List[Dict[str, Any]]:
+        from core.config import settings
+        from sephiroth.context import mmr_rerank, truncate
+
+        reranked = mmr_rerank(hits, top_k=top_k)
+        for hit in reranked:
+            if hit.get("content"):
+                hit["content"] = truncate(hit["content"], settings.max_context_chars)
+        return reranked
 
 
 class MedicalKnowledgeBase:

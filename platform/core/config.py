@@ -100,6 +100,12 @@ class Settings(BaseSettings):
     # via a model call) and could otherwise hang a consultation indefinitely.
     tool_call_timeout_seconds: float = 30.0
 
+    # Character-count budget (approximate, not a real tokenizer) for the
+    # coordinator's assembled specialist sections (src/sephiroth/context/budget.py) —
+    # bounds what was previously an unbounded concatenation of up to 4
+    # specialist answers.
+    max_context_chars: int = 4000
+
     enable_image_analysis: bool = True
     enable_vision_analysis: bool = True
     enable_rag: bool = True

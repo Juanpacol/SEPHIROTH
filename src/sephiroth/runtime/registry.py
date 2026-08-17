@@ -35,6 +35,7 @@ RADIOLOGY = AgentCapability(
     ),
     capabilities=["imaging_analysis", "vision"],
     tools=["inspect_medical_image", "analyze_medical_image", "describe_medical_image"],
+    context_fields=["image_path", "conditions"],
 )
 
 LABORATORY = AgentCapability(
@@ -50,6 +51,7 @@ LABORATORY = AgentCapability(
     ),
     capabilities=["lab_interpretation"],
     tools=[],  # works purely from the provided patient context
+    context_fields=["lab_results", "conditions"],
 )
 
 DRUG_SAFETY = AgentCapability(
@@ -64,6 +66,7 @@ DRUG_SAFETY = AgentCapability(
     ),
     capabilities=["medication_interaction", "drug_safety"],
     tools=["check_drug_interactions"],
+    context_fields=["medications", "conditions"],
 )
 
 EVIDENCE = AgentCapability(
@@ -79,6 +82,7 @@ EVIDENCE = AgentCapability(
     ),
     capabilities=["evidence_retrieval"],
     tools=["search_clinical_guidelines", "search_pubmed"],
+    context_fields=["conditions"],
 )
 
 COORDINATOR = AgentCapability(

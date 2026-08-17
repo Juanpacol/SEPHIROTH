@@ -8,6 +8,12 @@ progressive (`asyncio.as_completed`), not a burst after everyone finishes.
 
 Also verifies AC-004-07, AC-004-09 (docs/specs/SPEC-004-verification-safety.md)
 — the RunState-adoption and abstain/partial wiring tests near the bottom.
+
+Also verifies AC-005-06 (docs/specs/SPEC-005-context-engine.md): every test in
+this file (plus test_workflow.py/test_sse_contract.py/test_api_agents.py)
+passes unmodified after the executor switched to enforcing
+`context_for_agent` — the evidence that no agent depended on a context
+field outside its declared `context_fields`.
 """
 
 import asyncio

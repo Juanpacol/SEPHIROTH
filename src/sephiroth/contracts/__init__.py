@@ -19,6 +19,7 @@ See `docs/specs/SPEC-000-spec-process.md`.
 
 from .capability import AgentCapability, ExecutionSpec, RiskSpec, ToolDescriptor
 from .claims import CitationReport, Claim, Contradiction, VerificationReport
+from .context import RunContext
 from .enums import (
     AbstentionReason,
     Complexity,
@@ -61,6 +62,7 @@ PUBLIC_MODELS = (
     PlanStep,
     RecoveryAction,
     RiskSpec,
+    RunContext,
     RunState,
     SafetyFlag,
     Span,
@@ -97,6 +99,7 @@ __all__ = [
     "RetrievalMethod",
     "RiskLevel",
     "RiskSpec",
+    "RunContext",
     "RunState",
     "SafetyFlag",
     "SourceType",

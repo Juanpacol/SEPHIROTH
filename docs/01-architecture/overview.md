@@ -62,8 +62,8 @@ replayable trace.
 |---|---|---|
 | **Agent runtime** | Analyze, plan, route, execute, recover | 3 |
 | **Agent management** | Registry, capabilities, lifecycle, policies | 3 |
-| **Context engine** | Retrieval, ranking, memory, compression, budgeting | 4 |
-| **Verification & safety** | Claims, evidence, conflicts, confidence, abstention | 4 |
+| **Context engine** | Per-agent context views, lexical reranking, per-patient consultation memory, character budgeting (`src/sephiroth/context/`, SPEC-005) | 4a |
+| **Verification & safety** | Claims, evidence, conflicts, confidence, abstention (`src/sephiroth/verification`/`safety`, SPEC-004) | 4b |
 | **Tool / MCP runtime** | Registry, capability and permission checks, timeouts | 2 |
 | **Model providers** | One interface, many backends | 1 |
 | **Observability** | Traces, metrics, structured logging | 5 |

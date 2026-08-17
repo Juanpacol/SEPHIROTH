@@ -1,0 +1,53 @@
+{
+  "additionalProperties": false,
+  "description": "The full context dict, typed. Constructed once per consultation;\nagents see a filtered projection of it, never the raw dict directly.",
+  "properties": {
+    "conditions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Conditions",
+      "type": "array"
+    },
+    "history": {
+      "default": "",
+      "description": "Free-text past medical history, not conversational turns.",
+      "title": "History",
+      "type": "string"
+    },
+    "image_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Image Path"
+    },
+    "lab_results": {
+      "additionalProperties": true,
+      "title": "Lab Results",
+      "type": "object"
+    },
+    "medications": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Medications",
+      "type": "array"
+    },
+    "recent_consultations": {
+      "description": "Short digests of this patient's most recent prior consultations (query + answer excerpt), computed on the fly from the Consultation table \u2014 never persisted on RunContext itself.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Recent Consultations",
+      "type": "array"
+    }
+  },
+  "title": "RunContext",
+  "type": "object"
+}

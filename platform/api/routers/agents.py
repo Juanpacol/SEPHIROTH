@@ -18,6 +18,7 @@ from core.db import SessionLocal, get_session
 from data.schemas import Consultation, User
 from intelligence.agents.explainability import build_explanation
 from intelligence.agents.workflow import run_consultation, stream_consultation
+from sephiroth.context import recent_consultation_summaries
 from sephiroth.models import get_llm_client
 
 router = APIRouter()
@@ -103,11 +104,15 @@ async def consult(
         raise HTTPException(status_code=503, detail="Agent workflow is disabled")
     await _ensure_llm()
 
+    context = dict(request.context)
+    if request.patient_id:
+        context["recent_consultations"] = await recent_consultation_summaries(request.patient_id, session)
+
     state = await run_consultation(
         get_llm_client(),
         query=request.query,
         patient_id=request.patient_id,
-        context=request.context,
+        context=context,
     )
     consultation = await _persist(session, user, request, dict(state))
     return ConsultResponse(
@@ -136,6 +141,13 @@ async def consult_stream(
         raise HTTPException(status_code=503, detail="Agent workflow is disabled")
     await _ensure_llm()
 
+    context = dict(request.context)
+    if request.patient_id:
+        async with SessionLocal() as lookup_session:
+            context["recent_consultations"] = await recent_consultation_summaries(
+                request.patient_id, lookup_session
+            )
+
     async def event_stream():
         final_state: Dict[str, Any] = {}
         try:
@@ -143,7 +155,7 @@ async def consult_stream(
                 get_llm_client(),
                 query=request.query,
                 patient_id=request.patient_id,
-                context=request.context,
+                context=context,
             ):
                 if event["event"] == "final":
                     final_state = {

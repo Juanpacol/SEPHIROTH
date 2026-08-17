@@ -2,7 +2,7 @@
 id: SPEC-004
 title: Verification & Safety
 phase: 4
-version: 1.0.0
+version: 1.1.0
 status: Implemented
 authors: [jbotero]
 created: 2026-08-19
@@ -257,7 +257,7 @@ boundary; nothing else in the wire shape changes.
 | # | Risk / question | Resolution |
 |---|---|---|
 | 1 | Cost/latency: 2 extra LLM round-trips per consultation (`extract_claims` + `verify_claims`) | Instrumented from day one via existing `AgentResult.tokens`/`latency_ms` fields — real data feeds H6, not an estimate |
-| 2 | Confidence weights (0.5, 0.2, cap 3) and abstention thresholds (0.4, 0.65) are placeholders | Explicitly named tunable constants (§6.5); validating them against the eval harness is a follow-up, not assumed done here |
+| 2 | Confidence weights (0.5, 0.2, cap 3) and abstention thresholds (0.4, 0.65) are placeholders | Explicitly named tunable constants (§6.5). The replay wiring to validate them now exists (`intelligence/evaluation/abstention_replay.py`, `runner.run_full_mode`), but the committed `results/latest.json` snapshot has no real numbers yet — recomputing it requires a live model call this environment has no key for (same constraint `faithfulness_llm_judge` already has). `abstention_recall`/`abstention_precision` are computed and reported but deliberately **not gated** in `thresholds.json` yet — gating on an absent/`None` value would hard-fail every CI run. Gating is a follow-up once the user runs `--mode full --record` with a real key. |
 | 3 | Claims backed only by PubMed evidence (no abstract text) verify more weakly than guideline-backed claims | Documented limitation (NG via `harvest_evidence`'s docstring), not a bug — `search_pubmed` genuinely returns no passage content today |
 | 4 | `risk_level` (coarse per-consultation risk) does not gate abstention, only claim-level risk does | Deliberate: the spec's invariant is claim-level, not consultation-level; `risk_level` stays available for future correlation analysis |
 | 5 | The verifier is itself an LLM and can be wrong (ADR-006) | Mitigated by the token-overlap downgrade rule (B-7); still not a substitute for eventual NLI-entailment validation, deferred per ADR-006's own alternatives-rejected note |
@@ -275,3 +275,4 @@ boundary; nothing else in the wire shape changes.
 | Version | Date | Change |
 |---|---|---|
 | 1.0.0 | 2026-08-19 | Initial version; implemented in the same phase it was approved. Scoped to Verification & Safety only (Phase 4b) — Context Engine (4a) deferred to its own spec. |
+| 1.1.0 | 2026-08-19 | Added the abstention-replay eval wiring (`intelligence/evaluation/abstention_replay.py`) that risk 2 originally flagged as missing — computes `abstention_recall`/`abstention_precision` against the golden dataset's 4 `adversarial-negative` cases, reported but not yet gated (no real committed data to gate against). Real calibration remains a follow-up. |

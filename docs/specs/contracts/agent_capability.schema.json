@@ -66,6 +66,14 @@
       "title": "Capabilities",
       "type": "array"
     },
+    "context_fields": {
+      "description": "Which sephiroth.contracts.context.RunContext field names this agent actually needs. Empty list (the default) means every field \u2014 backward compatible with agents that don't declare a narrower view. See src/sephiroth/context/views.py.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Context Fields",
+      "type": "array"
+    },
     "description": {
       "default": "",
       "title": "Description",

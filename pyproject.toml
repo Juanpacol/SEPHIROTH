@@ -43,6 +43,7 @@ source = [
     "src/sephiroth/runtime",
     "src/sephiroth/verification",
     "src/sephiroth/safety",
+    "src/sephiroth/context",
     "intelligence/agents",
     "intelligence/mcp",
     "intelligence/evaluation",
