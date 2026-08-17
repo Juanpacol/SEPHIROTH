@@ -196,3 +196,26 @@ async def test_run_consultation_partial_status_prepends_caveat_banner(monkeypatc
     assert state["abstention"]["status"] == "partial"
     assert state["final_answer"].startswith(PARTIAL_BANNER)
     assert "The coordinator's real answer." in state["final_answer"]
+
+
+async def test_tracing_on_vs_off_produces_an_identical_run_apart_from_the_trace(monkeypatch):
+    """ADR-009's H6 requirement. Verifies AC-006-06
+    (docs/specs/SPEC-006-telemetry.md): a run with tracing disabled must
+    produce an identical result to one with it enabled, aside from the
+    trace/spans themselves."""
+    from core.config import settings
+
+    def _without_trace(state):
+        return {k: v for k, v in state.items() if k != "trace"}
+
+    monkeypatch.setattr(settings, "enable_tracing", True)
+    client_on = FakeLLMClient(default_script=[("answer", "consistent answer")])
+    state_on = await run_consultation(client_on, "test query")
+    assert state_on["trace"]["spans"], "tracing enabled must actually record spans"
+
+    monkeypatch.setattr(settings, "enable_tracing", False)
+    client_off = FakeLLMClient(default_script=[("answer", "consistent answer")])
+    state_off = await run_consultation(client_off, "test query")
+    assert state_off["trace"]["spans"] == []
+
+    assert _without_trace(state_on) == _without_trace(state_off)

@@ -56,11 +56,8 @@ what runs today is metadata inspection plus the vision model.
 | F-039 | Confidence engine | ✅ | `sephiroth/verification/confidence.py` | `test_verification_confidence.py` | — | SPEC-004 |
 | F-040 | Abstention engine | ✅ | `sephiroth/safety/abstention.py` | `test_safety_abstention.py` | — | SPEC-004, ADR-008 |
 | F-041 | Output safety engine (PHI, injection, HITL) | ⚠️ | `sephiroth/safety/output_safety.py` | `test_safety_output_safety.py` | — | SPEC-004 (input prompt-injection heuristic only; PHI/toxicity/jailbreak/HITL deferred, NG-2) |
-| F-042 | Structured execution traces | 📋 | `sephiroth/telemetry/` | 📋 | — | 📋 SPEC-005, ADR-009 |
-| F-043 | Span attribute redaction (allow-list) | 🚧 | `contracts/trace.py` | `test_contracts_models.py` | — | 📋 SPEC-005 |
-
-F-043 is 🚧 because the contract and its enforcement exist, but nothing emits
-spans yet.
+| F-042 | Structured execution traces | ⚠️ | `sephiroth/telemetry/` | `test_telemetry_build_trace.py` | — | SPEC-006, ADR-009 (spans recorded for 2 of 4 named seams, NG-1) |
+| F-043 | Span attribute redaction (allow-list) | ✅ | `contracts/trace.py`, `sephiroth/telemetry/span.py` | `test_contracts_models.py`, `test_telemetry_span.py` | — | SPEC-006 |
 
 F-025 is ⚠️ because only the timeout was built — retry and circuit-breaker
 were explicitly deferred (`SPEC-002` NG-1/NG-2): the two I/O-performing tools

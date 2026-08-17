@@ -106,6 +106,11 @@ class Settings(BaseSettings):
     # specialist answers.
     max_context_chars: int = 4000
 
+    # SPEC-006 (ADR-009): when False, sephiroth.telemetry.traced_span is a
+    # pure no-op — a run must produce an identical RunState with tracing
+    # disabled vs. enabled, apart from the (then-empty) .spans list.
+    enable_tracing: bool = True
+
     enable_image_analysis: bool = True
     enable_vision_analysis: bool = True
     enable_rag: bool = True

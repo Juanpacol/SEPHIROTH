@@ -46,6 +46,7 @@ class ConsultResponse(BaseModel):
     explanation: Dict[str, Any] = {}
     verification_report: Dict[str, Any] = {}
     abstention: Optional[Dict[str, Any]] = None
+    trace: Optional[Dict[str, Any]] = None
     disclaimer: str = DISCLAIMER
 
 
@@ -66,6 +67,16 @@ async def _persist(
     request: ConsultRequest,
     state: Dict[str, Any],
 ) -> Consultation:
+    trace = state.get("trace") or {}
+    # VerificationReport.supported_claim_ratio is a derived @property, not a
+    # serialized field — recompute it from the claims list already in the
+    # (frozen-shape) verification_report dict rather than from the trace dump.
+    verification_claims = state.get("verification_report", {}).get("claims", [])
+    supported_ratio = (
+        sum(1 for c in verification_claims if c.get("status") == "supported") / len(verification_claims)
+        if verification_claims
+        else 1.0
+    )
     consultation = Consultation(
         id=str(uuid4()),
         user_id=user.id,
@@ -77,6 +88,11 @@ async def _persist(
         citation_report=state.get("citation_report", {}),
         verification_report=state.get("verification_report", {}),
         abstention=state.get("abstention") or {},
+        trace=trace or None,
+        trace_id=trace.get("trace_id"),
+        risk_level=trace.get("risk_level"),
+        abstained=(state.get("abstention") or {}).get("status") == "abstain",
+        supported_claim_ratio=supported_ratio,
     )
     session.add(consultation)
     await session.commit()
@@ -124,6 +140,7 @@ async def consult(
         explanation=dict(state).get("explanation", {}),
         verification_report=consultation.verification_report,
         abstention=consultation.abstention or None,
+        trace=consultation.trace,
     )
 
 
@@ -165,6 +182,7 @@ async def consult_stream(
                         "citation_report": event["citation_report"],
                         "verification_report": event.get("verification_report", {}),
                         "abstention": event.get("abstention"),
+                        "trace": event.get("trace"),
                     }
                 yield f"data: {json.dumps(event, default=str)}\n\n"
         except Exception as exc:  # surface errors as an SSE event, not a dropped socket
@@ -210,6 +228,7 @@ async def history(
             "citation_report": c.citation_report,
             "verification_report": c.verification_report,
             "abstention": c.abstention or None,
+            "trace": c.trace,
             # Derived on read — improving the templates needs no backfill.
             "explanation": build_explanation(c.agents, c.tool_calls, c.citation_report),
             "patient_id": c.patient_id,

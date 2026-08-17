@@ -5,6 +5,22 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 5, Part 1 — Telemetry (trace-based observability)
+
+#### Added
+- **`src/sephiroth/telemetry/`** (`docs/specs/SPEC-006-telemetry.md`, executes `ADR-009`): `build_trace(state) -> ExecutionTrace` projects a fully-populated `RunState` into the persisted, replayable trace contract that's existed since Phase 0 but had nothing emitting into it until now. `traced_span(state, kind, name, **attrs)` records real spans for two of `ADR-009`'s four named seams — `Executor.step` (one per specialist/coordinator turn) and `Verifier.check` (the claim-verification/abstention pass) — timed with `time.monotonic()`, redacted via the pre-existing attribute allow-list (dropped, not raised, on a disallowed key — instrumentation must never break a run).
+- `RunState` gains one additive field, `spans: list[Span] = []`.
+- New setting `enable_tracing` (default `True`, `platform/core/config.py`) — when `False`, `traced_span` is a pure no-op; a run must produce an identical result with tracing on vs. off apart from the trace itself (ADR-009's H6 requirement, now covered by a real test).
+- Five new nullable `Consultation` columns: `trace` (JSON) plus the four indexed scalars `ADR-009` names — `trace_id`, `risk_level`, `abstained`, `supported_claim_ratio`. New migration `233988357f83`.
+- `ConsultResponse`, the SSE `final` event, and `/history` all gain `trace` as an additive, optional field.
+- Tests: `tests/test_telemetry_{span,build_trace}.py`, plus a new H6 parity test in `tests/test_runtime_executor.py`.
+
+#### Known deviations (`SPEC-006` §4, §10)
+- **`ModelProvider.chat` and `ToolRuntime.execute` are not independently instrumented this cycle** (NG-1) — `ToolRuntime` is a shared singleton with no per-request state, and threading one through would change `ToolExecutor`'s `Callable` signature that `FakeLLMClient` and every `scoped_executor()` call site already depend on; `Agent.run()` makes exactly one `chat()` call per turn today, so the `Executor.step` span already bounds it as tightly as a nested span would.
+- **Token/cost accounting is a placeholder** (NG-2) — `ChatResult`/`AgentResult` don't carry usage metadata from the model clients yet.
+- **No pluggable Tracer/OTel backend** (NG-3) — premature with a single consumer (the new Postgres columns); `opentelemetry-api` is already present as a transitive dependency but not wired to anything.
+- **Friction found during implementation**: `VerificationReport.supported_claim_ratio` is a Pydantic `@property`, not a `computed_field` — it doesn't appear in `model_dump()`'s output. `_persist` recomputes it directly from the already-serialized `verification_report`'s claim statuses instead of reading a field that would have silently always been `None`.
+
 ### DEBT-010 — remove `intelligence/agents/{base,workflow}.py` shims
 
 #### Changed

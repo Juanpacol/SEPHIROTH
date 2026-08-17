@@ -675,6 +675,82 @@
       "title": "SourceType",
       "type": "string"
     },
+    "Span": {
+      "additionalProperties": false,
+      "description": "One instrumented interval. Spans nest via `parent_id` to form a tree\nrooted at the run.",
+      "properties": {
+        "attributes": {
+          "additionalProperties": true,
+          "title": "Attributes",
+          "type": "object"
+        },
+        "duration_ms": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/SpanKind"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "ok": {
+          "default": true,
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Id"
+        },
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        },
+        "trace_id": {
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "trace_id",
+        "kind",
+        "name",
+        "started_at"
+      ],
+      "title": "Span",
+      "type": "object"
+    },
+    "SpanKind": {
+      "description": "Instrumentation seams, frozen from Phase 1 onward (SPEC-005).",
+      "enum": [
+        "run",
+        "plan",
+        "agent",
+        "model",
+        "tool",
+        "verify"
+      ],
+      "title": "SpanKind",
+      "type": "string"
+    },
     "SupportRelationship": {
       "description": "How one evidence record relates to the claim it was retrieved for.",
       "enum": [
@@ -955,6 +1031,14 @@
         "type": "string"
       },
       "title": "Selected Agents",
+      "type": "array"
+    },
+    "spans": {
+      "description": "Recorded by sephiroth.telemetry.traced_span; empty when tracing is disabled.",
+      "items": {
+        "$ref": "#/$defs/Span"
+      },
+      "title": "Spans",
       "type": "array"
     },
     "task": {

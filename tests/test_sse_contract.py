@@ -22,6 +22,11 @@ Phase 4 (SPEC-004) added two additive, optional keys to `final` —
 so `test_final_event_shape`'s exact-set assertion below was extended to
 include them; no existing key/casing changed. Verifies AC-004-08
 (docs/specs/SPEC-004-verification-safety.md).
+
+Phase 5 (SPEC-006) added one more additive key, `trace` (a persisted,
+replayable `ExecutionTrace` — see docs/specs/SPEC-006-telemetry.md) — same
+additive-only pattern, `test_final_event_shape` extended again. Verifies
+AC-006-07.
 """
 
 import json
@@ -153,6 +158,7 @@ async def test_final_event_shape():
         "explanation",
         "verification_report",
         "abstention",
+        "trace",
     }, f"final field set drifted: {sorted(final.keys())}"
     assert isinstance(final["answer"], str) and final["answer"]
     assert final["agents_involved"] == sorted(final["agents_involved"]), (

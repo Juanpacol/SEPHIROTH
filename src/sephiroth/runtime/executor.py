@@ -33,11 +33,12 @@ from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
 
 from core.config import settings
 from sephiroth.context import context_for_agent, truncate
-from sephiroth.contracts import AgentCapability, AgentResult, RunContext, RunState, ToolCall
+from sephiroth.contracts import AgentCapability, AgentResult, RunContext, RunState, SpanKind, ToolCall
 from sephiroth.models import ModelProvider
 from sephiroth.safety import check_input
 from sephiroth.safety import decide as decide_abstention
 from sephiroth.safety.abstention import PARTIAL_BANNER
+from sephiroth.telemetry import build_trace, traced_span
 from sephiroth.verification import compute_confidence, extract_claims, harvest_evidence, verify_claims
 
 from .agent import Agent
@@ -83,10 +84,11 @@ def to_tool_calls(capability_id: str, raw_calls: List[Dict[str, Any]]) -> List[T
 
 
 async def _run_specialist(
-    capability: AgentCapability, client: ModelProvider, query: str, run_context: RunContext
+    capability: AgentCapability, client: ModelProvider, query: str, run_context: RunContext, state: RunState
 ) -> Tuple[AgentCapability, AgentResult, List[ToolCall]]:
     agent = Agent(capability, client)
-    result = await agent.run(query, context_for_agent(capability, run_context))
+    with traced_span(state, SpanKind.AGENT, capability.id, agent=capability.id):
+        result = await agent.run(query, context_for_agent(capability, run_context))
     tool_calls = to_tool_calls(capability.id, result.tool_calls)
     agent_result = AgentResult(
         agent=capability.id,
@@ -103,20 +105,21 @@ async def _verify_and_decide(
     """Populates `state.evidence/claims/contradictions/confidence/abstention`
     from the coordinator's (already citation-sanitized) answer. Mutates
     `state` in place — this is the one function both entry points share."""
-    claims = await extract_claims(sanitized_answer, client)
-    evidence = harvest_evidence(state.tool_calls)
-    report = await verify_claims(claims, evidence, client)
-    tool_failures = sum(1 for tc in state.tool_calls if not tc.ok)
-    confidence = compute_confidence(report, state.citation_report, tool_failures)
-    input_flags = check_input(query)
-    abstention = decide_abstention(report, confidence, input_flags)
+    with traced_span(state, SpanKind.VERIFY, "verify"):
+        claims = await extract_claims(sanitized_answer, client)
+        evidence = harvest_evidence(state.tool_calls)
+        report = await verify_claims(claims, evidence, client)
+        tool_failures = sum(1 for tc in state.tool_calls if not tc.ok)
+        confidence = compute_confidence(report, state.citation_report, tool_failures)
+        input_flags = check_input(query)
+        abstention = decide_abstention(report, confidence, input_flags)
 
-    state.evidence = evidence
-    state.claims = report.claims
-    state.contradictions = report.contradictions
-    state.safety_flags = input_flags
-    state.confidence = confidence
-    state.abstention = abstention
+        state.evidence = evidence
+        state.claims = report.claims
+        state.contradictions = report.contradictions
+        state.safety_flags = input_flags
+        state.confidence = confidence
+        state.abstention = abstention
 
 
 def _final_answer(sanitized_answer: str, state: RunState) -> str:
@@ -149,7 +152,7 @@ async def run_consultation(
     capabilities = resolve(node_names)
 
     results = await asyncio.gather(
-        *(_run_specialist(cap, client, query, run_context) for cap in capabilities)
+        *(_run_specialist(cap, client, query, run_context, state) for cap in capabilities)
     )
     for capability, agent_result, tool_calls in results:
         state.agent_results[capability.id] = agent_result
@@ -158,10 +161,11 @@ async def run_consultation(
     sections = "\n\n".join(f"### {name} agent\n{output}" for name, output in state.agent_outputs.items())
     sections = truncate(sections, settings.max_context_chars)
     coordinator = Agent(COORDINATOR, client)
-    coord_result = await coordinator.run(
-        f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}",
-        context_for_agent(COORDINATOR, run_context),
-    )
+    with traced_span(state, SpanKind.AGENT, COORDINATOR.id, agent=COORDINATOR.id):
+        coord_result = await coordinator.run(
+            f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}",
+            context_for_agent(COORDINATOR, run_context),
+        )
     coord_tool_calls = to_tool_calls(coordinator.name, coord_result.tool_calls)
     state.tool_calls.extend(coord_tool_calls)
 
@@ -175,6 +179,7 @@ async def run_consultation(
 
     agents_involved = state.agents_involved
     tool_calls_wire = [_tool_call_wire(tc) for tc in state.tool_calls]
+    trace = build_trace(state, model=getattr(client, "model", ""))
 
     return {
         "patient_id": patient_id,
@@ -190,6 +195,7 @@ async def run_consultation(
         },
         "abstention": state.abstention.model_dump(mode="json") if state.abstention else None,
         "explanation": build_explanation(agents_involved, tool_calls_wire, citation_report.as_dict()),
+        "trace": trace.model_dump(mode="json"),
     }
 
 
@@ -206,7 +212,7 @@ async def stream_consultation(
       {"event": "routing", "agents": [...]}
       {"event": "agent_completed", "agent", "summary", "tool_calls"}
       {"event": "final", "answer", "agents_involved", "tool_calls", "citation_report",
-       "explanation", "verification_report", "abstention"}
+       "explanation", "verification_report", "abstention", "trace"}
     """
     from intelligence.agents.citation_guard import audit, sanitize
     from intelligence.agents.explainability import build_explanation
@@ -219,7 +225,9 @@ async def stream_consultation(
 
     yield {"event": "routing", "agents": node_names}
 
-    tasks = [asyncio.ensure_future(_run_specialist(cap, client, query, run_context)) for cap in capabilities]
+    tasks = [
+        asyncio.ensure_future(_run_specialist(cap, client, query, run_context, state)) for cap in capabilities
+    ]
     for finished in asyncio.as_completed(tasks):
         capability, agent_result, tool_calls = await finished
         state.agent_results[capability.id] = agent_result
@@ -235,10 +243,11 @@ async def stream_consultation(
     sections = "\n\n".join(f"### {name} agent\n{output}" for name, output in state.agent_outputs.items())
     sections = truncate(sections, settings.max_context_chars)
     coordinator = Agent(COORDINATOR, client)
-    coord_result = await coordinator.run(
-        f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}",
-        context_for_agent(COORDINATOR, run_context),
-    )
+    with traced_span(state, SpanKind.AGENT, COORDINATOR.id, agent=COORDINATOR.id):
+        coord_result = await coordinator.run(
+            f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}",
+            context_for_agent(COORDINATOR, run_context),
+        )
     coord_tool_calls = to_tool_calls(coordinator.name, coord_result.tool_calls)
     state.tool_calls.extend(coord_tool_calls)
 
@@ -252,6 +261,7 @@ async def stream_consultation(
 
     agents_involved = state.agents_involved
     tool_calls_wire = [_tool_call_wire(tc) for tc in state.tool_calls]
+    trace = build_trace(state, model=getattr(client, "model", ""))
 
     yield {
         "event": "final",
@@ -265,6 +275,7 @@ async def stream_consultation(
         },
         "abstention": state.abstention.model_dump(mode="json") if state.abstention else None,
         "explanation": build_explanation(agents_involved, tool_calls_wire, citation_report.as_dict()),
+        "trace": trace.model_dump(mode="json"),
     }
 
 

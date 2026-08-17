@@ -10,7 +10,7 @@
 
 schema_version: 1
 project: SEPHIROTH
-version: 0.5.1
+version: 0.6.0
 updated: 2026-08-19
 phase_current: 5
 
@@ -171,6 +171,20 @@ components:
       tests: [tests/test_context_views.py, tests/test_context_rerank.py,
               tests/test_context_memory.py, tests/test_context_budget.py,
               tests/test_rag_pipeline.py, tests/test_api_agents.py]
+    src/sephiroth/telemetry:
+      status: partial
+      phase: 5
+      spec: SPEC-006
+      description: >-
+        Executes ADR-009: build_trace projects a populated RunState into
+        the persisted ExecutionTrace contract (existing since Phase 0).
+        traced_span records real spans for Executor.step and
+        Verifier.check only (NG-1) — ModelProvider.chat and
+        ToolRuntime.execute are not independently instrumented this cycle;
+        token/cost accounting is a placeholder (NG-2). No pluggable
+        Tracer/OTel backend yet (NG-3).
+      tests: [tests/test_telemetry_span.py, tests/test_telemetry_build_trace.py,
+              tests/test_runtime_executor.py]
 
 # Capabilities the target architecture requires that have no implementation yet.
 gaps:
@@ -180,7 +194,8 @@ gaps:
   - {capability: Context Engine tuning — max_context_chars/lambda_mult against real data (SPEC-005 NG-5) — requires a live GEMINI_API_KEY run, not a build cycle, phase: null}
   - {capability: Generic conversational/session memory — no validated product need yet (SPEC-005 NG-1), phase: null}
   - {capability: Output-facing safety beyond the prompt-injection heuristic — PHI/toxicity/jailbreak/HITL (SPEC-004 NG-2), phase: 5}
-  - {capability: Structured execution traces, phase: 5}
+  - {capability: Live spans for ModelProvider.chat/ToolRuntime.execute + token/cost accounting + pluggable Tracer backend (SPEC-006 NG-1/2/3), phase: 5}
+  - {capability: Relocate risk_engine.py to src/sephiroth/safety/risk; shim citation_guard.py/risk_engine.py/explainability.py, phase: 5}
 
 quality_gates:
   coverage_fail_under: 87

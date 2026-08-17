@@ -21,6 +21,7 @@ from .plan import ExecutionPlan
 from .results import AgentResult, Failure, RecoveryAction, ToolCall
 from .safety import AbstentionDecision, SafetyFlag
 from .task import TaskAnalysis
+from .trace import Span
 
 
 class RunState(BaseModel):
@@ -71,6 +72,12 @@ class RunState(BaseModel):
 
     # --- output ---
     final_answer: str = ""
+
+    # --- observability (SPEC-006) ---
+    spans: list[Span] = Field(
+        default_factory=list,
+        description="Recorded by sephiroth.telemetry.traced_span; empty when tracing is disabled.",
+    )
 
     @property
     def agent_outputs(self) -> dict[str, str]:
