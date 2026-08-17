@@ -53,8 +53,16 @@ export function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-/** Redirect to /login, remembering nothing (demo scope). */
+/** Redirect to /login, remembering nothing (demo scope).
+ *
+ * Clears the stale token/user first — a 401 means the session is dead
+ * (expired/invalid JWT), and leaving it in localStorage sent every future
+ * visit to "/" straight back into the dead session via `AUTH_GATE_SCRIPT`
+ * (which only checks *presence* of a token, not validity), bouncing
+ * landing -> dashboard -> 401 -> login in a loop that never showed the
+ * landing page or a real dashboard. */
 export function redirectToLogin(): void {
+  clearAuth();
   if (typeof window !== "undefined" && window.location.pathname !== "/login") {
     window.location.href = "/login";
   }

@@ -364,6 +364,47 @@ class GeminiClient:
         response = await self._generate(contents, config, model=self.vision_model)
         return _extract_text(response).strip()
 
+    async def describe_image_stream(
+        self,
+        image_bytes: bytes,
+        mime_type: str,
+        prompt: str,
+        max_output_tokens: int = 512,
+    ):
+        """Token-chunk streaming variant of `describe_image`, for a live
+        "sampling" view in the UI. No retry loop (unlike `_generate`) —
+        a stream that fails mid-flight can't be transparently retried
+        without replaying already-yielded chunks to the caller; the one
+        caller (the imaging SSE route) surfaces the exception as an
+        `error` event instead."""
+        if self._client is None:
+            raise LLMUnavailableError("GEMINI_API_KEY is not configured.")
+
+        contents = [
+            types.Content(
+                role="user",
+                parts=[
+                    types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                    types.Part.from_text(text=prompt),
+                ],
+            )
+        ]
+        config = types.GenerateContentConfig(
+            max_output_tokens=max_output_tokens,
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
+        )
+        await self._rate_limiter.acquire()
+        try:
+            stream = await self._client.aio.models.generate_content_stream(
+                model=self.vision_model, contents=contents, config=config
+            )
+            async for chunk in stream:
+                text = getattr(chunk, "text", None)
+                if text:
+                    yield text
+        except (errors.ClientError, errors.ServerError) as exc:
+            raise LLMUnavailableError(str(exc)) from exc
+
     async def health(self) -> bool:
         """Return True when Gemini is reachable, the API key is valid, and
         `self.model` exists. Cached for 60s — called on every dashboard load

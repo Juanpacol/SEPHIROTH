@@ -96,6 +96,19 @@ class FallbackLLMClient:
             image_bytes=image_bytes, mime_type=mime_type, prompt=prompt, max_output_tokens=max_output_tokens
         )
 
+    async def describe_image_stream(
+        self,
+        image_bytes: bytes,
+        mime_type: str,
+        prompt: str,
+        max_output_tokens: int = 512,
+    ):
+        # Same no-fallback rationale as describe_image above.
+        async for chunk in self.primary.describe_image_stream(
+            image_bytes=image_bytes, mime_type=mime_type, prompt=prompt, max_output_tokens=max_output_tokens
+        ):
+            yield chunk
+
     async def health(self) -> bool:
         primary_ok = await self.primary.health()
         if primary_ok:

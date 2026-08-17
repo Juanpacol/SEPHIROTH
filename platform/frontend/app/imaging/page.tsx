@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Eye, ScanEye } from "lucide-react";
+import { Eye, Loader2, ScanEye } from "lucide-react";
 import { api } from "@/lib/api";
+import { authHeaders } from "@/lib/auth";
 import AgentBadge from "@/components/agent-badge";
 import ImageDropzone from "@/components/image-dropzone";
 
@@ -14,15 +15,62 @@ export default function ImagingPage() {
   const [modality, setModality] = useState("xray");
   const [target, setTarget] = useState("");
 
+  const [describeText, setDescribeText] = useState("");
+  const [describeModel, setDescribeModel] = useState<string | null>(null);
+  const [describeError, setDescribeError] = useState<string | null>(null);
+  const [describing, setDescribing] = useState(false);
+
   const analyze = useMutation({
     mutationFn: () => api.analyzeImage({ image_path: imagePath, modality, target }),
   });
 
-  const describe = useMutation({
-    mutationFn: () => api.describeImage({ image_path: imagePath, clinical_focus: target }),
-  });
+  const runDescribe = async () => {
+    if (!imagePath || describing) return;
+    setDescribing(true);
+    setDescribeError(null);
+    setDescribeText("");
+    setDescribeModel(null);
 
-  const hasResult = describe.data || analyze.data;
+    try {
+      const res = await fetch("/api/medical/imaging/describe/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ image_path: imagePath, clinical_focus: target }),
+      });
+      if (!res.ok || !res.body) throw new Error(`${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split("\n\n");
+        buffer = chunks.pop() ?? "";
+
+        for (const chunk of chunks) {
+          if (!chunk.startsWith("data: ")) continue;
+          const event = JSON.parse(chunk.slice(6));
+
+          if (event.event === "chunk") {
+            setDescribeText((prev) => prev + event.text);
+          } else if (event.event === "final") {
+            setDescribeModel(event.model ?? null);
+          } else if (event.event === "error") {
+            setDescribeError(event.detail);
+          }
+        }
+      }
+    } catch {
+      setDescribeError("Could not reach the vision model.");
+    } finally {
+      setDescribing(false);
+    }
+  };
+
+  const hasResult = describeText || describeError || analyze.data;
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
@@ -70,31 +118,33 @@ export default function ImagingPage() {
             {analyze.isPending ? "Analyzing…" : "Analyze image"}
           </button>
           <button
-            onClick={() => describe.mutate()}
-            disabled={!imagePath || describe.isPending}
+            onClick={runDescribe}
+            disabled={!imagePath || describing}
             className="ai-badge flex items-center gap-2 rounded-xl !px-4 !py-2.5 !text-sm font-semibold disabled:opacity-40"
-            aria-label="Describe image with the local vision model"
+            aria-label="Describe image with the vision model"
           >
             <Eye size={16} />
-            {describe.isPending ? "Describing…" : "Describe with Vision AI"}
+            {describing ? "Sampling…" : "Describe with Vision AI"}
           </button>
         </div>
       </div>
 
-      {/* Side-by-side: original image on the left, AI findings on the right */}
+      {/* Left: add-file control + preview stacked. Right: AI findings, streamed live. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="card flex items-center justify-center !p-3">
-          <ImageDropzone onUploaded={setImagePath} />
+        <div className="space-y-4">
+          <div className="card !p-3">
+            <ImageDropzone onUploaded={setImagePath} />
+          </div>
         </div>
 
         <div className="space-y-4">
-          {!hasResult && (
+          {!hasResult && !describing && (
             <div className="card flex h-full min-h-[220px] items-center justify-center text-center text-sm text-muted">
               Run an analysis or vision description to see AI findings here
             </div>
           )}
 
-          {describe.data && (
+          {(describing || describeText || describeError) && (
             <div
               className="card border-2"
               style={{ borderImage: "linear-gradient(135deg,#8C92AC,#D1D5DB) 1" }}
@@ -103,19 +153,21 @@ export default function ImagingPage() {
                 <h2 className="font-bold">Vision description</h2>
                 <AgentBadge name="vision-ai" />
               </div>
-              {describe.data.description ? (
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {describe.data.description}
-                </p>
+              {describeError ? (
+                <p className="text-sm text-danger">{describeError}</p>
               ) : (
-                <p className="text-sm text-danger">
-                  {describe.data.message ?? describe.data.error ?? "No description returned."}
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {describeText}
+                  {describing && (
+                    <Loader2 size={13} className="ml-1 inline animate-spin align-middle text-muted" />
+                  )}
                 </p>
               )}
-              <p className="mt-3 text-xs text-muted">
-                Generated locally by {describe.data.model ?? "the vision model"} — requires
-                professional review, not a diagnosis.
-              </p>
+              {describeModel && (
+                <p className="mt-3 text-xs text-muted">
+                  Generated by {describeModel} — requires professional review, not a diagnosis.
+                </p>
+              )}
             </div>
           )}
 

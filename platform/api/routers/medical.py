@@ -8,6 +8,7 @@ at will. Every other endpoint touching clinical data or tools already requires
 auth; this brings these six in line.
 """
 
+import json
 import mimetypes
 import tempfile
 from pathlib import Path
@@ -15,11 +16,19 @@ from typing import Any, Dict, List
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from auth.deps import get_current_user
+from core.config import settings
 from data.schemas import User
+from intelligence.mcp.vision_server import (
+    _MIME_OVERRIDES,
+    DESCRIPTION_PROMPT,
+    MAX_IMAGE_BYTES,
+    READABLE_FORMATS,
+)
+from sephiroth.models import LLMUnavailableError, get_llm_client
 from sephiroth.tools import get_tool_runtime
 
 router = APIRouter()
@@ -84,6 +93,64 @@ async def describe_image(request: DescribeRequest, user: User = Depends(get_curr
     return await registry.execute(
         "describe_medical_image",
         {"image_path": request.image_path, "clinical_focus": request.clinical_focus},
+    )
+
+
+@router.post(
+    "/imaging/describe/stream",
+    summary="Stream a live, token-by-token AI clinical description of a medical image",
+)
+async def describe_image_stream(request: DescribeRequest, user: User = Depends(get_current_user)) -> StreamingResponse:
+    """SSE variant of `/imaging/describe` — emits `chunk` events as the vision
+    model samples its response, then one `final` event with the full text.
+    Mirrors `/api/agents/consult/stream`'s event-envelope shape so the
+    frontend can reuse the same fetch+ReadableStream parsing pattern."""
+
+    async def event_stream():
+        if not settings.enable_vision_analysis:
+            yield f"data: {json.dumps({'event': 'error', 'detail': 'Vision analysis is disabled (ENABLE_VISION_ANALYSIS=false).'})}\n\n"
+            return
+
+        path = Path(request.image_path)
+        if not path.exists():
+            yield f"data: {json.dumps({'event': 'error', 'detail': f'File not found: {request.image_path}'})}\n\n"
+            return
+        if path.suffix.lower() not in READABLE_FORMATS:
+            detail = f"Unsupported format '{path.suffix}'."
+            yield f"data: {json.dumps({'event': 'error', 'detail': detail})}\n\n"
+            return
+
+        image_bytes = path.read_bytes()
+        if len(image_bytes) > MAX_IMAGE_BYTES:
+            yield f"data: {json.dumps({'event': 'error', 'detail': f'Image too large ({len(image_bytes)} bytes, max {MAX_IMAGE_BYTES}).'})}\n\n"
+            return
+
+        mime_type = _MIME_OVERRIDES.get(path.suffix.lower()) or mimetypes.guess_type(path.name)[0] or "image/png"
+        prompt = DESCRIPTION_PROMPT
+        if request.clinical_focus:
+            prompt += f"\nFocus especially on: {request.clinical_focus}."
+        model_name = settings.gemini_vision_model or settings.gemini_model
+
+        full_text = []
+        try:
+            client = get_llm_client()
+            async for chunk in client.describe_image_stream(image_bytes=image_bytes, mime_type=mime_type, prompt=prompt):
+                full_text.append(chunk)
+                yield f"data: {json.dumps({'event': 'chunk', 'text': chunk})}\n\n"
+        except LLMUnavailableError as exc:
+            detail = f"Vision model '{model_name}' failed: {exc}. Check GEMINI_API_KEY and quota."
+            yield f"data: {json.dumps({'event': 'error', 'detail': detail})}\n\n"
+            return
+        except Exception as exc:
+            yield f"data: {json.dumps({'event': 'error', 'detail': f'Vision model failed: {exc}'})}\n\n"
+            return
+
+        yield f"data: {json.dumps({'event': 'final', 'description': ''.join(full_text), 'model': model_name})}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 
