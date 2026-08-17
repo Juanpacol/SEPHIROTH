@@ -84,7 +84,13 @@ async def create_patient(body: PatientCreate, session: AsyncSession = Depends(ge
     )
     session.add(patient)
     await session.commit()
-    patient.timeline = []
+    # A brand-new patient has no timeline yet, but `commit()` expires every
+    # attribute by default; touching `patient.timeline` afterward would
+    # trigger an implicit lazy-load outside an awaited context, which
+    # asyncpg's async dialect rejects (`MissingGreenlet`) — SQLite's driver
+    # tolerates it, so this only ever surfaced against real Postgres.
+    # `refresh(..., attribute_names=...)` loads it explicitly, in-band.
+    await session.refresh(patient, attribute_names=["timeline"])
     return _full(patient)
 
 

@@ -143,6 +143,12 @@ async def claim_invite(
         patient_id=invite.patient_id,
     )
     session.add(user)
+    # `flush()` before setting `redeemed_user_id`: it's a plain FK column,
+    # not a relationship SQLAlchemy tracks between these two objects, so
+    # nothing tells the unit of work the new user must be INSERTed before
+    # this UPDATE — without the flush, Postgres (unlike SQLite) enforces
+    # the FK immediately and rejects the still-unflushed user id.
+    await session.flush()
     invite.redeemed_at = datetime.now(timezone.utc).replace(tzinfo=None)
     invite.redeemed_user_id = user.id
     await session.commit()

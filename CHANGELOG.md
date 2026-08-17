@@ -17,12 +17,18 @@ All notable changes to this project are documented here. Format based on
 - New migration `3b2f5725233c` on top of `233988357f83`. Hand-fixed: autogenerate named `users.patient_id`'s FK `None` in both directions (no `naming_convention` configured) — `op.drop_constraint(None, ...)` isn't droppable by name, so `downgrade()` would have failed; named it explicitly.
 - Tests: `tests/test_portal_isolation.py` (patient A can't read B, patient can't reach any clinician route, clinician keeps full access, plus a route-shape meta-test asserting every clinician route carries `require_clinician` and no portal route takes a `patient_id`), `tests/test_patient_invite.py` (happy path, replay, expiry, wrong secret, unique-FK double-claim, extra-field rejection), `tests/test_portal_endpoints.py` (portal reads, the bootstrap-flag-off path, a 404 when a portal login's bound chart has been deleted).
 
+#### Fixed — two pre-existing Postgres-only bugs, found during Docker/manual verification, invisible to the SQLite test suite (it never enables `PRAGMA foreign_keys`, and its driver tolerates a lazy-load SQLite's async dialect doesn't reject)
+- `POST /api/patients` 500'd on every real deployment: `patient.timeline = []` after `commit()` (which expires attributes) triggered an implicit lazy-load outside an awaited context — asyncpg's async dialect raises `MissingGreenlet`, SQLite's driver silently tolerated it. No test exercised the successful-creation path before this phase. Fixed with `session.refresh(patient, attribute_names=["timeline"])`, an explicit in-band load.
+- `POST /api/auth/portal/claim` 500'd on every real deployment: setting `invite.redeemed_user_id = user.id` before flushing the new `user` row works on SQLite (no FK enforcement) but Postgres rejects the UPDATE — the column is a plain FK, not a relationship, so nothing tells the unit of work to insert the user first. Fixed with an explicit `session.flush()` before setting the redeemed fields.
+- Both fixed and reverified with the actual invite→claim→portal-read→403-on-clinician-route flow run against a real local Postgres (not just the SQLite suite) before rebuilding the Docker image.
+
 #### Changed
 - `platform/api/main.py`: the clinician-only routers now carry `dependencies=[Depends(require_clinician)]` (was the Phase A placeholder `get_current_user`) — swapping in the real role check was the one-line change Phase A's commit message promised.
 - `tests/test_auth.py`: `test_update_profile`'s exact-set assertion extended for the two new additive `UserOut` fields; added `test_registration_defaults_to_clinician_role` and `test_register_rejects_role_and_patient_id_fields`.
+- `tests/test_api_patients_rag.py`: added `test_create_patient_returns_full_record_with_empty_timeline` — the missing successful-creation test that should have caught the first bug above.
 
 #### Verification
-- `pytest --cov`: 578 passed, 93% coverage.
+- `pytest --cov`: 579 passed, 93% coverage.
 - `intelligence.evaluation.run --mode ci`: PASS, unchanged.
 - `docs_check.py` / `export_contracts.py --check`: OK, no contract shape change (SQLAlchemy models, not `sephiroth.contracts`).
 - `bandit`: 0 High severity/confidence findings.
