@@ -13,6 +13,7 @@ pgvector>=0.3
 # Auth
 bcrypt>=4.1
 pyjwt>=2.8
+pyotp>=2.9
 
 # LLM & Agents — Google Gemini API (AI Studio free tier); PHI leaves the
 # machine, see README's privacy notice.

@@ -64,6 +64,12 @@ class User(Base):
     patient_id: Mapped[Optional[str]] = mapped_column(
         ForeignKey("patients.id"), nullable=True, unique=True, index=True
     )
+    # Checked in `get_current_user` on every request — a deactivated account
+    # is rejected immediately regardless of an already-issued JWT's `exp`
+    # (there is no token revocation list; this is the only kill switch).
+    is_active: Mapped[bool] = mapped_column(default=True, server_default="true")
+    mfa_secret: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    mfa_enabled: Mapped[bool] = mapped_column(default=False, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     consultations: Mapped[List["Consultation"]] = relationship(back_populates="user")
@@ -111,6 +117,58 @@ class PatientInvite(Base):
     redeemed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     redeemed_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class PasswordResetToken(Base):
+    """A one-time, expiring token letting a user set a new password without
+    knowing the old one — same shape as `PatientInvite` (hashed bearer
+    secret, expiry, one-time redemption). TTL is 1 hour, much shorter than
+    `PatientInvite`'s 72 hours: this token grants takeover of an already-live
+    account, not just onboarding. No email-sending capability exists in this
+    codebase (see `PatientInvite`'s precedent), so the raw token is returned
+    directly in the request response rather than mailed."""
+
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    code_hash: Mapped[str] = mapped_column(String(128))
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    redeemed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class MfaRecoveryCode(Base):
+    """A single-use backup code issued (10 at a time) when a user completes
+    TOTP enrollment, for the case their authenticator device is lost.
+    Hashed at rest like every other bearer secret in this codebase."""
+
+    __tablename__ = "mfa_recovery_codes"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    code_hash: Mapped[str] = mapped_column(String(128))
+    used_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class PhiAccessLog(Base):
+    """Append-only record of who read which patient's data, when, and via
+    which route. No update/delete route is ever exposed for this table —
+    an audit trail that could be edited by the audited party is not a
+    trail. Written at each existing PHI-read call site (patients.py,
+    portal.py, results.py) rather than derived from generic request
+    logging, since only the handler knows which `patient_id` was touched."""
+
+    __tablename__ = "phi_access_log"
+    __table_args__ = (Index("ix_phi_access_log_patient_created", "patient_id", "created_at"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    route: Mapped[str] = mapped_column(String(200))
+    method: Mapped[str] = mapped_column(String(10))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
 
 
 class TimelineEvent(Base):
@@ -419,6 +477,9 @@ __all__ = [
     "User",
     "Patient",
     "PatientInvite",
+    "PasswordResetToken",
+    "MfaRecoveryCode",
+    "PhiAccessLog",
     "TimelineEvent",
     "ClinicalNote",
     "AvailabilityRule",

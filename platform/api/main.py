@@ -15,7 +15,18 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import agents, dashboard, medical, notifications, patients, portal, rag, results, scheduling
+from api.routers import (
+    agents,
+    audit,
+    dashboard,
+    medical,
+    notifications,
+    patients,
+    portal,
+    rag,
+    results,
+    scheduling,
+)
 from auth import router as auth_router_module
 from auth.deps import require_clinician
 from core.config import settings
@@ -87,6 +98,7 @@ app.include_router(rag.router, prefix="/api/rag", tags=["rag"], dependencies=_cl
 app.include_router(
     dashboard.router, prefix="/api/dashboard", tags=["dashboard"], dependencies=_clinician_only
 )
+app.include_router(audit.router, prefix="/api/audit", tags=["audit"], dependencies=_clinician_only)
 # Patient portal, scheduling, and results: each mixes roles per-route (no
 # blanket guard) — see portal.py/scheduling.py/results.py.
 app.include_router(portal.router, prefix="/api/portal", tags=["portal"])
