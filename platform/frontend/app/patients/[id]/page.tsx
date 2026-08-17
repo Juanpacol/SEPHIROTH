@@ -10,12 +10,16 @@ import {
   Image as ImageIcon,
   NotebookPen,
   Pill,
+  Share2,
   Stethoscope,
+  UserPlus,
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
 import StatusPill from "@/components/status-pill";
 import AgentBadge from "@/components/agent-badge";
+import ShareResultSheet from "@/components/results/share-result-sheet";
+import { useToast } from "@/components/ui/toast";
 
 function AddNoteCard({ patientId }: { patientId: string }) {
   const [content, setContent] = useState("");
@@ -123,9 +127,22 @@ const eventIcons: Record<string, typeof Pill> = {
 
 export default function PatientProfilePage({ params }: { params: { id: string } }) {
   const { id } = params;
+  const showToast = useToast();
+  const [shareOpen, setShareOpen] = useState(false);
   const { data: patient, isLoading } = useQuery({
     queryKey: ["patient", id],
     queryFn: () => api.patient(id),
+  });
+
+  const invitePatient = useMutation({
+    mutationFn: () => api.createInvite(id),
+    onSuccess: (invite) => {
+      navigator.clipboard?.writeText(invite.code).catch(() => {});
+      showToast(`Claim code copied to clipboard: ${invite.code}`);
+    },
+    onError: (err) => {
+      showToast(err instanceof ApiError ? err.message : "Could not create an invite.", "error");
+    },
   });
 
   if (isLoading) return <div className="text-muted">Loading patient…</div>;
@@ -146,6 +163,14 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
         <div className="flex items-center gap-2">
           {patient.risk_level && <StatusPill label={`${patient.risk_level} risk`} />}
           <StatusPill label={patient.status} />
+          <button
+            onClick={() => invitePatient.mutate()}
+            disabled={invitePatient.isPending}
+            className="btn-secondary"
+            title="Generate a one-time code the patient uses to set up their portal login"
+          >
+            <UserPlus size={15} /> Invite to portal
+          </button>
         </div>
       </div>
 
@@ -157,7 +182,12 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
           <div className="card">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-bold">Intelligent Timeline</h2>
-              <AgentBadge name="AI-organized" />
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShareOpen(true)} className="btn-secondary py-1.5 text-xs">
+                  <Share2 size={13} /> Share a result
+                </button>
+                <AgentBadge name="AI-organized" />
+              </div>
             </div>
             <ol className="relative ml-3 space-y-5 border-l-2 border-line/60 pl-6">
               {patient.timeline.map((event, i) => {
@@ -256,6 +286,8 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
           </div>
         </div>
       </div>
+
+      <ShareResultSheet open={shareOpen} onClose={() => setShareOpen(false)} patientId={patient.id} />
     </div>
   );
 }

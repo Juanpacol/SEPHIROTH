@@ -11,6 +11,15 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
+  role: "clinician" | "patient";
+  patient_id: string | null;
+}
+
+/** Where a role lands after login/logout — the one place this mapping
+ * lives, so the login page, the auth guard, and the post-logout redirect
+ * all agree. */
+export function homeFor(role: AuthUser["role"]): string {
+  return role === "patient" ? "/portal" : "/dashboard";
 }
 
 export function getToken(): string | null {
