@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, CalendarClock, ChevronRight, LogOut } from "lucide-react";
+import { CalendarClock, ChevronRight, LogOut } from "lucide-react";
 import { clearAuth, useUser } from "@/lib/auth";
+import NotificationBell from "@/components/notification-bell";
 import ThemeToggle from "@/components/theme-toggle";
 
 export default function Topbar() {
@@ -67,9 +68,7 @@ export default function Topbar() {
             <CalendarClock size={18} />
           </button>
         )}
-        <button className="rounded-full p-2 text-muted hover:bg-primary-soft" aria-label="Notifications">
-          <Bell size={18} />
-        </button>
+        <NotificationBell />
         <Link
           href={user?.role === "patient" ? "/portal" : "/profile"}
           className="flex items-center gap-2.5"

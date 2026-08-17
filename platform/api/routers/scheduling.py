@@ -29,13 +29,42 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.deps import get_current_user, require_clinician
 from core.db import get_session
-from data.schemas import Appointment, AvailabilityException, AvailabilityRule, Patient, User
+from data.schemas import (
+    Appointment,
+    AppointmentSeries,
+    AppointmentWaitlist,
+    AvailabilityException,
+    AvailabilityRule,
+    Notification,
+    Patient,
+    User,
+)
 
 from .. import scheduling as slots_module  # platform/api/scheduling.py (pure expand_slots)
 
 router = APIRouter()
 
 BOOKING_HORIZON = timedelta(days=180)
+MAX_SERIES_COUNT = 52
+FREQUENCY_DAYS = {"weekly": 7, "biweekly": 14, "monthly": 28}
+
+
+async def _notify(
+    session: AsyncSession,
+    user_id: str,
+    type_: str,
+    message: str,
+    related_appointment_id: Optional[str] = None,
+) -> None:
+    session.add(
+        Notification(
+            id=str(uuid4()),
+            user_id=user_id,
+            type=type_,
+            message=message,
+            related_appointment_id=related_appointment_id,
+        )
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -95,6 +124,26 @@ class AppointmentUpdate(BaseModel):
     notes: Optional[str] = None
 
 
+class SeriesCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    clinician_id: str
+    patient_id: str
+    start_at: datetime
+    frequency: Literal["weekly", "biweekly", "monthly"]
+    occurrence_count: int = Field(..., ge=1, le=MAX_SERIES_COUNT)
+    mode: Literal["in_person", "telehealth"] = "in_person"
+    reason: str = ""
+
+
+class WaitlistCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    clinician_id: str
+    window_start: datetime
+    window_end: datetime
+
+
 def _validate_iana_timezone(tz: str) -> None:
     from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -148,6 +197,7 @@ def _appointment_out(appt: Appointment, *, for_patient: bool, patient_name: str 
         "mode": appt.mode,
         "reason": appt.reason,
         "cancellation_reason": appt.cancellation_reason,
+        "series_id": appt.series_id,
     }
     if patient_name:
         out["patient_name"] = patient_name
@@ -504,6 +554,17 @@ async def book_appointment(
         # two requests interleaved inside the same tiny window.
         await session.rollback()
         raise HTTPException(status_code=409, detail="This slot was just booked by someone else")
+
+    patient_login = await session.scalar(select(User).where(User.patient_id == body.patient_id))
+    if patient_login is not None:
+        await _notify(
+            session,
+            patient_login.id,
+            "appointment_booked",
+            f"Your appointment is confirmed for {appt.start_at.isoformat()}.",
+            related_appointment_id=appt.id,
+        )
+        await session.commit()
     return _appointment_out(appt, for_patient=user.role == "patient")
 
 
@@ -573,6 +634,32 @@ async def cancel_appointment(
     appt.cancellation_reason = reason
     await session.commit()
 
+    # Synchronous match-on-cancel: the earliest-waiting request whose
+    # window contains the now-freed slot gets notified and removed from
+    # the waitlist. No auto-booking — the patient must still book the
+    # slot themselves, which avoids a silent double-commit race between
+    # "notify" and "book" (no background sweep exists to do this lazily).
+    match = await session.scalar(
+        select(AppointmentWaitlist)
+        .where(
+            AppointmentWaitlist.clinician_id == appt.clinician_id,
+            AppointmentWaitlist.window_start <= appt.start_at,
+            AppointmentWaitlist.window_end >= appt.end_at,
+        )
+        .order_by(AppointmentWaitlist.created_at)
+    )
+    if match is not None:
+        waitlisted_login = await session.scalar(select(User).where(User.patient_id == match.patient_id))
+        if waitlisted_login is not None:
+            await _notify(
+                session,
+                waitlisted_login.id,
+                "waitlist_match",
+                f"A slot opened up at {appt.start_at.isoformat()} — book it before it's gone.",
+            )
+        await session.delete(match)
+        await session.commit()
+
 
 @router.get("/agenda/today")
 async def agenda_today(
@@ -614,3 +701,230 @@ async def agenda_today(
         "next_at": items[0]["start_at"] if items else None,
         "items": items,
     }
+
+
+# ---------------------------------------------------------------------------
+# Recurring series
+# ---------------------------------------------------------------------------
+
+
+def _series_out(series: AppointmentSeries, occurrence_ids: List[str]) -> Dict[str, Any]:
+    return {
+        "id": series.id,
+        "clinician_id": series.clinician_id,
+        "patient_id": series.patient_id,
+        "frequency": series.frequency,
+        "occurrence_count": series.occurrence_count,
+        "status": series.status,
+        "appointment_ids": occurrence_ids,
+    }
+
+
+@router.post("/series", status_code=201)
+async def create_series(
+    body: SeriesCreate,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Expands every occurrence **eagerly**, all in one transaction — see
+    `AppointmentSeries`'s docstring for why (no scheduler process exists
+    to expand a series lazily). Every occurrence must land on a real,
+    conflict-free working-hours slot or the whole series is rejected —
+    partially booking a recurring series would be a worse failure mode
+    than rejecting it outright."""
+    if user.role == "patient" and body.patient_id != user.patient_id:
+        raise HTTPException(status_code=403, detail="Cannot book a series for another patient")
+
+    clinician = await session.scalar(
+        select(User).where(User.id == body.clinician_id, User.role == "clinician")
+    )
+    if clinician is None:
+        raise HTTPException(status_code=404, detail="Clinician not found")
+    patient = await session.get(Patient, body.patient_id)
+    if patient is None:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    if body.start_at.tzinfo is None:
+        raise HTTPException(status_code=422, detail="start_at must be timezone-aware")
+    first_start = body.start_at.astimezone(timezone.utc).replace(tzinfo=None)
+    now = datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
+    if first_start < now:
+        raise HTTPException(status_code=422, detail="Cannot book an appointment in the past")
+
+    step_days = FREQUENCY_DAYS[body.frequency]
+    occurrences: List[tuple] = []  # (start_at, end_at)
+    for i in range(body.occurrence_count):
+        occ_start = first_start + timedelta(days=step_days * i)
+        if occ_start > now + BOOKING_HORIZON:
+            raise HTTPException(status_code=422, detail=f"Occurrence {i + 1} is more than 180 days out")
+        day_start = occ_start.date()
+        day_end = day_start + timedelta(days=1)
+        rules, exceptions, _existing = await _load_clinician_schedule(
+            session, body.clinician_id, day_start, day_end
+        )
+        slots = slots_module.expand_slots(rules, exceptions, [], day_start, day_end)
+        matching = next((s for s in slots if s.start_at == occ_start), None)
+        if matching is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Occurrence {i + 1} ({occ_start.isoformat()}) is outside working hours",
+            )
+        await _check_booking_conflicts(
+            session,
+            clinician_id=body.clinician_id,
+            patient_id=body.patient_id,
+            start_at=occ_start,
+            end_at=matching.end_at,
+        )
+        occurrences.append((occ_start, matching.end_at))
+
+    series = AppointmentSeries(
+        id=str(uuid4()),
+        clinician_id=body.clinician_id,
+        patient_id=body.patient_id,
+        frequency=body.frequency,
+        occurrence_count=body.occurrence_count,
+        created_by_user_id=user.id,
+    )
+    session.add(series)
+    appointment_ids: List[str] = []
+    for occ_start, occ_end in occurrences:
+        appt = Appointment(
+            id=str(uuid4()),
+            clinician_id=body.clinician_id,
+            patient_id=body.patient_id,
+            start_at=occ_start,
+            end_at=occ_end,
+            mode=body.mode,
+            reason=body.reason,
+            created_by_user_id=user.id,
+            series_id=series.id,
+        )
+        session.add(appt)
+        appointment_ids.append(appt.id)
+
+    try:
+        await session.commit()
+    except IntegrityError:
+        # Same last-resort backstop as book_appointment — a race across
+        # any single occurrence rolls back the entire series.
+        await session.rollback()
+        raise HTTPException(
+            status_code=409, detail="One of these occurrences was just booked by someone else"
+        )
+    return _series_out(series, appointment_ids)
+
+
+@router.delete("/series/{series_id}", status_code=204)
+async def cancel_series(
+    series_id: str,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    """Cancels the series and every future (not past) occurrence — a
+    session that already happened stays on the record."""
+    series = await session.get(AppointmentSeries, series_id)
+    if series is None:
+        raise HTTPException(status_code=404, detail="Series not found")
+    owns = (user.role == "clinician" and series.clinician_id == user.id) or (
+        user.role == "patient" and series.patient_id == user.patient_id
+    )
+    if not owns:
+        raise HTTPException(status_code=404, detail="Series not found")
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
+    series.status = "cancelled"
+    future_occurrences = (
+        await session.scalars(
+            select(Appointment).where(
+                Appointment.series_id == series_id,
+                Appointment.status == "booked",
+                Appointment.start_at >= now,
+            )
+        )
+    ).all()
+    for appt in future_occurrences:
+        appt.status = "cancelled"
+        appt.cancelled_at = now
+        appt.cancellation_reason = "Recurring series cancelled"
+    await session.commit()
+
+
+# ---------------------------------------------------------------------------
+# Waitlist
+# ---------------------------------------------------------------------------
+
+
+def _waitlist_out(entry: AppointmentWaitlist) -> Dict[str, Any]:
+    return {
+        "id": entry.id,
+        "clinician_id": entry.clinician_id,
+        "patient_id": entry.patient_id,
+        "window_start": entry.window_start.isoformat(),
+        "window_end": entry.window_end.isoformat(),
+        "created_at": entry.created_at.isoformat(),
+    }
+
+
+@router.post("/waitlist", status_code=201)
+async def join_waitlist(
+    body: WaitlistCreate,
+    patient: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    if patient.role != "patient":
+        raise HTTPException(status_code=403, detail="Only a patient may join a waitlist")
+    if body.window_start.tzinfo is None or body.window_end.tzinfo is None:
+        raise HTTPException(status_code=422, detail="window_start/window_end must be timezone-aware")
+    window_start = body.window_start.astimezone(timezone.utc).replace(tzinfo=None)
+    window_end = body.window_end.astimezone(timezone.utc).replace(tzinfo=None)
+    if window_start >= window_end:
+        raise HTTPException(status_code=422, detail="window_start must be before window_end")
+
+    clinician = await session.scalar(
+        select(User).where(User.id == body.clinician_id, User.role == "clinician")
+    )
+    if clinician is None:
+        raise HTTPException(status_code=404, detail="Clinician not found")
+
+    entry = AppointmentWaitlist(
+        id=str(uuid4()),
+        clinician_id=body.clinician_id,
+        patient_id=patient.patient_id,
+        window_start=window_start,
+        window_end=window_end,
+    )
+    session.add(entry)
+    await session.commit()
+    return _waitlist_out(entry)
+
+
+@router.get("/waitlist")
+async def list_my_waitlist(
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> List[Dict[str, Any]]:
+    if user.role == "clinician":
+        stmt = select(AppointmentWaitlist).where(AppointmentWaitlist.clinician_id == user.id)
+    else:
+        stmt = select(AppointmentWaitlist).where(AppointmentWaitlist.patient_id == user.patient_id)
+    entries = (await session.scalars(stmt.order_by(AppointmentWaitlist.created_at))).all()
+    return [_waitlist_out(e) for e in entries]
+
+
+@router.delete("/waitlist/{entry_id}", status_code=204)
+async def leave_waitlist(
+    entry_id: str,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    entry = await session.get(AppointmentWaitlist, entry_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Waitlist entry not found")
+    owns = (user.role == "clinician" and entry.clinician_id == user.id) or (
+        user.role == "patient" and entry.patient_id == user.patient_id
+    )
+    if not owns:
+        raise HTTPException(status_code=404, detail="Waitlist entry not found")
+    await session.delete(entry)
+    await session.commit()

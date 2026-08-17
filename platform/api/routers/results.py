@@ -24,7 +24,7 @@ from starlette.responses import Response
 from auth.deps import get_current_user, require_clinician
 from core.db import get_session
 from core.storage import get_blob_store
-from data.schemas import Patient, ResultAttachment, ResultShare, TimelineEvent, User
+from data.schemas import Notification, Patient, ResultAttachment, ResultShare, TimelineEvent, User
 
 router = APIRouter()
 
@@ -135,6 +135,18 @@ async def create_share(
     session.add(share)
     await session.commit()
     await session.refresh(share, attribute_names=["event", "attachments"])
+
+    patient_login = await session.scalar(select(User).where(User.patient_id == body.patient_id))
+    if patient_login is not None:
+        session.add(
+            Notification(
+                id=str(uuid4()),
+                user_id=patient_login.id,
+                type="result_shared",
+                message="A new result has been shared with you.",
+            )
+        )
+        await session.commit()
     return _share_out(share)
 
 
