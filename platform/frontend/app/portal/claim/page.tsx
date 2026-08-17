@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { api, ApiError } from "@/lib/api";
 import { homeFor, storeAuth } from "@/lib/auth";
 
-export default function LoginPage() {
+export default function ClaimInvitePage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [code, setCode] = useState("");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -20,18 +20,19 @@ export default function LoginPage() {
     setError("");
     setBusy(true);
     try {
-      const res =
-        mode === "login"
-          ? await api.login({ email, password })
-          : await api.register({ email, name, password });
+      const res = await api.claimInvite({ code: code.trim(), email, name, password });
       storeAuth(res.access_token, res.user);
       router.push(homeFor(res.user.role));
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Request failed";
-      if (message.includes("409")) setError("That email is already registered.");
-      else if (message.includes("401")) setError("Invalid email or password.");
-      else if (message.includes("422")) setError("Check your input (password ≥ 8 chars).");
-      else setError("Could not reach the server. Is the backend running?");
+      if (err instanceof ApiError && err.status === 400) {
+        setError("That claim code is invalid or has expired. Ask your clinician for a new one.");
+      } else if (err instanceof ApiError && err.status === 409) {
+        setError("That email is already registered.");
+      } else if (err instanceof ApiError && err.status === 422) {
+        setError("Check your input (password ≥ 8 characters).");
+      } else {
+        setError("Could not reach the server. Is the backend running?");
+      }
     } finally {
       setBusy(false);
     }
@@ -49,28 +50,33 @@ export default function LoginPage() {
 
         <form onSubmit={submit} className="card space-y-4">
           <div>
-            <h1 className="font-extrabold">
-              {mode === "login" ? "Welcome back" : "Create your account"}
-            </h1>
+            <h1 className="font-extrabold">Set up your portal account</h1>
             <p className="text-sm text-muted">
-              {mode === "login"
-                ? "Sign in to access your consultations"
-                : "Register as a clinician to get started"}
+              Enter the claim code your clinician gave you, along with your email and a password.
             </p>
           </div>
 
-          {mode === "register" && (
-            <div>
-              <label className="mb-1 block text-sm font-semibold">Full name</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                placeholder="Dr. Jane Smith"
-                className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
-              />
-            </div>
-          )}
+          <div>
+            <label className="mb-1 block text-sm font-semibold">Claim code</label>
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              required
+              placeholder="Paste the code from your clinician"
+              className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-semibold">Full name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="Jane Smith"
+              className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+            />
+          </div>
 
           <div>
             <label className="mb-1 block text-sm font-semibold">Email</label>
@@ -79,7 +85,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="you@hospital.org"
+              placeholder="you@example.org"
               className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
             />
           </div>
@@ -104,27 +110,13 @@ export default function LoginPage() {
             disabled={busy}
             className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white disabled:opacity-40"
           >
-            {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+            {busy ? "Please wait…" : "Set up my account"}
           </button>
 
           <p className="text-center text-sm text-muted">
-            {mode === "login" ? "No account yet?" : "Already registered?"}{" "}
-            <button
-              type="button"
-              onClick={() => setMode(mode === "login" ? "register" : "login")}
-              className="font-semibold text-primary"
-            >
-              {mode === "login" ? "Register as a clinician" : "Sign in"}
-            </button>
+            Already have an account? <Link href="/login" className="font-semibold text-primary">Sign in</Link>
           </p>
         </form>
-
-        <p className="mt-4 text-center text-sm text-muted">
-          Patient with a claim code from your clinician?{" "}
-          <Link href="/portal/claim" className="font-semibold text-primary">
-            Set up your portal account
-          </Link>
-        </p>
 
         <p className="mt-4 text-center text-xs text-muted">
           Research and education use only — not a medical device.

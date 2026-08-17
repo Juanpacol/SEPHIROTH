@@ -58,19 +58,30 @@ export default function Topbar() {
 
       <div className="flex items-center gap-4">
         <ThemeToggle />
-        <button className="rounded-full p-2 text-muted hover:bg-primary-soft" aria-label="Schedule">
-          <CalendarClock size={18} />
-        </button>
+        {user?.role !== "patient" && (
+          <button
+            onClick={() => router.push("/schedule")}
+            className="rounded-full p-2 text-muted hover:bg-primary-soft"
+            aria-label="Schedule"
+          >
+            <CalendarClock size={18} />
+          </button>
+        )}
         <button className="rounded-full p-2 text-muted hover:bg-primary-soft" aria-label="Notifications">
           <Bell size={18} />
         </button>
-        <Link href="/profile" className="flex items-center gap-2.5">
+        <Link
+          href={user?.role === "patient" ? "/portal" : "/profile"}
+          className="flex items-center gap-2.5"
+        >
           <div className="ai-ring flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-sm font-bold text-primary">
             {initials}
           </div>
           <div className="hidden text-sm leading-tight sm:block">
             <div className="font-semibold">{user?.name ?? "Not signed in"}</div>
-            <div className="text-xs text-muted">{user ? "Clinician" : ""}</div>
+            <div className="text-xs text-muted">
+              {user ? (user.role === "patient" ? "Patient" : "Clinician") : ""}
+            </div>
           </div>
         </Link>
         {user && (

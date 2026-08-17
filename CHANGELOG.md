@@ -5,6 +5,30 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase D — frontend: patient portal, schedule UI, role-aware shell (landing/icon/portal/scheduling plan)
+
+#### Added
+- `AuthUser`/`UserOut` gain `role`/`patient_id`; `lib/auth.ts::homeFor(role)` is the single mapping from role to post-login destination, used by the login page, the claim page, and the auth guard.
+- `components/auth-guard.tsx` — client-side role gate (no `middleware.ts`: the token lives in `localStorage`, invisible to Next middleware). Redirects a patient away from clinician routes and vice versa; also fixes the pre-existing "logged-out users briefly see chrome" flash by rendering `null` until the check completes.
+- `lib/routes.ts` — `isChromelessRoute`/`isClinicianRoute`/`isPatientRoute`, the one place route-to-role mapping lives.
+- New UI primitives (none existed before): `components/ui/sheet.tsx` (right-side drawer), `components/ui/toast.tsx` (mutation feedback, mounted in `Providers`).
+- `components/schedule/{availability-sheet,book-appointment-sheet}.tsx`, `components/results/share-result-sheet.tsx`.
+- New pages: `/schedule` (clinician week grid — availability bands via the working-hours sheet, appointment cards positioned by time, cancel-on-click), `/portal`, `/portal/appointments`, `/portal/results`, `/portal/results/[id]`, `/portal/claim` (public claim-code redemption).
+- `lib/api.ts`: full typed methods for scheduling (`availability`, `exceptions`, `slots`, `appointments`, `agendaToday`), results (`shareableEvents`, `createShare`, `uploadAttachment`, `listShares`, `getShare`, `downloadAttachment`), portal (`portalMe`, `portalTimeline`, `portalLabs`, `claimInvite`), and `createInvite`. Added the missing `del()` helper and an `ApiError` class carrying HTTP status (so a 403 renders as "not available for your account" instead of a generic failure).
+- `date-fns` — the only new frontend dependency, used for week navigation in `/schedule`.
+- Dashboard: a "Today's agenda" card (new `GET /api/scheduling/agenda/today` query) below the KPI row.
+- Patient detail page: an "Invite to portal" button (copies the claim code to the clipboard) and a "Share a result" action opening `ShareResultSheet`.
+
+#### Changed
+- `components/app-shell.tsx` generalizes its `pathname === "/login"` bail into `isChromelessRoute`, and wraps chrome in `AuthGuard`.
+- `components/sidebar.tsx` renders `CLINICIAN_NAV` or `PATIENT_NAV` depending on `useUser()?.role`; `components/topbar.tsx` wires the previously-dead `CalendarClock` button to `/schedule` (clinician only) and routes the avatar link to `/portal` for a patient.
+- `app/login/page.tsx`: post-login routing uses `homeFor(role)` instead of a hardcoded `/dashboard`; adds a "Have a claim code?" link to `/portal/claim`.
+- Attachment downloads use `getBlob` + `URL.createObjectURL` (same pattern as the existing PDF export), not a plain `<a href>` — the token lives in localStorage, so a direct browser navigation to an authenticated download route would 401.
+
+#### Verification
+- `npm run build`: clean, all 17 routes compile and type-check (including the two dynamic routes, `/patients/[id]` and `/portal/results/[id]`).
+- **UI not verified in a live browser** — no browser automation tool was available in this environment. Verified instead via a clean production build (full TypeScript check across every page) and a running dev server + backend, curling every new route for a non-error HTTP status. This is a real limitation of this verification pass, not a claim of full UI correctness — the golden-path click-through (register → book → invite → claim → share → download) has not been visually confirmed.
+
 ### Phase C — scheduling + exam-results backend (landing/icon/portal/scheduling plan)
 
 #### Added
