@@ -116,6 +116,60 @@ async def test_drug_interactions_requires_auth(client):
 
 
 @pytest.mark.asyncio
+async def test_upload_image_then_preview_round_trip(client):
+    async with client:
+        headers = await _auth_headers(client)
+        upload_res = await client.post(
+            "/api/medical/imaging/upload",
+            files={"file": ("scan.png", b"fake png bytes", "image/png")},
+            headers=headers,
+        )
+        assert upload_res.status_code == 200, upload_res.text
+        path = upload_res.json()["path"]
+        assert path.endswith(".png")
+
+        preview_res = await client.get("/api/medical/imaging/preview", params={"path": path}, headers=headers)
+        assert preview_res.status_code == 200
+        assert preview_res.content == b"fake png bytes"
+
+
+@pytest.mark.asyncio
+async def test_upload_image_rejects_unsupported_extension(client):
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.post(
+            "/api/medical/imaging/upload",
+            files={"file": ("scan.dcm", b"not really dicom", "application/dicom")},
+            headers=headers,
+        )
+        assert res.status_code == 415
+
+
+@pytest.mark.asyncio
+async def test_upload_image_rejects_oversized_file(client, monkeypatch):
+    from api.routers import medical as medical_module
+
+    monkeypatch.setattr(medical_module, "_MAX_UPLOAD_BYTES", 10)
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.post(
+            "/api/medical/imaging/upload",
+            files={"file": ("scan.png", b"this is definitely more than ten bytes", "image/png")},
+            headers=headers,
+        )
+        assert res.status_code == 413
+
+
+@pytest.mark.asyncio
+async def test_upload_image_requires_auth(client):
+    async with client:
+        res = await client.post(
+            "/api/medical/imaging/upload", files={"file": ("scan.png", b"bytes", "image/png")}
+        )
+        assert res.status_code == 401
+
+
+@pytest.mark.asyncio
 async def test_preview_image_rejects_non_image_extension(client):
     async with client:
         headers = await _auth_headers(client)

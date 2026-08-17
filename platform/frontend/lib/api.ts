@@ -326,6 +326,11 @@ export const api = {
     post<DescribeImageResponse>("/api/medical/imaging/describe", body),
   imagePreviewUrl: (path: string) =>
     `/api/medical/imaging/preview?path=${encodeURIComponent(path)}`,
+  uploadImage: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return postForm<{ path: string }>("/api/medical/imaging/upload", form);
+  },
   uploadNote: (patientId: string, file: File, noteDate?: string) => {
     const form = new FormData();
     form.append("file", file);
