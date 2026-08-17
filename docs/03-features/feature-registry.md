@@ -46,8 +46,8 @@ what runs today is metadata inspection plus the vision model.
 | F-029 | Dynamic LLM planner | 📋 | `sephiroth/runtime/planner.py` | 📋 | — | 📋 (deferred, SPEC-003 NG-1) |
 | F-030 | Capability-based router | ⚠️ | `sephiroth/runtime/router.py` | `test_agent_registry.py` | — | SPEC-003 §4 NG-1 |
 | F-031 | Executor (fan-out/merge/coordinate, LangGraph removed) | ✅ | `sephiroth/runtime/executor.py` | `test_runtime_executor.py`, `test_sse_contract.py` | — | SPEC-003 |
-| F-032 | Agent lifecycle state machine | 📋 | `sephiroth/runtime/` | 📋 | — | 📋 SPEC-003, D2 |
-| F-033 | Recovery engine (retry/fallback/replan/abstain) | 📋 | `sephiroth/runtime/recovery.py` | 📋 | — | 📋 SPEC-003, ADR-007 |
+| F-032 | Agent lifecycle state machine | ✅ | `src/sephiroth/runtime/executor.py` | ✅ | `tests/test_runtime_executor.py` | ✅ SPEC-007, D2 |
+| F-033 | Recovery engine (retry/abstain; fallback/replan NG) | ✅ | `src/sephiroth/runtime/recovery.py` | ✅ | `tests/test_runtime_recovery.py`, `tests/test_runtime_executor.py` | ✅ SPEC-007, ADR-007 |
 | F-034 | Typed `RunContext` + per-agent views | ✅ | `sephiroth/context/views.py` | `test_context_views.py` | — | SPEC-005, ADR-011 |
 | F-035 | Reranking, memory, token budgeting | ✅ | `sephiroth/context/{rerank,memory,budget}.py` | `test_context_{rerank,memory,budget}.py` | — | SPEC-005, ADR-011 (memory scoped to per-patient recall, not generic session — NG-1) |
 | F-036 | Claim extraction | ✅ | `sephiroth/verification/claims.py` | `test_verification_claims.py` | — | SPEC-004, ADR-006 |

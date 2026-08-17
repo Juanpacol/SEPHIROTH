@@ -5,6 +5,30 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 5, Part 2 — Recovery engine + lifecycle state machine
+
+#### Added
+- **`src/sephiroth/runtime/recovery.py`** (`docs/specs/SPEC-007-recovery.md`, executes `ADR-007`): `classify(exc, component, step_id, attempt) -> Failure` maps an exception to a `FailureCategory` (`MODEL` for `LLMUnavailableError`, `AGENT` for anything else); `decide_recovery(failure, attempt, max_attempts) -> RecoveryActionType` returns `RETRY` for a transient category (`MODEL`/`TOOL`) with attempts remaining, `ABSTAIN` otherwise.
+- `src/sephiroth/runtime/executor.py::_run_specialist` now wraps each specialist's turn in a bounded retry loop (`MAX_AGENT_ATTEMPTS=2`, matching `PlanStep.max_attempts`'s default). An exhausted specialist no longer raises past itself — it returns an `AgentResult` with empty content, and the consultation completes using the other specialists' output plus the coordinator's synthesis.
+- `RunState.lifecycle`/`.failures`/`.retries`/`.recovery_actions` (typed contracts since Phase 0, never populated) are filled for the first time: each capability moves through `SELECTED → EXECUTING → (COMPLETED | RECOVERING → COMPLETED | FAILED)`.
+- Tests: `tests/test_runtime_recovery.py` (unit table for `classify`/`decide_recovery`, no LLM); `tests/test_runtime_executor.py::test_transient_model_failure_retries_then_succeeds` (new); `test_one_specialist_raising_does_not_abort_the_others` rewritten to assert the new behaviour instead of clean propagation.
+
+#### Changed
+- **Behaviour change, deliberate**: before this cycle, an unhandled exception from any specialist aborted the entire consultation — this was documented in the old test's own docstring as a tracked gap, not a guarantee. It's now closed: a non-transient (`AGENT`-category) failure abstains immediately; a transient (`MODEL`-category) failure gets one retry before abstaining.
+
+#### Known deviations (`SPEC-007` §4)
+- **`FALLBACK` and `REPLAN` are not implemented** (NG-1, NG-2) — one agent per capability today (no alternative to fall back to); no dynamic planner yet to replan against (`SPEC-008`, still pending).
+- **The coordinator's own call is not covered by this recovery loop** (NG-3) — it's the final synthesis step with nothing to substitute for it; a coordinator failure still propagates unchanged, exactly as before this spec.
+- **`TOOL` category has no real trigger yet** (NG-4) — included in `decide_recovery`'s transient set for symmetry with `MODEL`, but `ToolRuntime.execute` already degrades a timeout to an error result rather than raising, so this branch is currently unreachable dead code.
+
+#### Verification
+- `pytest --cov`: 519 passed, 1 skipped, 93.17% total coverage; `recovery.py` and `executor.py` both 100%.
+- `intelligence.evaluation.run --mode ci`: PASS, all 6 metrics unchanged from Part 1.
+- `docs_check.py`: OK, all AC-007-0{1..5} anchors resolved.
+- `export_contracts.py --check`: OK, 24 schemas — no contract shape change (reuses existing `Failure`/`RecoveryAction`/enums).
+- `bandit`: 0 High severity/confidence findings.
+- Docker build + smoke test verified from a clean `git worktree`.
+
 ### Phase 5, Part 1 — Telemetry (trace-based observability)
 
 #### Added

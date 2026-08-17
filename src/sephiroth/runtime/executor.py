@@ -33,7 +33,17 @@ from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
 
 from core.config import settings
 from sephiroth.context import context_for_agent, truncate
-from sephiroth.contracts import AgentCapability, AgentResult, RunContext, RunState, SpanKind, ToolCall
+from sephiroth.contracts import (
+    AgentCapability,
+    AgentResult,
+    LifecycleState,
+    RecoveryAction,
+    RecoveryActionType,
+    RunContext,
+    RunState,
+    SpanKind,
+    ToolCall,
+)
 from sephiroth.models import ModelProvider
 from sephiroth.safety import check_input
 from sephiroth.safety import decide as decide_abstention
@@ -43,6 +53,7 @@ from sephiroth.verification import compute_confidence, extract_claims, harvest_e
 
 from .agent import Agent
 from .planner import route_specialists
+from .recovery import classify, decide_recovery
 from .registry import COORDINATOR
 from .router import resolve
 
@@ -50,6 +61,10 @@ from .router import resolve
 # functions below — they still live under intelligence/agents/ (shimmed in a
 # later phase, not this one) and importing them at module scope would create
 # the same cross-package ordering hazard Phase 2 hit with intelligence.mcp.
+
+#: Matches PlanStep.max_attempts' default (src/sephiroth/contracts/plan.py) —
+#: a specialist gets one retry before the run continues without its section.
+MAX_AGENT_ATTEMPTS = 2
 
 
 def _initial_context(context: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -86,17 +101,47 @@ def to_tool_calls(capability_id: str, raw_calls: List[Dict[str, Any]]) -> List[T
 async def _run_specialist(
     capability: AgentCapability, client: ModelProvider, query: str, run_context: RunContext, state: RunState
 ) -> Tuple[AgentCapability, AgentResult, List[ToolCall]]:
+    """Runs one specialist, classifying and retrying a transient failure up
+    to `MAX_AGENT_ATTEMPTS` (SPEC-007, executes `ADR-007`). A specialist
+    that exhausts its retries never raises past this function — it
+    contributes an empty section rather than aborting the rest of the
+    consultation; the failure and the recovery attempt are both recorded on
+    `state` for later inspection (recovery success rate, etc.)."""
     agent = Agent(capability, client)
-    with traced_span(state, SpanKind.AGENT, capability.id, agent=capability.id):
-        result = await agent.run(query, context_for_agent(capability, run_context))
-    tool_calls = to_tool_calls(capability.id, result.tool_calls)
-    agent_result = AgentResult(
-        agent=capability.id,
-        content=result.content,
-        tool_call_ids=[tc.id for tc in tool_calls],
-        rounds=result.rounds,
-    )
-    return capability, agent_result, tool_calls
+    state.lifecycle[capability.id] = LifecycleState.EXECUTING
+
+    attempt = 1
+    while True:
+        try:
+            with traced_span(state, SpanKind.AGENT, capability.id, agent=capability.id):
+                result = await agent.run(query, context_for_agent(capability, run_context))
+        except Exception as exc:
+            failure = classify(exc, component=capability.id, attempt=attempt)
+            state.failures.append(failure)
+            action = decide_recovery(failure, attempt, MAX_AGENT_ATTEMPTS)
+
+            if action is RecoveryActionType.RETRY:
+                state.retries[capability.id] = state.retries.get(capability.id, 0) + 1
+                state.recovery_actions.append(RecoveryAction(failure_id=failure.id, action=action))
+                state.lifecycle[capability.id] = LifecycleState.RECOVERING
+                attempt += 1
+                continue
+
+            state.recovery_actions.append(
+                RecoveryAction(failure_id=failure.id, action=action, succeeded=False)
+            )
+            state.lifecycle[capability.id] = LifecycleState.FAILED
+            return capability, AgentResult(agent=capability.id), []
+
+        state.lifecycle[capability.id] = LifecycleState.COMPLETED
+        tool_calls = to_tool_calls(capability.id, result.tool_calls)
+        agent_result = AgentResult(
+            agent=capability.id,
+            content=result.content,
+            tool_call_ids=[tc.id for tc in tool_calls],
+            rounds=result.rounds,
+        )
+        return capability, agent_result, tool_calls
 
 
 async def _verify_and_decide(
@@ -150,6 +195,8 @@ async def run_consultation(
     state = RunState(trace_id=uuid.uuid4().hex, request=query, patient_id=patient_id, patient_context=context)
     node_names = route_specialists(context)
     capabilities = resolve(node_names)
+    for cap in capabilities:
+        state.lifecycle[cap.id] = LifecycleState.SELECTED
 
     results = await asyncio.gather(
         *(_run_specialist(cap, client, query, run_context, state) for cap in capabilities)
@@ -222,6 +269,8 @@ async def stream_consultation(
     state = RunState(trace_id=uuid.uuid4().hex, request=query, patient_id=patient_id, patient_context=context)
     node_names = route_specialists(context)
     capabilities = resolve(node_names)
+    for cap in capabilities:
+        state.lifecycle[cap.id] = LifecycleState.SELECTED
 
     yield {"event": "routing", "agents": node_names}
 

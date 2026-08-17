@@ -1,13 +1,21 @@
 # ADR-007 — Explicit, classified recovery
 
-**Status:** Accepted · **Date:** 2026-08-16 · **Phase:** decided 0, not yet executed
+**Status:** Accepted · **Date:** 2026-08-16 · **Phase:** decided 0, executed 5 (SPEC-007)
 
 > **Correction (2026-08-19):** this line originally read "executed 3." It
 > wasn't — Phase 3 (Agent Runtime) relocated the executor but never built
 > `src/sephiroth/runtime/recovery.py`; an agent raising still propagates
 > uncaught today, exactly as it did before the migration. Tracked as an
 > open gap in `docs/project-state.yaml` (`Recovery engine`), not assumed
-> done. See `docs/03-features/feature-registry.md` F-032/F-033.
+> done. See `docs/03-features/feature-registry.md` F-032/F-033. Preserved
+> here for traceability even though the gap below is now closed.
+
+> **Update (2026-08-19):** `src/sephiroth/runtime/recovery.py` now exists
+> (`SPEC-007`). Only `RETRY`/`ABSTAIN` are implemented — `FALLBACK`
+> (no alternate agent per capability) and `REPLAN` (no dynamic planner
+> yet) are explicit non-goals of `SPEC-007`, revisited once `SPEC-008`
+> (dynamic planner) lands. `RunState.lifecycle` is populated for the
+> first time. See `docs/03-features/feature-registry.md` F-032/F-033.
 
 ## Context
 

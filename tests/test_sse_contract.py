@@ -27,6 +27,10 @@ Phase 5 (SPEC-006) added one more additive key, `trace` (a persisted,
 replayable `ExecutionTrace` — see docs/specs/SPEC-006-telemetry.md) — same
 additive-only pattern, `test_final_event_shape` extended again. Verifies
 AC-006-07.
+
+Phase 5 (SPEC-007) added the recovery engine (specialist retry/abstain on
+failure) — this file passes unmodified since none of the five frozen
+events changed shape. Verifies AC-007-05 (docs/specs/SPEC-007-recovery.md).
 """
 
 import json

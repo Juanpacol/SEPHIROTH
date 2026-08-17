@@ -48,11 +48,20 @@ async def test_all_four_specialists_run_concurrently_not_sequentially():
     assert elapsed < 0.05 * 3, f"took {elapsed:.3f}s — looks sequential, not concurrent"
 
 
-async def test_one_specialist_raising_does_not_abort_the_others():
-    """Matches the pre-Phase-3 behaviour exactly: an unhandled exception during
-    fan-out propagates (no recovery yet — that's a tracked future gap, not
-    silently introduced here), but this pins that it's a clean propagation,
-    not a partial/corrupted result."""
+async def test_one_specialist_raising_does_not_abort_the_others(monkeypatch):
+    """SPEC-007 (executes ADR-007) changed this behaviour on purpose: a
+    specialist that raises a plain exception is classified AGENT-category
+    (not transient, per sephiroth.runtime.recovery.decide_recovery — only
+    MODEL/TOOL categories retry), so it abstains immediately and
+    contributes an empty section — the consultation completes with the
+    other specialists' output rather than aborting entirely. Was
+    previously a clean-propagation test; the pre-Phase-5 behaviour (an
+    unhandled exception aborts everything) is gone by design, not a
+    regression.
+
+    Verifies AC-007-03 (docs/specs/SPEC-007-recovery.md)."""
+    import sephiroth.runtime.executor as executor_module
+    from sephiroth.contracts import FailureCategory, LifecycleState, RecoveryActionType
 
     class FailingClient(FakeLLMClient):
         async def chat(self, messages, system_prompt=None, **kwargs):
@@ -61,9 +70,69 @@ async def test_one_specialist_raising_does_not_abort_the_others():
             return await super().chat(messages, system_prompt=system_prompt, **kwargs)
 
     client = FailingClient(default_script=[("answer", "ok")])
+    state_holder = {}
+    original_run_specialist = executor_module._run_specialist
 
-    with pytest.raises(RuntimeError, match="simulated agent failure"):
-        await run_consultation(client, "test query", context={"image_path": "/x.png"})
+    async def _capture_state(capability, client, query, run_context, state):
+        state_holder["state"] = state
+        return await original_run_specialist(capability, client, query, run_context, state)
+
+    monkeypatch.setattr(executor_module, "_run_specialist", _capture_state)
+    result = await run_consultation(client, "test query", context={"image_path": "/x.png"})
+
+    assert "radiology" in result["agent_outputs"]
+    assert result["agent_outputs"]["radiology"] == ""
+    assert result["final_answer"]  # the coordinator still produced an answer
+
+    state = state_holder["state"]
+    assert state.lifecycle["radiology"] == LifecycleState.FAILED
+    assert len(state.failures) == 1
+    assert state.failures[0].category == FailureCategory.AGENT
+    assert [a.action for a in state.recovery_actions] == [RecoveryActionType.ABSTAIN]
+    assert state.recovery_actions[0].succeeded is False
+
+
+async def test_transient_model_failure_retries_then_succeeds(monkeypatch):
+    """A MODEL-category failure (LLMUnavailableError) is transient per
+    sephiroth.runtime.recovery.decide_recovery — retried once, then
+    succeeds on the second attempt within MAX_AGENT_ATTEMPTS=2.
+
+    Verifies AC-007-04 (docs/specs/SPEC-007-recovery.md)."""
+    import sephiroth.runtime.executor as executor_module
+    from sephiroth.contracts import FailureCategory, LifecycleState, RecoveryActionType
+    from sephiroth.models import LLMUnavailableError
+
+    attempts = {"radiology": 0}
+
+    class FlakyClient(FakeLLMClient):
+        async def chat(self, messages, system_prompt=None, **kwargs):
+            if system_prompt and "radiology specialist" in system_prompt:
+                attempts["radiology"] += 1
+                if attempts["radiology"] == 1:
+                    raise LLMUnavailableError("rate limited")
+            return await super().chat(messages, system_prompt=system_prompt, **kwargs)
+
+    client = FlakyClient(default_script=[("answer", "ok")])
+    state_holder = {}
+    original_run_specialist = executor_module._run_specialist
+
+    async def _capture_state(capability, client, query, run_context, state):
+        state_holder["state"] = state
+        return await original_run_specialist(capability, client, query, run_context, state)
+
+    monkeypatch.setattr(executor_module, "_run_specialist", _capture_state)
+    result = await run_consultation(client, "test query", context={"image_path": "/x.png"})
+
+    assert result["agent_outputs"]["radiology"] == "ok"
+    assert attempts["radiology"] == 2
+
+    state = state_holder["state"]
+    assert state.lifecycle["radiology"] == LifecycleState.COMPLETED
+    assert len(state.failures) == 1
+    assert state.failures[0].category == FailureCategory.MODEL
+    assert [a.action for a in state.recovery_actions] == [RecoveryActionType.RETRY]
+    assert state.recovery_actions[0].succeeded is None
+    assert state.retries["radiology"] == 1
 
 
 async def test_stream_yields_agent_completed_progressively_not_in_a_burst():
