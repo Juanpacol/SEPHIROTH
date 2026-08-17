@@ -60,9 +60,22 @@ export function redirectToLogin(): void {
   }
 }
 
-/** Current logged-in user (from localStorage; null while loading or logged out). */
+/** Current logged-in user (from localStorage; null while logged out).
+ *
+ * Reads localStorage synchronously via a lazy `useState` initializer
+ * instead of starting at `null` and hydrating in a `useEffect` — every
+ * consumer of this hook (`Sidebar`, `Topbar`, ...) only ever mounts
+ * client-side, after `AuthGuard` has already resolved the same
+ * `getStoredUser()` call in its own effect (it renders `null` until
+ * then), so there is no SSR/hydration-mismatch risk here. The previous
+ * null-then-hydrate version meant every one of those consumers
+ * independently re-derived its role-dependent UI (nav items, home link)
+ * one render late — for a fraction of a second, `Sidebar`/`Topbar` would
+ * render as if logged out (falling back to the clinician-shaped
+ * defaults), which read as "briefly flashes the dashboard" when landing
+ * on `/portal` as a patient. */
 export function useUser(): AuthUser | null {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
   useEffect(() => {
     setUser(getStoredUser());
   }, []);
