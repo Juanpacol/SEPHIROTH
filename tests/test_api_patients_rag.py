@@ -1,17 +1,27 @@
 """API tests for /api/patients, /api/rag, and /api/dashboard — read paths
-backed by the isolated SQLite `db_session` fixture."""
+backed by the isolated SQLite `db_session` fixture.
+
+`/api/patients*` and `/api/dashboard/stats` used to have no auth at
+all — anyone could list every patient's PHI. Phase A of the patient-portal
+plan closes that with a router-level `dependencies=[Depends(get_current_user)]`
+(mirrored here, since this file builds its own `FastAPI()` app rather than
+importing `api.main`'s) — see `test_unauthenticated_*` below, the
+regression lock for that fix."""
 
 import pytest
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from api.routers import dashboard as dashboard_router_module
 from api.routers import patients as patients_router_module
 from api.routers import rag as rag_router_module
 from auth import router as auth_router_module
+from auth.deps import get_current_user
 from core.db import get_session
 from data.schemas import Patient
 from tests.conftest import FakeLLMClient
+
+_authenticated = [Depends(get_current_user)]
 
 NOTE_EVENTS_PAYLOAD = {
     "events": [{"date": "2026-01-01", "type": "diagnosis", "title": "Test diagnosis", "detail": "detail"}]
@@ -26,9 +36,9 @@ def app(db_session, monkeypatch):
 
     app = FastAPI()
     app.include_router(auth_router_module.router, prefix="/api/auth")
-    app.include_router(patients_router_module.router, prefix="/api/patients")
+    app.include_router(patients_router_module.router, prefix="/api/patients", dependencies=_authenticated)
     app.include_router(rag_router_module.router, prefix="/api/rag")
-    app.include_router(dashboard_router_module.router, prefix="/api/dashboard")
+    app.include_router(dashboard_router_module.router, prefix="/api/dashboard", dependencies=_authenticated)
 
     async def override_session():
         yield db_session
@@ -40,6 +50,14 @@ def app(db_session, monkeypatch):
 @pytest.fixture
 def client(app):
     return AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
+
+
+CREDS = {"email": "clinician@example.org", "name": "Dr. Test", "password": "password123"}
+
+
+async def _auth_headers(client) -> dict:
+    res = await client.post("/api/auth/register", json=CREDS)
+    return {"Authorization": f"Bearer {res.json()['access_token']}"}
 
 
 @pytest.fixture
@@ -63,7 +81,8 @@ async def seeded_patient(db_session):
 @pytest.mark.asyncio
 async def test_list_patients_returns_summary(client, seeded_patient):
     async with client:
-        res = await client.get("/api/patients")
+        headers = await _auth_headers(client)
+        res = await client.get("/api/patients", headers=headers)
         assert res.status_code == 200
         body = res.json()
         assert len(body) == 1
@@ -74,7 +93,8 @@ async def test_list_patients_returns_summary(client, seeded_patient):
 @pytest.mark.asyncio
 async def test_get_patient_detail_includes_full_fields(client, seeded_patient):
     async with client:
-        res = await client.get("/api/patients/P001")
+        headers = await _auth_headers(client)
+        res = await client.get("/api/patients/P001", headers=headers)
         assert res.status_code == 200
         body = res.json()
         assert body["medications"] == ["warfarin", "aspirin"]
@@ -85,7 +105,8 @@ async def test_get_patient_detail_includes_full_fields(client, seeded_patient):
 @pytest.mark.asyncio
 async def test_get_patient_risk_flags_reflect_labs_and_drug_interactions(client, seeded_patient):
     async with client:
-        res = await client.get("/api/patients/P001")
+        headers = await _auth_headers(client)
+        res = await client.get("/api/patients/P001", headers=headers)
         body = res.json()
         labels = {f["label"] for f in body["risk_flags"]}
         assert "Hyperkalemia" in labels
@@ -96,8 +117,49 @@ async def test_get_patient_risk_flags_reflect_labs_and_drug_interactions(client,
 @pytest.mark.asyncio
 async def test_get_unknown_patient_404(client):
     async with client:
-        res = await client.get("/api/patients/DOES-NOT-EXIST")
+        headers = await _auth_headers(client)
+        res = await client.get("/api/patients/DOES-NOT-EXIST", headers=headers)
         assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_unauthenticated_cannot_list_patients(client, seeded_patient):
+    """Regression lock: `/api/patients` used to have no auth at all — any
+    unauthenticated caller could list every patient's PHI."""
+    async with client:
+        res = await client.get("/api/patients")
+        assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_unauthenticated_cannot_create_patient(client):
+    async with client:
+        res = await client.post("/api/patients", json={"name": "X", "age": 30, "sex": "M"})
+        assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_unauthenticated_cannot_get_patient_detail(client, seeded_patient):
+    async with client:
+        res = await client.get("/api/patients/P001")
+        assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_unauthenticated_cannot_get_patient_timeline(client, seeded_patient):
+    async with client:
+        res = await client.get("/api/patients/P001/timeline")
+        assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_unauthenticated_cannot_read_dashboard_stats(client):
+    """Regression lock: `/api/dashboard/stats` used to have no auth at
+    all — any unauthenticated caller could read aggregate PHI (patient
+    counts, high-risk counts derived from every patient's labs/meds)."""
+    async with client:
+        res = await client.get("/api/dashboard/stats")
+        assert res.status_code == 401
 
 
 @pytest.mark.asyncio
@@ -133,7 +195,8 @@ async def test_rag_search_requires_auth(client):
 @pytest.mark.asyncio
 async def test_dashboard_stats_shape(client, seeded_patient):
     async with client:
-        res = await client.get("/api/dashboard/stats")
+        headers = await _auth_headers(client)
+        res = await client.get("/api/dashboard/stats", headers=headers)
         assert res.status_code == 200
         body = res.json()
         assert "kpis" in body
