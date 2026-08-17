@@ -389,11 +389,13 @@ class ResultShare(Base):
 
 
 class ResultAttachment(Base):
-    """One file attached to a `ResultShare`. Bytes live in Postgres
-    (`LargeBinary`, `deferred=True` so a list query never drags them into
-    memory) rather than the filesystem (Render's free tier has no
-    persistent disk — a redeploy would destroy uploaded files) or S3 (no
-    new infra for an MVP shipping zero files today). Capped at 10MB/file,
+    """One file attached to a `ResultShare`. Bytes live behind
+    `platform/core/storage.py::BlobStore` — Postgres `LargeBinary` by
+    default (`deferred=True` so a list query never drags them into
+    memory), or S3 when `settings.storage_backend == "s3"`. `content` is
+    nullable because the S3 backend never populates it — the bytes live
+    in the bucket, keyed by this row's `id`, and `content` staying NULL
+    for those rows is the signal of where to look. Capped at 10MB/file,
     3 files/share, enforced at the API layer."""
 
     __tablename__ = "result_attachments"
@@ -406,7 +408,7 @@ class ResultAttachment(Base):
     content_type: Mapped[str] = mapped_column(String(100))
     size_bytes: Mapped[int] = mapped_column(Integer)
     sha256: Mapped[str] = mapped_column(String(64), index=True)
-    content: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
+    content: Mapped[Optional[bytes]] = mapped_column(LargeBinary, deferred=True, nullable=True)
     uploaded_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

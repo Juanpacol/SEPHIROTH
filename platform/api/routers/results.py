@@ -210,10 +210,11 @@ async def upload_attachment(
         content_type=file.content_type,
         size_bytes=total,
         sha256=hashlib.sha256(data).hexdigest(),
-        content=data,
         uploaded_by_user_id=clinician.id,
     )
     session.add(attachment)
+    await session.flush()  # attachment.id must exist before blob_store keys on it
+    await get_blob_store().put(session, attachment.id, data)
     await session.commit()
     return _attachment_out(attachment)
 

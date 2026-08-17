@@ -127,6 +127,15 @@ class Settings(BaseSettings):
     # leaving this off keeps eval deterministic.
     enable_dynamic_planner: bool = False
 
+    # Attachment byte storage (platform/core/storage.py). "postgres"
+    # (default) keeps today's behavior unchanged; "s3" requires
+    # s3_bucket plus standard AWS credentials (env vars or IAM role —
+    # never hardcoded here). Switching backends does not migrate
+    # already-stored bytes.
+    storage_backend: Literal["postgres", "s3"] = "postgres"
+    s3_bucket: Optional[str] = None
+    s3_region: str = "us-east-1"
+
     enable_image_analysis: bool = True
     enable_vision_analysis: bool = True
     enable_rag: bool = True
