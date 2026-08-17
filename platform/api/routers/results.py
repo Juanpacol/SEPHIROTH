@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from starlette.responses import Response
 
+from api.audit import log_phi_access
 from auth.deps import get_current_user, require_clinician
 from core.db import get_session
 from core.storage import get_blob_store
@@ -135,6 +136,7 @@ async def create_share(
     session.add(share)
     await session.commit()
     await session.refresh(share, attribute_names=["event", "attachments"])
+    await log_phi_access(session, clinician, share.patient_id, "/api/results/shares", "POST")
     return _share_out(share)
 
 
@@ -246,6 +248,7 @@ async def get_share(
 
         share.viewed_at = datetime.now(timezone.utc).replace(tzinfo=None)
         await session.commit()
+    await log_phi_access(session, user, share.patient_id, "/api/results/shares/{share_id}", "GET")
     return _share_out(share)
 
 
@@ -267,6 +270,9 @@ async def download_attachment(
     data = await get_blob_store().get(session, attachment_id)
     if data is None:
         raise HTTPException(status_code=404, detail="Attachment not found")
+    await log_phi_access(
+        session, user, share.patient_id, "/api/results/attachments/{attachment_id}/download", "GET"
+    )
     return Response(
         content=data,
         media_type=attachment.content_type,

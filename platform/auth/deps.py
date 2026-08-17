@@ -29,7 +29,7 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     user = await session.get(User, user_id)
-    if user is None:
+    if user is None or not user.is_active:
         raise HTTPException(status_code=401, detail="User no longer exists")
     return user
 
@@ -73,7 +73,7 @@ async def require_clinician_for_registration(
     if user_id is None:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     user = await session.get(User, user_id)
-    if user is None:
+    if user is None or not user.is_active:
         raise HTTPException(status_code=401, detail="User no longer exists")
     if user.role != ROLE_CLINICIAN:
         raise HTTPException(status_code=403, detail="Clinician access required")

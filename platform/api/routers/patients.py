@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from api.audit import log_phi_access
 from auth.deps import get_current_user
 from auth.security import hash_password
 from core.db import get_session
@@ -104,8 +105,14 @@ async def _get_patient(session: AsyncSession, patient_id: str) -> Patient:
 
 
 @router.get("/{patient_id}")
-async def get_patient(patient_id: str, session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
-    return _full(await _get_patient(session, patient_id))
+async def get_patient(
+    patient_id: str,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    patient = await _get_patient(session, patient_id)
+    await log_phi_access(session, user, patient_id, "/api/patients/{patient_id}", "GET")
+    return _full(patient)
 
 
 class NoteCreate(BaseModel):
@@ -227,9 +234,11 @@ async def upload_clinical_note(
 async def get_timeline(
     patient_id: str,
     event_type: Optional[str] = None,
+    user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
     patient = await _get_patient(session, patient_id)
+    await log_phi_access(session, user, patient_id, "/api/patients/{patient_id}/timeline", "GET")
     events = patient.timeline
     if event_type:
         events = [e for e in events if e.type == event_type]
