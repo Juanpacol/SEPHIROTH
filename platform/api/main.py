@@ -15,7 +15,18 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import agents, audit, dashboard, medical, patients, portal, rag, results, scheduling
+from api.routers import (
+    agents,
+    audit,
+    dashboard,
+    medical,
+    notifications,
+    patients,
+    portal,
+    rag,
+    results,
+    scheduling,
+)
 from auth import router as auth_router_module
 from auth.deps import require_clinician
 from core.config import settings
@@ -93,6 +104,10 @@ app.include_router(audit.router, prefix="/api/audit", tags=["audit"], dependenci
 app.include_router(portal.router, prefix="/api/portal", tags=["portal"])
 app.include_router(scheduling.router, prefix="/api/scheduling", tags=["scheduling"])
 app.include_router(results.router, prefix="/api/results", tags=["results"])
+# Notifications: every route is scoped to the caller's own identity
+# (`get_current_user`), so it mixes roles per-route like the three above
+# rather than carrying a blanket clinician-only guard.
+app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
 
 
 @app.get("/health")

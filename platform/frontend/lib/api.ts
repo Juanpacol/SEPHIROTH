@@ -153,6 +153,16 @@ export interface Appointment {
   reason: string;
   notes?: string;
   cancellation_reason: string;
+  series_id?: string | null;
+}
+
+export interface AppNotification {
+  id: string;
+  type: "appointment_booked" | "result_shared" | "waitlist_match";
+  message: string;
+  related_appointment_id?: string | null;
+  read_at: string | null;
+  created_at: string;
 }
 
 export interface TodayAgenda {
@@ -401,4 +411,10 @@ export const api = {
   portalLabs: () => get<{ patient_id: string; lab_results: Record<string, string> }>("/api/portal/labs"),
   claimInvite: (body: { code: string; email: string; name: string; password: string }) =>
     post<AuthResponse>("/api/auth/portal/claim", body),
+
+  // --- Notifications ---------------------------------------------------------
+  listNotifications: () => get<AppNotification[]>("/api/notifications"),
+  unreadNotificationCount: () => get<{ count: number }>("/api/notifications/unread-count"),
+  markNotificationRead: (notificationId: string) =>
+    postNoContent(`/api/notifications/${notificationId}/read`, {}),
 };

@@ -282,9 +282,83 @@ class Appointment(Base):
     created_by_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
     cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     cancellation_reason: Mapped[str] = mapped_column(String(200), default="")
+    # Set only for an occurrence created by POST /scheduling/series, which
+    # expands every occurrence eagerly at creation time (no background job
+    # exists to expand a series lazily — see AppointmentSeries).
+    series_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("appointment_series.id"), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     patient: Mapped["Patient"] = relationship()
+
+
+class AppointmentSeries(Base):
+    """A recurring booking pattern (e.g. "every Tuesday for 8 weeks").
+    Deliberately not full RFC 5545 — just frequency/interval/count — and
+    deliberately expanded **eagerly**, all `count` `Appointment` rows
+    created up front in one transaction, rather than lazily by a
+    scheduler: no background-job infrastructure exists anywhere in this
+    deployment (single API container, no Celery/RQ/APScheduler), so a
+    lazy-expansion design would need one. `count` is capped at
+    `MAX_SERIES_COUNT` (see the router) to bound that eager insert."""
+
+    __tablename__ = "appointment_series"
+    __table_args__ = (CheckConstraint("occurrence_count > 0", name="ck_appointment_series_count_positive"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    clinician_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    frequency: Mapped[str] = mapped_column(String(10))  # "weekly" | "biweekly" | "monthly"
+    occurrence_count: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(
+        String(10), default="active", server_default="active"
+    )  # active|cancelled
+    created_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    occurrences: Mapped[List["Appointment"]] = relationship(order_by="Appointment.start_at")
+
+
+class AppointmentWaitlist(Base):
+    """A patient's request to be notified if a slot opens in a clinician's
+    fully-booked window. No auto-booking on a match: `cancel_appointment`
+    (see `platform/api/routers/scheduling.py`) synchronously checks for
+    the earliest waiting match and sends an in-app `Notification` — the
+    patient still has to book the freed slot themselves, which sidesteps
+    a silent double-commit race between "notify" and "book"."""
+
+    __tablename__ = "appointment_waitlist"
+    __table_args__ = (CheckConstraint("window_start < window_end", name="ck_waitlist_window_order"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    clinician_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    window_start: Mapped[datetime] = mapped_column(DateTime)
+    window_end: Mapped[datetime] = mapped_column(DateTime)
+    notified_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+
+
+class Notification(Base):
+    """An in-app notification — no email/SMS/push channel exists in this
+    codebase (no SMTP/Twilio dependency, no worker process to send from),
+    so this is the whole delivery mechanism for now. Created at three
+    hook points: a successful booking, a result share, and a waitlist
+    match. Read via `GET /api/notifications`, which wires the previously
+    dead bell icon in `components/topbar.tsx`."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    type: Mapped[str] = mapped_column(String(30))  # appointment_booked|result_shared|waitlist_match
+    message: Mapped[str] = mapped_column(String(300))
+    related_appointment_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("appointments.id"), nullable=True
+    )
+    read_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
 
 
 class ResultShare(Base):
@@ -411,6 +485,9 @@ __all__ = [
     "AvailabilityRule",
     "AvailabilityException",
     "Appointment",
+    "AppointmentSeries",
+    "AppointmentWaitlist",
+    "Notification",
     "ResultShare",
     "ResultAttachment",
     "Consultation",
