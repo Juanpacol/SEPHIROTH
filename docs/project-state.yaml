@@ -10,7 +10,7 @@
 
 schema_version: 1
 project: SEPHIROTH
-version: 0.9.0
+version: 1.0.0
 updated: 2026-08-19
 phase_current: 5
 
@@ -20,7 +20,7 @@ phases:
   "2": {name: "Tool Runtime", status: done}
   "3": {name: "Agent Runtime + DEBT-008 closure (LangGraph removed in the same phase)", status: done}
   "4": {name: "Context Engine (4a, done — SPEC-005) + Verification & Safety (4b, done — SPEC-004)", status: done}
-  "5": {name: "Observability + shim removal", status: partial}
+  "5": {name: "Observability, recovery, relocation, dynamic planner, debt cleanup (SPEC-006/007/008)", status: done}
 
 components:
   legacy:
@@ -67,9 +67,6 @@ components:
       status: implemented
       description: LLM-first structured event extraction with lexicon fallback
       tests: [tests/test_timeline_extractor.py]
-    intelligence/nlp/ner:
-      status: deprecated
-      description: Vendored MedCAT, never wired into any call path
     data/rag:
       status: implemented
       description: Hybrid retrieval — keyword + dense, fused via RRF over 22 seed docs
@@ -225,16 +222,33 @@ quality_gates:
 known_debt:
   - id: DEBT-001
     item: "Vendored MedCAT under intelligence/nlp/{ner,pipeline,preprocessing} has zero call sites"
-    action: remove
-    status: open
+    action: >-
+      Deleted (Phase 5, Part 5) — 11 files, ~1581 lines, confirmed zero
+      importers by grep before removal.
+    phase: 5
+    status: resolved
   - id: DEBT-002
     item: "Vendored MONAI under intelligence/medical-imaging should be a pip dependency"
-    action: replace with `monai` dependency
-    status: open
+    action: >-
+      Deleted (Phase 5, Part 5) — 157 files. Found during removal that
+      intelligence/mcp/imaging_server.py never imported this vendored tree
+      in the first place; its real-inference branch already imports the
+      `monai`/`torch` pip packages directly (both commented out in
+      requirements.txt, gated behind settings.monai_model_path). Activating
+      that branch — installing the real dependency and validating
+      inference — is separate future work (F-013), not part of this
+      cleanup.
+    phase: 5
+    status: resolved
   - id: DEBT-003
     item: "data/schemas GuidelineDocument persists a pgvector column that is never queried"
-    action: wire ingestion into retrieval, or document as cold storage
-    status: open
+    action: >-
+      Documented as intentional cold storage (Phase 5, Part 5) — no route
+      reads or writes this table today; retrieval always runs against the
+      in-memory vector store. Resolved by clarifying the docstring, not by
+      building an ingestion endpoint (out of scope, no validated need).
+    phase: 5
+    status: resolved
   - id: DEBT-004
     item: "platform/api/routers/medical.py and rag.py exposed MCP tools with no authentication"
     action: "Depends(get_current_user) added to all 8 endpoints across both routers"

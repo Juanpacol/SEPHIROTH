@@ -5,6 +5,24 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 5, Part 5 — DEBT-001/002/003 cleanup (final part of the 5-part plan)
+
+#### Removed
+- **`DEBT-001`**: `intelligence/nlp/{ner,pipeline,preprocessing}/` (11 files, ~1581 lines) — vendored MedCAT, zero call sites confirmed by grep before removal. `intelligence/nlp/__init__.py` (the `ClinicalEntityExtractor`/`ClinicalTextProcessor` stub classes) and `timeline_extractor.py` are untouched — neither imported the deleted tree either.
+- **`DEBT-002`**: `intelligence/medical-imaging/` (157 files) — vendored MONAI, also zero call sites. `intelligence/mcp/imaging_server.py`'s real-inference branch already imports the real `monai`/`torch` pip packages directly (both commented out in `requirements.txt`, gated behind `settings.monai_model_path`); it never referenced this vendored tree. Activating F-013 means installing those packages and validating inference, not restoring vendored code.
+- Now-orphaned `ruff`/`bandit` `exclude`/`exclude_dirs` entries for both deleted trees.
+
+#### Changed
+- **`DEBT-003`**: `data/schemas/__init__.py::GuidelineDocument`'s docstring rewritten to state plainly that no route reads or writes this table today — resolved by documenting it as intentional cold storage, not by building an ingestion endpoint (no validated product need).
+- `docs/project-state.yaml`: all 3 `DEBT` entries marked `resolved`; `intelligence/nlp/ner`'s standalone `deprecated` component entry removed (the directory no longer exists); phase 5 marked `done`; version bumped to `1.0.0` — this closes the 5-part plan.
+
+#### Verification
+- `pytest --cov`: 532 passed, 1 skipped, 93.23% coverage — unchanged from Part 4 (neither deleted tree had any tests to lose).
+- `intelligence.evaluation.run --mode ci`: PASS, all 6 metrics unchanged.
+- `docs_check.py`: OK (no deleted path still referenced in `project-state.yaml`). `export_contracts.py --check`: OK, 24 schemas, no shape change.
+- `bandit`: 0 High severity/confidence findings.
+- Docker build + smoke test verified from a clean `git worktree`.
+
 ### Phase 5, Part 4 — Dynamic capability-matching planner
 
 #### Added

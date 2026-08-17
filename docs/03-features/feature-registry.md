@@ -28,7 +28,13 @@ evaluation is out of scope for Phases 0–5 and gets filled in afterwards.
 | F-014 | SSE streaming consultation | ✅ | `workflow.py`, `routers/agents.py` | `test_sse_contract.py` | — | `00-migration-charter.md` §2.1 |
 
 F-013 is ⚠️ because MONAI inference is gated behind an unset `monai_model_path`;
-what runs today is metadata inspection plus the vision model.
+what runs today is metadata inspection plus the vision model. The vendored
+`intelligence/medical-imaging/` reference tree was deleted in Phase 5
+(`DEBT-002`) — it was never imported; `imaging_server.py`'s real-inference
+branch already targets the real `monai`/`torch` pip packages (currently
+commented out in `requirements.txt`). Activating F-013 means installing
+those and validating inference against real weights, not restoring the
+vendored tree.
 
 ## Migration (Phases 0–5)
 

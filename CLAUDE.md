@@ -34,8 +34,7 @@ An **AI-powered clinical decision support platform** for healthcare professional
 | `src/sephiroth/telemetry/` | `build_trace` projects `RunState` into the persisted `ExecutionTrace`; `traced_span` records real spans for the executor/verifier seams (ADR-009) |
 | `intelligence/mcp/` | FastMCP servers (nlp, imaging, rag, drug_safety, vision — vision shares the same Gemini client, model override via `gemini_vision_model`); the registry/dispatcher itself lives in `src/sephiroth/tools/` |
 | `intelligence/agents/` | Thin `Agent` wrappers (shim into `src/sephiroth/runtime/`). `citation_guard.py`/`explainability.py`/`risk_engine.py` are Phase-5 shims into `src/sephiroth/verification`/`telemetry`/`safety` respectively — real logic lives there now |
-| `intelligence/medical-imaging/` | MONAI transforms + networks (cloned from ref-monai-medical-imaging) |
-| `intelligence/nlp/` | MedCAT NER + pipeline (cloned) + `timeline_extractor.py` (note → timeline events via structured LLM output) |
+| `intelligence/nlp/` | `timeline_extractor.py` (note → timeline events via structured LLM output). The vendored MedCAT tree (`ner/`, `pipeline/`, `preprocessing/`) was deleted in Phase 5 (`DEBT-001`) — it had zero call sites |
 | `data/rag/` | Evidence retrieval with mandatory citations (seeded guideline corpus + PubMed) |
 | `data/schemas/` | SQLAlchemy 2.0 models (User, Patient, TimelineEvent, ClinicalNote, Consultation) |
 | `tests/` | pytest suite (auth, citation guard, timeline fallback) — SQLite in-memory, no services needed, no API key needed |
