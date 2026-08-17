@@ -31,8 +31,8 @@ Requirements are defined in [scope.md](00-project/scope.md); features in
 | | F-028 static planner (parity) | `sephiroth/runtime/planner.py` | `test_workflow.py` (unmodified parity gate) | — | — | ✅ implemented (phase 3) |
 | | F-029 dynamic planner | `sephiroth/runtime/planner.py` | 📋 | H1 | unnecessary invocation rate | 📋 deferred (SPEC-003 NG-1); no phase committed |
 | | F-030 capability router | `sephiroth/runtime/router.py` | `test_agent_registry.py` | H1 | tool selection accuracy | ⚠️ static lookup only, not capability-matching (phase 3) |
-| **R-005** Failures classified and handled | F-033 recovery engine | `sephiroth/runtime/recovery.py` | 📋 | H4 | recovery success rate | 📋 phase 4 |
-| | F-032 lifecycle state machine | `sephiroth/runtime/` | 📋 | H4 | completion under fault injection | 📋 phase 4 |
+| **R-005** Failures classified and handled | F-033 recovery engine | `sephiroth/runtime/recovery.py` | `test_runtime_recovery.py`, `test_runtime_executor.py` | H4 | recovery success rate | ✅ implemented (phase 5, SPEC-007); RETRY/ABSTAIN only — FALLBACK/REPLAN explicit non-goals; H4 metric not yet run (needs live traffic) |
+| | F-032 lifecycle state machine | `sephiroth/runtime/executor.py` | `test_runtime_executor.py` | H4 | completion under fault injection | ✅ implemented (phase 5, SPEC-007) |
 | | F-025 tool call timeout | `sephiroth/tools/runtime.py` | `test_tool_runtime.py` | H4 | tool success rate | ⚠️ timeout only; retry/fallback deferred |
 | **R-006** Replayable traces | F-042 execution traces | `sephiroth/telemetry/` | `test_telemetry_build_trace.py` | H6 | latency, tokens, cost | ⚠️ implemented (phase 5); real span coverage limited to 2 of 4 seams (SPEC-006 NG-1), tokens/cost still placeholders (NG-2) |
 | | F-043 span redaction | `sephiroth/contracts/trace.py`, `sephiroth/telemetry/span.py` | `test_contracts_models.py`, `test_telemetry_span.py` | — | zero PHI in spans | ✅ implemented (phase 5) — enforced both at `Span` construction and at `traced_span`'s filtering boundary |
@@ -72,7 +72,7 @@ Three uses, in order of how often they come up:
 | R-002 | Yes | Abstention engine gates every consultation (phase 4); thresholds are placeholders pending tuning (SPEC-004 NG-3) |
 | R-003 | Partially | Formal interface closed in phase 1; the H5 cross-provider experiment itself hasn't run |
 | R-004 | Partially | Agent set is now data-driven (`AgentCapability` records), but selection is still a static key-presence check, not real capability matching (SPEC-003 NG-1) |
-| R-005 | Partially | LLM-level fallback + per-call tool timeout only; no agent-level recovery or lifecycle state machine |
+| R-005 | Yes | Recovery engine + lifecycle state machine implemented (phase 5, SPEC-007); FALLBACK/REPLAN out of scope, H4 metric run pending live traffic |
 | R-006 | Partially | Traces now emitted and persisted (phase 5); only 2 of 4 named seams have real spans, tokens/cost are placeholders |
 | R-007 | **Yes** | Closed in phase 0 |
 | R-008 | **Yes** | Enforced continuously by the suite and the three gates |

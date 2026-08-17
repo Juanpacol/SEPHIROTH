@@ -10,7 +10,7 @@
 
 schema_version: 1
 project: SEPHIROTH
-version: 0.6.0
+version: 0.7.0
 updated: 2026-08-19
 phase_current: 5
 
@@ -133,10 +133,16 @@ components:
         Phase 4 (SPEC-004), the executor's internal state is a real
         RunState — the SPEC-003 §10 deferral is resolved; ToolCall.tool vs.
         the frozen wire's name is projected at one function, _tool_call_wire.
+        Since Phase 5 (SPEC-007), src/sephiroth/runtime/recovery.py
+        classifies a failing specialist and retries/abstains per policy
+        (ADR-007); RunState.lifecycle/.failures/.retries/.recovery_actions
+        are populated for the first time. A specialist that exhausts
+        retries no longer aborts the consultation — it contributes an
+        empty section instead.
       tests: [tests/test_agent_registry.py, tests/test_runtime_executor.py,
               tests/test_no_langgraph.py, tests/test_workflow.py,
               tests/test_sse_contract.py, tests/test_api_agents.py,
-              tests/test_prompt_contract.py]
+              tests/test_prompt_contract.py, tests/test_runtime_recovery.py]
     src/sephiroth/verification:
       status: implemented
       phase: 4
@@ -189,7 +195,6 @@ components:
 # Capabilities the target architecture requires that have no implementation yet.
 gaps:
   - {capability: Dynamic, capability-matching planner (NG-1, SPEC-003), phase: 5}
-  - {capability: Recovery engine + agent lifecycle state machine (F-032/F-033, ADR-007), phase: 5}
   - {capability: Confidence/abstention threshold tuning against the eval harness (SPEC-004 NG-3) — requires a live GEMINI_API_KEY run, not a build cycle, phase: null}
   - {capability: Context Engine tuning — max_context_chars/lambda_mult against real data (SPEC-005 NG-5) — requires a live GEMINI_API_KEY run, not a build cycle, phase: null}
   - {capability: Generic conversational/session memory — no validated product need yet (SPEC-005 NG-1), phase: null}
