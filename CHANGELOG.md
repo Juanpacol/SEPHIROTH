@@ -5,6 +5,33 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase C — scheduling + exam-results backend (landing/icon/portal/scheduling plan)
+
+#### Added
+- 5 new tables: `AvailabilityRule` (recurring weekly working hours, wall-clock + IANA timezone), `AvailabilityException` (one-off block/open), `Appointment` (clinician+patient, half-open-interval conflict rules, soft-cancel only), `ResultShare` (references an existing `TimelineEvent` — no new "lab result" entity), `ResultAttachment` (Postgres `LargeBinary`, `deferred=True`, sha256, 10MB/3-file caps).
+- `platform/api/scheduling.py::expand_slots` — a pure function computing every open, bookable slot from rules/exceptions/existing bookings; never materialized. Handles DST via `zoneinfo`, with a documented limitation (doesn't collapse/expand slot count across a spring-forward/fall-back transition — always one slot per configured step).
+- `platform/core/storage.py` — a `BlobStore` Protocol behind `ResultAttachment.content`, so a later move to S3/object storage is one class, not a router rewrite.
+- New routers `scheduling.py` (`/availability`, `/exceptions`, `/slots`, `/appointments`, `/agenda/today`) and `results.py` (`/shareable/{patient_id}`, `/shares`, `/shares/{id}/attachments`, `/attachments/{id}/download`) — both role-scoped per-route (no blanket router guard), unlike Phase A/B's clinician-only routers.
+- New authenticated `GET /api/scheduling/agenda/today` + regression lock proving `/api/dashboard/stats`'s shape is untouched (deliberately not folding per-clinician agenda data into that global route).
+- Migration `08a4a2ef03ab` on top of `3b2f5725233c` — autogenerate got everything right this cycle (check constraints, cascade delete, server defaults, unique constraints) with zero hand-fixes needed.
+- ~120 new tests across `test_scheduling_slots.py` (pure-function DST/chunking/exception cases), `test_scheduling_models.py`, `test_api_scheduling_availability.py`, `test_api_scheduling_appointments.py`, `test_api_scheduling_edge_cases.py`, `test_api_result_shares.py`, `test_result_attachments.py`, `test_api_agenda_today.py`.
+
+#### Fixed — a real conflict-precedence bug found by the appointment test suite
+- `POST /api/scheduling/appointments` returned 422 ("outside working hours") instead of 409 ("conflict") when booking the exact same already-booked slot: the working-hours check was computing `expand_slots` with existing appointments included, which subtracts booked slots from the candidate set — making a genuinely-booked slot look like it was never in working hours at all, hiding the real conflict. Fixed by computing working-hours membership against rules/exceptions only, independent of existing bookings; the explicit conflict queries are what now correctly produce the 409.
+
+#### Non-goals (stated up front, not discovered mid-build)
+- A true DB-level double-booking exclusion constraint (Postgres `EXCLUDE USING gist`) — no SQLite equivalent, would break the test fixture; mitigated with a transactional check instead.
+- Recurring appointment series, waitlists, any notification channel (email/SMS/push) — `viewed_at` is the only "read" signal.
+- Object storage (S3) for attachments — the `storage.py` seam makes this a later swap, not built now.
+
+#### Verification
+- `pytest --cov`: 656 passed, ~90% coverage.
+- `intelligence.evaluation.run --mode ci`: PASS, unchanged.
+- `docs_check.py` / `export_contracts.py --check`: OK, no shape change.
+- `bandit`: 0 High severity/confidence findings.
+- Migration applied, downgraded, and re-applied against real local Postgres; drift guard ran (not skipped) and passed.
+- Docker build + smoke test + a manual booking/conflict/sharing flow verified against a real container next.
+
 ### Phase B — roles + patient portal auth (landing/icon/portal/scheduling plan)
 
 #### Added
