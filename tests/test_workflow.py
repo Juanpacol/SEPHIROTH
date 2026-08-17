@@ -7,7 +7,11 @@ unmodified through the `intelligence.agents.workflow` shim as the parity
 proof — the shim was deleted in Phase 5 (`DEBT-010`, one phase later than
 scheduled) once nothing else needed it; this module's import retargeted in
 the same commit and is kept permanently as the executor's characterization
-test."""
+test.
+
+Phase 5 (SPEC-008) added the feature-flagged dynamic planner — this file
+passes unmodified with the flag at its default (off), the evidence that
+the change is additive. Verifies AC-008-04 (docs/specs/SPEC-008-dynamic-planner.md)."""
 
 import pytest
 

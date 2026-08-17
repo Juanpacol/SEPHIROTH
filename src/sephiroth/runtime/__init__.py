@@ -5,6 +5,12 @@ Replaces `intelligence/agents/workflow.py`'s LangGraph-compiled graph. See
 """
 
 from .executor import run_consultation, stream_consultation
-from .planner import SPECIALISTS, route_specialists
+from .planner import SPECIALISTS, route_specialists, route_specialists_dynamic
 
-__all__ = ["SPECIALISTS", "route_specialists", "run_consultation", "stream_consultation"]
+__all__ = [
+    "SPECIALISTS",
+    "route_specialists",
+    "route_specialists_dynamic",
+    "run_consultation",
+    "stream_consultation",
+]

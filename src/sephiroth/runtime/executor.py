@@ -54,7 +54,7 @@ from sephiroth.verification import compute_confidence, extract_claims, harvest_e
 from sephiroth.verification.citation_guard import audit, sanitize
 
 from .agent import Agent
-from .planner import route_specialists
+from .planner import route_specialists, route_specialists_dynamic
 from .recovery import classify, decide_recovery
 from .registry import COORDINATOR
 from .router import resolve
@@ -66,6 +66,14 @@ MAX_AGENT_ATTEMPTS = 2
 
 def _initial_context(context: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     return context or {}
+
+
+async def _route(context: Optional[Dict[str, Any]], client: ModelProvider) -> List[str]:
+    """SPEC-008: dynamic routing behind `settings.enable_dynamic_planner`
+    (default off); static `route_specialists` otherwise."""
+    if settings.enable_dynamic_planner:
+        return await route_specialists_dynamic(context, client)
+    return route_specialists(context)
 
 
 def _tool_call_wire(tc: ToolCall) -> Dict[str, Any]:
@@ -187,7 +195,7 @@ async def run_consultation(
     context = _initial_context(context)
     run_context = RunContext.from_dict(context)
     state = RunState(trace_id=uuid.uuid4().hex, request=query, patient_id=patient_id, patient_context=context)
-    node_names = route_specialists(context)
+    node_names = await _route(context, client)
     capabilities = resolve(node_names)
     for cap in capabilities:
         state.lifecycle[cap.id] = LifecycleState.SELECTED
@@ -258,7 +266,7 @@ async def stream_consultation(
     context = _initial_context(context)
     run_context = RunContext.from_dict(context)
     state = RunState(trace_id=uuid.uuid4().hex, request=query, patient_id=patient_id, patient_context=context)
-    node_names = route_specialists(context)
+    node_names = await _route(context, client)
     capabilities = resolve(node_names)
     for cap in capabilities:
         state.lifecycle[cap.id] = LifecycleState.SELECTED

@@ -111,6 +111,13 @@ class Settings(BaseSettings):
     # disabled vs. enabled, apart from the (then-empty) .spans list.
     enable_tracing: bool = True
 
+    # SPEC-008 (closes SPEC-003 NG-1): when True, routing asks the model
+    # which specialists are relevant instead of the static key-presence
+    # heuristic, falling back to that heuristic on any model failure.
+    # Default False — the offline eval (--mode ci) has no live model, so
+    # leaving this off keeps eval deterministic.
+    enable_dynamic_planner: bool = False
+
     enable_image_analysis: bool = True
     enable_vision_analysis: bool = True
     enable_rag: bool = True

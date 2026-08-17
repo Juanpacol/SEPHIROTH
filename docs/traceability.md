@@ -29,7 +29,7 @@ Requirements are defined in [scope.md](00-project/scope.md); features in
 | | F-023 config-driven selection | `sephiroth/models/factory.py` | `test_llm_factory.py` | H5 | — | ✅ implemented |
 | **R-004** Capability-based selection | F-026 agent registry | `sephiroth/runtime/registry.py` | `test_agent_registry.py` | H1 | agent selection accuracy | ✅ implemented (phase 3); H1 experiment not yet run |
 | | F-028 static planner (parity) | `sephiroth/runtime/planner.py` | `test_workflow.py` (unmodified parity gate) | — | — | ✅ implemented (phase 3) |
-| | F-029 dynamic planner | `sephiroth/runtime/planner.py` | 📋 | H1 | unnecessary invocation rate | 📋 deferred (SPEC-003 NG-1); no phase committed |
+| | F-029 dynamic planner | `sephiroth/runtime/planner.py` | `test_dynamic_planner.py` | H1 | unnecessary invocation rate | ✅ implemented (phase 5, SPEC-008); feature-flagged (`enable_dynamic_planner`, default off), degrades to static on failure; H1 metric not yet run (needs live traffic) |
 | | F-030 capability router | `sephiroth/runtime/router.py` | `test_agent_registry.py` | H1 | tool selection accuracy | ⚠️ static lookup only, not capability-matching (phase 3) |
 | **R-005** Failures classified and handled | F-033 recovery engine | `sephiroth/runtime/recovery.py` | `test_runtime_recovery.py`, `test_runtime_executor.py` | H4 | recovery success rate | ✅ implemented (phase 5, SPEC-007); RETRY/ABSTAIN only — FALLBACK/REPLAN explicit non-goals; H4 metric not yet run (needs live traffic) |
 | | F-032 lifecycle state machine | `sephiroth/runtime/executor.py` | `test_runtime_executor.py` | H4 | completion under fault injection | ✅ implemented (phase 5, SPEC-007) |
@@ -71,7 +71,7 @@ Three uses, in order of how often they come up:
 | R-001 | Yes | Citation guard (provenance) feeds a 5-state claim-content verifier (phase 4); the LLM judge's own accuracy is unmeasured (SPEC-004 risk 5) |
 | R-002 | Yes | Abstention engine gates every consultation (phase 4); thresholds are placeholders pending tuning (SPEC-004 NG-3) |
 | R-003 | Partially | Formal interface closed in phase 1; the H5 cross-provider experiment itself hasn't run |
-| R-004 | Partially | Agent set is now data-driven (`AgentCapability` records), but selection is still a static key-presence check, not real capability matching (SPEC-003 NG-1) |
+| R-004 | Yes | Dynamic capability-matching planner implemented (phase 5, SPEC-008), feature-flagged and off by default; static heuristic remains the always-available fallback; H1 metric run pending live traffic |
 | R-005 | Yes | Recovery engine + lifecycle state machine implemented (phase 5, SPEC-007); FALLBACK/REPLAN out of scope, H4 metric run pending live traffic |
 | R-006 | Partially | Traces now emitted and persisted (phase 5); only 2 of 4 named seams have real spans, tokens/cost are placeholders |
 | R-007 | **Yes** | Closed in phase 0 |

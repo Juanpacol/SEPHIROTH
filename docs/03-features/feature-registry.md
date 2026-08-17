@@ -43,7 +43,7 @@ what runs today is metadata inspection plus the vision model.
 | F-026 | Agent registry with declared capabilities | ✅ | `sephiroth/runtime/registry.py` | `test_agent_registry.py` | — | SPEC-003 |
 | F-027 | Task analyzer | ✅ | `sephiroth/runtime/analyzer.py` | `test_agent_registry.py` (via planner) | — | SPEC-003 |
 | F-028 | Static planner (parity with `route_specialists`) | ✅ | `sephiroth/runtime/planner.py` | `test_workflow.py` (unmodified parity gate) | — | SPEC-003 |
-| F-029 | Dynamic LLM planner | 📋 | `sephiroth/runtime/planner.py` | 📋 | — | 📋 (deferred, SPEC-003 NG-1) |
+| F-029 | Dynamic LLM planner | ✅ | `sephiroth/runtime/planner.py` | `test_dynamic_planner.py` | H1 (unmeasured, needs live traffic) | ✅ SPEC-008 |
 | F-030 | Capability-based router | ⚠️ | `sephiroth/runtime/router.py` | `test_agent_registry.py` | — | SPEC-003 §4 NG-1 |
 | F-031 | Executor (fan-out/merge/coordinate, LangGraph removed) | ✅ | `sephiroth/runtime/executor.py` | `test_runtime_executor.py`, `test_sse_contract.py` | — | SPEC-003 |
 | F-032 | Agent lifecycle state machine | ✅ | `src/sephiroth/runtime/executor.py` | ✅ | `tests/test_runtime_executor.py` | ✅ SPEC-007, D2 |
