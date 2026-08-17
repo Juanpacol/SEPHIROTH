@@ -5,6 +5,28 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 5, Part 4 — Dynamic capability-matching planner
+
+#### Added
+- **`src/sephiroth/runtime/planner.py::route_specialists_dynamic(context, client)`** (`docs/specs/SPEC-008-dynamic-planner.md`, closes `SPEC-003` NG-1): asks the model which of the four specialists are relevant via one `generate_json` call constrained to the four known node names, instead of the static key-presence heuristic. Degrades to `route_specialists` (unchanged) on any exception, non-dict payload, or empty/all-unknown `agents` list.
+- New setting `enable_dynamic_planner` (default `False`, `platform/core/config.py`) gates which planner `_route` (new helper in `executor.py`) uses. Default off keeps the offline eval (`--mode ci`, no live model) on the static path.
+- `tests/test_dynamic_planner.py`: the same 4 static-parity cases (image/labs/medications/none) via a scripted `FakeLLMClient`, plus degradation cases (exception, non-dict, malformed, unknown-name filtering), plus 2 integration tests wiring the flag through `run_consultation`/`stream_consultation`.
+
+#### Changed
+- `src/sephiroth/runtime/executor.py` promotes the previously duplicated `node_names = route_specialists(context)` line at both entry points into a shared `_route(context, client)` helper.
+
+#### Known deviations (`SPEC-008` §4)
+- **`H1` (unnecessary invocation rate) is not measured** (NG-3) — needs live traffic with the flag on; this spec makes the metric answerable, not answered.
+- **No prompt tuning** — the routing prompt is untuned; validating real model behavior needs a live `GEMINI_API_KEY` run this environment cannot provide.
+
+#### Verification — this is the highest-risk part of the 5-part plan (touches the frozen `routing` SSE event)
+- `pytest --cov`: 532 passed, 1 skipped, 93.19% coverage; `planner.py` 100%.
+- **Frozen contract suite passes unmodified with the flag at its default (off)**: `test_workflow.py`, `test_sse_contract.py`, `test_api_agents.py` — the evidence this change is additive.
+- `intelligence.evaluation.run --mode ci`: PASS, all 6 metrics unchanged (flag off).
+- `docs_check.py`: OK, all AC-008-0{1..4} anchors resolved. `export_contracts.py --check`: OK, 24 schemas, no shape change.
+- `bandit`: 0 High severity/confidence findings.
+- Docker build + smoke test verified from a clean `git worktree`.
+
 ### Phase 5, Part 3 — Relocate `risk_engine`/`citation_guard`/`explainability`
 
 #### Added
