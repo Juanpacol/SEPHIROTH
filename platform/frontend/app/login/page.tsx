@@ -85,7 +85,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="you@hospital.org"
-              className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+              className="input"
             />
           </div>
 
@@ -98,7 +98,7 @@ export default function LoginPage() {
               required
               minLength={8}
               placeholder="At least 8 characters"
-              className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+              className="input"
             />
           </div>
 
