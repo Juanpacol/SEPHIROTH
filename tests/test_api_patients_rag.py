@@ -235,6 +235,47 @@ async def test_rag_search_returns_cited_results(client):
 
 
 @pytest.mark.asyncio
+async def test_evidence_categories_lists_every_category_with_counts(client):
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.get("/api/rag/categories", headers=headers)
+        assert res.status_code == 200
+        body = res.json()
+        assert len(body) > 1
+        assert all({"slug", "label", "count"} <= set(c.keys()) for c in body)
+        assert sum(c["count"] for c in body) == 23  # len(SEED_GUIDELINES)
+        # Sorted by label, not slug — "Cancer Screening" before "Cardiovascular".
+        labels = [c["label"] for c in body]
+        assert labels == sorted(labels)
+
+
+@pytest.mark.asyncio
+async def test_evidence_categories_requires_auth(client):
+    async with client:
+        res = await client.get("/api/rag/categories")
+        assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_evidence_by_category_returns_excerpts(client):
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.get("/api/rag/categories/cardiovascular", headers=headers)
+        assert res.status_code == 200
+        body = res.json()
+        assert len(body) > 1
+        assert all({"id", "title", "organization", "year", "excerpt", "citation"} <= set(item.keys()) for item in body)
+
+
+@pytest.mark.asyncio
+async def test_evidence_by_category_unknown_category_404s(client):
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.get("/api/rag/categories/not-a-real-category", headers=headers)
+        assert res.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_rag_search_requires_auth(client):
     """DEBT-004 (docs/specs/SPEC-002-tool-runtime.md): search_pubmed makes a
     real network call per request, so an unauthenticated search endpoint is

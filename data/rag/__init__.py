@@ -81,6 +81,7 @@ SEED_GUIDELINES: List[Document] = [
         ),
         source="ADA Standards of Care in Diabetes",
         metadata={
+            "category": "endocrinology",
             "organization": "American Diabetes Association",
             "year": 2024,
             "title": "Glycemic Targets & Pharmacologic Approaches",
@@ -94,7 +95,12 @@ SEED_GUIDELINES: List[Document] = [
             "diuretics, ACE inhibitors, ARBs, and calcium channel blockers."
         ),
         source="ACC/AHA Hypertension Guideline",
-        metadata={"organization": "ACC/AHA", "year": 2023, "title": "High Blood Pressure Management"},
+        metadata={
+            "category": "cardiovascular",
+            "organization": "ACC/AHA",
+            "year": 2023,
+            "title": "High Blood Pressure Management",
+        },
     ),
     Document(
         id="aha-2022-hf",
@@ -105,7 +111,12 @@ SEED_GUIDELINES: List[Document] = [
             "inhibitors. SGLT2 inhibitors are recommended regardless of diabetes status."
         ),
         source="AHA/ACC/HFSA Heart Failure Guideline",
-        metadata={"organization": "AHA/ACC/HFSA", "year": 2022, "title": "Management of Heart Failure"},
+        metadata={
+            "category": "cardiovascular",
+            "organization": "AHA/ACC/HFSA",
+            "year": 2022,
+            "title": "Management of Heart Failure",
+        },
     ),
     Document(
         id="gold-2024-copd",
@@ -115,7 +126,12 @@ SEED_GUIDELINES: List[Document] = [
             "with blood eosinophils >=300 cells/uL or continued exacerbations."
         ),
         source="GOLD COPD Report",
-        metadata={"organization": "GOLD", "year": 2024, "title": "COPD Diagnosis, Management and Prevention"},
+        metadata={
+            "category": "pulmonology",
+            "organization": "GOLD",
+            "year": 2024,
+            "title": "COPD Diagnosis, Management and Prevention",
+        },
     ),
     Document(
         id="idsa-2023-cap",
@@ -126,6 +142,7 @@ SEED_GUIDELINES: List[Document] = [
         ),
         source="ATS/IDSA Community-Acquired Pneumonia Guideline",
         metadata={
+            "category": "infectious_disease",
             "organization": "ATS/IDSA",
             "year": 2023,
             "title": "Treatment of Community-Acquired Pneumonia",
@@ -141,6 +158,7 @@ SEED_GUIDELINES: List[Document] = [
         ),
         source="ADA Standards of Care in Diabetes",
         metadata={
+            "category": "nephrology",
             "organization": "American Diabetes Association",
             "year": 2024,
             "title": "Chronic Kidney Disease in Diabetes",
@@ -154,7 +172,12 @@ SEED_GUIDELINES: List[Document] = [
             "years, annual FIT testing, or stool DNA-FIT every 1-3 years."
         ),
         source="USPSTF Colorectal Cancer Screening Recommendation",
-        metadata={"organization": "USPSTF", "year": 2021, "title": "Screening for Colorectal Cancer"},
+        metadata={
+            "category": "screening",
+            "organization": "USPSTF",
+            "year": 2021,
+            "title": "Screening for Colorectal Cancer",
+        },
     ),
     Document(
         id="uspstf-2024-breast",
@@ -164,7 +187,12 @@ SEED_GUIDELINES: List[Document] = [
             "benefits and harms of screening in women 75 years and older."
         ),
         source="USPSTF Breast Cancer Screening Recommendation",
-        metadata={"organization": "USPSTF", "year": 2024, "title": "Screening for Breast Cancer"},
+        metadata={
+            "category": "screening",
+            "organization": "USPSTF",
+            "year": 2024,
+            "title": "Screening for Breast Cancer",
+        },
     ),
     Document(
         id="kdigo-2024-ckd",
@@ -175,7 +203,12 @@ SEED_GUIDELINES: List[Document] = [
             "diabetes status."
         ),
         source="KDIGO Clinical Practice Guideline for CKD",
-        metadata={"organization": "KDIGO", "year": 2024, "title": "Evaluation and Management of CKD"},
+        metadata={
+            "category": "nephrology",
+            "organization": "KDIGO",
+            "year": 2024,
+            "title": "Evaluation and Management of CKD",
+        },
     ),
     Document(
         id="acc-aha-2018-lipids",
@@ -186,7 +219,12 @@ SEED_GUIDELINES: List[Document] = [
             "with additional risk factors."
         ),
         source="ACC/AHA Multi-Society Cholesterol Guideline",
-        metadata={"organization": "ACC/AHA", "year": 2018, "title": "Management of Blood Cholesterol"},
+        metadata={
+            "category": "cardiovascular",
+            "organization": "ACC/AHA",
+            "year": 2018,
+            "title": "Management of Blood Cholesterol",
+        },
     ),
     Document(
         id="gina-2024-asthma",
@@ -197,7 +235,12 @@ SEED_GUIDELINES: List[Document] = [
             "reduce exacerbation risk."
         ),
         source="Global Initiative for Asthma Report",
-        metadata={"organization": "GINA", "year": 2024, "title": "Global Strategy for Asthma Management"},
+        metadata={
+            "category": "pulmonology",
+            "organization": "GINA",
+            "year": 2024,
+            "title": "Global Strategy for Asthma Management",
+        },
     ),
     Document(
         id="aha-asa-2021-stroke",
@@ -209,6 +252,7 @@ SEED_GUIDELINES: List[Document] = [
         ),
         source="AHA/ASA Acute Ischemic Stroke Guideline",
         metadata={
+            "category": "neurology",
             "organization": "AHA/ASA",
             "year": 2021,
             "title": "Early Management of Acute Ischemic Stroke",
@@ -223,7 +267,12 @@ SEED_GUIDELINES: List[Document] = [
             "are not suitable."
         ),
         source="IDSA Uncomplicated UTI Guideline",
-        metadata={"organization": "IDSA", "year": 2019, "title": "Treatment of Uncomplicated Cystitis"},
+        metadata={
+            "category": "infectious_disease",
+            "organization": "IDSA",
+            "year": 2019,
+            "title": "Treatment of Uncomplicated Cystitis",
+        },
     ),
     Document(
         id="sscm-2021-sepsis",
@@ -235,6 +284,7 @@ SEED_GUIDELINES: List[Document] = [
         ),
         source="Surviving Sepsis Campaign Guidelines",
         metadata={
+            "category": "critical_care",
             "organization": "Surviving Sepsis Campaign",
             "year": 2021,
             "title": "Management of Sepsis and Septic Shock",
@@ -250,6 +300,7 @@ SEED_GUIDELINES: List[Document] = [
         ),
         source="ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline",
         metadata={
+            "category": "cardiovascular",
             "organization": "ACC/AHA/HRS",
             "year": 2024,
             "title": "Anticoagulation in Atrial Fibrillation",
@@ -264,7 +315,12 @@ SEED_GUIDELINES: List[Document] = [
             "below 6 mg/dL."
         ),
         source="ACR Guideline for Management of Gout",
-        metadata={"organization": "ACR", "year": 2020, "title": "Management of Gout"},
+        metadata={
+            "category": "rheumatology",
+            "organization": "ACR",
+            "year": 2020,
+            "title": "Management of Gout",
+        },
     ),
     Document(
         id="who-2022-tb",
@@ -275,7 +331,12 @@ SEED_GUIDELINES: List[Document] = [
             "4 months."
         ),
         source="WHO Consolidated Guidelines on Tuberculosis",
-        metadata={"organization": "WHO", "year": 2022, "title": "Treatment of Drug-Susceptible Tuberculosis"},
+        metadata={
+            "category": "infectious_disease",
+            "organization": "WHO",
+            "year": 2022,
+            "title": "Treatment of Drug-Susceptible Tuberculosis",
+        },
     ),
     Document(
         id="ada-2024-obesity",
@@ -287,6 +348,7 @@ SEED_GUIDELINES: List[Document] = [
         ),
         source="ADA Standards of Care in Diabetes",
         metadata={
+            "category": "endocrinology",
             "organization": "American Diabetes Association",
             "year": 2024,
             "title": "Obesity Management in Type 2 Diabetes",
@@ -301,7 +363,12 @@ SEED_GUIDELINES: List[Document] = [
             "severe features of preeclampsia."
         ),
         source="ACOG Practice Bulletin on Preeclampsia",
-        metadata={"organization": "ACOG", "year": 2020, "title": "Gestational Hypertension and Preeclampsia"},
+        metadata={
+            "category": "obstetrics",
+            "organization": "ACOG",
+            "year": 2020,
+            "title": "Gestational Hypertension and Preeclampsia",
+        },
     ),
     Document(
         id="aap-2013-otitis",
@@ -313,6 +380,7 @@ SEED_GUIDELINES: List[Document] = [
         ),
         source="AAP Clinical Practice Guideline on Acute Otitis Media",
         metadata={
+            "category": "pediatrics",
             "organization": "AAP",
             "year": 2013,
             "title": "Diagnosis and Management of Acute Otitis Media",
@@ -328,6 +396,7 @@ SEED_GUIDELINES: List[Document] = [
         ),
         source="ADA Standards of Care in Diabetes",
         metadata={
+            "category": "endocrinology",
             "organization": "American Diabetes Association",
             "year": 2024,
             "title": "Hypertension Management in Diabetes",
@@ -343,6 +412,7 @@ SEED_GUIDELINES: List[Document] = [
         ),
         source="ACC/AHA Primary Prevention of Cardiovascular Disease Guideline",
         metadata={
+            "category": "cardiovascular",
             "organization": "ACC/AHA",
             "year": 2019,
             "title": "Primary Prevention of Cardiovascular Disease",
@@ -357,7 +427,12 @@ SEED_GUIDELINES: List[Document] = [
             "either treatment alone."
         ),
         source="NICE Guideline on Depression in Adults",
-        metadata={"organization": "NICE", "year": 2022, "title": "Management of Depression in Adults"},
+        metadata={
+            "category": "psychiatry",
+            "organization": "NICE",
+            "year": 2022,
+            "title": "Management of Depression in Adults",
+        },
     ),
 ]
 

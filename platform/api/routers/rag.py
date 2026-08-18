@@ -5,15 +5,55 @@ DEBT-004): `search_pubmed` makes a real outbound network call per request, so
 an unauthenticated endpoint is also an open door to consuming that quota.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from auth.deps import get_current_user
 from data.schemas import User
+from intelligence.mcp.rag_server import list_evidence_by_category, list_evidence_categories
 from sephiroth.tools import get_tool_runtime
 
 router = APIRouter()
+
+# Display label for each category slug used in data/rag/__init__.py's
+# SEED_GUIDELINES metadata — the one place that mapping is spelled out, so
+# adding a new category later means adding one line here, not touching the
+# frontend. Any slug not listed here (e.g. from a future added_document())
+# falls back to a title-cased version of the slug itself.
+_CATEGORY_LABELS = {
+    "cardiovascular": "Cardiovascular",
+    "endocrinology": "Endocrinology",
+    "nephrology": "Nephrology",
+    "pulmonology": "Pulmonology",
+    "infectious_disease": "Infectious Disease",
+    "critical_care": "Critical Care",
+    "screening": "Cancer Screening",
+    "neurology": "Neurology",
+    "rheumatology": "Rheumatology",
+    "obstetrics": "Obstetrics",
+    "pediatrics": "Pediatrics",
+    "psychiatry": "Psychiatry",
+}
+
+
+@router.get("/categories", summary="Browse the evidence corpus by clinical category")
+async def evidence_categories(user: User = Depends(get_current_user)) -> List[Dict[str, Any]]:
+    counts = list_evidence_categories()
+    categories = [
+        {"slug": slug, "label": _CATEGORY_LABELS.get(slug, slug.replace("_", " ").title()), "count": count}
+        for slug, count in counts.items()
+    ]
+    categories.sort(key=lambda c: c["label"])
+    return categories
+
+
+@router.get("/categories/{category}", summary="Every guideline excerpt in one category")
+async def evidence_by_category(category: str, user: User = Depends(get_current_user)) -> List[Dict[str, Any]]:
+    items = list_evidence_by_category(category)
+    if not items:
+        raise HTTPException(status_code=404, detail=f"No evidence found for category '{category}'")
+    return items
 
 
 @router.get("/search")

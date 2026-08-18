@@ -1,6 +1,6 @@
 """FastMCP server exposing medical evidence retrieval (RAG + PubMed)."""
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import httpx
 from fastmcp import FastMCP
@@ -24,6 +24,38 @@ def _default_min_similarity() -> float:
 
 
 _pipeline = RAGPipeline(embedding_provider=get_embedding_provider(), min_similarity=_default_min_similarity())
+
+
+def list_evidence_categories() -> Dict[str, int]:
+    """Category slug -> document count, for the Evidence Library's browse
+    view. Not an `@mcp.tool` — this is a UI-only concern, an agent never
+    needs to "browse by category" to answer a clinical question, only to
+    search or read one item, which the tools above already cover."""
+    counts: Dict[str, int] = {}
+    for doc in _pipeline.documents:
+        category = doc.metadata.get("category", "general")
+        counts[category] = counts.get(category, 0) + 1
+    return counts
+
+
+def list_evidence_by_category(category: str) -> List[Dict[str, Any]]:
+    """Every guideline excerpt in one category, for the Evidence Library's
+    browse view. The excerpt itself doubles as the preview — these are
+    already short, hand-picked snippets, not full documents with a
+    separate summary to generate."""
+    return [
+        {
+            "id": doc.id,
+            "title": doc.metadata.get("title", doc.source),
+            "organization": doc.metadata.get("organization"),
+            "year": doc.metadata.get("year"),
+            "excerpt": doc.content,
+            "citation": doc.citation,
+        }
+        for doc in _pipeline.documents
+        if doc.metadata.get("category", "general") == category
+    ]
+
 
 PUBMED_ESEARCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 PUBMED_ESUMMARY = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"

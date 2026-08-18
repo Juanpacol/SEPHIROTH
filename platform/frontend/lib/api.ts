@@ -117,6 +117,21 @@ export interface DrugInteraction {
   recommendation: string;
 }
 
+export interface EvidenceCategory {
+  slug: string;
+  label: string;
+  count: number;
+}
+
+export interface EvidenceItem {
+  id: string;
+  title: string;
+  organization: string | null;
+  year: number | null;
+  excerpt: string;
+  citation: string;
+}
+
 export interface DrugCheckResult {
   medications_checked: string[];
   interactions_found: number;
@@ -383,6 +398,8 @@ export const api = {
     get<{ results: { content: string; citation: string; score: number }[] }>(
       `/api/rag/search?q=${encodeURIComponent(q)}`
     ),
+  evidenceCategories: () => get<EvidenceCategory[]>("/api/rag/categories"),
+  evidenceByCategory: (slug: string) => get<EvidenceItem[]>(`/api/rag/categories/${slug}`),
   updateProfile: (body: { email: string; name: string }) => patch<UserOut>("/api/auth/me", body),
   changePassword: (body: { current_password: string; new_password: string }) =>
     postNoContent("/api/auth/change-password", body),
