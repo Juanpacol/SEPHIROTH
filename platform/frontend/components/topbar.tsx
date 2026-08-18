@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarClock, ChevronRight, LogOut } from "lucide-react";
-import { clearAuth, useUser } from "@/lib/auth";
+import { CalendarClock, ChevronRight } from "lucide-react";
+import { useUser } from "@/lib/auth";
 import NotificationBell from "@/components/notification-bell";
 import ThemeToggle from "@/components/theme-toggle";
 
@@ -24,21 +23,6 @@ export default function Topbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  const initials = user
-    ? user.name
-        .split(" ")
-        .filter((w) => w && w !== "Dr." && w !== "Dr")
-        .map((w) => w[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-    : "…";
-
-  const logout = () => {
-    clearAuth();
-    router.push("/login");
-  };
 
   return (
     <header
@@ -69,30 +53,6 @@ export default function Topbar() {
           </button>
         )}
         <NotificationBell />
-        <Link
-          href={user?.role === "patient" ? "/portal" : "/profile"}
-          className="flex items-center gap-2.5"
-        >
-          <div className="ai-ring flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-sm font-bold text-primary">
-            {initials}
-          </div>
-          <div className="hidden text-sm leading-tight sm:block">
-            <div className="font-semibold">{user?.name ?? "Not signed in"}</div>
-            <div className="text-xs text-muted">
-              {user ? (user.role === "patient" ? "Patient" : "Clinician") : ""}
-            </div>
-          </div>
-        </Link>
-        {user && (
-          <button
-            onClick={logout}
-            className="rounded-full p-2 text-muted hover:bg-primary-soft hover:text-danger"
-            aria-label="Log out"
-            title="Log out"
-          >
-            <LogOut size={17} />
-          </button>
-        )}
       </div>
     </header>
   );

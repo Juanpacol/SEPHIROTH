@@ -235,6 +235,51 @@ async def test_rag_search_returns_cited_results(client):
 
 
 @pytest.mark.asyncio
+async def test_add_timeline_event_appears_in_patient_detail(client, seeded_patient):
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.post(
+            f"/api/patients/{seeded_patient.id}/timeline",
+            json={"type": "imaging", "title": "Chest X-ray reviewed", "detail": "Bilateral infiltrates visible."},
+            headers=headers,
+        )
+        assert res.status_code == 201
+        body = res.json()
+        assert body["title"] == "Chest X-ray reviewed"
+        assert body["type"] == "imaging"
+        assert body["ai_generated"] is True
+
+        detail_res = await client.get(f"/api/patients/{seeded_patient.id}", headers=headers)
+        titles = [e["title"] for e in detail_res.json()["timeline"]]
+        assert "Chest X-ray reviewed" in titles
+
+
+@pytest.mark.asyncio
+async def test_add_timeline_event_duplicate_date_and_title_409s(client, seeded_patient):
+    async with client:
+        headers = await _auth_headers(client)
+        payload = {"date": "2026-01-01", "title": "Chest X-ray reviewed", "detail": "First."}
+        first = await client.post(f"/api/patients/{seeded_patient.id}/timeline", json=payload, headers=headers)
+        assert first.status_code == 201
+
+        second = await client.post(
+            f"/api/patients/{seeded_patient.id}/timeline",
+            json={**payload, "detail": "Second, different detail."},
+            headers=headers,
+        )
+        assert second.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_add_timeline_event_requires_auth(client, seeded_patient):
+    async with client:
+        res = await client.post(
+            f"/api/patients/{seeded_patient.id}/timeline", json={"title": "Chest X-ray reviewed"}
+        )
+        assert res.status_code == 401
+
+
+@pytest.mark.asyncio
 async def test_evidence_categories_lists_every_category_with_counts(client):
     async with client:
         headers = await _auth_headers(client)

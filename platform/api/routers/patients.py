@@ -181,6 +181,9 @@ async def _ingest_note(
             )
         )
     session.add_all(new_events)
+    # See add_timeline_event's comment: keeps `patient.timeline` correct for
+    # any later request that reuses this identity-mapped `Patient`.
+    patient.timeline.extend(new_events)
     await session.commit()
 
     return {
@@ -253,6 +256,51 @@ async def get_timeline(
     if event_type:
         events = [e for e in events if e.type == event_type]
     return {"patient_id": patient_id, "events": [_event(e) for e in events]}
+
+
+class TimelineEventCreate(BaseModel):
+    date: Optional[str] = Field(None, description="ISO date the event refers to; defaults to today")
+    type: str = "imaging"
+    title: str = Field(..., min_length=1)
+    detail: str = ""
+
+
+@router.post("/{patient_id}/timeline", status_code=201, summary="Add one timeline event directly")
+async def add_timeline_event(
+    patient_id: str,
+    body: TimelineEventCreate,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Direct single-event write — unlike `_ingest_note`'s bulk NLP
+    extraction, the caller already knows exactly what happened (e.g. the
+    `/imaging` page attaching a vision description). Same dedup rule as
+    notes: one event per (date, title) pair."""
+    patient = await _get_patient(session, patient_id)
+    resolved_date = body.date or datetime.now(timezone.utc).date().isoformat()
+    existing = {(e.date.isoformat(), e.title.lower()) for e in patient.timeline}
+    if (resolved_date, body.title.lower()) in existing:
+        raise HTTPException(status_code=409, detail="An event with this date and title already exists")
+
+    event = TimelineEvent(
+        patient_id=patient.id,
+        date=date_cls.fromisoformat(resolved_date),
+        type=body.type,
+        title=body.title,
+        detail=body.detail,
+        ai_generated=True,
+    )
+    session.add(event)
+    # `patient.timeline` was already loaded (via `_get_patient`'s selectinload)
+    # before this event existed; with `expire_on_commit=False` a plain
+    # `commit()` doesn't invalidate that already-loaded collection, so a
+    # later request reusing this same identity-mapped `Patient` (same
+    # session/connection pool) would see a stale, event-missing timeline.
+    # Appending here keeps the in-memory relationship state correct
+    # regardless of expiration settings.
+    patient.timeline.append(event)
+    await session.commit()
+    return _event(event)
 
 
 @router.post("/{patient_id}/invites", status_code=201, summary="Issue a patient-portal claim code")

@@ -201,8 +201,8 @@ function CitationsPanel({ report }: { report: CitationReport }) {
   );
 }
 
-export default function CopilotPanel() {
-  const [query, setQuery] = useState("");
+export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: string }) {
+  const [query, setQuery] = useState(initialQuery);
   const [patientId, setPatientId] = useState("");
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [streaming, setStreaming] = useState(false);

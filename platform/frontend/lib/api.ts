@@ -379,6 +379,10 @@ export const api = {
     post<DescribeImageResponse>("/api/medical/imaging/describe", body),
   imagePreviewUrl: (path: string) =>
     `/api/medical/imaging/preview?path=${encodeURIComponent(path)}`,
+  detectModality: (imagePath: string) =>
+    post<{ modality: string }>("/api/medical/imaging/detect-modality", { image_path: imagePath }),
+  addTimelineEvent: (patientId: string, body: { type: string; title: string; detail?: string }) =>
+    post<TimelineEvent>(`/api/patients/${patientId}/timeline`, body),
   uploadImage: (file: File) => {
     const form = new FormData();
     form.append("file", file);

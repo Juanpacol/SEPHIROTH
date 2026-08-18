@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   BookOpenCheck,
@@ -10,11 +10,12 @@ import {
   ClipboardList,
   FileText,
   LayoutDashboard,
+  LogOut,
   ScanEye,
   Search,
   Users,
 } from "lucide-react";
-import { useUser } from "@/lib/auth";
+import { clearAuth, useUser } from "@/lib/auth";
 import WingMark from "@/components/brand/wing-mark";
 
 const CLINICIAN_NAV = [
@@ -53,9 +54,26 @@ const PATIENT_NAV = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const user = useUser();
   const groups = user?.role === "patient" ? PATIENT_NAV : CLINICIAN_NAV;
   const homeHref = user?.role === "patient" ? "/portal" : "/dashboard";
+  const profileHref = user?.role === "patient" ? "/portal" : "/profile";
+
+  const initials = user
+    ? user.name
+        .split(" ")
+        .filter((w) => w && w !== "Dr." && w !== "Dr")
+        .map((w) => w[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "…";
+
+  const logout = () => {
+    clearAuth();
+    router.push("/login");
+  };
 
   return (
     <aside className="glass-surface sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line/60 px-3 py-5 md:flex">
@@ -93,6 +111,30 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
+
+      <div className="flex items-center gap-2 border-t border-line/60 px-1 pt-3">
+        <Link href={profileHref} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl px-2 py-1.5 hover:bg-primary-soft">
+          <div className="ai-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-bold text-primary">
+            {initials}
+          </div>
+          <div className="min-w-0 text-sm leading-tight">
+            <div className="truncate font-semibold">{user?.name ?? "Not signed in"}</div>
+            <div className="text-xs text-muted">
+              {user ? (user.role === "patient" ? "Patient" : "Clinician") : ""}
+            </div>
+          </div>
+        </Link>
+        {user && (
+          <button
+            onClick={logout}
+            className="shrink-0 rounded-full p-2 text-muted hover:bg-primary-soft hover:text-danger"
+            aria-label="Log out"
+            title="Log out"
+          >
+            <LogOut size={17} />
+          </button>
+        )}
+      </div>
     </aside>
   );
 }

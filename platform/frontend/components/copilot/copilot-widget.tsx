@@ -5,14 +5,37 @@
  * they're on to ask a question. Mounted once in AppShell, so it's present
  * (and its conversation state persists) across every chrome'd route. */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bot, X } from "lucide-react";
 import { useUser } from "@/lib/auth";
 import CopilotPanel from "@/components/copilot/copilot-panel";
 
+/** Custom-event name other pages (e.g. `/imaging`'s "Ask SEPHIROTH" button)
+ * dispatch to open this widget with a pre-filled question — a plain
+ * `window` event instead of a new state-management dependency, since the
+ * widget already only needs to react to one thing from the outside. */
+export const OPEN_COPILOT_EVENT = "open-copilot";
+
 export default function CopilotWidget() {
   const user = useUser();
   const [open, setOpen] = useState(false);
+  const [prefill, setPrefill] = useState("");
+  // Bumped on every external open request so `<CopilotPanel key={...}>`
+  // remounts with the new `initialQuery` — the panel owns its `query`
+  // state internally and has no other way to be told "start over with
+  // this text" once already mounted.
+  const [prefillNonce, setPrefillNonce] = useState(0);
+
+  useEffect(() => {
+    const onOpenRequest = (e: Event) => {
+      const detail = (e as CustomEvent<{ prefill?: string }>).detail;
+      setPrefill(detail?.prefill ?? "");
+      setPrefillNonce((n) => n + 1);
+      setOpen(true);
+    };
+    window.addEventListener(OPEN_COPILOT_EVENT, onOpenRequest);
+    return () => window.removeEventListener(OPEN_COPILOT_EVENT, onOpenRequest);
+  }, []);
 
   // Copilot is a clinician tool — patients have their own portal, not this.
   if (user?.role === "patient") return null;
@@ -48,7 +71,7 @@ export default function CopilotWidget() {
             </button>
           </div>
           <div className="min-h-0 flex-1 p-3">
-            <CopilotPanel />
+            <CopilotPanel key={prefillNonce} initialQuery={prefill} />
           </div>
         </div>
       )}

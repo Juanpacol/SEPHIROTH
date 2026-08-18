@@ -27,6 +27,7 @@ from intelligence.mcp.vision_server import (
     DESCRIPTION_PROMPT,
     MAX_IMAGE_BYTES,
     READABLE_FORMATS,
+    detect_modality,
 )
 from sephiroth.models import LLMUnavailableError, get_llm_client
 from sephiroth.tools import get_tool_runtime
@@ -152,6 +153,26 @@ async def describe_image_stream(request: DescribeRequest, user: User = Depends(g
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.post("/imaging/detect-modality", summary="Best-effort modality guess, to pre-fill the modality dropdown")
+async def detect_image_modality(request: DescribeRequest, user: User = Depends(get_current_user)) -> Dict[str, str]:
+    """Reuses `DescribeRequest` (only `image_path` matters here) — same
+    file-read/validation as `/imaging/describe/stream`. Never errors on a
+    readable image; degrades to `{"modality": "unknown"}` if vision is
+    unavailable, same posture as `detect_modality` itself."""
+    path = Path(request.image_path)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {request.image_path}")
+    if path.suffix.lower() not in READABLE_FORMATS:
+        raise HTTPException(status_code=400, detail=f"Unsupported format '{path.suffix}'.")
+
+    image_bytes = path.read_bytes()
+    if len(image_bytes) > MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail=f"Image too large (max {MAX_IMAGE_BYTES} bytes).")
+
+    mime_type = _MIME_OVERRIDES.get(path.suffix.lower()) or mimetypes.guess_type(path.name)[0] or "image/png"
+    return {"modality": await detect_modality(image_bytes, mime_type)}
 
 
 @router.post("/imaging/upload", summary="Upload an image file for analysis, in place of typing a path")

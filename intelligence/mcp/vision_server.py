@@ -32,6 +32,30 @@ READABLE_FORMATS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}
 _MIME_OVERRIDES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".bmp": "image/bmp"}
 MAX_IMAGE_BYTES = 15 * 1024 * 1024  # Gemini's inline request cap is ~20MB
 
+_MODALITY_PROMPT = (
+    "Classify this medical image into exactly one of: xray, ct, mri, ultrasound, "
+    "pathology, unknown. Reply with only that single word, nothing else."
+)
+_KNOWN_MODALITIES = {"xray", "ct", "mri", "ultrasound", "pathology"}
+
+
+async def detect_modality(image_bytes: bytes, mime_type: str) -> str:
+    """Best-effort modality guess to pre-fill the `/imaging` page's dropdown
+    — not an `@mcp.tool` since no agent needs to "guess a modality", only a
+    UI convenience. Degrades to `"unknown"` (never raises) on any failure,
+    same posture as `describe_medical_image`'s own `LLMUnavailableError`
+    handling, so a flaky vision call never blocks the upload flow — the
+    clinician can always pick the modality by hand regardless."""
+    try:
+        client = get_llm_client()
+        raw = await client.describe_image(
+            image_bytes=image_bytes, mime_type=mime_type, prompt=_MODALITY_PROMPT, max_output_tokens=8
+        )
+    except LLMUnavailableError:
+        return "unknown"
+    guess = raw.strip().lower().strip(".")
+    return guess if guess in _KNOWN_MODALITIES else "unknown"
+
 
 def _settings():
     from core.config import settings  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
