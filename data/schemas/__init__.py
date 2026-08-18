@@ -445,7 +445,9 @@ class Consultation(Base):
     # `acted_on` is true, recorded at a separate, later time.
     acted_on: Mapped[Optional[bool]] = mapped_column(nullable=True, index=True)
     acted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    outcome: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, index=True)  # improved|not_improved|unclear
+    outcome: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True, index=True
+    )  # improved|not_improved|unclear
     outcome_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

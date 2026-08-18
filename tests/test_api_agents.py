@@ -203,11 +203,15 @@ async def test_recommendation_stats_counts_correctly(client):
         history = (await client.get("/api/agents/history", headers=headers)).json()
         assert len(history) == 2
 
-        await client.patch(f"/api/agents/history/{history[0]['id']}", json={"acted_on": True}, headers=headers)
+        await client.patch(
+            f"/api/agents/history/{history[0]['id']}", json={"acted_on": True}, headers=headers
+        )
         await client.patch(
             f"/api/agents/history/{history[0]['id']}", json={"outcome": "improved"}, headers=headers
         )
-        await client.patch(f"/api/agents/history/{history[1]['id']}", json={"acted_on": False}, headers=headers)
+        await client.patch(
+            f"/api/agents/history/{history[1]['id']}", json={"acted_on": False}, headers=headers
+        )
 
         stats_res = await client.get("/api/agents/recommendations/stats", headers=headers)
         assert stats_res.status_code == 200

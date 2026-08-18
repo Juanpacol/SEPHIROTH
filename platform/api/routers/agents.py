@@ -339,7 +339,9 @@ async def recommendation_stats(
     """Raw counts, not a pre-formatted string — computed over the user's
     FULL history (never truncated the way `/history`'s `limit` is), so the
     ratio stays accurate regardless of how much of the list the UI renders."""
-    total = await session.scalar(select(func.count(Consultation.id)).where(Consultation.user_id == user.id)) or 0
+    total = (
+        await session.scalar(select(func.count(Consultation.id)).where(Consultation.user_id == user.id)) or 0
+    )
     acted_on = (
         await session.scalar(
             select(func.count(Consultation.id)).where(

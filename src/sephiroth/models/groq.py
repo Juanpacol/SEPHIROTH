@@ -242,7 +242,9 @@ class GroqClient:
         data = await self._post(payload)
         return json.loads(data["choices"][0]["message"]["content"])
 
-    def _vision_payload(self, image_bytes: bytes, mime_type: str, prompt: str, max_output_tokens: int) -> Dict[str, Any]:
+    def _vision_payload(
+        self, image_bytes: bytes, mime_type: str, prompt: str, max_output_tokens: int
+    ) -> Dict[str, Any]:
         data_url = f"data:{mime_type};base64,{base64.b64encode(image_bytes).decode('ascii')}"
         return {
             "model": self.vision_model,
@@ -272,7 +274,9 @@ class GroqClient:
         degrades to a second real attempt instead of "unavailable," for
         whoever explicitly accepts that instability."""
         if not self.vision_model:
-            raise LLMUnavailableError("GroqClient has no vision_model configured; use Gemini for image description.")
+            raise LLMUnavailableError(
+                "GroqClient has no vision_model configured; use Gemini for image description."
+            )
         data = await self._post(self._vision_payload(image_bytes, mime_type, prompt, max_output_tokens))
         return (data["choices"][0]["message"].get("content") or "").strip()
 
@@ -288,7 +292,9 @@ class GroqClient:
         describe_image_stream`'s own rationale: a stream that fails mid-flight
         can't transparently retry without replaying already-yielded chunks."""
         if not self.vision_model:
-            raise LLMUnavailableError("GroqClient has no vision_model configured; use Gemini for image description.")
+            raise LLMUnavailableError(
+                "GroqClient has no vision_model configured; use Gemini for image description."
+            )
         if not self.api_key:
             raise LLMUnavailableError("GROQ_API_KEY is not configured.")
 

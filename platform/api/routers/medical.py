@@ -101,7 +101,9 @@ async def describe_image(request: DescribeRequest, user: User = Depends(get_curr
     "/imaging/describe/stream",
     summary="Stream a live, token-by-token AI clinical description of a medical image",
 )
-async def describe_image_stream(request: DescribeRequest, user: User = Depends(get_current_user)) -> StreamingResponse:
+async def describe_image_stream(
+    request: DescribeRequest, user: User = Depends(get_current_user)
+) -> StreamingResponse:
     """SSE variant of `/imaging/describe` — emits `chunk` events as the vision
     model samples its response, then one `final` event with the full text.
     Mirrors `/api/agents/consult/stream`'s event-envelope shape so the
@@ -109,12 +111,14 @@ async def describe_image_stream(request: DescribeRequest, user: User = Depends(g
 
     async def event_stream():
         if not settings.enable_vision_analysis:
-            yield f"data: {json.dumps({'event': 'error', 'detail': 'Vision analysis is disabled (ENABLE_VISION_ANALYSIS=false).'})}\n\n"
+            detail = "Vision analysis is disabled (ENABLE_VISION_ANALYSIS=false)."
+            yield f"data: {json.dumps({'event': 'error', 'detail': detail})}\n\n"
             return
 
         path = Path(request.image_path)
         if not path.exists():
-            yield f"data: {json.dumps({'event': 'error', 'detail': f'File not found: {request.image_path}'})}\n\n"
+            detail = f"File not found: {request.image_path}"
+            yield f"data: {json.dumps({'event': 'error', 'detail': detail})}\n\n"
             return
         if path.suffix.lower() not in READABLE_FORMATS:
             detail = f"Unsupported format '{path.suffix}'."
@@ -123,10 +127,13 @@ async def describe_image_stream(request: DescribeRequest, user: User = Depends(g
 
         image_bytes = path.read_bytes()
         if len(image_bytes) > MAX_IMAGE_BYTES:
-            yield f"data: {json.dumps({'event': 'error', 'detail': f'Image too large ({len(image_bytes)} bytes, max {MAX_IMAGE_BYTES}).'})}\n\n"
+            detail = f"Image too large ({len(image_bytes)} bytes, max {MAX_IMAGE_BYTES})."
+            yield f"data: {json.dumps({'event': 'error', 'detail': detail})}\n\n"
             return
 
-        mime_type = _MIME_OVERRIDES.get(path.suffix.lower()) or mimetypes.guess_type(path.name)[0] or "image/png"
+        mime_type = (
+            _MIME_OVERRIDES.get(path.suffix.lower()) or mimetypes.guess_type(path.name)[0] or "image/png"
+        )
         prompt = DESCRIPTION_PROMPT
         if request.clinical_focus:
             prompt += f"\nFocus especially on: {request.clinical_focus}."
@@ -135,7 +142,9 @@ async def describe_image_stream(request: DescribeRequest, user: User = Depends(g
         full_text = []
         try:
             client = get_llm_client()
-            async for chunk in client.describe_image_stream(image_bytes=image_bytes, mime_type=mime_type, prompt=prompt):
+            async for chunk in client.describe_image_stream(
+                image_bytes=image_bytes, mime_type=mime_type, prompt=prompt
+            ):
                 full_text.append(chunk)
                 yield f"data: {json.dumps({'event': 'chunk', 'text': chunk})}\n\n"
         except LLMUnavailableError as exc:
@@ -146,7 +155,8 @@ async def describe_image_stream(request: DescribeRequest, user: User = Depends(g
             yield f"data: {json.dumps({'event': 'error', 'detail': f'Vision model failed: {exc}'})}\n\n"
             return
 
-        yield f"data: {json.dumps({'event': 'final', 'description': ''.join(full_text), 'model': model_name})}\n\n"
+        final_payload = {"event": "final", "description": "".join(full_text), "model": model_name}
+        yield f"data: {json.dumps(final_payload)}\n\n"
 
     return StreamingResponse(
         event_stream(),
@@ -155,8 +165,12 @@ async def describe_image_stream(request: DescribeRequest, user: User = Depends(g
     )
 
 
-@router.post("/imaging/detect-modality", summary="Best-effort modality guess, to pre-fill the modality dropdown")
-async def detect_image_modality(request: DescribeRequest, user: User = Depends(get_current_user)) -> Dict[str, str]:
+@router.post(
+    "/imaging/detect-modality", summary="Best-effort modality guess, to pre-fill the modality dropdown"
+)
+async def detect_image_modality(
+    request: DescribeRequest, user: User = Depends(get_current_user)
+) -> Dict[str, str]:
     """Reuses `DescribeRequest` (only `image_path` matters here) — same
     file-read/validation as `/imaging/describe/stream`. Never errors on a
     readable image; degrades to `{"modality": "unknown"}` if vision is

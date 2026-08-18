@@ -15,8 +15,26 @@ from httpx import ASGITransport, AsyncClient
 from api.routers import medical as medical_router_module
 from auth import router as auth_router_module
 from core.db import get_session
+from sephiroth.models import LLMUnavailableError
 
 CREDS = {"email": "medical-router@example.org", "name": "Dr. Router", "password": "password123"}
+
+
+class _UnavailableVisionClient:
+    """Deterministic stand-in for "Gemini has no API key configured" —
+    used instead of relying on the real, unmonkeypatched `get_llm_client()`
+    singleton, which is process-global and can end up holding a stale
+    client (tied to a since-closed event loop) depending on what other
+    tests ran first in the same session."""
+
+    model = "fake-vision-model"
+
+    async def describe_image(self, **kwargs):
+        raise LLMUnavailableError("GEMINI_API_KEY is not configured.")
+
+    async def describe_image_stream(self, **kwargs):
+        raise LLMUnavailableError("GEMINI_API_KEY is not configured.")
+        yield  # pragma: no cover — makes this an async generator; never reached
 
 
 @pytest.fixture
@@ -93,6 +111,262 @@ async def test_analyze_image_no_weights(client, tmp_path):
         )
         assert res.status_code == 200
         assert res.json()["status"] == "model_not_configured"
+
+
+@pytest.mark.asyncio
+async def test_describe_image_no_api_key_returns_unavailable(client, tmp_path, monkeypatch):
+    import sephiroth.models.factory as factory_module
+
+    monkeypatch.setattr(factory_module, "_client", _UnavailableVisionClient())
+    img_path = tmp_path / "x.png"
+    img_path.write_bytes(b"fake")
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.post(
+            "/api/medical/imaging/describe",
+            json={"image_path": str(img_path)},
+            headers=headers,
+        )
+        assert res.status_code == 200
+        assert res.json()["status"] == "unavailable"
+
+
+async def _sse_events(response) -> list:
+    events = []
+    buffer = ""
+    async for chunk in response.aiter_text():
+        buffer += chunk
+        while "\n\n" in buffer:
+            raw, buffer = buffer.split("\n\n", 1)
+            if raw.startswith("data: "):
+                import json as _json
+
+                events.append(_json.loads(raw[len("data: ") :]))
+    return events
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_analysis_disabled(client, tmp_path, monkeypatch):
+    from core.config import settings
+
+    monkeypatch.setattr(settings, "enable_vision_analysis", False)
+    img_path = tmp_path / "x.png"
+    img_path.write_bytes(b"fake")
+    async with client:
+        headers = await _auth_headers(client)
+        async with client.stream(
+            "POST",
+            "/api/medical/imaging/describe/stream",
+            json={"image_path": str(img_path)},
+            headers=headers,
+        ) as res:
+            assert res.status_code == 200
+            events = await _sse_events(res)
+        assert events == [
+            {"event": "error", "detail": "Vision analysis is disabled (ENABLE_VISION_ANALYSIS=false)."}
+        ]
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_file_not_found(client):
+    async with client:
+        headers = await _auth_headers(client)
+        async with client.stream(
+            "POST",
+            "/api/medical/imaging/describe/stream",
+            json={"image_path": "/tmp/does-not-exist-xyz.png"},
+            headers=headers,
+        ) as res:
+            events = await _sse_events(res)
+        assert events == [{"event": "error", "detail": "File not found: /tmp/does-not-exist-xyz.png"}]
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_unsupported_format(client, tmp_path):
+    img_path = tmp_path / "scan.dcm"
+    img_path.write_bytes(b"not an image")
+    async with client:
+        headers = await _auth_headers(client)
+        async with client.stream(
+            "POST",
+            "/api/medical/imaging/describe/stream",
+            json={"image_path": str(img_path)},
+            headers=headers,
+        ) as res:
+            events = await _sse_events(res)
+        assert events == [{"event": "error", "detail": "Unsupported format '.dcm'."}]
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_oversized_image(client, tmp_path, monkeypatch):
+    from api.routers import medical as medical_module
+
+    monkeypatch.setattr(medical_module, "MAX_IMAGE_BYTES", 4)
+    img_path = tmp_path / "x.png"
+    img_path.write_bytes(b"more than four bytes")
+    async with client:
+        headers = await _auth_headers(client)
+        async with client.stream(
+            "POST",
+            "/api/medical/imaging/describe/stream",
+            json={"image_path": str(img_path)},
+            headers=headers,
+        ) as res:
+            events = await _sse_events(res)
+        assert events == [{"event": "error", "detail": "Image too large (20 bytes, max 4)."}]
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_no_api_key_yields_error_event(client, tmp_path, monkeypatch):
+    import sephiroth.models.factory as factory_module
+
+    monkeypatch.setattr(factory_module, "_client", _UnavailableVisionClient())
+    img_path = tmp_path / "x.png"
+    img_path.write_bytes(b"fake")
+    async with client:
+        headers = await _auth_headers(client)
+        async with client.stream(
+            "POST",
+            "/api/medical/imaging/describe/stream",
+            json={"image_path": str(img_path)},
+            headers=headers,
+        ) as res:
+            events = await _sse_events(res)
+        assert len(events) == 1
+        assert events[0]["event"] == "error"
+        assert "GEMINI_API_KEY" in events[0]["detail"]
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_success_yields_chunks_then_final(client, tmp_path, monkeypatch):
+    import sephiroth.models.factory as factory_module
+
+    class _FakeVisionClient:
+        model = "fake-vision-model"
+
+        async def describe_image_stream(self, **kwargs):
+            for chunk in ["Bilateral ", "infiltrates."]:
+                yield chunk
+
+    monkeypatch.setattr(factory_module, "_client", _FakeVisionClient())
+    img_path = tmp_path / "x.png"
+    img_path.write_bytes(b"fake")
+    async with client:
+        headers = await _auth_headers(client)
+        async with client.stream(
+            "POST",
+            "/api/medical/imaging/describe/stream",
+            json={"image_path": str(img_path)},
+            headers=headers,
+        ) as res:
+            events = await _sse_events(res)
+        assert events[0] == {"event": "chunk", "text": "Bilateral "}
+        assert events[1] == {"event": "chunk", "text": "infiltrates."}
+        assert events[2]["event"] == "final"
+        assert events[2]["description"] == "Bilateral infiltrates."
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_requires_auth(client, tmp_path):
+    img_path = tmp_path / "x.png"
+    img_path.write_bytes(b"fake")
+    async with client:
+        res = await client.post("/api/medical/imaging/describe/stream", json={"image_path": str(img_path)})
+        assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_detect_modality_file_not_found(client):
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.post(
+            "/api/medical/imaging/detect-modality",
+            json={"image_path": "/tmp/does-not-exist-xyz.png"},
+            headers=headers,
+        )
+        assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_detect_modality_unsupported_format(client, tmp_path):
+    img_path = tmp_path / "scan.dcm"
+    img_path.write_bytes(b"not an image")
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.post(
+            "/api/medical/imaging/detect-modality",
+            json={"image_path": str(img_path)},
+            headers=headers,
+        )
+        assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_detect_modality_oversized_image(client, tmp_path, monkeypatch):
+    from api.routers import medical as medical_module
+
+    monkeypatch.setattr(medical_module, "MAX_IMAGE_BYTES", 4)
+    img_path = tmp_path / "x.png"
+    img_path.write_bytes(b"more than four bytes")
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.post(
+            "/api/medical/imaging/detect-modality",
+            json={"image_path": str(img_path)},
+            headers=headers,
+        )
+        assert res.status_code == 413
+
+
+@pytest.mark.asyncio
+async def test_detect_modality_no_api_key_degrades_to_unknown(client, tmp_path, monkeypatch):
+    import sephiroth.models.factory as factory_module
+
+    monkeypatch.setattr(factory_module, "_client", _UnavailableVisionClient())
+    img_path = tmp_path / "x.png"
+    img_path.write_bytes(b"fake")
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.post(
+            "/api/medical/imaging/detect-modality",
+            json={"image_path": str(img_path)},
+            headers=headers,
+        )
+        assert res.status_code == 200
+        assert res.json() == {"modality": "unknown"}
+
+
+@pytest.mark.asyncio
+async def test_detect_modality_returns_guessed_modality(client, tmp_path, monkeypatch):
+    import sephiroth.models.factory as factory_module
+
+    class _FakeVisionClient:
+        model = "fake-vision-model"
+
+        async def describe_image(self, **kwargs):
+            return "ct"
+
+    monkeypatch.setattr(factory_module, "_client", _FakeVisionClient())
+    img_path = tmp_path / "x.png"
+    img_path.write_bytes(b"fake")
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.post(
+            "/api/medical/imaging/detect-modality",
+            json={"image_path": str(img_path)},
+            headers=headers,
+        )
+        assert res.status_code == 200
+        assert res.json() == {"modality": "ct"}
+
+
+@pytest.mark.asyncio
+async def test_detect_modality_requires_auth(client, tmp_path):
+    img_path = tmp_path / "x.png"
+    img_path.write_bytes(b"fake")
+    async with client:
+        res = await client.post("/api/medical/imaging/detect-modality", json={"image_path": str(img_path)})
+        assert res.status_code == 401
 
 
 @pytest.mark.asyncio

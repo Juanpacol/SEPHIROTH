@@ -91,7 +91,10 @@ class FallbackLLMClient:
     ) -> str:
         try:
             return await self.primary.describe_image(
-                image_bytes=image_bytes, mime_type=mime_type, prompt=prompt, max_output_tokens=max_output_tokens
+                image_bytes=image_bytes,
+                mime_type=mime_type,
+                prompt=prompt,
+                max_output_tokens=max_output_tokens,
             )
         except LLMUnavailableError as exc:
             # Only falls through if the secondary was explicitly configured
@@ -106,7 +109,10 @@ class FallbackLLMClient:
                 "primary vision (%s) unavailable (%s); falling back to secondary", self.primary.model, exc
             )
             return await self.secondary.describe_image(
-                image_bytes=image_bytes, mime_type=mime_type, prompt=prompt, max_output_tokens=max_output_tokens
+                image_bytes=image_bytes,
+                mime_type=mime_type,
+                prompt=prompt,
+                max_output_tokens=max_output_tokens,
             )
 
     async def describe_image_stream(
@@ -126,7 +132,10 @@ class FallbackLLMClient:
         try:
             started = False
             async for chunk in self.primary.describe_image_stream(
-                image_bytes=image_bytes, mime_type=mime_type, prompt=prompt, max_output_tokens=max_output_tokens
+                image_bytes=image_bytes,
+                mime_type=mime_type,
+                prompt=prompt,
+                max_output_tokens=max_output_tokens,
             ):
                 started = True
                 yield chunk
@@ -137,7 +146,10 @@ class FallbackLLMClient:
                 "primary vision (%s) unavailable (%s); falling back to secondary", self.primary.model, exc
             )
             async for chunk in self.secondary.describe_image_stream(
-                image_bytes=image_bytes, mime_type=mime_type, prompt=prompt, max_output_tokens=max_output_tokens
+                image_bytes=image_bytes,
+                mime_type=mime_type,
+                prompt=prompt,
+                max_output_tokens=max_output_tokens,
             ):
                 yield chunk
 

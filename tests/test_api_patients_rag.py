@@ -240,7 +240,11 @@ async def test_add_timeline_event_appears_in_patient_detail(client, seeded_patie
         headers = await _auth_headers(client)
         res = await client.post(
             f"/api/patients/{seeded_patient.id}/timeline",
-            json={"type": "imaging", "title": "Chest X-ray reviewed", "detail": "Bilateral infiltrates visible."},
+            json={
+                "type": "imaging",
+                "title": "Chest X-ray reviewed",
+                "detail": "Bilateral infiltrates visible.",
+            },
             headers=headers,
         )
         assert res.status_code == 201
@@ -259,7 +263,9 @@ async def test_add_timeline_event_duplicate_date_and_title_409s(client, seeded_p
     async with client:
         headers = await _auth_headers(client)
         payload = {"date": "2026-01-01", "title": "Chest X-ray reviewed", "detail": "First."}
-        first = await client.post(f"/api/patients/{seeded_patient.id}/timeline", json=payload, headers=headers)
+        first = await client.post(
+            f"/api/patients/{seeded_patient.id}/timeline", json=payload, headers=headers
+        )
         assert first.status_code == 201
 
         second = await client.post(
@@ -309,7 +315,10 @@ async def test_evidence_by_category_returns_excerpts(client):
         assert res.status_code == 200
         body = res.json()
         assert len(body) > 1
-        assert all({"id", "title", "organization", "year", "excerpt", "citation"} <= set(item.keys()) for item in body)
+        assert all(
+            {"id", "title", "organization", "year", "excerpt", "citation"} <= set(item.keys())
+            for item in body
+        )
 
 
 @pytest.mark.asyncio

@@ -161,7 +161,9 @@ async def test_describe_image_stream_does_not_fall_back_if_secondary_has_no_visi
     client = FallbackLLMClient(primary=primary, secondary=secondary)
 
     with pytest.raises(LLMUnavailableError):
-        async for _ in client.describe_image_stream(image_bytes=b"", mime_type="image/png", prompt="describe"):
+        async for _ in client.describe_image_stream(
+            image_bytes=b"", mime_type="image/png", prompt="describe"
+        ):
             pass
     assert secondary.vision_stream_calls == 0
 
@@ -172,7 +174,10 @@ async def test_describe_image_stream_falls_back_when_secondary_opted_into_vision
     secondary = _FakeClient(supports_vision=True, vision_stream_chunks=["groq ", "stream"])
     client = FallbackLLMClient(primary=primary, secondary=secondary)
 
-    chunks = [c async for c in client.describe_image_stream(image_bytes=b"", mime_type="image/png", prompt="describe")]
+    chunks = [
+        c
+        async for c in client.describe_image_stream(image_bytes=b"", mime_type="image/png", prompt="describe")
+    ]
     assert "".join(chunks) == "groq stream"
     assert secondary.vision_stream_calls == 1
 
@@ -192,7 +197,9 @@ async def test_describe_image_stream_does_not_retry_once_primary_has_yielded():
 
     chunks = []
     with pytest.raises(LLMUnavailableError):
-        async for chunk in client.describe_image_stream(image_bytes=b"", mime_type="image/png", prompt="describe"):
+        async for chunk in client.describe_image_stream(
+            image_bytes=b"", mime_type="image/png", prompt="describe"
+        ):
             chunks.append(chunk)
     assert chunks == ["partial "]
     assert secondary.vision_stream_calls == 0

@@ -253,7 +253,9 @@ async def test_describe_image_uses_configured_vision_model():
     client = _make_client(handler, vision_model="llama-3.2-90b-vision-preview")
     assert client.supports_vision is True
 
-    result = await client.describe_image(image_bytes=b"fake-bytes", mime_type="image/png", prompt="describe this")
+    result = await client.describe_image(
+        image_bytes=b"fake-bytes", mime_type="image/png", prompt="describe this"
+    )
 
     assert result == "Bilateral infiltrates visible."
     assert captured["body"]["model"] == "llama-3.2-90b-vision-preview"
@@ -276,7 +278,10 @@ async def test_describe_image_stream_yields_chunks_in_order():
     client = _make_client(handler, vision_model="llama-3.2-90b-vision-preview")
 
     chunks = [
-        c async for c in client.describe_image_stream(image_bytes=b"fake-bytes", mime_type="image/png", prompt="describe")
+        c
+        async for c in client.describe_image_stream(
+            image_bytes=b"fake-bytes", mime_type="image/png", prompt="describe"
+        )
     ]
     assert "".join(chunks) == "Bilateral infiltrates."
 
@@ -285,7 +290,9 @@ async def test_describe_image_stream_yields_chunks_in_order():
 async def test_describe_image_stream_not_supported_without_vision_model():
     client = GroqClient(api_key="fake-key", sleep=_noop_sleep)
     with pytest.raises(LLMUnavailableError):
-        async for _ in client.describe_image_stream(image_bytes=b"", mime_type="image/png", prompt="describe"):
+        async for _ in client.describe_image_stream(
+            image_bytes=b"", mime_type="image/png", prompt="describe"
+        ):
             pass
 
 
@@ -296,5 +303,7 @@ async def test_describe_image_stream_error_status_raises_unavailable():
 
     client = _make_client(handler, vision_model="llama-3.2-90b-vision-preview")
     with pytest.raises(LLMUnavailableError):
-        async for _ in client.describe_image_stream(image_bytes=b"", mime_type="image/png", prompt="describe"):
+        async for _ in client.describe_image_stream(
+            image_bytes=b"", mime_type="image/png", prompt="describe"
+        ):
             pass
