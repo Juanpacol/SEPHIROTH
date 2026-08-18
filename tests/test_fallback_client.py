@@ -11,15 +11,36 @@ from sephiroth.models.fallback import FallbackLLMClient
 class _FakeClient:
     model = "fake-model"
 
-    def __init__(self, chat_result=None, chat_exc=None, json_result=None, json_exc=None, health_result=True):
+    def __init__(
+        self,
+        chat_result=None,
+        chat_exc=None,
+        json_result=None,
+        json_exc=None,
+        health_result=True,
+        supports_vision=True,
+        vision_result="primary vision description",
+        vision_exc=None,
+        vision_stream_chunks=None,
+        vision_stream_exc=None,
+        vision_stream_fail_after_first=False,
+    ):
         self.chat_result = chat_result
         self.chat_exc = chat_exc
         self.json_result = json_result
         self.json_exc = json_exc
         self.health_result = health_result
+        self.supports_vision = supports_vision
+        self.vision_result = vision_result
+        self.vision_exc = vision_exc
+        self.vision_stream_chunks = vision_stream_chunks or []
+        self.vision_stream_exc = vision_stream_exc
+        self.vision_stream_fail_after_first = vision_stream_fail_after_first
         self.chat_calls = 0
         self.json_calls = 0
         self.health_calls = 0
+        self.vision_calls = 0
+        self.vision_stream_calls = 0
 
     async def chat(self, **kwargs):
         self.chat_calls += 1
@@ -34,7 +55,19 @@ class _FakeClient:
         return self.json_result
 
     async def describe_image(self, **kwargs):
-        return "primary vision description"
+        self.vision_calls += 1
+        if self.vision_exc:
+            raise self.vision_exc
+        return self.vision_result
+
+    async def describe_image_stream(self, **kwargs):
+        self.vision_stream_calls += 1
+        if self.vision_stream_exc and not self.vision_stream_fail_after_first:
+            raise self.vision_stream_exc
+        for chunk in self.vision_stream_chunks:
+            yield chunk
+        if self.vision_stream_exc and self.vision_stream_fail_after_first:
+            raise self.vision_stream_exc
 
     async def health(self):
         self.health_calls += 1
@@ -93,6 +126,76 @@ async def test_describe_image_never_falls_back():
 
     result = await client.describe_image(image_bytes=b"", mime_type="image/png", prompt="describe")
     assert result == "primary vision description"
+
+
+@pytest.mark.asyncio
+async def test_describe_image_does_not_fall_back_if_secondary_has_no_vision():
+    """Default posture (secondary.supports_vision=False, e.g. a bare
+    GroqClient with no vision_model configured): a primary vision failure
+    must propagate, not silently swallow into a fallback that doesn't
+    exist. Matches the pre-opt-in behavior exactly."""
+    primary = _FakeClient(vision_exc=LLMUnavailableError("gemini vision quota exhausted"))
+    secondary = _FakeClient(supports_vision=False)
+    client = FallbackLLMClient(primary=primary, secondary=secondary)
+
+    with pytest.raises(LLMUnavailableError):
+        await client.describe_image(image_bytes=b"", mime_type="image/png", prompt="describe")
+    assert secondary.vision_calls == 0
+
+
+@pytest.mark.asyncio
+async def test_describe_image_falls_back_when_secondary_opted_into_vision():
+    primary = _FakeClient(vision_exc=LLMUnavailableError("gemini vision quota exhausted"))
+    secondary = _FakeClient(supports_vision=True, vision_result="groq vision description")
+    client = FallbackLLMClient(primary=primary, secondary=secondary)
+
+    result = await client.describe_image(image_bytes=b"", mime_type="image/png", prompt="describe")
+    assert result == "groq vision description"
+    assert secondary.vision_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_does_not_fall_back_if_secondary_has_no_vision():
+    primary = _FakeClient(vision_stream_exc=LLMUnavailableError("gemini vision quota exhausted"))
+    secondary = _FakeClient(supports_vision=False)
+    client = FallbackLLMClient(primary=primary, secondary=secondary)
+
+    with pytest.raises(LLMUnavailableError):
+        async for _ in client.describe_image_stream(image_bytes=b"", mime_type="image/png", prompt="describe"):
+            pass
+    assert secondary.vision_stream_calls == 0
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_falls_back_when_secondary_opted_into_vision():
+    primary = _FakeClient(vision_stream_exc=LLMUnavailableError("gemini vision quota exhausted"))
+    secondary = _FakeClient(supports_vision=True, vision_stream_chunks=["groq ", "stream"])
+    client = FallbackLLMClient(primary=primary, secondary=secondary)
+
+    chunks = [c async for c in client.describe_image_stream(image_bytes=b"", mime_type="image/png", prompt="describe")]
+    assert "".join(chunks) == "groq stream"
+    assert secondary.vision_stream_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_does_not_retry_once_primary_has_yielded():
+    """Once the primary has already streamed a chunk to the caller, a later
+    failure must propagate rather than silently restart on the secondary —
+    replaying would duplicate content the caller already received."""
+    primary = _FakeClient(
+        vision_stream_chunks=["partial "],
+        vision_stream_exc=LLMUnavailableError("dropped mid-stream"),
+        vision_stream_fail_after_first=True,
+    )
+    secondary = _FakeClient(supports_vision=True, vision_stream_chunks=["should not run"])
+    client = FallbackLLMClient(primary=primary, secondary=secondary)
+
+    chunks = []
+    with pytest.raises(LLMUnavailableError):
+        async for chunk in client.describe_image_stream(image_bytes=b"", mime_type="image/png", prompt="describe"):
+            chunks.append(chunk)
+    assert chunks == ["partial "]
+    assert secondary.vision_stream_calls == 0
 
 
 @pytest.mark.asyncio

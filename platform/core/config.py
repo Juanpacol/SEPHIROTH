@@ -62,17 +62,24 @@ class Settings(BaseSettings):
 
     # Which provider `get_llm_client()` builds as primary. "gemini" (default)
     # preserves all pre-Phase-1 behavior, including Groq fallback below.
-    # "groq" returns a bare GroqClient with no fallback (Groq has no vision
-    # equivalent, so a symmetric fallback would tangle describe_image).
+    # "groq" returns a bare GroqClient, never wrapped the other way around.
     llm_provider: Literal["gemini", "groq"] = "gemini"
 
     # Fallback LLM — Groq (OpenAI-compatible API), free tier. Used only for
     # text/tool-calling when Gemini is unavailable (rate-limited or its
     # daily request quota is exhausted — a real constraint observed on
-    # the free tier). No fallback for vision or embeddings; those stay on
-    # Gemini only. Fallback is active only when GROQ_API_KEY is set.
+    # the free tier). Fallback is active only when GROQ_API_KEY is set.
     groq_api_key: Optional[str] = None
     groq_model: str = "llama-3.3-70b-versatile"
+    # Vision fallback is opt-in and OFF by default (None) — Groq's vision
+    # models have historically churned (Llama 4 Scout/Maverick both
+    # deprecated in favor of text-only replacements as of this setting's
+    # introduction; only older "-preview" vision models remain, which can
+    # be pulled with little notice). Set this to a vision-capable Groq
+    # model id (e.g. "llama-3.2-90b-vision-preview") to accept that
+    # instability in exchange for imaging staying up when Gemini's vision
+    # quota is exhausted, instead of degrading to "unavailable."
+    groq_vision_model: Optional[str] = None
     groq_max_retries: int = 3
     # Defaults match the values the factory borrowed from Gemini/GroqClient
     # before these existed, so default behavior is unchanged.

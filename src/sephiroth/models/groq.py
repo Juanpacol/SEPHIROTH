@@ -15,6 +15,7 @@ byte-identical to the pre-Phase-1 behavior of having no limiter at all.
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import logging
 import time
@@ -49,6 +50,7 @@ class GroqClient:
         self,
         api_key: Optional[str],
         model: str = "llama-3.3-70b-versatile",
+        vision_model: Optional[str] = None,
         base_url: str = DEFAULT_BASE_URL,
         max_output_tokens: int = 2048,
         timeout_seconds: int = 60,
@@ -58,6 +60,11 @@ class GroqClient:
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ):
         self.model = model
+        # Instance-level, not the class default — vision only turns on when
+        # a caller explicitly opts in via `vision_model` (see config.py's
+        # `groq_vision_model`), since Groq's vision model lineup churns.
+        self.vision_model = vision_model
+        self.supports_vision = bool(vision_model)
         self.api_key = api_key
         self.base_url = base_url
         self.max_output_tokens = max_output_tokens
@@ -235,6 +242,22 @@ class GroqClient:
         data = await self._post(payload)
         return json.loads(data["choices"][0]["message"]["content"])
 
+    def _vision_payload(self, image_bytes: bytes, mime_type: str, prompt: str, max_output_tokens: int) -> Dict[str, Any]:
+        data_url = f"data:{mime_type};base64,{base64.b64encode(image_bytes).decode('ascii')}"
+        return {
+            "model": self.vision_model,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": data_url}},
+                    ],
+                }
+            ],
+            "max_tokens": max_output_tokens,
+        }
+
     async def describe_image(
         self,
         image_bytes: bytes,
@@ -242,10 +265,51 @@ class GroqClient:
         prompt: str,
         max_output_tokens: int = 512,
     ) -> str:
-        """Not supported: Groq's hosted vision models have been deprecated/
-        unreliable historically. Vision stays exclusively on Gemini —
-        see fallback.py, which never routes describe_image here."""
-        raise LLMUnavailableError("GroqClient does not support vision; use Gemini for image description.")
+        """Best-effort only, opt-in via `vision_model` (unset by default —
+        see config.py's `groq_vision_model`). Groq's vision model lineup has
+        churned before (Llama 4 Scout/Maverick both deprecated in favor of
+        text-only replacements); this exists so a Gemini vision outage
+        degrades to a second real attempt instead of "unavailable," for
+        whoever explicitly accepts that instability."""
+        if not self.vision_model:
+            raise LLMUnavailableError("GroqClient has no vision_model configured; use Gemini for image description.")
+        data = await self._post(self._vision_payload(image_bytes, mime_type, prompt, max_output_tokens))
+        return (data["choices"][0]["message"].get("content") or "").strip()
+
+    async def describe_image_stream(
+        self,
+        image_bytes: bytes,
+        mime_type: str,
+        prompt: str,
+        max_output_tokens: int = 512,
+    ):
+        """Streaming counterpart to `describe_image` — same opt-in
+        `vision_model` gate. No retry loop, matching `GeminiClient.
+        describe_image_stream`'s own rationale: a stream that fails mid-flight
+        can't transparently retry without replaying already-yielded chunks."""
+        if not self.vision_model:
+            raise LLMUnavailableError("GroqClient has no vision_model configured; use Gemini for image description.")
+        if not self.api_key:
+            raise LLMUnavailableError("GROQ_API_KEY is not configured.")
+
+        payload = {**self._vision_payload(image_bytes, mime_type, prompt, max_output_tokens), "stream": True}
+        try:
+            async with self._client.stream("POST", "/chat/completions", json=payload) as response:
+                if response.status_code >= 400:
+                    body = await response.aread()
+                    raise LLMUnavailableError(f"{response.status_code}: {body.decode(errors='replace')}")
+                async for line in response.aiter_lines():
+                    if not line.startswith("data: "):
+                        continue
+                    raw = line[len("data: ") :]
+                    if raw == "[DONE]":
+                        break
+                    delta = json.loads(raw)["choices"][0].get("delta", {})
+                    text = delta.get("content")
+                    if text:
+                        yield text
+        except httpx.HTTPError as exc:
+            raise LLMUnavailableError(str(exc)) from exc
 
     async def health(self) -> bool:
         if not self.api_key:

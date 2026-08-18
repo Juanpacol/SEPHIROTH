@@ -7,9 +7,11 @@ factory: a bare `GeminiClient` unless `GROQ_API_KEY` is configured, in which
 case a `FallbackLLMClient` wraps Gemini (primary) and Groq (secondary).
 
 `llm_provider="groq"` is new: it returns a bare `GroqClient`, not a client
-wrapping the other way around — Groq has no vision support, so a symmetric
-"Gemini as Groq's fallback" would tangle `describe_image` semantics for no
-acceptance criterion that requires it.
+wrapping the other way around — there's no acceptance criterion requiring
+"Gemini as Groq's fallback." `describe_image`/`describe_image_stream` fall
+through Gemini -> Groq too, but only when `groq_vision_model` is explicitly
+set (opt-in, off by default — see config.py and GroqClient's docstrings on
+why vision fallback stays best-effort rather than always-on).
 """
 
 from __future__ import annotations
@@ -32,6 +34,7 @@ def get_llm_client() -> Any:
             _client = GroqClient(
                 api_key=settings.groq_api_key,
                 model=settings.groq_model,
+                vision_model=settings.groq_vision_model,
                 max_output_tokens=settings.groq_max_output_tokens,
                 timeout_seconds=settings.groq_timeout_seconds,
                 max_retries=settings.groq_max_retries,
@@ -54,6 +57,7 @@ def get_llm_client() -> Any:
             secondary = GroqClient(
                 api_key=settings.groq_api_key,
                 model=settings.groq_model,
+                vision_model=settings.groq_vision_model,
                 max_output_tokens=settings.groq_max_output_tokens,
                 timeout_seconds=settings.groq_timeout_seconds,
                 max_retries=settings.groq_max_retries,

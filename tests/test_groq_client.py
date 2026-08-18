@@ -234,7 +234,67 @@ async def test_health_false_on_error():
 
 @pytest.mark.asyncio
 async def test_describe_image_not_supported():
-    # AC-001-05 (docs/specs/SPEC-001-model-provider.md)
+    # AC-001-05 (docs/specs/SPEC-001-model-provider.md) — default posture,
+    # no vision_model configured.
     client = GroqClient(api_key="fake-key", sleep=_noop_sleep)
+    assert client.supports_vision is False
     with pytest.raises(LLMUnavailableError):
         await client.describe_image(image_bytes=b"", mime_type="image/png", prompt="describe")
+
+
+@pytest.mark.asyncio
+async def test_describe_image_uses_configured_vision_model():
+    captured = {}
+
+    def handler(request):
+        captured["body"] = json_mod.loads(request.content)
+        return httpx.Response(200, json=_openai_response(content="Bilateral infiltrates visible."))
+
+    client = _make_client(handler, vision_model="llama-3.2-90b-vision-preview")
+    assert client.supports_vision is True
+
+    result = await client.describe_image(image_bytes=b"fake-bytes", mime_type="image/png", prompt="describe this")
+
+    assert result == "Bilateral infiltrates visible."
+    assert captured["body"]["model"] == "llama-3.2-90b-vision-preview"
+    content = captured["body"]["messages"][0]["content"]
+    assert content[0] == {"type": "text", "text": "describe this"}
+    assert content[1]["image_url"]["url"].startswith("data:image/png;base64,")
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_yields_chunks_in_order():
+    sse_body = (
+        b'data: {"choices":[{"delta":{"content":"Bilateral "}}]}\n\n'
+        b'data: {"choices":[{"delta":{"content":"infiltrates."}}]}\n\n'
+        b"data: [DONE]\n\n"
+    )
+
+    def handler(request):
+        return httpx.Response(200, content=sse_body, headers={"content-type": "text/event-stream"})
+
+    client = _make_client(handler, vision_model="llama-3.2-90b-vision-preview")
+
+    chunks = [
+        c async for c in client.describe_image_stream(image_bytes=b"fake-bytes", mime_type="image/png", prompt="describe")
+    ]
+    assert "".join(chunks) == "Bilateral infiltrates."
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_not_supported_without_vision_model():
+    client = GroqClient(api_key="fake-key", sleep=_noop_sleep)
+    with pytest.raises(LLMUnavailableError):
+        async for _ in client.describe_image_stream(image_bytes=b"", mime_type="image/png", prompt="describe"):
+            pass
+
+
+@pytest.mark.asyncio
+async def test_describe_image_stream_error_status_raises_unavailable():
+    def handler(request):
+        return httpx.Response(429, text="rate limited")
+
+    client = _make_client(handler, vision_model="llama-3.2-90b-vision-preview")
+    with pytest.raises(LLMUnavailableError):
+        async for _ in client.describe_image_stream(image_bytes=b"", mime_type="image/png", prompt="describe"):
+            pass

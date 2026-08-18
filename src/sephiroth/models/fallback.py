@@ -89,12 +89,25 @@ class FallbackLLMClient:
         prompt: str,
         max_output_tokens: int = 512,
     ) -> str:
-        # No fallback here on purpose: the secondary (Groq) has no
-        # comparable vision endpoint. Vision degrades to "unavailable"
-        # exactly as it would with a bare GeminiClient — see vision_server.py.
-        return await self.primary.describe_image(
-            image_bytes=image_bytes, mime_type=mime_type, prompt=prompt, max_output_tokens=max_output_tokens
-        )
+        try:
+            return await self.primary.describe_image(
+                image_bytes=image_bytes, mime_type=mime_type, prompt=prompt, max_output_tokens=max_output_tokens
+            )
+        except LLMUnavailableError as exc:
+            # Only falls through if the secondary was explicitly configured
+            # for vision (`groq_vision_model` — opt-in, off by default: see
+            # GroqClient's own docstring on why this stays best-effort).
+            # Otherwise `secondary.describe_image` raises the same
+            # LLMUnavailableError immediately, so the net behavior for
+            # anyone who hasn't opted in is unchanged from before.
+            if not getattr(self.secondary, "supports_vision", False):
+                raise
+            logger.warning(
+                "primary vision (%s) unavailable (%s); falling back to secondary", self.primary.model, exc
+            )
+            return await self.secondary.describe_image(
+                image_bytes=image_bytes, mime_type=mime_type, prompt=prompt, max_output_tokens=max_output_tokens
+            )
 
     async def describe_image_stream(
         self,
@@ -103,11 +116,30 @@ class FallbackLLMClient:
         prompt: str,
         max_output_tokens: int = 512,
     ):
-        # Same no-fallback rationale as describe_image above.
-        async for chunk in self.primary.describe_image_stream(
-            image_bytes=image_bytes, mime_type=mime_type, prompt=prompt, max_output_tokens=max_output_tokens
-        ):
-            yield chunk
+        # Streaming can't fall back mid-stream once chunks have already
+        # reached the caller — decide up front instead by making one
+        # (uncommitted) attempt: if the primary raises before yielding
+        # anything, retry the whole call on the secondary; once the primary
+        # has yielded at least one chunk, its stream is used to completion
+        # even if it later fails, matching describe_image_stream's own
+        # no-mid-stream-retry rationale.
+        try:
+            started = False
+            async for chunk in self.primary.describe_image_stream(
+                image_bytes=image_bytes, mime_type=mime_type, prompt=prompt, max_output_tokens=max_output_tokens
+            ):
+                started = True
+                yield chunk
+        except LLMUnavailableError as exc:
+            if started or not getattr(self.secondary, "supports_vision", False):
+                raise
+            logger.warning(
+                "primary vision (%s) unavailable (%s); falling back to secondary", self.primary.model, exc
+            )
+            async for chunk in self.secondary.describe_image_stream(
+                image_bytes=image_bytes, mime_type=mime_type, prompt=prompt, max_output_tokens=max_output_tokens
+            ):
+                yield chunk
 
     async def health(self) -> bool:
         primary_ok = await self.primary.health()
