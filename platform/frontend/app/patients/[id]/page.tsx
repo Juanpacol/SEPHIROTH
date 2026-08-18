@@ -19,6 +19,7 @@ import { authHeaders } from "@/lib/auth";
 import StatusPill from "@/components/status-pill";
 import AgentBadge from "@/components/agent-badge";
 import ShareResultSheet from "@/components/results/share-result-sheet";
+import InteractionCheckerCard from "@/components/patients/interaction-checker-card";
 import { useToast } from "@/components/ui/toast";
 
 function AddNoteCard({ patientId }: { patientId: string }) {
@@ -250,6 +251,8 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
               </p>
             </div>
           )}
+
+          <InteractionCheckerCard medications={patient.medications} />
 
           <div className="card">
             <h2 className="mb-3 font-bold">Lab Results</h2>

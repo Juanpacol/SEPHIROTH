@@ -438,6 +438,15 @@ class Consultation(Base):
     risk_level: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, index=True)
     abstained: Mapped[Optional[bool]] = mapped_column(nullable=True, index=True)
     supported_claim_ratio: Mapped[Optional[float]] = mapped_column(nullable=True, index=True)
+    # Outcome tracking: did the clinician act on this recommendation, and did
+    # the patient improve? Same nullable-scalar-no-backfill pattern as the
+    # trace columns above — `acted_on is None` means "never touched" (distinct
+    # from `False`, an explicit "no"), and `outcome` is only ever set once
+    # `acted_on` is true, recorded at a separate, later time.
+    acted_on: Mapped[Optional[bool]] = mapped_column(nullable=True, index=True)
+    acted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    outcome: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, index=True)  # improved|not_improved|unclear
+    outcome_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="consultations")

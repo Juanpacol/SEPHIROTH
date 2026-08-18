@@ -126,4 +126,10 @@ def assess_risk_level(flags: List[Dict[str, str]]) -> str:
     return "low"
 
 
-__all__ = ["LabRule", "LAB_RULES", "assess_patient_risk", "assess_risk_level"]
+# Shared sort key for anywhere a patient list needs to surface the riskiest
+# first (dashboard's critical-patients view, `/api/patients?sort=risk`) —
+# one definition so both routers agree on tie-breaking (unknown levels sort
+# last, after "low").
+RISK_ORDER: Dict[str, int] = {"high": 0, "medium": 1, "low": 2}
+
+__all__ = ["LabRule", "LAB_RULES", "RISK_ORDER", "assess_patient_risk", "assess_risk_level"]

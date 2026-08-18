@@ -32,7 +32,7 @@ export default function BookAppointmentSheet({
     }
   }, [open, defaultDate]);
 
-  const { data: patients } = useQuery({ queryKey: ["patients"], queryFn: api.patients, enabled: open });
+  const { data: patients } = useQuery({ queryKey: ["patients"], queryFn: () => api.patients(), enabled: open });
 
   const nextDay = (d: string) => {
     const dt = new Date(`${d}T00:00:00`);

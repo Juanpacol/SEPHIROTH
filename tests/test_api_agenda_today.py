@@ -89,12 +89,14 @@ async def test_agenda_counts_only_todays_booked_appointments(client, db_session)
 
 
 async def test_dashboard_stats_shape_unchanged_by_scheduling_feature(client, db_session):
-    """Regression lock: adding scheduling/results must not touch
-    `/api/dashboard/stats`'s response shape."""
+    """Regression lock: scheduling/results must not touch
+    `/api/dashboard/stats`'s response shape (last updated when the dashboard
+    was redesigned around a risk-sorted critical-patients list instead of
+    generic KPI cards — see tests/test_api_patients_rag.py for the shape's
+    own coverage)."""
     async with client:
         headers, _ = await _clinician(client)
         res = await client.get("/api/dashboard/stats", headers=headers)
         assert res.status_code == 200
         body = res.json()
-        assert set(body.keys()) == {"kpis", "agents", "system"}
-        assert len(body["kpis"]) == 4
+        assert set(body.keys()) == {"critical_patients", "critical_count", "at_risk_count"}

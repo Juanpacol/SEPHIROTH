@@ -7,6 +7,7 @@ import {
   BookOpenCheck,
   Bot,
   CalendarDays,
+  CheckCircle2,
   ClipboardList,
   FileText,
   LayoutDashboard,
@@ -28,6 +29,7 @@ const CLINICIAN_NAV = [
       { href: "/copilot", label: "Copilot Chat", icon: Bot },
       { href: "/patients", label: "Patients", icon: Users },
       { href: "/schedule", label: "Schedule", icon: CalendarDays },
+      { href: "/recommendations", label: "My Recommendations", icon: CheckCircle2 },
     ],
   },
   {

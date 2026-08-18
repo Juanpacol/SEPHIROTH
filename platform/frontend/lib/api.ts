@@ -1,22 +1,28 @@
 /** Typed fetch helpers for the FastAPI backend (proxied via next.config rewrites). */
 
-export interface Kpi {
-  label: string;
-  value: number;
-  delta: string;
-  trend: "up" | "down";
-}
-
 export interface AgentStatus {
   name: string;
   status: string;
   consultations: number;
 }
 
-export interface DashboardStats {
-  kpis: Kpi[];
+export interface AgentsStatus {
   agents: AgentStatus[];
   system: { llm: string; model: string; provider: string; local_only: boolean };
+}
+
+export interface CriticalPatient {
+  id: string;
+  name: string;
+  risk_level: "high" | "medium";
+  top_flag: string | null;
+  flag_count: number;
+}
+
+export interface DashboardStats {
+  critical_patients: CriticalPatient[];
+  critical_count: number;
+  at_risk_count: number;
 }
 
 export interface PatientSummary {
@@ -92,6 +98,30 @@ export interface HistoryItem extends ConsultResponse {
   query: string;
   patient_id: string | null;
   created_at: string;
+  acted_on: boolean | null;
+  acted_at: string | null;
+  outcome: "improved" | "not_improved" | "unclear" | null;
+  outcome_at: string | null;
+}
+
+export interface RecommendationStats {
+  total: number;
+  acted_on: number;
+  improved: number;
+}
+
+export interface DrugInteraction {
+  pair: [string, string];
+  severity: string;
+  effect: string;
+  recommendation: string;
+}
+
+export interface DrugCheckResult {
+  medications_checked: string[];
+  interactions_found: number;
+  interactions: DrugInteraction[];
+  disclaimer: string;
 }
 
 export interface UserOut {
@@ -315,9 +345,17 @@ export const api = {
   login: (body: { email: string; password: string }) =>
     post<AuthResponse>("/api/auth/login", body),
   dashboardStats: () => get<DashboardStats>("/api/dashboard/stats"),
-  patients: () => get<PatientSummary[]>("/api/patients"),
+  agentsStatus: () => get<AgentsStatus>("/api/agents/status"),
+  patients: (sort?: "risk") => get<PatientSummary[]>(`/api/patients${sort ? `?sort=${sort}` : ""}`),
   patient: (id: string) => get<Patient>(`/api/patients/${id}`),
   history: () => get<HistoryItem[]>("/api/agents/history"),
+  recommendationStats: () => get<RecommendationStats>("/api/agents/recommendations/stats"),
+  markActedOn: (id: string, acted_on: boolean) =>
+    patch<HistoryItem>(`/api/agents/history/${id}`, { acted_on }),
+  markOutcome: (id: string, outcome: "improved" | "not_improved" | "unclear") =>
+    patch<HistoryItem>(`/api/agents/history/${id}`, { outcome }),
+  checkDrugInteractions: (medications: string[]) =>
+    post<DrugCheckResult>("/api/medical/drugs/check", { medications }),
   consult: (body: { query: string; patient_id?: string; context?: Record<string, unknown> }) =>
     post<ConsultResponse>("/api/agents/consult", body),
   analyzeImage: (body: { image_path: string; modality: string; target?: string }) =>

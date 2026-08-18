@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import StatusPill from "@/components/status-pill";
 
 export default function PatientsPage() {
+  const sortByRisk = useSearchParams().get("sort") === "risk";
   const { data: patients, isLoading } = useQuery({
-    queryKey: ["patients"],
-    queryFn: api.patients,
+    queryKey: ["patients", sortByRisk ? "risk" : "name"],
+    queryFn: () => api.patients(sortByRisk ? "risk" : undefined),
   });
 
   return (

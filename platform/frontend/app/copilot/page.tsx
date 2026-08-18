@@ -233,7 +233,7 @@ export default function CopilotPage() {
     closePdfPreview();
   };
 
-  const { data: patients } = useQuery({ queryKey: ["patients"], queryFn: api.patients });
+  const { data: patients } = useQuery({ queryKey: ["patients"], queryFn: () => api.patients() });
   const { data: history } = useQuery({ queryKey: ["history"], queryFn: api.history });
 
   // Restore persisted history (oldest first) once per mount.

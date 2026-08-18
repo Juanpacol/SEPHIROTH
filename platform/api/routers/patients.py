@@ -18,15 +18,16 @@ from auth.security import hash_password
 from core.db import get_session
 from data.schemas import ClinicalNote, Patient, PatientInvite, TimelineEvent, User
 from sephiroth.models import get_llm_client
-from sephiroth.safety.risk import assess_patient_risk, assess_risk_level
+from sephiroth.safety.risk import RISK_ORDER, assess_patient_risk, assess_risk_level
 
 INVITE_TTL = timedelta(hours=72)
 
 router = APIRouter()
 
 
-def _summary(patient: Patient) -> Dict[str, Any]:
-    flags = assess_patient_risk(patient.lab_results, patient.medications)
+def _summary(patient: Patient, flags: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
+    if flags is None:
+        flags = assess_patient_risk(patient.lab_results, patient.medications)
     return {
         "id": patient.id,
         "name": patient.name,
@@ -50,12 +51,13 @@ def _event(event: TimelineEvent) -> Dict[str, Any]:
 
 
 def _full(patient: Patient) -> Dict[str, Any]:
+    flags = assess_patient_risk(patient.lab_results, patient.medications)
     return {
-        **_summary(patient),
+        **_summary(patient, flags),
         "medications": patient.medications,
         "allergies": patient.allergies,
         "lab_results": patient.lab_results,
-        "risk_flags": assess_patient_risk(patient.lab_results, patient.medications),
+        "risk_flags": flags,
         "timeline": [_event(e) for e in patient.timeline],
     }
 
@@ -70,9 +72,17 @@ class PatientCreate(BaseModel):
 
 
 @router.get("")
-async def list_patients(session: AsyncSession = Depends(get_session)) -> List[Dict[str, Any]]:
+async def list_patients(
+    sort: Optional[str] = None, session: AsyncSession = Depends(get_session)
+) -> List[Dict[str, Any]]:
+    """`sort=risk` reorders the (still name-sorted-first) list by risk level,
+    highest first — used by the dashboard's critical-patients view. Omitting
+    it keeps the original alphabetical-by-name order unchanged."""
     patients = (await session.scalars(select(Patient).order_by(Patient.name))).all()
-    return [_summary(p) for p in patients]
+    summaries = [_summary(p) for p in patients]
+    if sort == "risk":
+        summaries.sort(key=lambda s: RISK_ORDER.get(s["risk_level"], len(RISK_ORDER)))
+    return summaries
 
 
 @router.post("", status_code=201)

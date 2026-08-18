@@ -2,13 +2,14 @@
 
 import json
 import logging
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.pdf_export import render_consultation_pdf
@@ -203,6 +204,49 @@ async def consult_stream(
     )
 
 
+_AGENT_KEYS = {
+    "Evidence": "evidence",
+    "Radiology": "radiology",
+    "Laboratory": "laboratory",
+    "Drug Safety": "drug-safety",
+    "Coordinator": "coordinator",
+}
+
+
+@router.get("/status", summary="Per-agent usage + LLM health, for the Agents Activity page")
+async def agents_status(
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Moved here (was previously folded into `/api/dashboard/stats`) when
+    the dashboard was redesigned around a critical-patients list — this data
+    is about agents, not "what needs my attention today," and belongs in
+    this router. Behavior unchanged from the old dashboard endpoint."""
+    consultation_count = await session.scalar(select(func.count(Consultation.id))) or 0
+    all_agents_used = (await session.scalars(select(Consultation.agents))).all()
+    usage = {name: 0 for name in _AGENT_KEYS}
+    for agents_list in all_agents_used:
+        for name, key in _AGENT_KEYS.items():
+            if key in (agents_list or []):
+                usage[name] += 1
+    # Coordinator synthesizes every consultation.
+    usage["Coordinator"] = consultation_count
+
+    llm_ok = await get_llm_client().health()
+    return {
+        "agents": [
+            {"name": name, "status": "ready" if llm_ok else "offline", "consultations": usage[name]}
+            for name in _AGENT_KEYS
+        ],
+        "system": {
+            "llm": "online" if llm_ok else "offline",
+            "model": settings.gemini_model,
+            "provider": "gemini",
+            "local_only": False,
+        },
+    }
+
+
 @router.get("/history")
 async def history(
     limit: int = 20,
@@ -233,9 +277,86 @@ async def history(
             "explanation": build_explanation(c.agents, c.tool_calls, c.citation_report),
             "patient_id": c.patient_id,
             "created_at": c.created_at.isoformat(),
+            "acted_on": c.acted_on,
+            "acted_at": c.acted_at.isoformat() if c.acted_at else None,
+            "outcome": c.outcome,
+            "outcome_at": c.outcome_at.isoformat() if c.outcome_at else None,
         }
         for c in rows
     ]
+
+
+_OUTCOMES = ("improved", "not_improved", "unclear")
+
+
+class ConsultationUpdate(BaseModel):
+    """Partial update for the "My Recommendations" workflow — a clinician
+    marking whether they acted on a past consultation's answer, and later,
+    separately, whether the patient improved. Either field alone is a valid
+    request; both get their own timestamp since they're recorded at
+    different times, not atomically."""
+
+    acted_on: Optional[bool] = None
+    outcome: Optional[str] = Field(None, pattern="^(" + "|".join(_OUTCOMES) + ")$")
+
+
+@router.patch("/history/{consultation_id}", summary="Mark a consultation acted-on and/or its outcome")
+async def update_consultation_outcome(
+    consultation_id: str,
+    body: ConsultationUpdate,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    consultation = await session.scalar(
+        select(Consultation).where(Consultation.id == consultation_id, Consultation.user_id == user.id)
+    )
+    if consultation is None:
+        raise HTTPException(status_code=404, detail="Consultation not found")
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if body.acted_on is not None:
+        consultation.acted_on = body.acted_on
+        consultation.acted_at = now
+    if body.outcome is not None:
+        consultation.outcome = body.outcome
+        consultation.outcome_at = now
+    await session.commit()
+
+    return {
+        "id": consultation.id,
+        "acted_on": consultation.acted_on,
+        "acted_at": consultation.acted_at.isoformat() if consultation.acted_at else None,
+        "outcome": consultation.outcome,
+        "outcome_at": consultation.outcome_at.isoformat() if consultation.outcome_at else None,
+    }
+
+
+@router.get("/recommendations/stats", summary="Effectiveness ratio across the current user's own history")
+async def recommendation_stats(
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, int]:
+    """Raw counts, not a pre-formatted string — computed over the user's
+    FULL history (never truncated the way `/history`'s `limit` is), so the
+    ratio stays accurate regardless of how much of the list the UI renders."""
+    total = await session.scalar(select(func.count(Consultation.id)).where(Consultation.user_id == user.id)) or 0
+    acted_on = (
+        await session.scalar(
+            select(func.count(Consultation.id)).where(
+                Consultation.user_id == user.id, Consultation.acted_on.is_(True)
+            )
+        )
+        or 0
+    )
+    improved = (
+        await session.scalar(
+            select(func.count(Consultation.id)).where(
+                Consultation.user_id == user.id, Consultation.outcome == "improved"
+            )
+        )
+        or 0
+    )
+    return {"total": total, "acted_on": acted_on, "improved": improved}
 
 
 @router.get("/history/{consultation_id}/export", summary="Export a consultation as PDF")

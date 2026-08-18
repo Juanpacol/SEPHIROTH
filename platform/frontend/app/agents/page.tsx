@@ -35,7 +35,7 @@ const agentMeta: Record<string, { icon: typeof Bot; description: string; tools: 
 };
 
 export default function AgentsPage() {
-  const { data } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboardStats });
+  const { data } = useQuery({ queryKey: ["agents-status"], queryFn: api.agentsStatus });
 
   return (
     <div className="space-y-5">

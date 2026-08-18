@@ -91,6 +91,38 @@ async def test_list_patients_returns_summary(client, seeded_patient):
 
 
 @pytest.mark.asyncio
+async def test_list_patients_sort_risk_puts_high_risk_first(client, seeded_patient, db_session):
+    """Default order is alphabetical (seeded_patient's "Test Patient" would
+    sort after "Aaron Low Risk"); `sort=risk` must reorder to put the
+    high-risk patient first regardless of name."""
+    low_risk = Patient(
+        id="P002",
+        name="Aaron Low Risk",
+        age=30,
+        sex="F",
+        medical_record_number="PT-00002",
+        conditions=[],
+        medications=[],
+        allergies=[],
+        lab_results={},
+    )
+    db_session.add(low_risk)
+    await db_session.commit()
+
+    async with client:
+        headers = await _auth_headers(client)
+
+        default_res = await client.get("/api/patients", headers=headers)
+        assert [p["id"] for p in default_res.json()] == ["P002", "P001"]
+
+        risk_res = await client.get("/api/patients?sort=risk", headers=headers)
+        body = risk_res.json()
+        assert [p["id"] for p in body] == ["P001", "P002"]
+        assert body[0]["risk_level"] == "high"
+        assert body[1]["risk_level"] == "low"
+
+
+@pytest.mark.asyncio
 async def test_create_patient_returns_full_record_with_empty_timeline(client):
     """No test exercised the successful creation path before — it's what
     caught a real Postgres-only bug (`patient.timeline = []` after
@@ -214,15 +246,47 @@ async def test_rag_search_requires_auth(client):
 
 @pytest.mark.asyncio
 async def test_dashboard_stats_shape(client, seeded_patient):
+    """`seeded_patient` (potassium 6.0 -> Hyperkalemia, warfarin+aspirin ->
+    a major interaction) is high-risk, so it must show up in
+    `critical_patients` — this is the dashboard's whole point now: which
+    patients need attention, not aggregate counts."""
     async with client:
         headers = await _auth_headers(client)
         res = await client.get("/api/dashboard/stats", headers=headers)
         assert res.status_code == 200
         body = res.json()
-        assert "kpis" in body
-        assert "agents" in body
-        assert "system" in body
-        assert body["system"]["local_only"] is False
+        assert body["critical_count"] == 1
+        assert body["at_risk_count"] == 1
+        assert len(body["critical_patients"]) == 1
+        critical = body["critical_patients"][0]
+        assert critical["id"] == "P001"
+        assert critical["risk_level"] == "high"
+        assert critical["flag_count"] >= 2
+        assert critical["top_flag"]
+
+
+@pytest.mark.asyncio
+async def test_dashboard_stats_excludes_low_risk_patients(client, seeded_patient, db_session):
+    low_risk = Patient(
+        id="P003",
+        name="No Flags Patient",
+        age=40,
+        sex="F",
+        medical_record_number="PT-00003",
+        conditions=[],
+        medications=[],
+        allergies=[],
+        lab_results={},
+    )
+    db_session.add(low_risk)
+    await db_session.commit()
+
+    async with client:
+        headers = await _auth_headers(client)
+        res = await client.get("/api/dashboard/stats", headers=headers)
+        body = res.json()
+        assert body["at_risk_count"] == 1
+        assert all(p["id"] != "P003" for p in body["critical_patients"])
 
 
 @pytest.mark.asyncio

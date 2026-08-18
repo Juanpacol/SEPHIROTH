@@ -2,12 +2,9 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, ShieldAlert } from "lucide-react";
 import { api } from "@/lib/api";
-import KpiCard from "@/components/kpi-card";
-import StatusPill from "@/components/status-pill";
-import AgentBadge from "@/components/agent-badge";
+import CriticalPatientsList from "@/components/critical-patients-list";
 
 export default function DashboardPage() {
   const { data, isLoading, error } = useQuery({
@@ -36,13 +33,30 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-extrabold">Overview</h1>
-        <p className="text-sm text-muted">Here is the summary of overall data</p>
+        <p className="text-sm text-muted">Who needs attention today</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {data.kpis.map((kpi) => (
-          <KpiCard key={kpi.label} kpi={kpi} />
-        ))}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="card">
+          <div className="text-sm text-muted">High risk</div>
+          <div className="mt-1 text-3xl font-extrabold text-danger">{data.critical_count}</div>
+        </div>
+        <div className="card">
+          <div className="text-sm text-muted">At risk (high + medium)</div>
+          <div className="mt-1 text-3xl font-extrabold">{data.at_risk_count}</div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="mb-1 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 font-bold">
+            <ShieldAlert size={16} className="text-primary" /> Critical patients
+          </h2>
+          <Link href="/patients?sort=risk" className="text-sm font-semibold text-primary">
+            View all →
+          </Link>
+        </div>
+        <CriticalPatientsList patients={data.critical_patients} />
       </div>
 
       <div className="card">
@@ -78,50 +92,6 @@ export default function DashboardPage() {
             </ul>
           </>
         )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="card lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-muted">
-                Intelligence
-              </div>
-              <h2 className="font-bold">Consultations per agent</h2>
-            </div>
-            <AgentBadge name="AI activity" />
-          </div>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={data.agents}>
-              <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} />
-              <YAxis tickLine={false} axisLine={false} fontSize={12} width={30} />
-              <Tooltip cursor={{ fill: "#EBF3FE" }} />
-              <Bar dataKey="consultations" fill="#3683F8" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="card">
-          <h2 className="mb-4 font-bold">Agents status</h2>
-          <ul className="space-y-3">
-            {data.agents.map((agent) => (
-              <li key={agent.name} className="flex items-center justify-between">
-                <span className="text-sm font-medium">{agent.name}</span>
-                <StatusPill label={agent.status} />
-              </li>
-            ))}
-          </ul>
-          <div className="mt-5 rounded-xl border border-line/60 p-3 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted">Gemini</span>
-              <StatusPill label={data.system.llm} />
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-muted">Model</span>
-              <span className="font-semibold">{data.system.model}</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

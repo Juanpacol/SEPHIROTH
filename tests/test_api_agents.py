@@ -120,6 +120,108 @@ async def test_history_requires_auth(client):
 
 
 @pytest.mark.asyncio
+async def test_patch_consultation_marks_acted_on_and_outcome(client):
+    async with client:
+        token = await _register(client)
+        headers = {"Authorization": f"Bearer {token}"}
+        await client.post(
+            "/api/agents/consult", json={"query": "What A1C goal is appropriate?"}, headers=headers
+        )
+        history = (await client.get("/api/agents/history", headers=headers)).json()
+        consultation_id = history[0]["id"]
+        assert history[0]["acted_on"] is None
+        assert history[0]["outcome"] is None
+
+        acted_res = await client.patch(
+            f"/api/agents/history/{consultation_id}", json={"acted_on": True}, headers=headers
+        )
+        assert acted_res.status_code == 200
+        assert acted_res.json()["acted_on"] is True
+        assert acted_res.json()["acted_at"] is not None
+        assert acted_res.json()["outcome"] is None
+
+        outcome_res = await client.patch(
+            f"/api/agents/history/{consultation_id}", json={"outcome": "improved"}, headers=headers
+        )
+        assert outcome_res.status_code == 200
+        assert outcome_res.json()["outcome"] == "improved"
+        assert outcome_res.json()["outcome_at"] is not None
+        # Marking outcome alone must not clobber the earlier acted_on.
+        assert outcome_res.json()["acted_on"] is True
+
+        history_after = (await client.get("/api/agents/history", headers=headers)).json()
+        assert history_after[0]["acted_on"] is True
+        assert history_after[0]["outcome"] == "improved"
+
+
+@pytest.mark.asyncio
+async def test_patch_consultation_rejects_invalid_outcome(client):
+    async with client:
+        token = await _register(client)
+        headers = {"Authorization": f"Bearer {token}"}
+        await client.post(
+            "/api/agents/consult", json={"query": "What A1C goal is appropriate?"}, headers=headers
+        )
+        consultation_id = (await client.get("/api/agents/history", headers=headers)).json()[0]["id"]
+        res = await client.patch(
+            f"/api/agents/history/{consultation_id}", json={"outcome": "cured"}, headers=headers
+        )
+        assert res.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_patch_consultation_wrong_user_404s(client):
+    async with client:
+        token = await _register(client)
+        headers = {"Authorization": f"Bearer {token}"}
+        await client.post(
+            "/api/agents/consult", json={"query": "What A1C goal is appropriate?"}, headers=headers
+        )
+        consultation_id = (await client.get("/api/agents/history", headers=headers)).json()[0]["id"]
+
+        other_token = await client.post(
+            "/api/auth/register",
+            json={"email": "other@example.org", "name": "Dr. Other", "password": "password123"},
+        )
+        other_headers = {"Authorization": f"Bearer {other_token.json()['access_token']}"}
+        res = await client.patch(
+            f"/api/agents/history/{consultation_id}", json={"acted_on": True}, headers=other_headers
+        )
+        assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_recommendation_stats_counts_correctly(client):
+    async with client:
+        token = await _register(client)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        for _ in range(2):
+            await client.post(
+                "/api/agents/consult", json={"query": "What A1C goal is appropriate?"}, headers=headers
+            )
+        history = (await client.get("/api/agents/history", headers=headers)).json()
+        assert len(history) == 2
+
+        await client.patch(f"/api/agents/history/{history[0]['id']}", json={"acted_on": True}, headers=headers)
+        await client.patch(
+            f"/api/agents/history/{history[0]['id']}", json={"outcome": "improved"}, headers=headers
+        )
+        await client.patch(f"/api/agents/history/{history[1]['id']}", json={"acted_on": False}, headers=headers)
+
+        stats_res = await client.get("/api/agents/recommendations/stats", headers=headers)
+        assert stats_res.status_code == 200
+        assert stats_res.json() == {"total": 2, "acted_on": 1, "improved": 1}
+
+
+@pytest.mark.asyncio
+async def test_recommendation_stats_requires_auth(client):
+    async with client:
+        res = await client.get("/api/agents/recommendations/stats")
+        assert res.status_code == 401
+
+
+@pytest.mark.asyncio
 async def test_recent_consultations_reach_only_the_coordinator(db_session, monkeypatch):
     """SPEC-005 F-034/F-035: a patient with a prior consultation gets a
     `recent_consultations` digest injected into `context` by the router —
