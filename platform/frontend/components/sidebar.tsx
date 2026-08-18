@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   Activity,
   BookOpenCheck,
-  Bot,
   CalendarDays,
   CheckCircle2,
   ClipboardList,
@@ -26,7 +25,6 @@ const CLINICIAN_NAV = [
   {
     label: "Clinical",
     items: [
-      { href: "/copilot", label: "Copilot Chat", icon: Bot },
       { href: "/patients", label: "Patients", icon: Users },
       { href: "/schedule", label: "Schedule", icon: CalendarDays },
       { href: "/recommendations", label: "My Recommendations", icon: CheckCircle2 },
@@ -95,13 +93,6 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
-
-      {user?.role !== "patient" && (
-        <div className="rounded-2xl bg-sephiroth p-3 text-xs font-medium text-ink/80">
-          100% local inference
-          <div className="mt-0.5 font-normal text-ink/60">Gemini · 2.5 Flash</div>
-        </div>
-      )}
     </aside>
   );
 }

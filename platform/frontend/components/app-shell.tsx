@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import AuthGuard from "@/components/auth-guard";
 import Sidebar from "@/components/sidebar";
 import Topbar from "@/components/topbar";
+import CopilotWidget from "@/components/copilot/copilot-widget";
 import { isChromelessRoute } from "@/lib/routes";
 import { DISCLAIMER } from "@/lib/legal";
 
@@ -22,6 +23,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <footer className="px-6 pb-4 text-center text-xs text-muted">{DISCLAIMER}</footer>
         </div>
       </div>
+      <CopilotWidget />
     </AuthGuard>
   );
 }

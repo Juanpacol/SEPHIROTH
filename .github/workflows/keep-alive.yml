@@ -1,0 +1,21 @@
+name: Keep API warm
+
+# Render's free tier spins the backend down after ~15 minutes idle, and
+# waking it back up takes 30-60+ seconds — the dominant cause of a slow
+# first load in production, not frontend bundle size or query speed (both
+# measured fast against a warm instance). A cheap periodic ping to /health
+# keeps it from ever going idle long enough to spin down. Costs nothing;
+# GitHub's own scheduler jitter means "every 10 minutes" can land a bit
+# later some runs, which is fine — Render's window is ~15 minutes.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: |
+          curl -sf "${{ vars.RENDER_SERVICE_URL }}/health" || echo "::warning::Health ping failed — service may be cold-starting or down"
