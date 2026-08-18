@@ -65,10 +65,34 @@ const config: Config = {
           "0%, 60%, 100%": { opacity: "0.25", transform: "translateY(0)" },
           "30%": { opacity: "1", transform: "translateY(-1.5px)" },
         },
+        // magicui Marquee — ported from its v4 `@theme inline` block since
+        // this project is on Tailwind v3 (no `@theme`, config-based instead).
+        marquee: {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(calc(-100% - var(--gap)))" },
+        },
+        "marquee-vertical": {
+          from: { transform: "translateY(0)" },
+          to: { transform: "translateY(calc(-100% - var(--gap)))" },
+        },
+        // magicui ShimmerButton
+        "shimmer-slide": {
+          to: { transform: "translate(calc(100cqw - 100%), 0)" },
+        },
+        "spin-around": {
+          "0%": { transform: "translateZ(0) rotate(0)" },
+          "15%, 35%": { transform: "translateZ(0) rotate(90deg)" },
+          "65%, 85%": { transform: "translateZ(0) rotate(270deg)" },
+          "100%": { transform: "translateZ(0) rotate(360deg)" },
+        },
       },
       animation: {
         fadeIn: "fadeIn 0.3s ease-out",
         thinkingDot: "thinkingDot 1.2s ease-in-out infinite",
+        marquee: "marquee var(--duration, 40s) infinite linear",
+        "marquee-vertical": "marquee-vertical var(--duration, 40s) linear infinite",
+        "shimmer-slide": "shimmer-slide var(--speed, 3s) ease-in-out infinite alternate",
+        "spin-around": "spin-around calc(var(--speed, 3s) * 2) infinite linear",
       },
     },
   },

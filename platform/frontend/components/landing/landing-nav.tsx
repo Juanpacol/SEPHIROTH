@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import WingMark from "@/components/brand/wing-mark";
 import ThemeToggle from "@/components/theme-toggle";
+import { ShimmerButton } from "@/components/magicui/shimmer-button";
 
 const LINKS = [
   { href: "#how-it-works", label: "How it works" },
@@ -44,9 +45,9 @@ export default function LandingNav() {
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <Link href="/login" className="btn-primary py-2 text-sm">
+          <ShimmerButton href="/login" className="!px-4 !py-2 !text-sm">
             Open the app
-          </Link>
+          </ShimmerButton>
         </div>
       </div>
     </header>

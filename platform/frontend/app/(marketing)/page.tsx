@@ -14,9 +14,13 @@ import {
   Layers,
   Link as LinkIcon,
   ShieldCheck,
+  ScanEye,
+  FlaskConical,
+  Pill,
+  BookOpen,
+  Users,
 } from "lucide-react";
 import WingMark from "@/components/brand/wing-mark";
-import AgentBadge from "@/components/agent-badge";
 import AuthRedirectGate from "@/components/landing/auth-redirect-gate";
 import ConsultationWalkthrough from "@/components/landing/consultation-walkthrough";
 import ClaimVerifier from "@/components/landing/claim-verifier";
@@ -25,6 +29,11 @@ import AbstentionGate from "@/components/landing/abstention-gate";
 import HeroSilk from "@/components/landing/hero-silk";
 import ProductWall from "@/components/landing/product-wall";
 import LandingDock from "@/components/landing/landing-dock";
+import { Marquee } from "@/components/magicui/marquee";
+import { BentoGrid, BentoCard } from "@/components/magicui/bento-grid";
+import { BorderBeam } from "@/components/magicui/border-beam";
+import { TextAnimate } from "@/components/magicui/text-animate";
+import { ShimmerButton } from "@/components/magicui/shimmer-button";
 
 const VALUES = [
   {
@@ -45,11 +54,47 @@ const VALUES = [
 ];
 
 const AGENTS = [
-  { name: "Radiology", body: "Reads medical images and returns structured findings, not just prose." },
-  { name: "Laboratory", body: "Flags lab values against reference ranges, unit-aware." },
-  { name: "Drug Safety", body: "Cross-checks a medication list for known interactions." },
-  { name: "Evidence", body: "Pulls guidelines and PubMed results — every line cited, nothing invented." },
-  { name: "Coordinator", body: "Reads every specialist's output and writes the one answer a clinician sees." },
+  {
+    name: "Coordinator",
+    Icon: Users,
+    body: "Reads every specialist's output and writes the one answer a clinician sees.",
+    className: "col-span-3 md:col-span-2 md:row-span-2",
+  },
+  {
+    name: "Radiology",
+    Icon: ScanEye,
+    body: "Reads medical images and returns structured findings, not just prose.",
+    className: "col-span-3 md:col-span-1",
+  },
+  {
+    name: "Laboratory",
+    Icon: FlaskConical,
+    body: "Flags lab values against reference ranges, unit-aware.",
+    className: "col-span-3 md:col-span-1",
+  },
+  {
+    name: "Drug Safety",
+    Icon: Pill,
+    body: "Cross-checks a medication list for known interactions.",
+    className: "col-span-3 md:col-span-1",
+  },
+  {
+    name: "Evidence",
+    Icon: BookOpen,
+    body: "Pulls guidelines and PubMed results — every line cited, nothing invented.",
+    className: "col-span-3 md:col-span-1",
+  },
+];
+
+// The real sources RAGPipeline's seeded corpus draws from (data/rag/__init__.py) —
+// not decorative logos, the actual organizations behind the evidence.
+const SOURCES = [
+  "American Diabetes Association",
+  "ACC / AHA",
+  "GOLD",
+  "KDIGO",
+  "USPSTF",
+  "PubMed / NCBI",
 ];
 
 const FAQS = [
@@ -91,25 +136,41 @@ export default function LandingPage() {
         <span className="inline-flex items-center rounded-full border border-line/70 px-3 py-1 text-xs font-medium text-muted">
           Research &amp; education use — not a medical device
         </span>
-        <h1 className="mx-auto mt-5 max-w-2xl text-3xl font-extrabold tracking-tight md:text-5xl">
+        <TextAnimate
+          as="h1"
+          by="word"
+          animation="blurInUp"
+          duration={0.5}
+          className="mx-auto mt-5 max-w-2xl text-3xl font-extrabold tracking-tight md:text-5xl"
+        >
           Clinical decisions, with the reasoning shown
-        </h1>
+        </TextAnimate>
         <p className="mx-auto mt-4 max-w-xl text-lg text-muted">
           Multi-agent AI that reads the patient record, retrieves the evidence, cites every claim it
           makes, and says so — plainly — the moment the evidence runs out.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/login" className="btn-primary">
-            Open the app
-          </Link>
+          <ShimmerButton href="/login">Open the app</ShimmerButton>
           <a href="#how-it-works" className="btn-ghost">
             See how it works
           </a>
         </div>
 
-        <div className="mx-auto mt-16 max-w-2xl text-left">
+        <div className="relative mx-auto mt-16 max-w-2xl rounded-squircle text-left">
+          <BorderBeam size={90} duration={8} colorFrom="#3683F8" colorTo="#8C92AC" />
           <ConsultationWalkthrough />
         </div>
+      </section>
+
+      {/* Evidence sources — real orgs the RAG corpus cites, not logos */}
+      <section className="border-y border-line/60 bg-primary-soft/20 py-6">
+        <Marquee pauseOnHover className="[--duration:32s]">
+          {SOURCES.map((s) => (
+            <span key={s} className="mx-2 whitespace-nowrap text-sm font-semibold text-muted">
+              {s}
+            </span>
+          ))}
+        </Marquee>
       </section>
 
       {/* Values */}
@@ -190,14 +251,11 @@ export default function LandingPage() {
             Only the specialists a query actually needs get routed in — a drug question never wakes
             up Radiology.
           </p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <BentoGrid className="mt-8 auto-rows-[14rem] md:grid-cols-4">
             {AGENTS.map((a) => (
-              <div key={a.name} className="card card-interactive">
-                <AgentBadge name={a.name} />
-                <p className="mt-2 text-sm text-muted">{a.body}</p>
-              </div>
+              <BentoCard key={a.name} name={a.name} Icon={a.Icon} description={a.body} className={a.className} />
             ))}
-          </div>
+          </BentoGrid>
         </div>
       </section>
 
@@ -268,9 +326,7 @@ export default function LandingPage() {
           code from your care team.
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/login" className="btn-primary">
-            Open the app
-          </Link>
+          <ShimmerButton href="/login">Open the app</ShimmerButton>
           <Link href="/portal/claim" className="btn-ghost">
             Patient portal setup
           </Link>
