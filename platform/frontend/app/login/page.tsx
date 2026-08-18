@@ -72,7 +72,7 @@ export default function LoginPage() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 placeholder="Dr. Jane Smith"
-                className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+                className="input"
               />
             </div>
           )}
@@ -104,11 +104,7 @@ export default function LoginPage() {
 
           {error && <p className="text-sm text-danger">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white disabled:opacity-40"
-          >
+          <button type="submit" disabled={busy} className="btn-primary w-full">
             {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
           </button>
 

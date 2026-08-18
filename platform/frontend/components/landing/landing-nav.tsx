@@ -36,7 +36,7 @@ export default function LandingNav() {
 
         <nav className="hidden items-center gap-6 text-sm font-medium text-muted md:flex">
           {LINKS.map((link) => (
-            <a key={link.href} href={link.href} className="hover:text-primary">
+            <a key={link.href} href={link.href} className="link-underline">
               {link.label}
             </a>
           ))}

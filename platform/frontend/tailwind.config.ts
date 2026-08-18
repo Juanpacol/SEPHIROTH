@@ -46,6 +46,11 @@ const config: Config = {
       },
       boxShadow: {
         card: "0 1px 3px rgba(16, 42, 83, 0.06), 0 8px 24px rgba(16, 42, 83, 0.06)",
+        "card-lg": "0 4px 10px rgba(16, 42, 83, 0.08), 0 16px 40px rgba(16, 42, 83, 0.12)",
+      },
+      transitionTimingFunction: {
+        // UIKit's default spring-ish curve: a slight overshoot then settle.
+        ios: "cubic-bezier(0.34, 1.56, 0.64, 1)",
       },
       backgroundImage: {
         // Metallic pauldron gradient — marks AI-generated content.

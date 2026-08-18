@@ -27,26 +27,26 @@ const VALUES = [
   {
     icon: Layers,
     title: "Specialists, not one generalist",
-    body: "Radiology, laboratory, drug safety, and evidence agents each reason within their own domain, then a coordinator synthesizes what they found.",
+    body: "Radiology, laboratory, drug safety, and evidence agents each stay inside their own domain — one coordinator reads all four before it speaks.",
   },
   {
     icon: LinkIcon,
     title: "Every claim traced to a source",
-    body: "Citations are checked against what the tools actually returned. Anything that can't be traced back gets stripped, not guessed at.",
+    body: "Citation Guard checks each sentence against what the tools actually returned. Nothing traceable gets stripped before a clinician ever sees it.",
   },
   {
     icon: ShieldCheck,
     title: "Silence is a valid answer",
-    body: "When the evidence isn't there, the system says so — a caveat banner or an outright decline, never a confident-sounding guess.",
+    body: "No evidence, no guess. Below its confidence threshold, the system hands back a caveat or an outright decline instead of sounding sure.",
   },
 ];
 
 const AGENTS = [
-  { name: "Radiology", body: "Analyzes medical images and structured findings." },
-  { name: "Laboratory", body: "Interprets lab values against reference ranges." },
-  { name: "Drug Safety", body: "Screens medication lists for interactions." },
-  { name: "Evidence", body: "Retrieves guidelines and PubMed results, always cited." },
-  { name: "Coordinator", body: "Synthesizes every specialist's findings into one answer." },
+  { name: "Radiology", body: "Reads medical images and returns structured findings, not just prose." },
+  { name: "Laboratory", body: "Flags lab values against reference ranges, unit-aware." },
+  { name: "Drug Safety", body: "Cross-checks a medication list for known interactions." },
+  { name: "Evidence", body: "Pulls guidelines and PubMed results — every line cited, nothing invented." },
+  { name: "Coordinator", body: "Reads every specialist's output and writes the one answer a clinician sees." },
 ];
 
 const FAQS = [
@@ -56,19 +56,19 @@ const FAQS = [
   },
   {
     q: "What data does it see?",
-    a: "Whatever a clinician includes in a consultation — patient context, notes, and query text. See the privacy notice in the project README for what leaves the machine.",
+    a: "Only what a clinician puts into a consultation — patient context, notes, and the query itself. See the privacy notice in the project README for exactly what leaves the machine.",
   },
   {
     q: "What happens when it doesn't know?",
-    a: "The abstention gate checks confidence and evidence support before answering. Below its threshold, it declines rather than guesses — see the demo above.",
+    a: "The abstention gate checks confidence and evidence support before an answer ever ships. Below its threshold, it declines instead of guessing — try the slider above.",
   },
   {
     q: "Where do citations come from?",
-    a: "Retrieved clinical guidelines and PubMed results only. Citation Guard strips anything the model added that wasn't actually returned by a tool.",
+    a: "Retrieved clinical guidelines and PubMed results only, nowhere else. Citation Guard strips anything the model added that no tool actually returned.",
   },
   {
     q: "Can I audit a past answer?",
-    a: "Every consultation builds a replayable execution trace — which agents ran, what they called, and how the verification pass classified each claim.",
+    a: "Yes — every consultation saves a replayable execution trace: which agents ran, what they called, and how each claim was classified.",
   },
 ];
 
@@ -90,8 +90,8 @@ export default function LandingPage() {
           Clinical decisions, with the reasoning shown
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-lg text-muted">
-          Multi-agent AI that reads the patient record, retrieves the evidence, cites every claim,
-          and declines when the evidence isn&apos;t there.
+          Multi-agent AI that reads the patient record, retrieves the evidence, cites every claim it
+          makes, and says so — plainly — the moment the evidence runs out.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link href="/login" className="btn-primary">
@@ -111,8 +111,8 @@ export default function LandingPage() {
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="grid gap-5 md:grid-cols-3">
           {VALUES.map((v) => (
-            <div key={v.title} className="card">
-              <div className="mb-3 inline-flex rounded-2xl bg-primary-soft p-2.5 text-primary">
+            <div key={v.title} className="card card-interactive group">
+              <div className="mb-3 inline-flex rounded-2xl bg-primary-soft p-2.5 text-primary transition-transform duration-300 ease-ios group-hover:scale-110 group-hover:rotate-3">
                 <v.icon size={20} />
               </div>
               <h3 className="font-bold">{v.title}</h3>
@@ -127,9 +127,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-4xl px-6 py-24">
           <h2 className="text-2xl font-extrabold md:text-3xl">How a consultation actually runs</h2>
           <p className="mt-3 max-w-2xl text-muted">
-            Routing → specialists → coordinator → citation guard → verification → abstention. Step
-            through it above, or press{" "}
-            <span className="font-semibold text-primary">Run it</span> to watch it play out.
+            Six steps, in order, every time: routing → specialists → coordinator → citation guard →
+            verification → abstention. Step through the tabs above, or press{" "}
+            <span className="font-semibold text-primary">Run it</span> and watch the whole pipeline
+            fire in sequence.
           </p>
         </div>
       </section>
@@ -138,7 +139,8 @@ export default function LandingPage() {
       <section id="safeguards" className="scroll-mt-24 mx-auto max-w-6xl px-6 py-24">
         <h2 className="text-2xl font-extrabold md:text-3xl">Safeguards, made visible</h2>
         <p className="mt-3 max-w-2xl text-muted">
-          Two of the checks every answer passes through before it reaches a clinician.
+          Three of the checks every answer has to clear before it reaches a clinician — try them
+          yourself below.
         </p>
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
           <div>
@@ -167,9 +169,13 @@ export default function LandingPage() {
       <section id="agents" className="scroll-mt-24 border-t border-line/60 bg-primary-soft/30">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <h2 className="text-2xl font-extrabold md:text-3xl">Five specialists, one coordinator</h2>
+          <p className="mt-3 max-w-2xl text-muted">
+            Only the specialists a query actually needs get routed in — a drug question never wakes
+            up Radiology.
+          </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {AGENTS.map((a) => (
-              <div key={a.name} className="card">
+              <div key={a.name} className="card card-interactive">
                 <AgentBadge name={a.name} />
                 <p className="mt-2 text-sm text-muted">{a.body}</p>
               </div>
@@ -183,10 +189,10 @@ export default function LandingPage() {
         <h2 className="text-2xl font-extrabold md:text-3xl">Every consultation is replayable</h2>
         <p className="mt-3 max-w-2xl text-muted">
           A full execution trace — every agent, every tool call, every verification decision — is
-          saved alongside each answer, so a clinician (or an auditor) can see exactly how it was
-          reached.
+          saved alongside each answer, so a clinician or an auditor can see exactly how it was
+          reached, months later, without re-running anything.
         </p>
-        <div className="card mt-8 border-l-4 border-primary/40">
+        <div className="card card-interactive mt-8 border-l-4 border-primary/40">
           <ol className="space-y-3 text-sm">
             <li className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-primary" /> Routing selected Evidence,
@@ -218,11 +224,16 @@ export default function LandingPage() {
           <h2 className="text-2xl font-extrabold md:text-3xl">Frequently asked</h2>
           <div className="mt-6 space-y-3">
             {FAQS.map((f) => (
-              <details key={f.q} className="card group">
+              <details
+                key={f.q}
+                className="card group transition-colors duration-200 open:bg-primary-soft/40"
+              >
                 <summary className="cursor-pointer list-none font-semibold [&::-webkit-details-marker]:hidden">
-                  <span className="flex items-center justify-between">
+                  <span className="flex items-center justify-between transition-colors duration-200 group-hover:text-primary">
                     {f.q}
-                    <span className="transition-transform group-open:rotate-90">›</span>
+                    <span className="transition-transform duration-300 ease-ios group-open:rotate-90 group-open:text-primary">
+                      ›
+                    </span>
                   </span>
                 </summary>
                 <p className="mt-2 text-sm text-muted">{f.a}</p>
@@ -236,7 +247,8 @@ export default function LandingPage() {
       <section className="mx-auto max-w-3xl px-6 py-24 text-center">
         <h2 className="text-2xl font-extrabold md:text-3xl">Ready to see it on your own cases?</h2>
         <p className="mt-3 text-muted">
-          Sign in as a clinician, or set up your portal account with a claim code.
+          Sign in as a clinician to run a consultation, or set up your portal account with a claim
+          code from your care team.
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link href="/login" className="btn-primary">

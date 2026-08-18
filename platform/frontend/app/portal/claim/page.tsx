@@ -106,7 +106,7 @@ function ClaimInviteForm() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 placeholder="Jane Smith"
-                className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+                className="input"
               />
             </div>
 
@@ -118,7 +118,7 @@ function ClaimInviteForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.org"
-                className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+                className="input"
               />
             </div>
 
@@ -131,7 +131,7 @@ function ClaimInviteForm() {
                 required
                 minLength={8}
                 placeholder="At least 8 characters"
-                className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+                className="input"
               />
             </div>
 

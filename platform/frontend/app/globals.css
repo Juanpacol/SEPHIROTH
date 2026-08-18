@@ -39,6 +39,20 @@ html[data-auth-redirect] body {
   }
 }
 
+/* Chrome/Safari autofill ignores `text-ink` and paints its own text color —
+   most visible on a password field, where the wrong color can make what
+   you typed unreadable against the card background. Forces autofilled
+   text to match the theme instead. (Deliberately no `color-scheme` here —
+   that would let the browser repaint the *field's own background* using
+   its native light/dark chrome, fighting the explicit `bg-card` every
+   input already gets from the `.input` class.) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: rgb(var(--color-ink));
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 @layer components {
   .card {
     @apply bg-card rounded-squircle shadow-card p-5;
@@ -61,21 +75,45 @@ html[data-auth-redirect] body {
     @apply inline-flex items-center gap-1.5 rounded-full bg-sephiroth px-2.5 py-0.5 text-[11px] font-semibold text-ink/80;
   }
 
-  /* Shared iOS-style primitives — buttons and inputs across every page. */
+  /* Shared iOS-style primitives — buttons and inputs across every page.
+     The spring-ish cubic-bezier (a slight overshoot then settle) is the
+     same curve UIKit uses for its default `UIView.animate` easing —
+     applied everywhere something responds to touch/hover, not just
+     buttons, so the whole app feels like one system. */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 ease-ios active:scale-[0.97] active:duration-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
   }
   .btn-primary {
-    @apply btn bg-primary text-white shadow-sm hover:bg-primary-dark;
+    @apply btn bg-primary text-white shadow-sm hover:-translate-y-0.5 hover:bg-primary-dark hover:shadow-md;
   }
   .btn-secondary {
-    @apply btn bg-primary-soft text-primary hover:brightness-95;
+    @apply btn bg-primary-soft text-primary hover:-translate-y-0.5 hover:brightness-95;
   }
   .btn-ghost {
-    @apply btn bg-transparent text-ink/70 hover:bg-primary-soft hover:text-primary;
+    @apply btn bg-transparent text-ink/70 hover:-translate-y-0.5 hover:bg-primary-soft hover:text-primary;
   }
   .input {
-    @apply w-full rounded-2xl border border-line bg-card px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+    @apply w-full rounded-2xl border border-line bg-card px-4 py-2.5 text-sm text-ink placeholder:text-muted transition-colors duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+  }
+
+  /* Cards that respond to hover/tap — the landing page's value/agent
+     tiles, not every `.card` app-wide (a dashboard KPI card sitting still
+     reads as more trustworthy than one that wobbles under the cursor). */
+  .card-interactive {
+    @apply cursor-default transition-all duration-300 ease-ios hover:-translate-y-1 hover:shadow-card-lg active:translate-y-0 active:scale-[0.98] active:duration-100;
+  }
+
+  /* Underline that grows from the center on hover, iOS-tab-bar style —
+     used on the landing nav's section links instead of a flat color swap. */
+  .link-underline {
+    @apply relative text-muted transition-colors duration-200 hover:text-primary;
+  }
+  .link-underline::after {
+    content: "";
+    @apply absolute -bottom-1 left-1/2 h-px w-0 -translate-x-1/2 bg-primary transition-all duration-200 ease-ios;
+  }
+  .link-underline:hover::after {
+    @apply w-full;
   }
 
   /* Frosted-glass navbar, translucent + blurred like iOS's UINavigationBar. */
