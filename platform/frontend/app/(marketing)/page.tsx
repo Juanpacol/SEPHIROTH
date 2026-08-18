@@ -22,6 +22,9 @@ import ConsultationWalkthrough from "@/components/landing/consultation-walkthrou
 import ClaimVerifier from "@/components/landing/claim-verifier";
 import CitationGuardToggle from "@/components/landing/citation-guard-toggle";
 import AbstentionGate from "@/components/landing/abstention-gate";
+import HeroSilk from "@/components/landing/hero-silk";
+import ProductWall from "@/components/landing/product-wall";
+import LandingDock from "@/components/landing/landing-dock";
 
 const VALUES = [
   {
@@ -76,9 +79,11 @@ export default function LandingPage() {
   return (
     <>
       <AuthRedirectGate />
+      <LandingDock />
 
       {/* Hero */}
-      <section className="relative mx-auto max-w-6xl px-6 py-24 text-center md:py-32">
+      <section className="relative mx-auto max-w-6xl overflow-hidden px-6 py-24 text-center md:py-32">
+        <HeroSilk />
         <WingMark
           size={420}
           className="pointer-events-none absolute left-1/2 top-0 -z-10 -translate-x-1/2 text-ink/[0.04]"
@@ -119,6 +124,18 @@ export default function LandingPage() {
               <p className="mt-1.5 text-sm text-muted">{v.body}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Product wall — real screenshots, not stock photos */}
+      <section className="mx-auto max-w-6xl px-6 pb-24">
+        <h2 className="text-center text-2xl font-extrabold md:text-3xl">The actual product</h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-muted">
+          Every tile below is a real screenshot — the dashboard, a live consultation, cited
+          evidence search, streaming vision analysis.
+        </p>
+        <div className="mt-8">
+          <ProductWall />
         </div>
       </section>
 
