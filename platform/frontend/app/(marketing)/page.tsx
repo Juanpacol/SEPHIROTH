@@ -33,21 +33,21 @@ import { BorderBeam } from "@/components/magicui/border-beam";
 import { TextAnimate } from "@/components/magicui/text-animate";
 import { ShimmerButton } from "@/components/magicui/shimmer-button";
 
-const VALUES = [
+const PAIN_POINTS = [
   {
     icon: Layers,
-    title: "One consult, four specialists, no tab-switching",
-    body: "Radiology, laboratory, drug safety, and evidence run in parallel and report to one coordinator — the workup that used to mean four lookups now takes one query.",
+    problem: "A drug interaction check here, a guideline search there, a lab flag in another tab — 15+ minutes gone before you've even started reasoning about the case.",
+    solution: "One question fans out to radiology, labs, drug safety, and evidence agents in parallel, and comes back synthesized — the four lookups collapse into the time it takes to read one answer.",
   },
   {
     icon: LinkIcon,
-    title: "Every claim traced to a source",
-    body: "Citation Guard checks each sentence against what the tools actually returned, so you're reviewing a cited answer, not re-verifying one from scratch.",
+    problem: "Most clinical AI hands you a confident paragraph with no way to check where any of it came from — you either trust it blindly or re-verify it yourself, which defeats the point.",
+    solution: "Every sentence is checked against what the tools actually retrieved and labeled supported, contradicted, or unverified before it ever reaches you — a cited answer, not a leap of faith.",
   },
   {
     icon: ShieldCheck,
-    title: "Silence is a valid answer",
-    body: "No evidence, no guess. Below its confidence threshold, the system hands back a caveat or an outright decline instead of costing you time on a wrong lead.",
+    problem: "A wrong guess costs more than a slow one, but most tools answer with the same confidence whether the evidence is there or not.",
+    solution: "Below its confidence threshold, SEPHIROTH hands back a caveat or declines outright instead of guessing — the tool tells you when to keep digging, instead of pretending it knows.",
   },
 ];
 
@@ -170,16 +170,31 @@ export default function LandingPage() {
         </Marquee>
       </section>
 
-      {/* Values */}
+      {/* Pain points — what actually costs a clinician time and trust, and how SEPHIROTH answers it */}
       <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="grid gap-5 md:grid-cols-3">
-          {VALUES.map((v) => (
-            <div key={v.title} className="card card-interactive group">
-              <div className="mb-3 inline-flex rounded-2xl bg-primary-soft p-2.5 text-primary transition-transform duration-300 ease-ios group-hover:scale-110 group-hover:rotate-3">
+        <h2 className="text-center text-2xl font-extrabold md:text-3xl">
+          Built around what actually slows you down
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-muted">
+          Not another chatbot bolted onto a chart — three problems that cost real minutes and real
+          trust, and what we built specifically to close each one.
+        </p>
+        <div className="mt-10 space-y-5">
+          {PAIN_POINTS.map((v) => (
+            <div key={v.problem} className="card grid gap-4 md:grid-cols-[auto_1fr_1fr] md:items-center">
+              <div className="inline-flex rounded-2xl bg-primary-soft p-2.5 text-primary md:self-start">
                 <v.icon size={20} />
               </div>
-              <h3 className="font-bold">{v.title}</h3>
-              <p className="mt-1.5 text-sm text-muted">{v.body}</p>
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wide text-danger">The problem</span>
+                <p className="mt-1 text-sm text-muted">{v.problem}</p>
+              </div>
+              <div className="border-t border-line/60 pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+                <span className="text-xs font-bold uppercase tracking-wide text-primary">
+                  How SEPHIROTH answers it
+                </span>
+                <p className="mt-1 text-sm">{v.solution}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -197,26 +212,31 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How it works */}
+      {/* How it works — the mechanics, for the reader who wants to know before trusting it */}
       <section id="how-it-works" className="scroll-mt-24 border-t border-line/60 bg-primary-soft/30">
         <div className="mx-auto max-w-4xl px-6 py-24">
-          <h2 className="text-2xl font-extrabold md:text-3xl">The workup, compressed into one pass</h2>
+          <span className="text-xs font-bold uppercase tracking-wide text-primary">
+            For the curious: how it actually runs
+          </span>
+          <h2 className="mt-2 text-2xl font-extrabold md:text-3xl">
+            The same workup you&apos;d do by hand, minus the serial part
+          </h2>
           <p className="mt-3 max-w-2xl text-muted">
             Six steps, in order, every time: routing → specialists → coordinator → citation guard →
-            verification → abstention — the same chart review and cross-checking a clinician would
-            do by hand, run in parallel instead of serially. Step through the tabs above, or press{" "}
-            <span className="font-semibold text-primary">Run it</span> and watch the whole pipeline
-            fire in sequence.
+            verification → abstention — the chart review and cross-checking you already do,
+            just run in parallel instead of one lookup at a time. Step through the tabs above, or
+            press <span className="font-semibold text-primary">Run it</span> and watch the whole
+            pipeline fire in sequence.
           </p>
         </div>
       </section>
 
       {/* Safeguards */}
       <section id="safeguards" className="scroll-mt-24 mx-auto max-w-6xl px-6 py-24">
-        <h2 className="text-2xl font-extrabold md:text-3xl">Safeguards, made visible</h2>
+        <h2 className="text-2xl font-extrabold md:text-3xl">Recommendations you can put your name behind</h2>
         <p className="mt-3 max-w-2xl text-muted">
-          Three of the checks every answer has to clear before it reaches a clinician — try them
-          yourself below.
+          Three checks stand between a raw model output and anything you actually see — try each
+          one yourself below.
         </p>
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
           <div>
@@ -244,10 +264,10 @@ export default function LandingPage() {
       {/* Agents */}
       <section id="agents" className="scroll-mt-24 border-t border-line/60 bg-primary-soft/30">
         <div className="mx-auto max-w-6xl px-6 py-24">
-          <h2 className="text-2xl font-extrabold md:text-3xl">Five specialists, one coordinator</h2>
+          <h2 className="text-2xl font-extrabold md:text-3xl">Every specialist a case needs, none it doesn't</h2>
           <p className="mt-3 max-w-2xl text-muted">
-            Only the specialists a query actually needs get routed in — a drug question never wakes
-            up Radiology.
+            No fixed checklist wasting your time — only the specialists a query actually needs get
+            routed in, so a drug question never sits waiting on Radiology.
           </p>
           <BentoGrid className="mt-8 auto-rows-[14rem] md:grid-cols-4">
             {AGENTS.map((a) => (
@@ -259,11 +279,11 @@ export default function LandingPage() {
 
       {/* Trace showcase */}
       <section className="mx-auto max-w-4xl px-6 py-24">
-        <h2 className="text-2xl font-extrabold md:text-3xl">Every consultation is replayable</h2>
+        <h2 className="text-2xl font-extrabold md:text-3xl">Defend any recommendation, months later</h2>
         <p className="mt-3 max-w-2xl text-muted">
-          A full execution trace — every agent, every tool call, every verification decision — is
-          saved alongside each answer, so a clinician or an auditor can see exactly how it was
-          reached, months later, without re-running anything.
+          A QA review, a teaching case, a question about why you acted on something — a full
+          execution trace is saved alongside every answer, so you can show exactly how it was
+          reached without re-running anything or trusting your memory.
         </p>
         <div className="card card-interactive mt-8 border-l-4 border-primary/40">
           <ol className="space-y-3 text-sm">
