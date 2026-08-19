@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import WingMark from "@/components/brand/wing-mark";
 import AuthRedirectGate from "@/components/landing/auth-redirect-gate";
-import HeroSilk from "@/components/landing/hero-silk";
 import ConsultationWalkthrough from "@/components/landing/consultation-walkthrough";
 import ClaimVerifier from "@/components/landing/claim-verifier";
 import CitationGuardToggle from "@/components/landing/citation-guard-toggle";
@@ -126,7 +125,6 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative mx-auto max-w-6xl overflow-hidden px-6 py-24 text-center md:py-32">
-        <HeroSilk />
         <WingMark
           size={420}
           className="pointer-events-none absolute left-1/2 top-0 -z-10 -translate-x-1/2 text-ink/[0.04]"
