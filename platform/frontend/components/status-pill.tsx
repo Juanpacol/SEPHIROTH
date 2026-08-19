@@ -12,6 +12,14 @@ const styles: Record<string, string> = {
   "high risk": "bg-danger/10 text-danger",
   "medium risk": "bg-warning/10 text-warning",
   "low risk": "bg-success/10 text-success",
+  // Alert/imaging status + severity
+  critical: "bg-danger/10 text-danger",
+  review: "bg-warning/10 text-warning",
+  resolved: "bg-success/10 text-success",
+  reviewed: "bg-success/10 text-success",
+  analyzed: "bg-success/10 text-success",
+  pending: "bg-primary-soft text-primary",
+  none: "bg-success/10 text-success",
 };
 
 // Clinical severity — a pulsing dot draws the eye to HIGH risk the way a

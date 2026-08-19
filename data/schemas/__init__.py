@@ -485,6 +485,143 @@ class GuidelineDocument(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class Alert(Base):
+    """A clinical alert surfaced on the dashboard — the persisted analogue
+    of the transient risk flags `sephiroth.safety.risk` computes at
+    read-time (decision #10): those flags have no identity to review or
+    resolve, so anything the dashboard needs to track lifecycle for
+    (reviewed by whom, resolved when) needs a real row. Never auto-deleted;
+    lifecycle is a status change, same convention as `Appointment`."""
+
+    __tablename__ = "alerts"
+    __table_args__ = (
+        CheckConstraint(
+            "category IN ('medication','lab','imaging','ai','clinical')", name="ck_alert_category"
+        ),
+        CheckConstraint("severity IN ('critical','high','medium','low')", name="ck_alert_severity"),
+        CheckConstraint("status IN ('active','reviewed','resolved')", name="ck_alert_status"),
+        Index("ix_alerts_status_severity", "status", "severity"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    category: Mapped[str] = mapped_column(String(20))
+    severity: Mapped[str] = mapped_column(String(10))
+    status: Mapped[str] = mapped_column(String(10), default="active", server_default="active", index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    detail: Mapped[str] = mapped_column(Text, default="")
+    source: Mapped[str] = mapped_column(String(60))  # which engine/rule raised it
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    reviewed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+
+    patient: Mapped["Patient"] = relationship()
+
+
+class LabResult(Base):
+    """One discrete lab measurement with real row identity and a
+    timestamp, unlike `Patient.lab_results` (a denormalized
+    current-values JSON snapshot with no history). Powers trend/
+    deterioration queries the JSON blob structurally cannot answer.
+    Newly captured results only — the existing JSON snapshot is not
+    backfilled retroactively."""
+
+    __tablename__ = "lab_results"
+    __table_args__ = (Index("ix_lab_results_patient_test_taken", "patient_id", "test_name", "taken_at"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    test_name: Mapped[str] = mapped_column(String(60))
+    value: Mapped[float]
+    unit: Mapped[str] = mapped_column(String(20), default="")
+    reference_low: Mapped[Optional[float]] = mapped_column(nullable=True)
+    reference_high: Mapped[Optional[float]] = mapped_column(nullable=True)
+    is_abnormal: Mapped[bool] = mapped_column(default=False, server_default="false")
+    is_critical: Mapped[bool] = mapped_column(default=False, server_default="false")
+    taken_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    patient: Mapped["Patient"] = relationship()
+
+
+class MedicationOrder(Base):
+    """A structured medication order, gradually replacing
+    `Patient.medications` (a flat name-only list) as the source for the
+    drug-interaction/dosage-anomaly checks in `sephiroth.safety.risk`.
+    That module keeps reading the JSON list when a patient has no
+    `MedicationOrder` rows, so existing patients don't need a backfill."""
+
+    __tablename__ = "medication_orders"
+    __table_args__ = (CheckConstraint("status IN ('active','discontinued')", name="ck_medication_order_status"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    dose: Mapped[str] = mapped_column(String(60), default="")
+    route: Mapped[str] = mapped_column(String(30), default="")
+    frequency: Mapped[str] = mapped_column(String(60), default="")
+    start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    is_high_risk: Mapped[bool] = mapped_column(default=False, server_default="false")
+    status: Mapped[str] = mapped_column(String(15), default="active", server_default="active", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    patient: Mapped["Patient"] = relationship()
+
+
+class ImagingStudy(Base):
+    """A tracked imaging study and its AI-assisted read — `TimelineEvent`
+    (`type="imaging"`) still carries the narrative entry shown on a
+    patient's timeline; this table adds the structured fields (severity,
+    review flag, new-vs-prior comparison) the dashboard's Imaging section
+    needs that a free-text timeline entry can't answer."""
+
+    __tablename__ = "imaging_studies"
+    __table_args__ = (
+        CheckConstraint("status IN ('pending','analyzed')", name="ck_imaging_study_status"),
+        CheckConstraint("severity IN ('critical','review','none')", name="ck_imaging_study_severity"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    modality: Mapped[str] = mapped_column(String(20))
+    body_part: Mapped[str] = mapped_column(String(60))
+    study_date: Mapped[date] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(String(10), default="pending", server_default="pending", index=True)
+    finding_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    severity: Mapped[str] = mapped_column(String(10), default="none", server_default="none")
+    is_new_finding: Mapped[bool] = mapped_column(default=False, server_default="false")
+    analyzed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    patient: Mapped["Patient"] = relationship()
+
+
+class AIEvaluation(Base):
+    """One AI assessment tracked for the dashboard's Inteligencia Artificial
+    section — complements, not replaces, `Consultation`'s own
+    `risk_level`/`abstained`/`supported_claim_ratio`/`acted_on` columns:
+    those describe one consultation's outcome, this tracks review/override
+    state across any AI evaluation (not only full multi-agent
+    consultations)."""
+
+    __tablename__ = "ai_evaluations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    patient_id: Mapped[Optional[str]] = mapped_column(ForeignKey("patients.id"), nullable=True, index=True)
+    consultation_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("consultations.id"), nullable=True, index=True
+    )
+    eval_type: Mapped[str] = mapped_column(String(40))
+    confidence: Mapped[float] = mapped_column(default=0.0)
+    requires_human_review: Mapped[bool] = mapped_column(default=False, server_default="false")
+    reviewed_by_clinician: Mapped[bool] = mapped_column(default=False, server_default="false")
+    clinician_modified: Mapped[Optional[bool]] = mapped_column(nullable=True)
+    clinician_rejected: Mapped[Optional[bool]] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+
+
 __all__ = [
     "Base",
     "User",
@@ -505,4 +642,9 @@ __all__ = [
     "ResultAttachment",
     "Consultation",
     "GuidelineDocument",
+    "Alert",
+    "LabResult",
+    "MedicationOrder",
+    "ImagingStudy",
+    "AIEvaluation",
 ]

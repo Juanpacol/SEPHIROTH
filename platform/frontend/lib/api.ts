@@ -15,6 +15,7 @@ export interface CriticalPatient {
   id: string;
   name: string;
   risk_level: "high" | "medium";
+  priority_score: number;
   top_flag: string | null;
   flag_count: number;
 }
@@ -22,7 +23,98 @@ export interface CriticalPatient {
 export interface DashboardStats {
   critical_patients: CriticalPatient[];
   critical_count: number;
+  moderate_count: number;
+  stable_count: number;
   at_risk_count: number;
+  max_priority_score: number;
+  avg_priority_score: number;
+}
+
+export interface DashboardEvolution {
+  deteriorating: { id: string; name: string }[];
+  improving: { id: string; name: string }[];
+  no_change: { id: string; name: string }[];
+  deteriorating_count: number;
+  improving_count: number;
+  no_change_count: number;
+  new_risk_factors_count: number;
+}
+
+export interface DashboardAlerts {
+  active_count: number;
+  new_count: number;
+  critical_count: number;
+  pending_review_count: number;
+  resolved_count: number;
+  avg_review_seconds: number | null;
+  recent: {
+    id: string;
+    patient_id: string;
+    category: string;
+    severity: string;
+    status: string;
+    title: string;
+  }[];
+}
+
+export interface DashboardMedications {
+  interaction_count: number;
+  contraindication_count: number;
+  high_risk_medication_count: number;
+  dose_anomaly_count: number;
+  polypharmacy_patient_count: number;
+}
+
+export interface DashboardLabs {
+  abnormal_count: number;
+  critical_count: number;
+  deteriorating_trend_count: number;
+  significant_change_count: number;
+  pending_count: number;
+}
+
+export interface DashboardImaging {
+  analyzed_count: number;
+  critical_finding_count: number;
+  requires_review_count: number;
+  no_relevant_finding_count: number;
+  new_finding_vs_prior_count: number;
+  pending_count: number;
+}
+
+export interface DashboardAI {
+  evaluations_count: number;
+  consultations_count: number;
+  high_risk_prediction_count: number;
+  avg_confidence: number | null;
+  requires_human_review_count: number;
+  clinician_modified_count: number;
+  clinician_rejected_count: number;
+}
+
+export interface DashboardEvidence {
+  recommendations_with_evidence_count: number;
+  recommendations_without_evidence_count: number;
+  distinct_sources_used: number;
+  avg_supported_claim_ratio: number | null;
+}
+
+export interface DashboardPending {
+  unresolved_clinical_issues_count: number;
+  patients_pending_follow_up_count: number;
+  pending_recommendations_count: number;
+  cases_requiring_decision_count: number;
+}
+
+export interface DashboardPerformance {
+  avg_alert_response_seconds: number | null;
+  alerts_resolved_count: number;
+  false_positive_count: number;
+  false_negative_count: number;
+  sensitivity: number | null;
+  specificity: number | null;
+  auc: number | null;
+  methodology: string;
 }
 
 export interface PatientSummary {
@@ -360,6 +452,15 @@ export const api = {
   login: (body: { email: string; password: string }) =>
     post<AuthResponse>("/api/auth/login", body),
   dashboardStats: () => get<DashboardStats>("/api/dashboard/stats"),
+  dashboardEvolution: () => get<DashboardEvolution>("/api/dashboard/evolution"),
+  dashboardAlerts: () => get<DashboardAlerts>("/api/dashboard/alerts"),
+  dashboardMedications: () => get<DashboardMedications>("/api/dashboard/medications"),
+  dashboardLabs: () => get<DashboardLabs>("/api/dashboard/labs"),
+  dashboardImaging: () => get<DashboardImaging>("/api/dashboard/imaging"),
+  dashboardAI: () => get<DashboardAI>("/api/dashboard/ai"),
+  dashboardEvidence: () => get<DashboardEvidence>("/api/dashboard/evidence"),
+  dashboardPending: () => get<DashboardPending>("/api/dashboard/pending"),
+  dashboardPerformance: () => get<DashboardPerformance>("/api/dashboard/performance"),
   agentsStatus: () => get<AgentsStatus>("/api/agents/status"),
   patients: (sort?: "risk") => get<PatientSummary[]>(`/api/patients${sort ? `?sort=${sort}` : ""}`),
   patient: (id: string) => get<Patient>(`/api/patients/${id}`),
