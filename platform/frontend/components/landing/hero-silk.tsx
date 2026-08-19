@@ -2,9 +2,10 @@
 
 /** Client-only wrapper around the Silk WebGL background — `next/dynamic`
  * with `ssr: false` because @react-three/fiber's <Canvas> touches `window`
- * at module-eval time and breaks server rendering. Sits absolutely
- * positioned behind the hero copy; `pointer-events-none` keeps the CTA
- * buttons and the interactive walkthrough beneath it clickable. */
+ * at module-eval time and breaks server rendering. Sits `absolute` inside
+ * the hero section only, with a bottom mask that fades it into the hero's
+ * own background instead of cutting off hard at the section's edge.
+ * `pointer-events-none` keeps every control on top of it clickable. */
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
@@ -36,7 +37,10 @@ export default function HeroSilk() {
   if (!supported) return null;
 
   return (
-    <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.16] dark:opacity-[0.22]" aria-hidden="true">
+    <div
+      className="pointer-events-none absolute inset-0 -z-10 opacity-[0.16] [mask-image:linear-gradient(to_bottom,black,transparent)] dark:opacity-[0.22]"
+      aria-hidden="true"
+    >
       <WebglBoundary>
         <Silk color="#646464" speed={3.2} scale={1} noiseIntensity={1.1} rotation={0.15} />
       </WebglBoundary>

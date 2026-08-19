@@ -22,13 +22,12 @@ import {
 } from "lucide-react";
 import WingMark from "@/components/brand/wing-mark";
 import AuthRedirectGate from "@/components/landing/auth-redirect-gate";
+import HeroSilk from "@/components/landing/hero-silk";
 import ConsultationWalkthrough from "@/components/landing/consultation-walkthrough";
 import ClaimVerifier from "@/components/landing/claim-verifier";
 import CitationGuardToggle from "@/components/landing/citation-guard-toggle";
 import AbstentionGate from "@/components/landing/abstention-gate";
-import HeroSilk from "@/components/landing/hero-silk";
 import ProductWall from "@/components/landing/product-wall";
-import LandingDock from "@/components/landing/landing-dock";
 import { Marquee } from "@/components/magicui/marquee";
 import { BentoGrid, BentoCard } from "@/components/magicui/bento-grid";
 import { BorderBeam } from "@/components/magicui/border-beam";
@@ -38,18 +37,18 @@ import { ShimmerButton } from "@/components/magicui/shimmer-button";
 const VALUES = [
   {
     icon: Layers,
-    title: "Specialists, not one generalist",
-    body: "Radiology, laboratory, drug safety, and evidence agents each stay inside their own domain — one coordinator reads all four before it speaks.",
+    title: "One consult, four specialists, no tab-switching",
+    body: "Radiology, laboratory, drug safety, and evidence run in parallel and report to one coordinator — the workup that used to mean four lookups now takes one query.",
   },
   {
     icon: LinkIcon,
     title: "Every claim traced to a source",
-    body: "Citation Guard checks each sentence against what the tools actually returned. Nothing traceable gets stripped before a clinician ever sees it.",
+    body: "Citation Guard checks each sentence against what the tools actually returned, so you're reviewing a cited answer, not re-verifying one from scratch.",
   },
   {
     icon: ShieldCheck,
     title: "Silence is a valid answer",
-    body: "No evidence, no guess. Below its confidence threshold, the system hands back a caveat or an outright decline instead of sounding sure.",
+    body: "No evidence, no guess. Below its confidence threshold, the system hands back a caveat or an outright decline instead of costing you time on a wrong lead.",
   },
 ];
 
@@ -124,7 +123,6 @@ export default function LandingPage() {
   return (
     <>
       <AuthRedirectGate />
-      <LandingDock />
 
       {/* Hero */}
       <section className="relative mx-auto max-w-6xl overflow-hidden px-6 py-24 text-center md:py-32">
@@ -143,11 +141,12 @@ export default function LandingPage() {
           duration={0.5}
           className="mx-auto mt-5 max-w-2xl text-3xl font-extrabold tracking-tight md:text-5xl"
         >
-          Clinical decisions, with the reasoning shown
+          Give every clinician back the minutes lost to lookups
         </TextAnimate>
         <p className="mx-auto mt-4 max-w-xl text-lg text-muted">
-          Multi-agent AI that reads the patient record, retrieves the evidence, cites every claim it
-          makes, and says so — plainly — the moment the evidence runs out.
+          One query fans out to radiology, labs, drug safety, and evidence agents, comes back
+          cited and verified, and tells you plainly when it doesn&apos;t know — less chart-digging,
+          more time with the patient.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <ShimmerButton href="/login">Open the app</ShimmerButton>
@@ -203,10 +202,11 @@ export default function LandingPage() {
       {/* How it works */}
       <section id="how-it-works" className="scroll-mt-24 border-t border-line/60 bg-primary-soft/30">
         <div className="mx-auto max-w-4xl px-6 py-24">
-          <h2 className="text-2xl font-extrabold md:text-3xl">How a consultation actually runs</h2>
+          <h2 className="text-2xl font-extrabold md:text-3xl">The workup, compressed into one pass</h2>
           <p className="mt-3 max-w-2xl text-muted">
             Six steps, in order, every time: routing → specialists → coordinator → citation guard →
-            verification → abstention. Step through the tabs above, or press{" "}
+            verification → abstention — the same chart review and cross-checking a clinician would
+            do by hand, run in parallel instead of serially. Step through the tabs above, or press{" "}
             <span className="font-semibold text-primary">Run it</span> and watch the whole pipeline
             fire in sequence.
           </p>
@@ -320,7 +320,7 @@ export default function LandingPage() {
 
       {/* Closing CTA */}
       <section className="mx-auto max-w-3xl px-6 py-24 text-center">
-        <h2 className="text-2xl font-extrabold md:text-3xl">Ready to see it on your own cases?</h2>
+        <h2 className="text-2xl font-extrabold md:text-3xl">Get an hour of chart review back today</h2>
         <p className="mt-3 text-muted">
           Sign in as a clinician to run a consultation, or set up your portal account with a claim
           code from your care team.
