@@ -223,8 +223,25 @@ export default function ImagingPage() {
 
         <div className="space-y-4">
           {!hasResult && !describing && (
-            <div className="card flex h-full min-h-[220px] items-center justify-center text-center text-sm text-muted">
-              Run an analysis or vision description to see AI findings here
+            <div className="card space-y-3">
+              <div className="flex items-center gap-2">
+                <Eye size={16} className="text-primary" />
+                <h2 className="font-bold">What this looks like</h2>
+                <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                  Sample
+                </span>
+              </div>
+              <p className="text-sm text-muted">
+                Upload an image on the left and this panel fills in with the same kind of
+                streamed vision description and cited evidence shown below — from a real
+                consultation, not a mockup.
+              </p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/landing/imaging-vision.jpg"
+                alt="Example of a completed Imaging Analysis: a streamed vision description alongside cited guideline evidence"
+                className="w-full rounded-xl border border-line/60"
+              />
             </div>
           )}
 
