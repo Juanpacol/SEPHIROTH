@@ -96,20 +96,27 @@ async def _persist(
         supported_claim_ratio=supported_ratio,
     )
     session.add(consultation)
-    abstention_status = (state.get("abstention") or {}).get("status", "answer")
-    session.add(
-        AIEvaluation(
-            id=str(uuid4()),
-            patient_id=consultation.patient_id,
-            consultation_id=consultation.id,
-            eval_type="consultation",
-            # Same derived-not-self-reported confidence signal Consultation
-            # itself stores (decision #15) — never a value the model reports.
-            confidence=supported_ratio,
-            requires_human_review=abstention_status != "answer" or consultation.risk_level == "high",
-        )
-    )
     await session.commit()
+    logger.info("consultation_persisted consultation_id=%s", consultation.id[:8])
+    # Separate commit: AIEvaluation.consultation_id is a plain FK column, not
+    # an ORM relationship() SQLAlchemy's unit-of-work can use to order the
+    # two inserts — flushing both in one transaction risked (and once hit,
+    # against Supabase) inserting AIEvaluation before Consultation existed.
+    abstention_status = (state.get("abstention") or {}).get("status", "answer")
+    ai_eval = AIEvaluation(
+        id=str(uuid4()),
+        patient_id=consultation.patient_id,
+        consultation_id=consultation.id,
+        eval_type="consultation",
+        # Same derived-not-self-reported confidence signal Consultation
+        # itself stores (decision #15) — never a value the model reports.
+        confidence=supported_ratio,
+        requires_human_review=abstention_status != "answer" or consultation.risk_level == "high",
+    )
+    logger.info("adding_ai_eval ai_eval_id=%s consultation_id=%s", ai_eval.id[:8], ai_eval.consultation_id[:8])
+    session.add(ai_eval)
+    await session.commit()
+    logger.info("ai_eval_persisted ai_eval_id=%s", ai_eval.id[:8])
     # Audit trail: one line per persisted consultation.
     logger.info(
         "consultation_id=%s user=%s patient=%s agents=%s tool_calls=%s fabricated_citations=%s",
