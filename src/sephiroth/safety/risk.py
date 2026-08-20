@@ -60,14 +60,24 @@ LAB_RULES: Dict[str, List[tuple]] = {
     "ef": [
         (lambda v: v < 40, LabRule("Reduced ejection fraction", "high", "EF {value}% (< 40%)")),
     ],
+    # Added for the Synthea-imported patient panel, which never carries
+    # potassium/inr/bnp/ef — bmi/cholesterol/ldl are the only extra signal
+    # it does provide, using standard ATP III / WHO cutoffs.
+    "bmi": [
+        (lambda v: 30 <= v < 40, LabRule("Obesity", "medium", "BMI {value} (≥ 30)")),
+        (lambda v: v >= 40, LabRule("Severe obesity", "high", "BMI {value} (≥ 40)")),
+    ],
+    "cholesterol": [
+        (lambda v: v >= 240, LabRule("High total cholesterol", "medium", "Cholesterol {value} mg/dL (≥ 240)")),
+    ],
+    "ldl": [
+        (lambda v: 160 <= v < 190, LabRule("High LDL cholesterol", "medium", "LDL {value} mg/dL (≥ 160)")),
+        (lambda v: v >= 190, LabRule("Very high LDL cholesterol", "high", "LDL {value} mg/dL (≥ 190)")),
+    ],
 }
 
 
-def _blood_pressure_flags(raw: Any) -> List[Dict[str, str]]:
-    numbers = [float(n) for n in _NUMBER_RE.findall(str(raw))]
-    if len(numbers) < 2:
-        return []
-    systolic, diastolic = numbers[0], numbers[1]
+def _blood_pressure_threshold_flags(systolic: float, diastolic: float) -> List[Dict[str, str]]:
     if systolic >= 160 or diastolic >= 100:
         return [
             {
@@ -80,17 +90,35 @@ def _blood_pressure_flags(raw: Any) -> List[Dict[str, str]]:
     return []
 
 
+def _blood_pressure_flags(raw: Any) -> List[Dict[str, str]]:
+    """Parses a single combined "systolic/diastolic"-style value (the old
+    demo-patient schema's `bp` key)."""
+    numbers = [float(n) for n in _NUMBER_RE.findall(str(raw))]
+    if len(numbers) < 2:
+        return []
+    return _blood_pressure_threshold_flags(numbers[0], numbers[1])
+
+
 def assess_patient_risk(
     lab_results: Optional[Dict[str, Any]],
     medications: Optional[List[str]] = None,
 ) -> List[Dict[str, str]]:
     """All rule-based risk flags for a patient (labs + drug interactions)."""
     flags: List[Dict[str, str]] = []
+    by_key_lower = {key.strip().lower(): raw for key, raw in (lab_results or {}).items()}
 
-    for key, raw in (lab_results or {}).items():
-        key_lower = key.strip().lower()
-        if key_lower == "bp":
-            flags.extend(_blood_pressure_flags(raw))
+    # Two BP schemas coexist: the old demo patients carry one combined "bp"
+    # string ("140/90"); Synthea-imported patients carry two separate keys.
+    if "bp" in by_key_lower:
+        flags.extend(_blood_pressure_flags(by_key_lower["bp"]))
+    elif "bp_systolic" in by_key_lower and "bp_diastolic" in by_key_lower:
+        systolic = _first_number(by_key_lower["bp_systolic"])
+        diastolic = _first_number(by_key_lower["bp_diastolic"])
+        if systolic is not None and diastolic is not None:
+            flags.extend(_blood_pressure_threshold_flags(systolic, diastolic))
+
+    for key_lower, raw in by_key_lower.items():
+        if key_lower in ("bp", "bp_systolic", "bp_diastolic"):
             continue
         rules = LAB_RULES.get(key_lower)
         if not rules:
