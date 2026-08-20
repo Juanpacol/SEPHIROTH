@@ -12,7 +12,7 @@ import time
 from contextlib import asynccontextmanager
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routers import (
@@ -112,7 +112,33 @@ app.include_router(notifications.router, prefix="/api/notifications", tags=["not
 
 @app.get("/health")
 async def health_check():
+    """Liveness only — no I/O, never flaps. This is what Render's
+    `healthCheckPath` polls; pointing it at a DB-touching endpoint would let
+    a transient Supabase pooler blip trigger an unnecessary restart."""
     return {"status": "healthy", "version": settings.api_version, "model": settings.gemini_model}
+
+
+@app.get("/health/ready")
+async def readiness_check(response: Response):
+    """Readiness/deep check: real dependency probes, for humans and the
+    post-deploy smoke test — not the Render liveness probe above."""
+    from sqlalchemy import text
+
+    from core.db import SessionLocal
+
+    checks: dict[str, str] = {}
+    try:
+        async with SessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception as exc:
+        checks["database"] = f"error: {type(exc).__name__}"
+    checks["llm"] = "configured" if settings.gemini_api_key else "unconfigured"
+
+    ok = checks["database"] == "ok"
+    if not ok:
+        response.status_code = 503
+    return {"status": "ready" if ok else "degraded", "checks": checks}
 
 
 if __name__ == "__main__":

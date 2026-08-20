@@ -18,10 +18,10 @@ EMAIL="smoke-test-$(date +%s)@example.org"
 
 echo "==> Smoke testing $BASE_URL"
 
-echo "--> GET /health"
-HEALTH_CODE=$(curl -s -o /tmp/smoke_health.json -w '%{http_code}' "$BASE_URL/health")
+echo "--> GET /health/ready"
+HEALTH_CODE=$(curl -s -o /tmp/smoke_health.json -w '%{http_code}' "$BASE_URL/health/ready")
 if [ "$HEALTH_CODE" != "200" ]; then
-  echo "FAIL: /health returned $HEALTH_CODE"
+  echo "FAIL: /health/ready returned $HEALTH_CODE"
   cat /tmp/smoke_health.json
   exit 1
 fi

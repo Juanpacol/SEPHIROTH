@@ -5,11 +5,18 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     plan: free
+    region: oregon # pinned to the service's current region -- changing this recreates the service
+    # Free plan is capped at 1 instance anyway; pinned explicitly because
+    # init_db() runs `alembic upgrade head` on every boot (core/db.py) --
+    # two instances booting concurrently would race on the same migration.
+    numInstances: 1
     autoDeploy: false # deploys are triggered explicitly by the CD workflow, gated on the smoke test
-    healthCheckPath: /health
+    healthCheckPath: /health # liveness only, no I/O -- see /health/ready for the DB-backed deep check
     envVars:
       - key: ENVIRONMENT
         value: production
+      - key: PYTHONUNBUFFERED
+        value: "1" # belt-and-braces with the Dockerfile ENV -- keeps crash tracebacks from being lost to buffering
       - key: JWT_SECRET
         sync: false # set manually in the Render dashboard — never committed
       - key: DATABASE_URL
