@@ -19,7 +19,13 @@ logger = logging.getLogger(__name__)
 
 _ALEMBIC_INI_PATH = Path(__file__).parent.parent.parent / "alembic.ini"
 
-engine = create_async_engine(settings.database_url, echo=settings.debug)
+engine = create_async_engine(
+    settings.database_url,
+    echo=settings.debug,
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
