@@ -10,20 +10,47 @@ or straight-aggregation sweep over rows, returned as a hand-built dict —
 no `response_model=`, no background jobs, nothing persisted here that
 wasn't already persisted by another route."""
 
+import os
+import time
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List
+from typing import Any, Awaitable, Callable, Dict, List
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from auth.deps import require_clinician
 from core.db import get_session
-from data.schemas import AIEvaluation, Alert, Consultation, ImagingStudy, LabResult, MedicationOrder, Patient
+from data.schemas import AIEvaluation, Alert, Consultation, ImagingStudy, LabResult, MedicationOrder, Patient, User
 from intelligence.mcp.drug_safety_server import find_interactions
 from sephiroth.safety.priority import compute_priority_score
 from sephiroth.safety.risk import RISK_ORDER, assess_patient_risk, assess_risk_level
 
 router = APIRouter()
+
+# Plain in-process TTL cache for the endpoints that scan every Patient row.
+# Shorter than dashboardStats's own 30s frontend refetch interval, so cached
+# data is never staler than what the client would have re-requested anyway.
+# No new table/service — matches this router's "nothing persisted here" design.
+_CACHE_TTL_SECONDS = 15.0
+_cache: Dict[str, tuple[float, Dict[str, Any]]] = {}
+
+async def _cached(key: str, compute: Callable[[], Awaitable[Dict[str, Any]]]) -> Dict[str, Any]:
+    # pytest sets this env var for the duration of every test; each test gets
+    # its own throwaway DB (tests/conftest.py), so a cache hit from a
+    # previous test would silently return another test's data. Checked at
+    # call time, not import time — dashboard.py can be imported during
+    # pytest's collection phase, before the env var is set for the first
+    # test, so a module-level constant would freeze this to False forever.
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        return await compute()
+    now = time.monotonic()
+    hit = _cache.get(key)
+    if hit is not None and now - hit[0] < _CACHE_TTL_SECONDS:
+        return hit[1]
+    value = await compute()
+    _cache[key] = (now, value)
+    return value
 
 
 @router.get("/stats", summary="Critical patients for the dashboard")
@@ -31,7 +58,12 @@ async def dashboard_stats(session: AsyncSession = Depends(get_session)) -> Dict[
     """Every patient scored by the same rule-based risk engine `/api/patients`
     uses, filtered to high/medium, sorted riskiest-first, capped to the top
     10 — a scan-in-five-seconds list, not another count. Rule-based sweep
-    over every patient; fine at demo scale, cache if the panel grows."""
+    over every patient, cached for `_CACHE_TTL_SECONDS` since it's re-fetched
+    on a 30s frontend interval and on every tab switch."""
+    return await _cached("stats", lambda: _dashboard_stats(session))
+
+
+async def _dashboard_stats(session: AsyncSession) -> Dict[str, Any]:
     patients = (await session.scalars(select(Patient).order_by(Patient.name))).all()
 
     scored: List[Dict[str, Any]] = []
@@ -73,6 +105,10 @@ async def dashboard_evolution(session: AsyncSession = Depends(get_session)) -> D
     (`LabResult`, real time series) to flag deterioration/improvement.
     Patients with fewer than 2 readings for any test are counted as
     "no_change" — there's nothing to compare yet, not a claim of stability."""
+    return await _cached("evolution", lambda: _dashboard_evolution(session))
+
+
+async def _dashboard_evolution(session: AsyncSession) -> Dict[str, Any]:
     patients = (await session.scalars(select(Patient))).all()
     results = (await session.scalars(select(LabResult).order_by(LabResult.taken_at))).all()
 
@@ -118,6 +154,10 @@ async def dashboard_evolution(session: AsyncSession = Depends(get_session)) -> D
 
 @router.get("/alerts", summary="Clinical alerts")
 async def dashboard_alerts(session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
+    return await _dashboard_alerts(session)
+
+
+async def _dashboard_alerts(session: AsyncSession) -> Dict[str, Any]:
     alerts = (await session.scalars(select(Alert).order_by(Alert.created_at.desc()))).all()
 
     now = datetime.now(timezone.utc)
@@ -160,6 +200,10 @@ async def dashboard_medications(session: AsyncSession = Depends(get_session)) ->
     checks; structured counts (high-risk, polypharmacy) come from
     `MedicationOrder` when a patient has orders, falling back to the flat
     `Patient.medications` list otherwise (same fallback `risk.py` uses)."""
+    return await _cached("medications", lambda: _dashboard_medications(session))
+
+
+async def _dashboard_medications(session: AsyncSession) -> Dict[str, Any]:
     patients = (await session.scalars(select(Patient))).all()
     orders = (await session.scalars(select(MedicationOrder).where(MedicationOrder.status == "active"))).all()
 
@@ -353,3 +397,21 @@ async def dashboard_performance(session: AsyncSession = Depends(get_session)) ->
         "auc": None,  # needs a probability score per prediction, not just a 3-level label — not computable
         "methodology": "proxy estimate from Consultation.outcome vs risk_level — no ground-truth dataset",
     }
+
+
+@router.get("/bootstrap", summary="Combined first-paint payload: stats + today's agenda + alerts")
+async def dashboard_bootstrap(
+    clinician: User = Depends(require_clinician),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Collapses the 3 requests `DashboardPage` fires on first paint
+    (`dashboardStats`, `agendaToday`, and the default-active "alerts" tab)
+    into one browser<->backend round trip. The 3 queries still run
+    sequentially (a single `AsyncSession` isn't safe for concurrent use),
+    but that's one HTTP round trip instead of 3 — the actual cost being cut."""
+    from api.routers.scheduling import agenda_today  # noqa: PLC0415 — avoid a router import cycle
+
+    stats = await _cached("stats", lambda: _dashboard_stats(session))
+    agenda = await agenda_today(clinician=clinician, session=session)
+    alerts = await _dashboard_alerts(session)
+    return {"stats": stats, "agenda": agenda, "alerts": alerts}
