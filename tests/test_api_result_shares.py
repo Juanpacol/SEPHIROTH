@@ -51,7 +51,7 @@ async def patient_token(db_session, patient_with_events):
         id="user-presult1",
         email="presult1@example.org",
         name="Result Patient",
-        hashed_password=hash_password("password123"),
+        hashed_password=await hash_password("password123"),
         role="patient",
         patient_id=p.id,
     )
@@ -177,7 +177,7 @@ async def test_patient_cannot_read_another_patients_share(client, patient_with_e
             id="user-other-b",
             email="otherb@example.org",
             name="Other B",
-            hashed_password=hash_password("password123"),
+            hashed_password=await hash_password("password123"),
             role="patient",
             patient_id=other.id,
         )

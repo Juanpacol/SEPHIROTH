@@ -45,7 +45,7 @@ async def patient_login(db_session, patient_row):
         id="user-pwait1",
         email="pwait1@example.org",
         name="Waiting Patient",
-        hashed_password=hash_password("password123"),
+        hashed_password=await hash_password("password123"),
         role="patient",
         patient_id=patient_row.id,
     )

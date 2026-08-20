@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -407,7 +408,10 @@ async def export_consultation(
     explanation = build_explanation(
         consultation.agents, consultation.tool_calls, consultation.citation_report
     )
-    pdf_bytes = render_consultation_pdf(consultation, explanation)
+    # reportlab's SimpleDocTemplate.build() is synchronous and CPU-bound —
+    # offload it so one export doesn't stall every other in-flight request
+    # on the single-worker event loop.
+    pdf_bytes = await run_in_threadpool(render_consultation_pdf, consultation, explanation)
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",

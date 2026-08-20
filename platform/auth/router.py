@@ -18,6 +18,7 @@ from auth.security import (
     create_mfa_pending_token,
     decode_mfa_pending_token,
     hash_password,
+    hash_passwords,
     verify_password,
 )
 from core.config import settings
@@ -163,7 +164,7 @@ async def register(request: RegisterRequest, session: AsyncSession = Depends(get
         id=str(uuid4()),
         email=request.email,
         name=request.name,
-        hashed_password=hash_password(request.password),
+        hashed_password=await hash_password(request.password),
         role="clinician",
     )
     session.add(user)
@@ -194,7 +195,7 @@ async def claim_invite(
         invite is None
         or invite.redeemed_at is not None
         or invite.expires_at < datetime.now(timezone.utc).replace(tzinfo=None)
-        or not verify_password(secret, invite.code_hash)
+        or not await verify_password(secret, invite.code_hash)
     ):
         raise HTTPException(status_code=400, detail=_INVALID_CLAIM_CODE)
 
@@ -210,7 +211,7 @@ async def claim_invite(
         id=str(uuid4()),
         email=request.email,
         name=request.name,
-        hashed_password=hash_password(request.password),
+        hashed_password=await hash_password(request.password),
         role="patient",
         patient_id=invite.patient_id,
     )
@@ -230,7 +231,8 @@ async def claim_invite(
 @router.post("/login", response_model=LoginResponse)
 async def login(request: LoginRequest, session: AsyncSession = Depends(get_session)) -> LoginResponse:
     user = await session.scalar(select(User).where(User.email == request.email))
-    if user is None or not user.is_active or not verify_password(request.password, user.hashed_password):
+    valid_password = user is not None and await verify_password(request.password, user.hashed_password)
+    if user is None or not user.is_active or not valid_password:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     if user.mfa_enabled:
         return LoginResponse(mfa_required=True, mfa_token=create_mfa_pending_token(user.id))
@@ -251,7 +253,7 @@ async def _verify_mfa_code(session: AsyncSession, user: User, code: str) -> bool
         )
     ).all()
     for rc in recovery_codes:
-        if verify_password(code, rc.code_hash):
+        if await verify_password(code, rc.code_hash):
             rc.used_at = datetime.now(timezone.utc).replace(tzinfo=None)
             await session.commit()
             return True
@@ -298,9 +300,9 @@ async def change_password(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> None:
-    if not verify_password(request.current_password, user.hashed_password):
+    if not await verify_password(request.current_password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
-    user.hashed_password = hash_password(request.new_password)
+    user.hashed_password = await hash_password(request.new_password)
     await session.commit()
 
 
@@ -315,7 +317,7 @@ async def deactivate_account(
     `change_password`. Data is never deleted: a clinician's consultations
     and a patient's chart both remain intact; only login is blocked
     (`get_current_user` checks `is_active` on every request)."""
-    if not verify_password(request.password, user.hashed_password):
+    if not await verify_password(request.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
     user.is_active = False
     await session.commit()
@@ -336,7 +338,7 @@ async def request_password_reset(
     reset = PasswordResetToken(
         id=str(uuid4()),
         user_id=user.id,
-        code_hash=hash_password(secret),
+        code_hash=await hash_password(secret),
         expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + PASSWORD_RESET_TTL,
     )
     session.add(reset)
@@ -357,7 +359,7 @@ async def confirm_password_reset(
         reset is None
         or reset.redeemed_at is not None
         or reset.expires_at < datetime.now(timezone.utc).replace(tzinfo=None)
-        or not verify_password(secret, reset.code_hash)
+        or not await verify_password(secret, reset.code_hash)
     ):
         raise HTTPException(status_code=400, detail=_INVALID_RESET_TOKEN)
 
@@ -365,7 +367,7 @@ async def confirm_password_reset(
     if user is None:
         raise HTTPException(status_code=400, detail=_INVALID_RESET_TOKEN)
 
-    user.hashed_password = hash_password(request.new_password)
+    user.hashed_password = await hash_password(request.new_password)
     reset.redeemed_at = datetime.now(timezone.utc).replace(tzinfo=None)
     await session.commit()
 
@@ -396,8 +398,12 @@ async def mfa_verify(
 
     user.mfa_enabled = True
     codes = [secrets.token_hex(5) for _ in range(MFA_RECOVERY_CODE_COUNT)]
+    code_hashes = await hash_passwords(codes)
     session.add_all(
-        [MfaRecoveryCode(id=str(uuid4()), user_id=user.id, code_hash=hash_password(c)) for c in codes]
+        [
+            MfaRecoveryCode(id=str(uuid4()), user_id=user.id, code_hash=code_hash)
+            for code_hash in code_hashes
+        ]
     )
     await session.commit()
     return MfaVerifyResponse(recovery_codes=codes)
@@ -409,7 +415,7 @@ async def mfa_disable(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> None:
-    if not verify_password(request.password, user.hashed_password):
+    if not await verify_password(request.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
     if not await _verify_mfa_code(session, user, request.code):
         raise HTTPException(status_code=400, detail=_INVALID_MFA_CODE)

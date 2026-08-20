@@ -289,14 +289,28 @@ async def dashboard_imaging(session: AsyncSession = Depends(get_session)) -> Dic
 
 @router.get("/ai", summary="AI evaluation metrics")
 async def dashboard_ai(session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
-    evaluations = (await session.scalars(select(AIEvaluation))).all()
-    consultations = (await session.scalars(select(Consultation))).all()
+    # Column-only selects: `Consultation` also carries `answer`/`tool_calls`/
+    # `citation_report`/`verification_report`/`trace` (the full replayable
+    # execution trace) — a `select(Consultation)` here would hydrate every
+    # row of the largest table in the schema into ORM objects just to read
+    # one column, on a 512MB instance.
+    evaluations = (
+        await session.execute(
+            select(
+                AIEvaluation.confidence,
+                AIEvaluation.requires_human_review,
+                AIEvaluation.clinician_modified,
+                AIEvaluation.clinician_rejected,
+            )
+        )
+    ).all()
+    consultation_rows = (await session.execute(select(Consultation.risk_level))).all()
 
     confidences = [e.confidence for e in evaluations if e.confidence is not None]
     return {
         "evaluations_count": len(evaluations),
-        "consultations_count": len(consultations),
-        "high_risk_prediction_count": sum(1 for c in consultations if c.risk_level == "high"),
+        "consultations_count": len(consultation_rows),
+        "high_risk_prediction_count": sum(1 for r in consultation_rows if r.risk_level == "high"),
         "avg_confidence": round(sum(confidences) / len(confidences), 3) if confidences else None,
         "requires_human_review_count": sum(1 for e in evaluations if e.requires_human_review),
         "clinician_modified_count": sum(1 for e in evaluations if e.clinician_modified),
@@ -308,13 +322,15 @@ async def dashboard_ai(session: AsyncSession = Depends(get_session)) -> Dict[str
 async def dashboard_evidence(session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
     """Derived entirely from `Consultation.verification_report` /
     `citation_report`, already persisted per consultation — no new table."""
-    consultations = (await session.scalars(select(Consultation))).all()
+    rows = (
+        await session.execute(select(Consultation.verification_report, Consultation.supported_claim_ratio))
+    ).all()
 
     with_evidence = without_evidence = 0
     sources: set = set()
     ratios = []
-    for c in consultations:
-        report = c.verification_report or {}
+    for row in rows:
+        report = row.verification_report or {}
         claims = report.get("claims", [])
         if not claims:
             continue
@@ -326,8 +342,8 @@ async def dashboard_evidence(session: AsyncSession = Depends(get_session)) -> Di
         for claim in claims:
             for evidence_id in claim.get("evidence_ids", []) or []:
                 sources.add(evidence_id)
-        if c.supported_claim_ratio is not None:
-            ratios.append(c.supported_claim_ratio)
+        if row.supported_claim_ratio is not None:
+            ratios.append(row.supported_claim_ratio)
 
     return {
         "recommendations_with_evidence_count": with_evidence,
@@ -340,15 +356,17 @@ async def dashboard_evidence(session: AsyncSession = Depends(get_session)) -> Di
 @router.get("/pending", summary="Pending clinical items")
 async def dashboard_pending(session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
     alerts = (await session.scalars(select(Alert).where(Alert.status == "active"))).all()
-    consultations = (await session.scalars(select(Consultation))).all()
+    consultation_rows = (
+        await session.execute(select(Consultation.acted_on, Consultation.risk_level))
+    ).all()
 
     pending_follow_up = {a.patient_id for a in alerts}
     return {
         "unresolved_clinical_issues_count": len(alerts),
         "patients_pending_follow_up_count": len(pending_follow_up),
-        "pending_recommendations_count": sum(1 for c in consultations if c.acted_on is None),
+        "pending_recommendations_count": sum(1 for r in consultation_rows if r.acted_on is None),
         "cases_requiring_decision_count": sum(
-            1 for c in consultations if c.acted_on is None and c.risk_level == "high"
+            1 for r in consultation_rows if r.acted_on is None and r.risk_level == "high"
         ),
     }
 
@@ -361,8 +379,10 @@ async def dashboard_performance(session: AsyncSession = Depends(get_session)) ->
     recorded, optional) versus `risk_level` (the model's own high/medium/
     low call) — treat as directional, never as clinical validation."""
     alerts = (await session.scalars(select(Alert).where(Alert.reviewed_at.is_not(None)))).all()
-    consultations = (
-        await session.scalars(select(Consultation).where(Consultation.outcome.is_not(None)))
+    consultation_rows = (
+        await session.execute(
+            select(Consultation.risk_level, Consultation.outcome).where(Consultation.outcome.is_not(None))
+        )
     ).all()
 
     def _naive_utc(dt: datetime) -> datetime:
@@ -373,10 +393,14 @@ async def dashboard_performance(session: AsyncSession = Depends(get_session)) ->
     ]
     resolved = sum(1 for a in alerts if a.status == "resolved")
 
-    true_positive = sum(1 for c in consultations if c.risk_level == "high" and c.outcome == "not_improved")
-    false_positive = sum(1 for c in consultations if c.risk_level == "high" and c.outcome == "improved")
-    true_negative = sum(1 for c in consultations if c.risk_level != "high" and c.outcome == "improved")
-    false_negative = sum(1 for c in consultations if c.risk_level != "high" and c.outcome == "not_improved")
+    true_positive = sum(
+        1 for r in consultation_rows if r.risk_level == "high" and r.outcome == "not_improved"
+    )
+    false_positive = sum(1 for r in consultation_rows if r.risk_level == "high" and r.outcome == "improved")
+    true_negative = sum(1 for r in consultation_rows if r.risk_level != "high" and r.outcome == "improved")
+    false_negative = sum(
+        1 for r in consultation_rows if r.risk_level != "high" and r.outcome == "not_improved"
+    )
 
     sensitivity = (
         true_positive / (true_positive + false_negative) if (true_positive + false_negative) else None

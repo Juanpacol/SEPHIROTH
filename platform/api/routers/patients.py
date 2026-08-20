@@ -21,6 +21,7 @@ from sephiroth.models import get_llm_client
 from sephiroth.safety.risk import RISK_ORDER, assess_patient_risk, assess_risk_level
 
 INVITE_TTL = timedelta(hours=72)
+_MAX_NOTE_UPLOAD_BYTES = 20 * 1024 * 1024  # 20 MB — same ceiling as medical.py's imaging upload
 
 router = APIRouter()
 
@@ -221,15 +222,32 @@ async def upload_clinical_note(
     """Extract text from an uploaded PDF and run the same note pipeline."""
     from io import BytesIO
 
+    from fastapi.concurrency import run_in_threadpool
     from pypdf import PdfReader
 
     async with SessionLocal() as session:
         patient = await _get_patient(session, patient_id)
 
-    raw = await file.read()
-    try:
+    chunks = []
+    total = 0
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > _MAX_NOTE_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File exceeds the 20 MB limit")
+        chunks.append(chunk)
+    raw = b"".join(chunks)
+
+    def _extract_text() -> str:
         reader = PdfReader(BytesIO(raw))
-        text = "\n".join((page.extract_text() or "") for page in reader.pages).strip()
+        return "\n".join((page.extract_text() or "") for page in reader.pages).strip()
+
+    try:
+        # pypdf is pure-Python and CPU-bound — a large PDF would otherwise
+        # stall the single event loop for every other in-flight request.
+        text = await run_in_threadpool(_extract_text)
     except Exception:
         raise HTTPException(status_code=422, detail="Could not read this file as a PDF.")
 
@@ -331,7 +349,7 @@ async def create_invite(
         expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + INVITE_TTL,
     )
     secret = secrets.token_urlsafe(16)
-    invite.code_hash = hash_password(secret)
+    invite.code_hash = await hash_password(secret)
     session.add(invite)
     await session.commit()
 

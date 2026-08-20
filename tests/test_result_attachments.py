@@ -51,7 +51,7 @@ async def patient_token(db_session, share):
         id="user-patt1",
         email="patt1@example.org",
         name="Attach Patient",
-        hashed_password=hash_password("password123"),
+        hashed_password=await hash_password("password123"),
         role="patient",
         patient_id=p.id,
     )
@@ -184,7 +184,7 @@ async def test_download_authz_owning_patient_ok_other_patient_404(client, share,
             id="user-patt2",
             email="patt2@example.org",
             name="Other",
-            hashed_password=hash_password("password123"),
+            hashed_password=await hash_password("password123"),
             role="patient",
             patient_id=other_patient.id,
         )

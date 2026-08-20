@@ -52,7 +52,7 @@ async def patient_login(db_session, patient_with_lab_event):
         id="user-psharenotif1",
         email="psharenotif1@example.org",
         name="Notif Patient",
-        hashed_password=hash_password("password123"),
+        hashed_password=await hash_password("password123"),
         role="patient",
         patient_id=patient.id,
     )

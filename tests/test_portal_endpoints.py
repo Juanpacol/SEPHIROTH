@@ -64,7 +64,7 @@ async def patient_token(db_session):
         id="user-pportal1",
         email="portal1@example.org",
         name="Portal Patient",
-        hashed_password=hash_password("password123"),
+        hashed_password=await hash_password("password123"),
         role="patient",
         patient_id="PPORTAL1",
     )
@@ -123,7 +123,7 @@ async def test_portal_404_when_bound_chart_deleted(client, db_session):
         id="user-orphan",
         email="orphan@example.org",
         name="Orphan",
-        hashed_password=hash_password("password123"),
+        hashed_password=await hash_password("password123"),
         role="patient",
         patient_id="DOES-NOT-EXIST",
     )

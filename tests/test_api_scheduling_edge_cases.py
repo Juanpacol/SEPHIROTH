@@ -46,7 +46,7 @@ async def patient_token(db_session, patient_row):
         id="user-pedge1",
         email="pedge1@example.org",
         name="Edge Patient",
-        hashed_password=hash_password("password123"),
+        hashed_password=await hash_password("password123"),
         role="patient",
         patient_id=patient_row.id,
     )

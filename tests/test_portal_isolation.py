@@ -61,7 +61,7 @@ async def _make_patient_user(db_session, patient_id: str, email: str) -> User:
         id=f"user-{patient_id}",
         email=email,
         name="Portal Patient",
-        hashed_password=hash_password("password123"),
+        hashed_password=await hash_password("password123"),
         role="patient",
         patient_id=patient_id,
     )

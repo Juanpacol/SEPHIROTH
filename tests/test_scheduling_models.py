@@ -25,7 +25,7 @@ from data.schemas import (
 async def clinician(db_session):
     from auth.security import hash_password
 
-    user = User(id="clin1", email="clin1@example.org", name="Dr. Model", hashed_password=hash_password("x"))
+    user = User(id="clin1", email="clin1@example.org", name="Dr. Model", hashed_password=await hash_password("x"))
     db_session.add(user)
     await db_session.commit()
     return user
@@ -84,7 +84,7 @@ async def test_result_share_unique_per_event_and_patient(db_session, patient):
 
     from auth.security import hash_password
 
-    user = User(id="clin2", email="clin2@example.org", name="Dr. X", hashed_password=hash_password("x"))
+    user = User(id="clin2", email="clin2@example.org", name="Dr. X", hashed_password=await hash_password("x"))
     db_session.add(user)
     await db_session.commit()
 
@@ -109,7 +109,7 @@ async def test_result_attachment_cascade_deletes_with_share(db_session, patient)
 
     from auth.security import hash_password
 
-    user = User(id="clin3", email="clin3@example.org", name="Dr. Y", hashed_password=hash_password("x"))
+    user = User(id="clin3", email="clin3@example.org", name="Dr. Y", hashed_password=await hash_password("x"))
     db_session.add(user)
     await db_session.commit()
 

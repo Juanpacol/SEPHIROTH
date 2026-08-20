@@ -7,21 +7,39 @@ from typing import Optional
 
 import bcrypt
 import jwt
+from starlette.concurrency import run_in_threadpool
 
 from core.config import settings
 
 ALGORITHM = "HS256"
 
 
-def hash_password(password: str) -> str:
+def _hash_password_sync(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
-def verify_password(password: str, hashed: str) -> bool:
+def _verify_password_sync(password: str, hashed: str) -> bool:
     try:
         return bcrypt.checkpw(password.encode(), hashed.encode())
     except ValueError:
         return False
+
+
+async def hash_password(password: str) -> str:
+    # bcrypt is CPU-bound (~100-250ms at this cost factor) and synchronous;
+    # run it off the event loop so one hash doesn't stall every other
+    # in-flight request on a single-worker instance.
+    return await run_in_threadpool(_hash_password_sync, password)
+
+
+async def verify_password(password: str, hashed: str) -> bool:
+    return await run_in_threadpool(_verify_password_sync, password, hashed)
+
+
+async def hash_passwords(passwords: list[str]) -> list[str]:
+    """Bulk variant — one threadpool hop for N hashes (e.g. MFA recovery
+    codes) instead of N sequential ones."""
+    return await run_in_threadpool(lambda: [_hash_password_sync(p) for p in passwords])
 
 
 def create_access_token(user_id: str) -> str:
