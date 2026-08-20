@@ -35,7 +35,8 @@ def test_empty_context_fields_returns_every_field():
 def test_declared_context_fields_filters_to_only_those():
     capability = _capability(["image_path", "conditions"])
     result = context_for_agent(capability, _context())
-    assert set(result.keys()) == {"image_path", "conditions"}
+    # "language" always passes through: it's a response-language directive, not patient data.
+    assert set(result.keys()) == {"image_path", "conditions", "language"}
     assert result["image_path"] == "/x.png"
     assert result["conditions"] == ["diabetes"]
 
@@ -45,7 +46,7 @@ def test_filtered_out_fields_are_absent_not_just_empty():
     result = context_for_agent(capability, _context())
     assert "lab_results" not in result
     assert "image_path" not in result
-    assert result == {"medications": ["metformin"]}
+    assert result == {"medications": ["metformin"], "language": "en"}
 
 
 def test_log_filtered_fields_does_not_raise_and_is_a_noop_for_full_view(caplog):

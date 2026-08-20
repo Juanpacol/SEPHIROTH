@@ -21,6 +21,8 @@ MEDICAL_DISCLAIMER = (
     "professional review, and every factual claim must cite its source."
 )
 
+_LANGUAGE_NAMES = {"en": "English", "es": "Spanish"}
+
 
 class Agent:
     """A capability record, an LLM client, and a tool scope — nothing else."""
@@ -39,14 +41,18 @@ class Agent:
 
         allowed_tools = self.capability.tools or None  # [] means "no tools", same as None did
         system_parts = [MEDICAL_DISCLAIMER, self.capability.role_prompt]
+        language = (context or {}).get("language")
+        if language and language in _LANGUAGE_NAMES:
+            system_parts.append(f"Respond in {_LANGUAGE_NAMES[language]}, regardless of the language used elsewhere in this prompt.")
         tools: List[Dict[str, Any]] = []
         if allowed_tools:
             tools = registry.llm_tools(allowed_tools)
             system_parts.append(registry.system_prompt_summary(allowed_tools))
 
         user_content = query
-        if context:
-            context_lines = "\n".join(f"{k}: {v}" for k, v in context.items() if v)
+        context_for_prompt = {k: v for k, v in (context or {}).items() if k != "language"}
+        if context_for_prompt:
+            context_lines = "\n".join(f"{k}: {v}" for k, v in context_for_prompt.items() if v)
             user_content = f"{query}\n\n--- Patient context ---\n{context_lines}"
 
         return await self.client.chat(

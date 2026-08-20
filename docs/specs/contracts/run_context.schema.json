@@ -32,6 +32,12 @@
       "title": "Lab Results",
       "type": "object"
     },
+    "language": {
+      "default": "en",
+      "description": "UI language code the client is set to (\"en\" or \"es\"); agents are asked to answer in this language.",
+      "title": "Language",
+      "type": "string"
+    },
     "medications": {
       "items": {
         "type": "string"

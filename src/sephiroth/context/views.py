@@ -32,7 +32,9 @@ def context_for_agent(capability: AgentCapability, ctx: RunContext) -> Dict[str,
     full = ctx.model_dump(mode="python")
     if not capability.context_fields:
         return full
-    return {name: value for name, value in full.items() if name in capability.context_fields}
+    projected = {name: value for name, value in full.items() if name in capability.context_fields}
+    projected["language"] = full["language"]  # response-language directive, not patient data — always passes through
+    return projected
 
 
 def log_filtered_fields(capability: AgentCapability, ctx: RunContext) -> None:
