@@ -6,9 +6,10 @@
  * (and its conversation state persists) across every chrome'd route. */
 
 import { useEffect, useState } from "react";
-import { Bot, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useUser } from "@/lib/auth";
 import CopilotPanel from "@/components/copilot/copilot-panel";
+import WingMark from "@/components/brand/wing-mark";
 
 /** Custom-event name other pages (e.g. `/imaging`'s "Ask SEPHIROTH" button)
  * dispatch to open this widget with a pre-filled question — a plain
@@ -48,7 +49,7 @@ export default function CopilotWidget() {
         aria-expanded={open}
         className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-card-lg transition-all duration-200 ease-ios hover:-translate-y-0.5 hover:bg-primary-dark active:scale-95"
       >
-        {open ? <X size={22} /> : <Bot size={22} />}
+        {open ? <X size={22} /> : <WingMark size={22} />}
       </button>
 
       {open && (
@@ -58,9 +59,17 @@ export default function CopilotWidget() {
           className="fixed bottom-24 right-6 z-40 flex h-[min(680px,calc(100vh-140px))] w-[min(420px,calc(100vw-3rem))] flex-col overflow-hidden rounded-squircle border border-line/60 bg-surface shadow-card-lg"
         >
           <div className="flex items-center justify-between border-b border-line/60 bg-card px-4 py-3">
-            <div>
-              <h2 className="text-sm font-bold">Copilot Chat</h2>
-              <p className="text-xs text-muted">Every citation verified against tool output.</p>
+            <div className="flex items-center gap-2">
+              <span
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                style={{ background: "linear-gradient(135deg,#8C92AC,#D1D5DB)" }}
+              >
+                <WingMark size={16} className="text-white" />
+              </span>
+              <div>
+                <h2 className="text-sm font-bold">Copilot Chat</h2>
+                <p className="text-xs text-muted">Every citation verified against tool output.</p>
+              </div>
             </div>
             <button
               onClick={() => setOpen(false)}
