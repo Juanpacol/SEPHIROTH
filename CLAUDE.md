@@ -219,7 +219,7 @@ Schema is Alembic-managed for both local Postgres and Supabase (`migrations/vers
   ```
   Review the generated file — autogenerate doesn't detect everything (e.g. it won't add `CREATE EXTENSION` statements or always get custom types like `pgvector.sqlalchemy.Vector` right on the first pass; the baseline migration needed a manual import fixup, see `migrations/versions/dff332c99951_initial_schema.py` for the pattern).
 - **`tests/test_alembic_migration.py`** is the drift guard: it fails if a model changed without a matching migration. Self-skips if no local Postgres is reachable at `localhost:5433` (never blocks CI).
-- Supabase was **stamped**, not migrated, at the baseline revision (`alembic stamp head`) — its schema already matched the models exactly (it was created by the old `create_all` path before this migration system existed), so `stamp` just recorded "already current" without running any DDL against the 14 real patients already there. Never run `alembic upgrade head` against Supabase for a revision it hasn't seen yet without checking the migration is additive first.
+- Supabase was **stamped**, not migrated, at the baseline revision (`alembic stamp head`) — its schema already matched the models exactly (it was created by the old `create_all` path before this migration system existed), so `stamp` just recorded "already current" without running any DDL against the 14 real patients already there. It has since been genuinely migrated forward through every later revision by `init_db()`'s normal `alembic upgrade head` on boot (currently at `742cbbb2465b`, confirmed 2026-08-20) — the "never run upgrade head without checking additive-first" caution above applied only to that one baseline gap, not to Supabase in general.
 
 ## Testing
 

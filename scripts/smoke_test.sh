@@ -10,6 +10,14 @@
 #
 # Portable: avoids GNU-only flags (e.g. `head -n -1`) since this also runs
 # on macOS (BSD userland) during local development.
+#
+# Auth: against an ephemeral DB (CI's docker-build-smoke-test job) there's
+# no clinician yet, so it self-registers -- that only works because
+# ENVIRONMENT=development there leaves settings.allow_bootstrap_registration
+# at its default True. Against the real deployed service (post-deploy
+# workflow) that flag is False (render.yaml) -- registration requires an
+# existing clinician's token, so set SMOKE_TEST_EMAIL/SMOKE_TEST_PASSWORD
+# (a dedicated, already-registered service account) to log in instead.
 
 set -euo pipefail
 
@@ -28,17 +36,31 @@ fi
 cat /tmp/smoke_health.json
 echo
 
-echo "--> POST /api/auth/register"
-curl -sf -X POST "$BASE_URL/api/auth/register" \
-  -H "Content-Type: application/json" \
-  -d "{\"email\": \"$EMAIL\", \"name\": \"Smoke Test\", \"password\": \"smoketest123\"}" \
-  -o /tmp/smoke_register.json
-TOKEN=$(python3 -c "import json; print(json.load(open('/tmp/smoke_register.json'))['access_token'])")
-if [ -z "$TOKEN" ]; then
-  echo "FAIL: registration did not return an access_token"
-  exit 1
+if [ -n "${SMOKE_TEST_EMAIL:-}" ] && [ -n "${SMOKE_TEST_PASSWORD:-}" ]; then
+  echo "--> POST /api/auth/login (service account)"
+  curl -sf -X POST "$BASE_URL/api/auth/login" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\": \"$SMOKE_TEST_EMAIL\", \"password\": \"$SMOKE_TEST_PASSWORD\"}" \
+    -o /tmp/smoke_register.json
+  TOKEN=$(python3 -c "import json; print(json.load(open('/tmp/smoke_register.json'))['access_token'])")
+  if [ -z "$TOKEN" ]; then
+    echo "FAIL: login did not return an access_token"
+    exit 1
+  fi
+  echo "logged in, token acquired"
+else
+  echo "--> POST /api/auth/register"
+  curl -sf -X POST "$BASE_URL/api/auth/register" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\": \"$EMAIL\", \"name\": \"Smoke Test\", \"password\": \"smoketest123\"}" \
+    -o /tmp/smoke_register.json
+  TOKEN=$(python3 -c "import json; print(json.load(open('/tmp/smoke_register.json'))['access_token'])")
+  if [ -z "$TOKEN" ]; then
+    echo "FAIL: registration did not return an access_token"
+    exit 1
+  fi
+  echo "registered, token acquired"
 fi
-echo "registered, token acquired"
 
 echo "--> GET /api/patients (authenticated)"
 PATIENTS_CODE=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/api/patients" -H "Authorization: Bearer $TOKEN")

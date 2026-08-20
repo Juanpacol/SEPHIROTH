@@ -143,6 +143,10 @@ class Settings(BaseSettings):
     s3_bucket: Optional[str] = None
     s3_region: str = "us-east-1"
 
+    # No production frontend origin is deployed yet -- add it here (and in
+    # render.yaml) once one exists, rather than hardcoding it in main.py.
+    cors_allow_origins: list[str] = ["http://localhost:3000", "http://localhost:3100"]
+
     enable_image_analysis: bool = True
     enable_vision_analysis: bool = True
     enable_rag: bool = True

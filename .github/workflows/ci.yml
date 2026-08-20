@@ -136,6 +136,67 @@ jobs:
         if: always()
         run: docker logs sephiroth-api-ci
 
+  # Regression guard for the 2026-08-20 crash-loop incident: `docker-build-
+  # smoke-test` above runs with ENVIRONMENT=development, which is the one
+  # environment where config.py's jwt_secret validator never raises --
+  # meaning that job structurally cannot catch a production-only config
+  # failure. This job boots with ENVIRONMENT=production instead, and
+  # separately asserts that a deliberately-bad config produces a legible
+  # error rather than a silent crash loop with no traceback in the logs.
+  prod-config-parity:
+    runs-on: ubuntu-latest
+    needs: docker-build-smoke-test
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_USER: clinical_ai
+          POSTGRES_PASSWORD: clinical_ai_password
+          POSTGRES_DB: clinical_ai_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U clinical_ai -d clinical_ai_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t sephiroth-api:ci .
+
+      - name: Boot with ENVIRONMENT=production
+        run: |
+          docker run -d --name prod-parity \
+            --network host \
+            -e ENVIRONMENT=production \
+            -e JWT_SECRET="$(openssl rand -hex 32)" \
+            -e DATABASE_URL="postgresql+asyncpg://clinical_ai:clinical_ai_password@localhost:5432/clinical_ai_db" \
+            sephiroth-api:ci
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health > /dev/null; then echo "up"; exit 0; fi
+            sleep 2
+          done
+          echo "FAIL: container never became healthy under ENVIRONMENT=production"
+          docker logs prod-parity
+          exit 1
+      - name: Container logs (always, for debugging)
+        if: always()
+        run: docker logs prod-parity
+
+      # The regression test for the incident itself: a bad config must fail
+      # loudly and legibly, not silently. PYTHONUNBUFFERED=1 (Dockerfile) is
+      # what makes this message actually reach `docker logs` instead of
+      # being lost to stdout buffering.
+      - name: Assert bad config fails with a readable message
+        run: |
+          set +e
+          OUTPUT=$(docker run --rm -e ENVIRONMENT=production -e JWT_SECRET=short sephiroth-api:ci 2>&1)
+          set -e
+          echo "$OUTPUT"
+          echo "$OUTPUT" | grep -q "jwt_secret must be" \
+            || { echo "FAIL: bad-config error produced no legible message"; exit 1; }
+
   # Blocking: secrets and high-confidence/high-severity SAST findings are
   # 100% actionable — no reason to ever let these ride.
   security:
