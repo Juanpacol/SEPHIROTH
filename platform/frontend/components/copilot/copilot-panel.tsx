@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { api, type CitationReport, type Explanation, type ToolCall } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
+import { useLanguage } from "@/lib/language";
 import AgentBadge from "@/components/agent-badge";
 import ExplainabilityPanel from "@/components/explainability-panel";
 
@@ -40,6 +41,49 @@ interface Exchange {
   progress?: AgentProgress[];
   pending?: boolean;
   error?: string;
+}
+
+/** Suggested starter questions — kept in English regardless of UI locale,
+ * matching the clinical literature/citations the agents cite. */
+const SUGGESTED_QUESTIONS = [
+  "What is the first-line treatment for hypertension?",
+  "What is the target A1C for adults with type 2 diabetes?",
+  "When is anticoagulation recommended for atrial fibrillation?",
+  "What are the first-line antibiotics for community-acquired pneumonia?",
+];
+
+/** Token-overlap match — mirrors the >=0.5 overlap threshold Citation Guard
+ * uses server-side (`citation_guard._is_verified`) so a link only attaches
+ * when the citation text plausibly came from that tool result. */
+function tokensOf(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .match(/[a-z0-9/]+/g)
+      ?.filter((t) => t.length > 1) ?? []
+  );
+}
+
+function citationUrl(citation: string, toolCalls: ToolCall[] | undefined): string | null {
+  if (!toolCalls) return null;
+  const candidateTokens = tokensOf(citation);
+  if (candidateTokens.size === 0) return null;
+
+  let best: { url: string; overlap: number } | null = null;
+  for (const call of toolCalls) {
+    const results = (call.result as { results?: unknown[] } | undefined)?.results;
+    if (!Array.isArray(results)) continue;
+    for (const item of results) {
+      if (typeof item !== "object" || item === null) continue;
+      const { citation: label, source, title, url } = item as Record<string, unknown>;
+      const text = [label, source, title].find((v) => typeof v === "string") as string | undefined;
+      if (!text || typeof url !== "string") continue;
+      const overlap =
+        Array.from(tokensOf(text)).filter((t) => candidateTokens.has(t)).length / candidateTokens.size;
+      if (overlap >= 0.5 && (!best || overlap > best.overlap)) best = { url, overlap };
+    }
+  }
+  return best?.url ?? null;
 }
 
 interface PdfPreview {
@@ -70,6 +114,7 @@ function PdfPreviewModal({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div
       className="fixed inset-0 z-[60] flex animate-fadeIn items-center justify-center bg-ink/40 p-4"
@@ -81,7 +126,7 @@ function PdfPreviewModal({
       >
         <div className="flex items-center justify-between border-b border-line/60 p-4">
           <div>
-            <h2 className="font-bold">Export preview</h2>
+            <h2 className="font-bold">{t("copilot.exportPreview")}</h2>
             <p className="text-xs text-muted">
               {(preview.size / 1024).toFixed(0)} KB · SEPHIROTH Consultation Report
             </p>
@@ -101,7 +146,7 @@ function PdfPreviewModal({
 
         <div className="border-t border-line/60 p-4">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
-            Included sections
+            {t("copilot.includedSections")}
           </p>
           <ul className="mb-4 space-y-1">
             {preview.sections.map((section) => (
@@ -115,13 +160,13 @@ function PdfPreviewModal({
               onClick={onClose}
               className="rounded-xl border border-line/70 px-4 py-2 text-sm font-semibold text-ink/80 hover:bg-surface"
             >
-              Cancel
+              {t("copilot.cancel")}
             </button>
             <button
               onClick={onConfirm}
               className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white"
             >
-              <Download size={14} /> Download PDF
+              <Download size={14} /> {t("copilot.downloadPdf")}
             </button>
           </div>
         </div>
@@ -174,26 +219,41 @@ function ToolCallRow({ call }: { call: ToolCall }) {
   );
 }
 
-function CitationsPanel({ report }: { report: CitationReport }) {
+function CitationsPanel({ report, toolCalls }: { report: CitationReport; toolCalls?: ToolCall[] }) {
+  const { t } = useLanguage();
   const verified = report.verified ?? [];
   const fabricated = report.fabricated ?? [];
   if (verified.length === 0 && fabricated.length === 0) return null;
   return (
     <div className="rounded-xl bg-surface p-3 text-xs">
       <div className="mb-1.5 flex items-center gap-1 font-semibold text-ink/80">
-        <ShieldCheck size={13} className="text-success" /> Citation Guard
+        <ShieldCheck size={13} className="text-success" /> {t("copilot.citationGuard")}
       </div>
-      {verified.map((citation) => (
-        <div key={citation} className="flex items-start gap-1.5 text-muted">
-          <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-success" />
-          <span>{citation}</span>
-        </div>
-      ))}
+      {verified.map((citation) => {
+        const url = citationUrl(citation, toolCalls);
+        return (
+          <div key={citation} className="flex items-start gap-1.5 text-muted">
+            <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-success" />
+            {url ? (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2"
+              >
+                {citation} — {t("copilot.viewSource")}
+              </a>
+            ) : (
+              <span>{citation}</span>
+            )}
+          </div>
+        );
+      })}
       {fabricated.map((citation) => (
         <div key={citation} className="flex items-start gap-1.5 text-danger">
           <ShieldAlert size={12} className="mt-0.5 shrink-0" />
           <span>
-            &ldquo;{citation}&rdquo; — could not be traced to any tool result; removed
+            &ldquo;{citation}&rdquo; — {t("copilot.fabricatedCitation")}
           </span>
         </div>
       ))}
@@ -202,6 +262,7 @@ function CitationsPanel({ report }: { report: CitationReport }) {
 }
 
 export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: string }) {
+  const { lang, t } = useLanguage();
   const [query, setQuery] = useState(initialQuery);
   const [patientId, setPatientId] = useState("");
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
@@ -265,10 +326,11 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
       prev.map((e, i) => (i === prev.length - 1 ? { ...e, ...update } : e))
     );
 
-  const submit = async () => {
-    if (!query.trim() || streaming) return;
+  const submit = async (override?: string) => {
+    const text = override ?? query;
+    if (!text.trim() || streaming) return;
     const patient = patients?.find((p) => p.id === patientId);
-    const q = query;
+    const q = text;
     setQuery("");
     setStreaming(true);
     setExchanges((prev) => [...prev, { question: q, pending: true, progress: [] }]);
@@ -280,7 +342,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
         body: JSON.stringify({
           query: q,
           patient_id: patientId,
-          context: patient ? { conditions: patient.conditions } : {},
+          context: { ...(patient ? { conditions: patient.conditions } : {}), language: lang },
         }),
       });
       if (!res.ok || !res.body) throw new Error(`${res.status}`);
@@ -340,7 +402,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
         }
       }
     } catch {
-      patch({ pending: false, error: "Consultation failed — is the backend running?" });
+      patch({ pending: false, error: t("copilot.failed") });
     } finally {
       setStreaming(false);
     }
@@ -350,9 +412,20 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
     <div className="flex h-full flex-col gap-3">
       <div className="flex-1 space-y-4 overflow-y-auto">
         {exchanges.length === 0 && (
-          <div className="card text-sm text-muted">
-            Ask a clinical question, e.g.{" "}
-            <em>&ldquo;What is the first-line treatment for hypertension?&rdquo;</em>
+          <div className="card space-y-2.5 text-sm text-muted">
+            <p>{t("copilot.askOrTry")}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {SUGGESTED_QUESTIONS.map((q) => (
+                <button
+                  key={q}
+                  onClick={() => submit(q)}
+                  disabled={streaming}
+                  className="rounded-full border border-line/70 bg-card px-3 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-primary hover:text-primary disabled:opacity-40"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {exchanges.map((exchange, i) => (
@@ -367,7 +440,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
               {exchange.pending ? (
                 <div className="space-y-2">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-                    Agents working…
+                    {t("copilot.agentsWorking")}
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {exchange.progress?.map((agent) => (
@@ -411,14 +484,16 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                     )}
                   </div>
                   <div className="whitespace-pre-wrap leading-relaxed">{exchange.answer}</div>
-                  {exchange.citations && <CitationsPanel report={exchange.citations} />}
+                  {exchange.citations && (
+                    <CitationsPanel report={exchange.citations} toolCalls={exchange.toolCalls} />
+                  )}
                   {exchange.explanation && (
                     <ExplainabilityPanel explanation={exchange.explanation} />
                   )}
                   {exchange.toolCalls && exchange.toolCalls.length > 0 && (
                     <div className="rounded-xl bg-surface p-3 text-xs text-muted">
                       <div className="mb-1 flex items-center gap-1 font-semibold">
-                        <Wrench size={12} /> Tools used — click a call to inspect it
+                        <Wrench size={12} /> {t("copilot.toolsUsed")}
                       </div>
                       {exchange.toolCalls.map((call, j) => (
                         <ToolCallRow key={j} call={call} />
@@ -438,7 +513,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
           onChange={(e) => setPatientId(e.target.value)}
           className="rounded-xl border border-line/70 bg-card px-2 py-2 text-sm"
         >
-          <option value="">No patient</option>
+          <option value="">{t("copilot.noPatient")}</option>
           {patients?.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -449,11 +524,11 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
-          placeholder="Ask a clinical question…"
+          placeholder={t("copilot.placeholder")}
           className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
         />
         <button
-          onClick={submit}
+          onClick={() => submit()}
           disabled={streaming}
           className="rounded-xl bg-primary p-2.5 text-white transition-opacity disabled:opacity-40"
           aria-label="Send"
