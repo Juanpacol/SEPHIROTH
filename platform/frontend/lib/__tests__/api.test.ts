@@ -90,13 +90,15 @@ describe("api fetch helpers (via api.*)", () => {
     // jsdom's window.location isn't directly assignable; delete+redefine.
     // @ts-expect-error -- intentional override for this test only
     delete window.location;
-    window.location = { ...original, href: "", pathname: "/dashboard" } as Location;
+    // @ts-expect-error -- window.location's setter type is oddly `string & Location`
+    window.location = { ...original, href: "", pathname: "/dashboard" };
 
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(new Response("", { status: 401 }));
 
     await expect(api.patients()).rejects.toMatchObject({ status: 401 });
     expect(window.location.href).toBe("/login");
 
+    // @ts-expect-error -- restoring the original, same setter-type quirk as above
     window.location = original;
   });
 });
