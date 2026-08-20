@@ -23,7 +23,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -682,18 +682,25 @@ async def agenda_today(
         )
     ).all()
 
-    items = []
-    for appt in appointments:
-        patient = await session.get(Patient, appt.patient_id)
-        items.append(
-            {
-                "id": appt.id,
-                "start_at": appt.start_at.isoformat(),
-                "end_at": appt.end_at.isoformat(),
-                "patient_name": patient.name if patient else "",
-                "reason": appt.reason,
-            }
-        )
+    patient_names = dict(
+        (
+            await session.execute(
+                select(Patient.id, Patient.name).where(
+                    Patient.id.in_({a.patient_id for a in appointments})
+                )
+            )
+        ).all()
+    )
+    items = [
+        {
+            "id": appt.id,
+            "start_at": appt.start_at.isoformat(),
+            "end_at": appt.end_at.isoformat(),
+            "patient_name": patient_names.get(appt.patient_id, ""),
+            "reason": appt.reason,
+        }
+        for appt in appointments
+    ]
 
     return {
         "date": today.isoformat(),
@@ -752,30 +759,53 @@ async def create_series(
         raise HTTPException(status_code=422, detail="Cannot book an appointment in the past")
 
     step_days = FREQUENCY_DAYS[body.frequency]
-    occurrences: List[tuple] = []  # (start_at, end_at)
+    occurrence_starts: List[datetime] = []
     for i in range(body.occurrence_count):
         occ_start = first_start + timedelta(days=step_days * i)
         if occ_start > now + BOOKING_HORIZON:
             raise HTTPException(status_code=422, detail=f"Occurrence {i + 1} is more than 180 days out")
-        day_start = occ_start.date()
-        day_end = day_start + timedelta(days=1)
-        rules, exceptions, _existing = await _load_clinician_schedule(
-            session, body.clinician_id, day_start, day_end
+        occurrence_starts.append(occ_start)
+
+    # Load the schedule and any conflicting appointments once for the whole
+    # span instead of once per occurrence (up to 52) — that was up to 260
+    # round trips to Supabase in one request. `_load_clinician_schedule`'s
+    # own `appointments` return is clinician-scoped only; conflict checking
+    # here also needs the patient's appointments with *other* clinicians, so
+    # that part is queried separately with an explicit OR.
+    span_start = occurrence_starts[0].date()
+    span_end = occurrence_starts[-1].date() + timedelta(days=1)
+    rules, exceptions, _clinician_appts = await _load_clinician_schedule(
+        session, body.clinician_id, span_start, span_end
+    )
+    conflict_candidates = (
+        await session.scalars(
+            select(Appointment).where(
+                Appointment.status == "booked",
+                Appointment.start_at < datetime.combine(span_end, datetime.min.time()),
+                Appointment.end_at > datetime.combine(span_start, datetime.min.time()),
+                or_(Appointment.clinician_id == body.clinician_id, Appointment.patient_id == body.patient_id),
+            )
         )
-        slots = slots_module.expand_slots(rules, exceptions, [], day_start, day_end)
-        matching = next((s for s in slots if s.start_at == occ_start), None)
+    ).all()
+
+    all_slots = slots_module.expand_slots(rules, exceptions, [], span_start, span_end)
+    slots_by_start = {s.start_at: s for s in all_slots}
+
+    occurrences: List[tuple] = []  # (start_at, end_at)
+    for i, occ_start in enumerate(occurrence_starts):
+        matching = slots_by_start.get(occ_start)
         if matching is None:
             raise HTTPException(
                 status_code=422,
                 detail=f"Occurrence {i + 1} ({occ_start.isoformat()}) is outside working hours",
             )
-        await _check_booking_conflicts(
-            session,
-            clinician_id=body.clinician_id,
-            patient_id=body.patient_id,
-            start_at=occ_start,
-            end_at=matching.end_at,
-        )
+        if any(
+            a.start_at < matching.end_at and a.end_at > occ_start for a in conflict_candidates
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail=f"Occurrence {i + 1} ({occ_start.isoformat()}) conflicts with an existing appointment",
+            )
         occurrences.append((occ_start, matching.end_at))
 
     series = AppointmentSeries(

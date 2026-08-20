@@ -15,7 +15,7 @@ from sqlalchemy.orm import selectinload
 from api.audit import log_phi_access
 from auth.deps import get_current_user
 from auth.security import hash_password
-from core.db import get_session
+from core.db import SessionLocal, get_session
 from data.schemas import ClinicalNote, Patient, PatientInvite, TimelineEvent, User
 from sephiroth.models import get_llm_client
 from sephiroth.safety.risk import RISK_ORDER, assess_patient_risk, assess_risk_level
@@ -132,15 +132,19 @@ class NoteCreate(BaseModel):
 
 
 async def _ingest_note(
-    session: AsyncSession,
     patient: Patient,
     user: User,
     content: str,
     note_type: str,
     note_date: Optional[str],
 ) -> Dict[str, Any]:
-    """Shared note pipeline: persist the note, extract entities, and add
-    AI-extracted Intelligent Timeline events (deduped on date+title)."""
+    """Shared note pipeline: extract entities/events (LLM calls, network,
+    rate-limited), then persist the note + AI-extracted Intelligent Timeline
+    events (deduped on date+title) in a short-lived session opened only for
+    the write. Deliberately takes no request-scoped session — holding one
+    open across the LLM calls below would pin a pooled connection
+    idle-in-transaction for as long as extraction takes (same reasoning as
+    `agents.py::consult`)."""
     from intelligence.nlp.timeline_extractor import extract_events
     from sephiroth.tools import get_tool_runtime
 
@@ -149,6 +153,7 @@ async def _ingest_note(
     registry = get_tool_runtime()
     await registry.load()
     entities = await registry.execute("extract_medical_entities", {"text": content})
+    extracted = await extract_events(get_llm_client(), content, resolved_date)
 
     note = ClinicalNote(
         id=str(uuid4()),
@@ -158,9 +163,6 @@ async def _ingest_note(
         content=content,
         extracted_entities=entities,
     )
-    session.add(note)
-
-    extracted = await extract_events(get_llm_client(), content, resolved_date)
 
     # Dedupe against existing events on (date, title).
     existing = {(e.date.isoformat(), e.title.lower()) for e in patient.timeline}
@@ -180,11 +182,14 @@ async def _ingest_note(
                 ai_generated=True,
             )
         )
-    session.add_all(new_events)
     # See add_timeline_event's comment: keeps `patient.timeline` correct for
-    # any later request that reuses this identity-mapped `Patient`.
+    # any later code in this request that reuses this Patient instance.
     patient.timeline.extend(new_events)
-    await session.commit()
+
+    async with SessionLocal() as session:
+        session.add(note)
+        session.add_all(new_events)
+        await session.commit()
 
     return {
         "note_id": note.id,
@@ -198,11 +203,11 @@ async def add_clinical_note(
     patient_id: str,
     body: NoteCreate,
     user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
     """Store a clinical note and auto-extract Intelligent Timeline events."""
-    patient = await _get_patient(session, patient_id)
-    return await _ingest_note(session, patient, user, body.content, body.note_type, body.note_date)
+    async with SessionLocal() as session:
+        patient = await _get_patient(session, patient_id)
+    return await _ingest_note(patient, user, body.content, body.note_type, body.note_date)
 
 
 @router.post("/{patient_id}/notes/upload", status_code=201, summary="Upload a clinical note as PDF")
@@ -212,14 +217,14 @@ async def upload_clinical_note(
     note_type: str = Form("progress_note"),
     note_date: Optional[str] = Form(None),
     user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
     """Extract text from an uploaded PDF and run the same note pipeline."""
     from io import BytesIO
 
     from pypdf import PdfReader
 
-    patient = await _get_patient(session, patient_id)
+    async with SessionLocal() as session:
+        patient = await _get_patient(session, patient_id)
 
     raw = await file.read()
     try:
@@ -237,7 +242,7 @@ async def upload_clinical_note(
             ),
         )
 
-    result = await _ingest_note(session, patient, user, text, note_type, note_date)
+    result = await _ingest_note(patient, user, text, note_type, note_date)
     result["source_file"] = file.filename
     result["characters_extracted"] = len(text)
     return result

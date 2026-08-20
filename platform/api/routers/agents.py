@@ -134,16 +134,25 @@ async def _persist(
 async def consult(
     request: ConsultRequest,
     user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
 ) -> ConsultResponse:
-    """Run the multi-agent clinical workflow and persist it to the user's history."""
+    """Run the multi-agent clinical workflow and persist it to the user's history.
+
+    Deliberately does not hold a request-scoped session (no `Depends(get_session)`)
+    across `run_consultation()` — that call can take minutes (5 agents, up to 6
+    tool rounds each, throttled by the shared Gemini rate limiter) and an open
+    session would pin a pooled connection idle-in-transaction for the whole
+    run. Same short-lived-session pattern `consult_stream` already uses below.
+    """
     if not settings.enable_agents:
         raise HTTPException(status_code=503, detail="Agent workflow is disabled")
     await _ensure_llm()
 
     context = dict(request.context)
     if request.patient_id:
-        context["recent_consultations"] = await recent_consultation_summaries(request.patient_id, session)
+        async with SessionLocal() as lookup_session:
+            context["recent_consultations"] = await recent_consultation_summaries(
+                request.patient_id, lookup_session
+            )
 
     state = await run_consultation(
         get_llm_client(),
@@ -151,7 +160,8 @@ async def consult(
         patient_id=request.patient_id,
         context=context,
     )
-    consultation = await _persist(session, user, request, dict(state))
+    async with SessionLocal() as session:
+        consultation = await _persist(session, user, request, dict(state))
     return ConsultResponse(
         id=consultation.id,
         answer=consultation.answer,

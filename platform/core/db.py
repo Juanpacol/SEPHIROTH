@@ -23,8 +23,14 @@ engine = create_async_engine(
     settings.database_url,
     echo=settings.debug,
     pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
+    # Sized for a single-worker instance (Render free plan, 0.15 CPU) against
+    # a Supabase session pooler: a single uvicorn process executes ~1 query
+    # at a time, so 30 potential connections was only ever masking connection
+    # leaks (idle-in-transaction spans), not real concurrency need.
+    pool_size=5,
+    max_overflow=5,
+    pool_recycle=300,
+    pool_timeout=10,
 )
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 

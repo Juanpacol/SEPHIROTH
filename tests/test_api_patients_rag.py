@@ -8,6 +8,8 @@ plan closes that with a router-level `dependencies=[Depends(get_current_user)]`
 importing `api.main`'s) — see `test_unauthenticated_*` below, the
 regression lock for that fix."""
 
+from contextlib import asynccontextmanager
+
 import pytest
 from fastapi import Depends, FastAPI
 from httpx import ASGITransport, AsyncClient
@@ -33,6 +35,15 @@ def app(db_session, monkeypatch):
     import sephiroth.models.factory as factory_module
 
     monkeypatch.setattr(factory_module, "_client", FakeLLMClient())
+
+    # `/patients/{id}/notes` (and `/notes/upload`) persist via `SessionLocal()`
+    # directly, not the injectable dependency — so a pooled connection isn't
+    # held idle-in-transaction across the LLM entity/event extraction calls.
+    @asynccontextmanager
+    async def _session_cm():
+        yield db_session
+
+    monkeypatch.setattr(patients_router_module, "SessionLocal", lambda: _session_cm())
 
     app = FastAPI()
     app.include_router(auth_router_module.router, prefix="/api/auth")

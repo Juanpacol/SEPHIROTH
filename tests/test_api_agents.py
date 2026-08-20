@@ -14,6 +14,8 @@ one additive assertion for them; no existing assertion changed. Verifies
 AC-004-08 (docs/specs/SPEC-004-verification-safety.md).
 """
 
+from contextlib import asynccontextmanager
+
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
@@ -47,6 +49,16 @@ def app(db_session, monkeypatch):
         }
     )
     monkeypatch.setattr(factory_module, "_client", fake_client)
+
+    # `/consult` persists via `SessionLocal()` directly (not the injectable
+    # dependency) so a pooled connection isn't held idle-in-transaction across
+    # the LLM run — same reasoning `/consult/stream` already had, see
+    # test_sse_contract.py's identical fixture.
+    @asynccontextmanager
+    async def _session_cm():
+        yield db_session
+
+    monkeypatch.setattr(agents_router_module, "SessionLocal", lambda: _session_cm())
 
     app = FastAPI()
     app.include_router(auth_router_module.router, prefix="/api/auth")
@@ -244,6 +256,12 @@ async def test_recent_consultations_reach_only_the_coordinator(db_session, monke
         }
     )
     monkeypatch.setattr(factory_module, "_client", fake_client)
+
+    @asynccontextmanager
+    async def _session_cm():
+        yield db_session
+
+    monkeypatch.setattr(agents_router_module, "SessionLocal", lambda: _session_cm())
 
     app = FastAPI()
     app.include_router(auth_router_module.router, prefix="/api/auth")
