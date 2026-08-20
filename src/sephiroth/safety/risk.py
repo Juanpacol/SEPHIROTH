@@ -144,6 +144,29 @@ def assess_patient_risk(
     return flags
 
 
+def lab_value_abnormality(test_name: str, value: float) -> tuple[bool, bool]:
+    """Whether a single lab value would trigger a flag under the same
+    `LAB_RULES` `assess_patient_risk` uses — shared so a persisted
+    `LabResult.is_abnormal`/`is_critical` row never disagrees with the
+    live risk flags computed from the same value."""
+    rules = LAB_RULES.get(test_name.strip().lower())
+    if not rules:
+        return False, False
+    triggered = [rule for predicate, rule in rules if predicate(value)]
+    return bool(triggered), any(rule.severity == "high" for rule in triggered)
+
+
+def bp_abnormality(systolic: float, diastolic: float) -> tuple[bool, bool]:
+    """Same idea as `lab_value_abnormality`, for the two-key blood-pressure
+    schema. Critical uses the standard hypertensive-crisis cutoff
+    (180/110) — one tier above `_blood_pressure_threshold_flags`' single
+    "Hypertensive range" severity, since that flag alone doesn't
+    distinguish severity."""
+    is_abnormal = bool(_blood_pressure_threshold_flags(systolic, diastolic))
+    is_critical = systolic >= 180 or diastolic >= 110
+    return is_abnormal, is_critical
+
+
 def assess_risk_level(flags: List[Dict[str, str]]) -> str:
     """Overall level for a patient: high > medium > low (no flags)."""
     severities = {f["severity"] for f in flags}
@@ -160,4 +183,12 @@ def assess_risk_level(flags: List[Dict[str, str]]) -> str:
 # last, after "low").
 RISK_ORDER: Dict[str, int] = {"high": 0, "medium": 1, "low": 2}
 
-__all__ = ["LabRule", "LAB_RULES", "RISK_ORDER", "assess_patient_risk", "assess_risk_level"]
+__all__ = [
+    "LabRule",
+    "LAB_RULES",
+    "RISK_ORDER",
+    "assess_patient_risk",
+    "assess_risk_level",
+    "lab_value_abnormality",
+    "bp_abnormality",
+]
