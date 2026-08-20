@@ -42,26 +42,38 @@ class ToolRuntime:
         self._tool_index: Dict[str, FastMCP] = {}
         self._schemas: List[Dict[str, Any]] = []
         self._loaded = False
+        self._load_lock = asyncio.Lock()
 
     async def load(self) -> None:
-        """Discover every tool on every server (idempotent)."""
+        """Discover every tool on every server (idempotent).
+
+        Guarded by a lock, not just the `_loaded` check: `run_consultation`
+        awaits `Agent.run()` for every selected specialist concurrently
+        (`asyncio.gather`), and each one calls this — without the lock,
+        multiple callers would all see `_loaded is False` before the first
+        one finishes its awaited `client.list_tools()` calls, and each
+        would append its own copy of every schema, producing duplicate
+        function declarations Gemini rejects outright."""
         if self._loaded:
             return
-        for server in self.servers:
-            async with Client(server) as client:
-                for tool in await client.list_tools():
-                    self._tool_index[tool.name] = server
-                    self._schemas.append(
-                        {
-                            "type": "function",
-                            "function": {
-                                "name": tool.name,
-                                "description": tool.description or "",
-                                "parameters": tool.inputSchema or {"type": "object", "properties": {}},
-                            },
-                        }
-                    )
-        self._loaded = True
+        async with self._load_lock:
+            if self._loaded:
+                return
+            for server in self.servers:
+                async with Client(server) as client:
+                    for tool in await client.list_tools():
+                        self._tool_index[tool.name] = server
+                        self._schemas.append(
+                            {
+                                "type": "function",
+                                "function": {
+                                    "name": tool.name,
+                                    "description": tool.description or "",
+                                    "parameters": tool.inputSchema or {"type": "object", "properties": {}},
+                                },
+                            }
+                        )
+            self._loaded = True
 
     def llm_tools(self, allowed: Optional[List[str]] = None) -> List[Dict[str, Any]]:
         """Tool schemas in Ollama/OpenAI format, optionally filtered to a whitelist."""
