@@ -85,6 +85,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "American Diabetes Association",
             "year": 2024,
             "title": "Glycemic Targets & Pharmacologic Approaches",
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
         },
     ),
     Document(
@@ -100,6 +101,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "ACC/AHA",
             "year": 2023,
             "title": "High Blood Pressure Management",
+            "url": "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000065",
         },
     ),
     Document(
@@ -116,6 +118,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "AHA/ACC/HFSA",
             "year": 2022,
             "title": "Management of Heart Failure",
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001063",
         },
     ),
     Document(
@@ -131,6 +134,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "GOLD",
             "year": 2024,
             "title": "COPD Diagnosis, Management and Prevention",
+            "url": "https://goldcopd.org/2024-gold-report/",
         },
     ),
     Document(
@@ -146,6 +150,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "ATS/IDSA",
             "year": 2023,
             "title": "Treatment of Community-Acquired Pneumonia",
+            "url": "https://www.atsjournals.org/doi/10.1164/rccm.201908-1581ST",
         },
     ),
     Document(
@@ -162,6 +167,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "American Diabetes Association",
             "year": 2024,
             "title": "Chronic Kidney Disease in Diabetes",
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
         },
     ),
     Document(
@@ -177,6 +183,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "USPSTF",
             "year": 2021,
             "title": "Screening for Colorectal Cancer",
+            "url": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/colorectal-cancer-screening",
         },
     ),
     Document(
@@ -192,6 +199,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "USPSTF",
             "year": 2024,
             "title": "Screening for Breast Cancer",
+            "url": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/breast-cancer-screening",
         },
     ),
     Document(
@@ -208,6 +216,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "KDIGO",
             "year": 2024,
             "title": "Evaluation and Management of CKD",
+            "url": "https://kdigo.org/guidelines/ckd-evaluation-and-management/",
         },
     ),
     Document(
@@ -224,6 +233,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "ACC/AHA",
             "year": 2018,
             "title": "Management of Blood Cholesterol",
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000625",
         },
     ),
     Document(
@@ -240,6 +250,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "GINA",
             "year": 2024,
             "title": "Global Strategy for Asthma Management",
+            "url": "https://ginasthma.org/gina-reports/",
         },
     ),
     Document(
@@ -256,6 +267,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "AHA/ASA",
             "year": 2021,
             "title": "Early Management of Acute Ischemic Stroke",
+            "url": "https://www.ahajournals.org/doi/10.1161/STR.0000000000000211",
         },
     ),
     Document(
@@ -272,6 +284,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "IDSA",
             "year": 2019,
             "title": "Treatment of Uncomplicated Cystitis",
+            "url": "https://www.idsociety.org/practice-guideline/uncomplicated-uti/",
         },
     ),
     Document(
@@ -288,6 +301,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "Surviving Sepsis Campaign",
             "year": 2021,
             "title": "Management of Sepsis and Septic Shock",
+            "url": "https://www.sccm.org/SurvivingSepsisCampaign/Guidelines",
         },
     ),
     Document(
@@ -304,6 +318,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "ACC/AHA/HRS",
             "year": 2024,
             "title": "Anticoagulation in Atrial Fibrillation",
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193",
         },
     ),
     Document(
@@ -320,6 +335,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "ACR",
             "year": 2020,
             "title": "Management of Gout",
+            "url": "https://rheumatology.org/gout-guideline",
         },
     ),
     Document(
@@ -336,6 +352,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "WHO",
             "year": 2022,
             "title": "Treatment of Drug-Susceptible Tuberculosis",
+            "url": "https://www.who.int/publications/i/item/9789240048126",
         },
     ),
     Document(
@@ -352,6 +369,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "American Diabetes Association",
             "year": 2024,
             "title": "Obesity Management in Type 2 Diabetes",
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
         },
     ),
     Document(
@@ -368,6 +386,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "ACOG",
             "year": 2020,
             "title": "Gestational Hypertension and Preeclampsia",
+            "url": "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2020/06/gestational-hypertension-and-preeclampsia",
         },
     ),
     Document(
@@ -384,6 +403,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "AAP",
             "year": 2013,
             "title": "Diagnosis and Management of Acute Otitis Media",
+            "url": "https://publications.aap.org/pediatrics/article/131/3/e964/30912",
         },
     ),
     Document(
@@ -400,6 +420,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "American Diabetes Association",
             "year": 2024,
             "title": "Hypertension Management in Diabetes",
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
         },
     ),
     Document(
@@ -416,6 +437,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "ACC/AHA",
             "year": 2019,
             "title": "Primary Prevention of Cardiovascular Disease",
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000678",
         },
     ),
     Document(
@@ -432,6 +454,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "NICE",
             "year": 2022,
             "title": "Management of Depression in Adults",
+            "url": "https://www.nice.org.uk/guidance/ng222",
         },
     ),
 ]
@@ -497,6 +520,7 @@ class RAGPipeline:
                 "content": doc.content,
                 "source": doc.source,
                 "citation": doc.citation,
+                "url": doc.metadata.get("url"),
                 "score": round(score, 4),
                 "metadata": doc.metadata,
             }
@@ -539,6 +563,7 @@ class RAGPipeline:
                     "content": doc.content,
                     "source": doc.source,
                     "citation": doc.citation,
+                    "url": doc.metadata.get("url"),
                     "score": round(rrf_scores[doc_id], 4),
                     "metadata": doc.metadata,
                 }

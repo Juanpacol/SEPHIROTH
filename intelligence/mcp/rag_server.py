@@ -51,6 +51,7 @@ def list_evidence_by_category(category: str) -> List[Dict[str, Any]]:
             "year": doc.metadata.get("year"),
             "excerpt": doc.content,
             "citation": doc.citation,
+            "url": doc.metadata.get("url"),
         }
         for doc in _pipeline.documents
         if doc.metadata.get("category", "general") == category

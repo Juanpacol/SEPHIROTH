@@ -55,7 +55,18 @@ function EvidenceRow({ item }: { item: EvidenceItem }) {
       {expanded && (
         <div className="mt-2 rounded-xl bg-surface p-3">
           <p className="text-sm leading-relaxed">{item.excerpt}</p>
-          <p className="mt-2 text-xs font-semibold text-primary">{item.citation}</p>
+          {item.url ? (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-xs font-semibold text-primary underline underline-offset-2"
+            >
+              {item.citation} — view source ↗
+            </a>
+          ) : (
+            <p className="mt-2 text-xs font-semibold text-primary">{item.citation}</p>
+          )}
         </div>
       )}
     </li>
@@ -110,7 +121,18 @@ export default function EvidencePage() {
                 </span>
                 <div>
                   <p className="text-sm leading-relaxed">{result.content}</p>
-                  <p className="mt-2 text-xs font-semibold text-primary">{result.citation}</p>
+                  {result.url ? (
+                    <a
+                      href={result.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-block text-xs font-semibold text-primary underline underline-offset-2"
+                    >
+                      {result.citation} — view source ↗
+                    </a>
+                  ) : (
+                    <p className="mt-2 text-xs font-semibold text-primary">{result.citation}</p>
+                  )}
                 </div>
               </div>
             </div>

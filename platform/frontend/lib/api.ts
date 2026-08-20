@@ -222,6 +222,7 @@ export interface EvidenceItem {
   year: number | null;
   excerpt: string;
   citation: string;
+  url: string | null;
 }
 
 export interface DrugCheckResult {
@@ -500,7 +501,7 @@ export const api = {
   },
   exportConsultation: (id: string) => getBlob(`/api/agents/history/${id}/export`),
   searchEvidence: (q: string) =>
-    get<{ results: { content: string; citation: string; score: number }[] }>(
+    get<{ results: { content: string; citation: string; url: string | null; score: number }[] }>(
       `/api/rag/search?q=${encodeURIComponent(q)}`
     ),
   evidenceCategories: () => get<EvidenceCategory[]>("/api/rag/categories"),

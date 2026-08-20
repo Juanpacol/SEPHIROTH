@@ -50,7 +50,7 @@ def test_retrieve_result_shape():
     results = pipeline.retrieve("hypertension blood pressure target adults", top_k=1)
     assert results
     hit = results[0]
-    assert set(hit.keys()) == {"id", "content", "source", "citation", "score", "metadata"}
+    assert set(hit.keys()) == {"id", "content", "source", "citation", "url", "score", "metadata"}
     assert isinstance(hit["metadata"], dict)
 
 
@@ -201,4 +201,4 @@ def test_hybrid_retrieval_output_shape_matches_keyword_only():
 
     results = pipeline.retrieve("statin therapy", top_k=1)
     assert results
-    assert set(results[0].keys()) == {"id", "content", "source", "citation", "score", "metadata"}
+    assert set(results[0].keys()) == {"id", "content", "source", "citation", "url", "score", "metadata"}
