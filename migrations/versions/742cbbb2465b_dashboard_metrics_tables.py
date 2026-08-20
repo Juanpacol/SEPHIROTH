@@ -67,7 +67,10 @@ def upgrade() -> None:
     op.create_index(op.f("ix_lab_results_patient_id"), "lab_results", ["patient_id"], unique=False)
     op.create_index(op.f("ix_lab_results_taken_at"), "lab_results", ["taken_at"], unique=False)
     op.create_index(
-        "ix_lab_results_patient_test_taken", "lab_results", ["patient_id", "test_name", "taken_at"], unique=False
+        "ix_lab_results_patient_test_taken",
+        "lab_results",
+        ["patient_id", "test_name", "taken_at"],
+        unique=False,
     )
 
     op.create_table(
@@ -87,7 +90,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["patient_id"], ["patients.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_medication_orders_patient_id"), "medication_orders", ["patient_id"], unique=False)
+    op.create_index(
+        op.f("ix_medication_orders_patient_id"), "medication_orders", ["patient_id"], unique=False
+    )
     op.create_index(op.f("ix_medication_orders_status"), "medication_orders", ["status"], unique=False)
 
     op.create_table(

@@ -553,7 +553,9 @@ class MedicationOrder(Base):
     `MedicationOrder` rows, so existing patients don't need a backfill."""
 
     __tablename__ = "medication_orders"
-    __table_args__ = (CheckConstraint("status IN ('active','discontinued')", name="ck_medication_order_status"),)
+    __table_args__ = (
+        CheckConstraint("status IN ('active','discontinued')", name="ck_medication_order_status"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)

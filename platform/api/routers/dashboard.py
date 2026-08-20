@@ -61,7 +61,9 @@ async def dashboard_stats(session: AsyncSession = Depends(get_session)) -> Dict[
         "stable_count": sum(1 for s in scored if s["risk_level"] == "low"),
         "at_risk_count": len(at_risk),
         "max_priority_score": max((s["priority_score"] for s in scored), default=0),
-        "avg_priority_score": round(sum(s["priority_score"] for s in scored) / len(scored), 2) if scored else 0.0,
+        "avg_priority_score": (
+            round(sum(s["priority_score"] for s in scored) / len(scored), 2) if scored else 0.0
+        ),
     }
 
 
@@ -315,12 +317,16 @@ async def dashboard_performance(session: AsyncSession = Depends(get_session)) ->
     recorded, optional) versus `risk_level` (the model's own high/medium/
     low call) — treat as directional, never as clinical validation."""
     alerts = (await session.scalars(select(Alert).where(Alert.reviewed_at.is_not(None)))).all()
-    consultations = (await session.scalars(select(Consultation).where(Consultation.outcome.is_not(None)))).all()
+    consultations = (
+        await session.scalars(select(Consultation).where(Consultation.outcome.is_not(None)))
+    ).all()
 
     def _naive_utc(dt: datetime) -> datetime:
         return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
-    review_durations = [(_naive_utc(a.reviewed_at) - _naive_utc(a.created_at)).total_seconds() for a in alerts]
+    review_durations = [
+        (_naive_utc(a.reviewed_at) - _naive_utc(a.created_at)).total_seconds() for a in alerts
+    ]
     resolved = sum(1 for a in alerts if a.status == "resolved")
 
     true_positive = sum(1 for c in consultations if c.risk_level == "high" and c.outcome == "not_improved")
@@ -328,8 +334,12 @@ async def dashboard_performance(session: AsyncSession = Depends(get_session)) ->
     true_negative = sum(1 for c in consultations if c.risk_level != "high" and c.outcome == "improved")
     false_negative = sum(1 for c in consultations if c.risk_level != "high" and c.outcome == "not_improved")
 
-    sensitivity = true_positive / (true_positive + false_negative) if (true_positive + false_negative) else None
-    specificity = true_negative / (true_negative + false_positive) if (true_negative + false_positive) else None
+    sensitivity = (
+        true_positive / (true_positive + false_negative) if (true_positive + false_negative) else None
+    )
+    specificity = (
+        true_negative / (true_negative + false_positive) if (true_negative + false_positive) else None
+    )
 
     return {
         "avg_alert_response_seconds": round(sum(review_durations) / len(review_durations), 1)
@@ -340,6 +350,6 @@ async def dashboard_performance(session: AsyncSession = Depends(get_session)) ->
         "false_negative_count": false_negative,
         "sensitivity": round(sensitivity, 3) if sensitivity is not None else None,
         "specificity": round(specificity, 3) if specificity is not None else None,
-        "auc": None,  # needs a probability score per prediction, not just a 3-level label — not computable today
-        "methodology": "proxy estimate from Consultation.outcome vs risk_level — no labeled ground-truth dataset",
+        "auc": None,  # needs a probability score per prediction, not just a 3-level label — not computable
+        "methodology": "proxy estimate from Consultation.outcome vs risk_level — no ground-truth dataset",
     }
