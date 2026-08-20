@@ -16,7 +16,7 @@ from api.pdf_export import render_consultation_pdf
 from auth.deps import get_current_user
 from core.config import settings
 from core.db import SessionLocal, get_session
-from data.schemas import Consultation, User
+from data.schemas import AIEvaluation, Consultation, User
 from sephiroth.context import recent_consultation_summaries
 from sephiroth.models import get_llm_client
 from sephiroth.runtime import run_consultation, stream_consultation
@@ -96,6 +96,19 @@ async def _persist(
         supported_claim_ratio=supported_ratio,
     )
     session.add(consultation)
+    abstention_status = (state.get("abstention") or {}).get("status", "answer")
+    session.add(
+        AIEvaluation(
+            id=str(uuid4()),
+            patient_id=consultation.patient_id,
+            consultation_id=consultation.id,
+            eval_type="consultation",
+            # Same derived-not-self-reported confidence signal Consultation
+            # itself stores (decision #15) — never a value the model reports.
+            confidence=supported_ratio,
+            requires_human_review=abstention_status != "answer" or consultation.risk_level == "high",
+        )
+    )
     await session.commit()
     # Audit trail: one line per persisted consultation.
     logger.info(
