@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarClock, ShieldAlert } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, type DashboardAlerts } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import CriticalPatientsList from "@/components/critical-patients-list";
 import StatCard from "@/components/stat-card";
@@ -27,16 +27,13 @@ export default function DashboardPage() {
   const [tab, setTab] = useState<Tab>("alerts");
   const { t } = useLanguage();
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: api.dashboardStats,
+  const { data: bootstrap, isLoading, error } = useQuery({
+    queryKey: ["dashboard", "bootstrap"],
+    queryFn: api.dashboardBootstrap,
     refetchInterval: 30_000,
   });
-  const { data: agenda } = useQuery({
-    queryKey: ["agenda", "today"],
-    queryFn: api.agendaToday,
-    refetchInterval: 60_000,
-  });
+  const data = bootstrap?.stats;
+  const agenda = bootstrap?.agenda;
 
   if (isLoading) return <div className="text-muted">{t("dashboard.loading")}</div>;
   if (error || !data)
@@ -125,7 +122,7 @@ export default function DashboardPage() {
           ))}
         </div>
         {tab === "evolution" && <EvolutionTab />}
-        {tab === "alerts" && <AlertsTab />}
+        {tab === "alerts" && <AlertsTab initialData={bootstrap?.alerts} />}
         {tab === "medication" && <MedicationsTab />}
         {tab === "labs" && <LabsTab />}
         {tab === "imaging" && <ImagingTab />}
@@ -138,9 +135,15 @@ export default function DashboardPage() {
   );
 }
 
+const TAB_STALE_TIME = 20_000;
+
 function EvolutionTab() {
   const { t } = useLanguage();
-  const { data } = useQuery({ queryKey: ["dashboard", "evolution"], queryFn: api.dashboardEvolution });
+  const { data } = useQuery({
+    queryKey: ["dashboard", "evolution"],
+    queryFn: api.dashboardEvolution,
+    staleTime: TAB_STALE_TIME,
+  });
   if (!data) return <TabLoading />;
   return (
     <div className="space-y-3">
@@ -154,9 +157,14 @@ function EvolutionTab() {
   );
 }
 
-function AlertsTab() {
+function AlertsTab({ initialData }: { initialData?: DashboardAlerts }) {
   const { t } = useLanguage();
-  const { data } = useQuery({ queryKey: ["dashboard", "alerts"], queryFn: api.dashboardAlerts });
+  const { data } = useQuery({
+    queryKey: ["dashboard", "alerts"],
+    queryFn: api.dashboardAlerts,
+    initialData,
+    staleTime: TAB_STALE_TIME,
+  });
   if (!data) return <TabLoading />;
   return (
     <div className="space-y-3">
@@ -190,7 +198,11 @@ function AlertsTab() {
 
 function MedicationsTab() {
   const { t } = useLanguage();
-  const { data } = useQuery({ queryKey: ["dashboard", "medications"], queryFn: api.dashboardMedications });
+  const { data } = useQuery({
+    queryKey: ["dashboard", "medications"],
+    queryFn: api.dashboardMedications,
+    staleTime: TAB_STALE_TIME,
+  });
   if (!data) return <TabLoading />;
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
@@ -205,7 +217,11 @@ function MedicationsTab() {
 
 function LabsTab() {
   const { t } = useLanguage();
-  const { data } = useQuery({ queryKey: ["dashboard", "labs"], queryFn: api.dashboardLabs });
+  const { data } = useQuery({
+    queryKey: ["dashboard", "labs"],
+    queryFn: api.dashboardLabs,
+    staleTime: TAB_STALE_TIME,
+  });
   if (!data) return <TabLoading />;
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
@@ -220,7 +236,11 @@ function LabsTab() {
 
 function ImagingTab() {
   const { t } = useLanguage();
-  const { data } = useQuery({ queryKey: ["dashboard", "imaging"], queryFn: api.dashboardImaging });
+  const { data } = useQuery({
+    queryKey: ["dashboard", "imaging"],
+    queryFn: api.dashboardImaging,
+    staleTime: TAB_STALE_TIME,
+  });
   if (!data) return <TabLoading />;
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -236,7 +256,11 @@ function ImagingTab() {
 
 function AITab() {
   const { t } = useLanguage();
-  const { data } = useQuery({ queryKey: ["dashboard", "ai"], queryFn: api.dashboardAI });
+  const { data } = useQuery({
+    queryKey: ["dashboard", "ai"],
+    queryFn: api.dashboardAI,
+    staleTime: TAB_STALE_TIME,
+  });
   if (!data) return <TabLoading />;
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -256,7 +280,11 @@ function AITab() {
 
 function EvidenceTab() {
   const { t } = useLanguage();
-  const { data } = useQuery({ queryKey: ["dashboard", "evidence"], queryFn: api.dashboardEvidence });
+  const { data } = useQuery({
+    queryKey: ["dashboard", "evidence"],
+    queryFn: api.dashboardEvidence,
+    staleTime: TAB_STALE_TIME,
+  });
   if (!data) return <TabLoading />;
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -273,7 +301,11 @@ function EvidenceTab() {
 
 function PendingTab() {
   const { t } = useLanguage();
-  const { data } = useQuery({ queryKey: ["dashboard", "pending"], queryFn: api.dashboardPending });
+  const { data } = useQuery({
+    queryKey: ["dashboard", "pending"],
+    queryFn: api.dashboardPending,
+    staleTime: TAB_STALE_TIME,
+  });
   if (!data) return <TabLoading />;
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -287,7 +319,11 @@ function PendingTab() {
 
 function PerformanceTab() {
   const { t } = useLanguage();
-  const { data } = useQuery({ queryKey: ["dashboard", "performance"], queryFn: api.dashboardPerformance });
+  const { data } = useQuery({
+    queryKey: ["dashboard", "performance"],
+    queryFn: api.dashboardPerformance,
+    staleTime: TAB_STALE_TIME,
+  });
   if (!data) return <TabLoading />;
   return (
     <div className="space-y-2">

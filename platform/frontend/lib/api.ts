@@ -453,6 +453,8 @@ export const api = {
   login: (body: { email: string; password: string }) =>
     post<AuthResponse>("/api/auth/login", body),
   dashboardStats: () => get<DashboardStats>("/api/dashboard/stats"),
+  dashboardBootstrap: () =>
+    get<{ stats: DashboardStats; agenda: TodayAgenda; alerts: DashboardAlerts }>("/api/dashboard/bootstrap"),
   dashboardEvolution: () => get<DashboardEvolution>("/api/dashboard/evolution"),
   dashboardAlerts: () => get<DashboardAlerts>("/api/dashboard/alerts"),
   dashboardMedications: () => get<DashboardMedications>("/api/dashboard/medications"),
