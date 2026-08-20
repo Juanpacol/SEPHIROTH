@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from core.config import settings
 from data.schemas import Base, Patient, TimelineEvent
+from sephiroth.safety.alerts import generate_alerts_for_all_patients
 
 logger = logging.getLogger(__name__)
 
@@ -103,19 +104,24 @@ async def init_db() -> None:
 
     async with SessionLocal() as session:
         existing = await session.scalar(select(Patient.id).limit(1))
-        if existing:
-            return
-        for entry in SEED_PATIENTS:
-            session.add(entry["patient"])
-            for event_date, event_type, title, detail in entry["timeline"]:
-                session.add(
-                    TimelineEvent(
-                        patient_id=entry["patient"].id,
-                        date=date.fromisoformat(event_date),
-                        type=event_type,
-                        title=title,
-                        detail=detail,
+        if not existing:
+            for entry in SEED_PATIENTS:
+                session.add(entry["patient"])
+                for event_date, event_type, title, detail in entry["timeline"]:
+                    session.add(
+                        TimelineEvent(
+                            patient_id=entry["patient"].id,
+                            date=date.fromisoformat(event_date),
+                            type=event_type,
+                            title=title,
+                            detail=detail,
+                        )
                     )
-                )
-        await session.commit()
-        logger.info("Seeded %d demo patients", len(SEED_PATIENTS))
+            await session.commit()
+            logger.info("Seeded %d demo patients", len(SEED_PATIENTS))
+
+        # Idempotent: only creates an Alert for a risk flag that doesn't
+        # already have an open one, so this is safe to run on every boot
+        # and automatically covers patients imported outside the seed path
+        # (e.g. real_data/patients/import_synthea.py).
+        await generate_alerts_for_all_patients(session)
