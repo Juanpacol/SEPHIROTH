@@ -1,13 +1,13 @@
 "use client";
 
 import { useRef } from "react";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme, type Theme } from "@/lib/theme";
+import { useLanguage } from "@/lib/language";
 
 const OPTIONS: { value: Theme; icon: typeof Sun; label: string }[] = [
   { value: "light", icon: Sun, label: "Light" },
   { value: "dark", icon: Moon, label: "Dark" },
-  { value: "system", icon: Monitor, label: "System" },
 ];
 
 /** Circle-reveal transition, adapted from magicui's `AnimatedThemeToggler`
@@ -54,10 +54,11 @@ function useThemeRevealTransition() {
   };
 }
 
-/** iOS-style segmented control for Light/Dark/System, used in Topbar and the profile page. */
+/** iOS-style segmented control for Light/Dark plus a language toggle, used in Topbar, landing nav, and the profile page. */
 export default function ThemeToggle({ className = "" }: { className?: string }) {
   const [theme, setTheme] = useTheme();
   const reveal = useThemeRevealTransition();
+  const { lang, setLang } = useLanguage();
 
   const resolvesDark = (value: Theme) =>
     value === "dark" || (value === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
@@ -83,6 +84,14 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
           <Icon size={15} />
         </button>
       ))}
+      <button
+        onClick={() => setLang(lang === "en" ? "es" : "en")}
+        aria-label="Toggle language"
+        title={lang === "en" ? "English" : "Español"}
+        className="rounded-full px-1.5 py-1.5 text-[11px] font-bold text-muted transition-colors hover:text-primary"
+      >
+        EN/ES
+      </button>
     </div>
   );
 }

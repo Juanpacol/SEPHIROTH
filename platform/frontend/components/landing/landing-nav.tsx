@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import WingMark from "@/components/brand/wing-mark";
 import ThemeToggle from "@/components/theme-toggle";
 import { ShimmerButton } from "@/components/magicui/shimmer-button";
-import { useLanguage } from "@/lib/language";
 
 const LINKS = [
   { href: "#how-it-works", label: "How it works" },
@@ -16,7 +15,6 @@ const LINKS = [
 
 export default function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
-  const { lang, setLang } = useLanguage();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -46,14 +44,6 @@ export default function LandingNav() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setLang(lang === "en" ? "es" : "en")}
-            className="rounded-full border border-line/70 px-2.5 py-1 text-xs font-semibold text-muted hover:bg-primary-soft/40"
-            aria-label="Toggle language"
-            title="EN / ES"
-          >
-            {lang === "en" ? "🇺🇸 EN" : "🇪🇸 ES"}
-          </button>
           <ThemeToggle />
           <ShimmerButton href="/login" className="!px-4 !py-2 !text-sm">
             Open the app

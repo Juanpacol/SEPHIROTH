@@ -57,7 +57,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const user = useUser();
-  const { lang, setLang, t } = useLanguage();
+  const { t } = useLanguage();
   const groups = user?.role === "patient" ? PATIENT_NAV : CLINICIAN_NAV;
   const homeHref = user?.role === "patient" ? "/portal" : "/dashboard";
   const profileHref = user?.role === "patient" ? "/portal" : "/profile";
@@ -92,15 +92,6 @@ export default function Sidebar() {
           <span>{t("nav.search")}</span>
         </div>
       )}
-
-      <button
-        onClick={() => setLang(lang === "en" ? "es" : "en")}
-        className="nav-item mt-2 justify-center text-xs font-semibold"
-        aria-label="Toggle language"
-        title="EN / ES"
-      >
-        {lang === "en" ? "🇺🇸 EN" : "🇪🇸 ES"}
-      </button>
 
       <nav className="mt-2 flex-1">
         {groups.map((group) => (
