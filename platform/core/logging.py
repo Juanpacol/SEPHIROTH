@@ -22,6 +22,15 @@ class KeyValueFormatter(logging.Formatter):
         return base
 
 
+def _log_uncaught(exc_type, exc, tb) -> None:
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc, tb)
+        return
+    logging.getLogger("api.fatal").critical("uncaught exception", exc_info=(exc_type, exc, tb))
+    for stream in (sys.stdout, sys.stderr):
+        stream.flush()
+
+
 def setup_logging(debug: bool = False) -> None:
     """Configure the root logger once; idempotent across uvicorn reloads."""
     root = logging.getLogger()
@@ -37,3 +46,6 @@ def setup_logging(debug: bool = False) -> None:
     # Keep noisy third-party loggers at WARNING.
     for name in ("httpx", "httpcore", "asyncio"):
         logging.getLogger(name).setLevel(logging.WARNING)
+
+    sys.excepthook = _log_uncaught
+    logging.captureWarnings(True)

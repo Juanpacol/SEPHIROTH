@@ -88,7 +88,9 @@ def _run_alembic_upgrade() -> None:
     from alembic import command
     from alembic.config import Config
 
-    command.upgrade(Config(str(_ALEMBIC_INI_PATH)), "head")
+    cfg = Config(str(_ALEMBIC_INI_PATH))
+    cfg.attributes["configure_logger"] = False  # app already configured logging
+    command.upgrade(cfg, "head")
 
 
 async def init_db() -> None:
