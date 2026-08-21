@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from data.schemas import Alert, User, Workflow, WorkflowStep
 from sephiroth.workflows.events import CLINICAL_ALERT, WorkflowEvent
 
-from .registry import StepContext, StepResult
+from .registry import StepContext, StepResult, StepTypeSpec, register_step_type
 
 DEFINITION_KEY = "alert_escalation"
 STEP_TYPE = "alert_escalate_check"
@@ -106,6 +106,17 @@ async def escalate_if_unresolved(ctx: StepContext) -> StepResult:
 
     return StepResult(outcome="succeeded", data={"notified": notified})
 
+
+register_step_type(
+    StepTypeSpec(
+        step_type=STEP_TYPE,
+        handler=escalate_if_unresolved,
+        max_attempts=3,
+        max_lateness_seconds=None,  # an overdue escalation still matters -- catch up forever
+        timeout_seconds=10.0,
+        reads_phi=True,  # notifies clinicians about a specific patient's alert
+    )
+)
 
 __all__ = [
     "DEFINITION_KEY",

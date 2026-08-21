@@ -282,6 +282,14 @@ class Appointment(Base):
     created_by_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
     cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     cancellation_reason: Mapped[str] = mapped_column(String(200), default="")
+    # Phase 10 (SPEC-012). Deliberately NOT a new `status` value -- `status`
+    # has no CheckConstraint, `status == "booked"` is hardcoded at several
+    # sites in this router, and the Postgres double-booking exclusion index
+    # is partial (`WHERE status = 'booked'`, see the booking_exclusion
+    # migration). A `confirmed` status would silently fall out of all of
+    # that. These two columns are orthogonal to `status` on purpose.
+    confirmed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    confirmed_by_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
     # Set only for an occurrence created by POST /scheduling/series, which
     # expands every occurrence eagerly at creation time (no background job
     # exists to expand a series lazily — see AppointmentSeries).

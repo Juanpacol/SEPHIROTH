@@ -7,9 +7,9 @@ import) so the wiring is one visible list, the same reasoning as
 
 from __future__ import annotations
 
-from sephiroth.workflows.events import CLINICAL_ALERT, SUBSCRIBERS
+from sephiroth.workflows.events import CLINICAL_ALERT, NEW_APPOINTMENT, SUBSCRIBERS
 
-from . import alert_escalation
+from . import alert_escalation, appointment_reminder
 
 _REGISTERED = False
 
@@ -21,6 +21,7 @@ def register_subscriptions() -> None:
     if _REGISTERED:
         return
     SUBSCRIBERS.setdefault(CLINICAL_ALERT, []).append(alert_escalation.on_clinical_alert)
+    SUBSCRIBERS.setdefault(NEW_APPOINTMENT, []).append(appointment_reminder.on_new_appointment)
     _REGISTERED = True
 
 

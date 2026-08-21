@@ -8,7 +8,7 @@ from __future__ import annotations
 from data.schemas import Patient
 from sephiroth.safety.alerts import generate_alerts_for_patient
 
-from .registry import StepContext, StepResult
+from .registry import StepContext, StepResult, StepTypeSpec, register_step_type
 
 
 async def alert_refresh(ctx: StepContext) -> StepResult:
@@ -29,5 +29,16 @@ async def alert_refresh(ctx: StepContext) -> StepResult:
     created = await generate_alerts_for_patient(ctx.session, patient)
     return StepResult(outcome="succeeded", detail=f"{len(created)} new alert(s)", data={"created": len(created)})
 
+
+register_step_type(
+    StepTypeSpec(
+        step_type="alert_refresh",
+        handler=alert_refresh,
+        max_attempts=3,
+        max_lateness_seconds=None,  # internal housekeeping -- always worth catching up
+        timeout_seconds=10.0,
+        reads_phi=False,  # reads lab/med data already visible to any clinician; not a per-patient PHI read event
+    )
+)
 
 __all__ = ["alert_refresh"]

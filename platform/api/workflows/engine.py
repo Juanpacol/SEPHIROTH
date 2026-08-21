@@ -29,6 +29,7 @@ from sephiroth.contracts.enums import RecoveryActionType
 from sephiroth.workflows.events import dispatch_pending
 from sephiroth.workflows.policy import classify_step_failure, decide_step_recovery, is_stale, next_run_after
 
+from . import definitions  # noqa: F401 -- import-time side effect: populates registry.STEP_TYPES
 from .channels import get_channel
 from .registry import STEP_TYPES, StepContext
 

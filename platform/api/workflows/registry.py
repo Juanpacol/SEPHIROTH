@@ -2,7 +2,15 @@
 / `_ACTION_TEMPLATES` (`src/sephiroth/telemetry/explain.py`) pattern applied
 to workflow steps: a literal dict mapping a `step_type` string to a frozen
 spec, so `engine.py` never branches on step type by name.
-"""
+
+`STEP_TYPES` starts empty. Each definition module (`handlers.py`,
+`alert_escalation.py`, `appointment_reminder.py`, ...) imports
+`StepContext`/`StepResult`/`register_step_type` from here and calls
+`register_step_type(...)` for each of its step types at the bottom of
+its own file. This module never imports them back -- `definitions.py`
+is the one place that imports every definition module (for the
+self-registration side effect), so which module gets imported "first"
+in any given test or startup path can never create a cycle."""
 
 from __future__ import annotations
 
@@ -46,29 +54,14 @@ class StepTypeSpec:
     reads_phi: bool = True
 
 
-def _build_step_types() -> Dict[str, StepTypeSpec]:
-    from . import alert_escalation, handlers
-
-    return {
-        "alert_refresh": StepTypeSpec(
-            step_type="alert_refresh",
-            handler=handlers.alert_refresh,
-            max_attempts=3,
-            max_lateness_seconds=None,  # internal housekeeping -- always worth catching up
-            timeout_seconds=10.0,
-            reads_phi=False,  # reads lab/med data already visible to any clinician; not a per-patient PHI read event
-        ),
-        alert_escalation.STEP_TYPE: StepTypeSpec(
-            step_type=alert_escalation.STEP_TYPE,
-            handler=alert_escalation.escalate_if_unresolved,
-            max_attempts=3,
-            max_lateness_seconds=None,  # an overdue escalation still matters -- catch up forever
-            timeout_seconds=10.0,
-            reads_phi=True,  # notifies clinicians about a specific patient's alert
-        ),
-    }
+STEP_TYPES: Dict[str, StepTypeSpec] = {}
 
 
-STEP_TYPES: Dict[str, StepTypeSpec] = _build_step_types()
+def register_step_type(spec: StepTypeSpec) -> None:
+    """Idempotent by construction -- re-registering the same
+    `step_type` just overwrites with an identical spec, since each
+    definition module is only ever imported once per process."""
+    STEP_TYPES[spec.step_type] = spec
 
-__all__ = ["StepContext", "StepResult", "StepTypeSpec", "StepHandler", "STEP_TYPES"]
+
+__all__ = ["StepContext", "StepResult", "StepTypeSpec", "StepHandler", "STEP_TYPES", "register_step_type"]

@@ -27,7 +27,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from auth.deps import get_current_user, require_clinician
+from auth.deps import get_current_user, require_clinician, require_patient
 from core.db import get_session
 from data.schemas import (
     Appointment,
@@ -38,11 +38,12 @@ from data.schemas import (
     Notification,
     Patient,
     User,
+    Workflow,
 )
-
 from sephiroth.workflows import events as workflow_events
 
 from .. import scheduling as slots_module  # platform/api/scheduling.py (pure expand_slots)
+from ..workflows.instantiate import cancel_workflow
 
 router = APIRouter()
 
@@ -200,6 +201,7 @@ def _appointment_out(appt: Appointment, *, for_patient: bool, patient_name: str 
         "reason": appt.reason,
         "cancellation_reason": appt.cancellation_reason,
         "series_id": appt.series_id,
+        "confirmed_at": appt.confirmed_at.isoformat() if appt.confirmed_at else None,
     }
     if patient_name:
         out["patient_name"] = patient_name
@@ -635,6 +637,27 @@ async def update_appointment(
     return _appointment_out(appt, for_patient=False)
 
 
+@router.post("/appointments/{appointment_id}/confirm")
+async def confirm_appointment(
+    appointment_id: str,
+    user: User = Depends(require_patient),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Patient-only. Sets `confirmed_at`/`confirmed_by_user_id` --
+    deliberately not a `status` change, see `Appointment.confirmed_at`'s
+    docstring. The appointment_unconfirmed_check step (SPEC-012) reads
+    this field directly at its own due time; confirming does not need
+    to reach into the workflow substrate to cancel anything."""
+    appt = await _get_own_appointment(session, user, appointment_id)
+    if appt.status != "booked":
+        raise HTTPException(status_code=409, detail="Only a booked appointment can be confirmed")
+    if appt.confirmed_at is None:
+        appt.confirmed_at = datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
+        appt.confirmed_by_user_id = user.id
+        await session.commit()
+    return _appointment_out(appt, for_patient=True)
+
+
 @router.delete("/appointments/{appointment_id}", status_code=204)
 async def cancel_appointment(
     appointment_id: str,
@@ -646,6 +669,13 @@ async def cancel_appointment(
     appt.status = "cancelled"
     appt.cancelled_at = datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
     appt.cancellation_reason = reason
+
+    active_workflow = await session.scalar(
+        select(Workflow).where(Workflow.appointment_id == appt.id, Workflow.status == "active")
+    )
+    if active_workflow is not None:
+        await cancel_workflow(session, active_workflow, appt.cancelled_at)
+
     await session.commit()
 
     # Synchronous match-on-cancel: the earliest-waiting request whose

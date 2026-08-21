@@ -22,7 +22,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.deps import require_clinician
 from core.db import get_session
-from data.schemas import Alert, User, Workflow, WorkflowStep
+from data.schemas import Alert, User, Workflow
+
+from ..workflows.instantiate import cancel_workflow
 
 router = APIRouter()
 
@@ -109,17 +111,7 @@ async def resolve_alert(
         )
     ).all()
     for wf in active_workflows:
-        wf.status = "cancelled"
-        wf.completed_at = now
-        pending_steps = (
-            await session.scalars(
-                select(WorkflowStep).where(
-                    WorkflowStep.workflow_id == wf.id, WorkflowStep.status.in_(("pending", "running"))
-                )
-            )
-        ).all()
-        for step in pending_steps:
-            step.status = "cancelled"
+        await cancel_workflow(session, wf, now)
 
     await session.commit()
     return _alert_out(alert)

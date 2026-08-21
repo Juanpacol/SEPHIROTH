@@ -18,6 +18,26 @@ from data.schemas import Patient, Workflow, WorkflowStep
 from .registry import STEP_TYPES
 
 
+async def cancel_workflow(session: AsyncSession, workflow: Workflow, now: datetime) -> None:
+    """Cancels a `Workflow` and every one of its still-pending/running
+    steps -- shared by Phase 9's alert resolution and Phase 10's
+    appointment cancellation, both of which need "the thing this
+    workflow exists to act on no longer needs acting on" to stop the
+    tick from ever touching it again. Does not commit -- caller's
+    transaction, same discipline as everything else in this package."""
+    workflow.status = "cancelled"
+    workflow.completed_at = now
+    pending_steps = (
+        await session.scalars(
+            select(WorkflowStep).where(
+                WorkflowStep.workflow_id == workflow.id, WorkflowStep.status.in_(("pending", "running"))
+            )
+        )
+    ).all()
+    for step in pending_steps:
+        step.status = "cancelled"
+
+
 async def seed_alert_refresh_workflows(session: AsyncSession) -> int:
     """Ensures every patient has exactly one active `alert_refresh`
     workflow with one due-now step. Idempotent: a patient that already
@@ -72,4 +92,4 @@ async def seed_alert_refresh_workflows(session: AsyncSession) -> int:
     return created
 
 
-__all__ = ["seed_alert_refresh_workflows"]
+__all__ = ["seed_alert_refresh_workflows", "cancel_workflow"]
