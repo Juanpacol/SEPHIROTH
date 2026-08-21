@@ -20,6 +20,7 @@ from api.routers import (
     alerts,
     approvals,
     audit,
+    automation_memory,
     dashboard,
     followups,
     internal,
@@ -108,6 +109,12 @@ app.include_router(audit.router, prefix="/api/audit", tags=["audit"], dependenci
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"], dependencies=_clinician_only)
 app.include_router(approvals.router, prefix="/api/approvals", tags=["approvals"], dependencies=_clinician_only)
 app.include_router(followups.router, prefix="/api/followups", tags=["followups"], dependencies=_clinician_only)
+app.include_router(
+    automation_memory.router,
+    prefix="/api/automation-memory",
+    tags=["automation-memory"],
+    dependencies=_clinician_only,
+)
 # Patient portal, scheduling, and results: each mixes roles per-route (no
 # blanket guard) — see portal.py/scheduling.py/results.py.
 app.include_router(portal.router, prefix="/api/portal", tags=["portal"])

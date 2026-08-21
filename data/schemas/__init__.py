@@ -793,6 +793,31 @@ class PendingAction(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
 
 
+class AutomationMemory(Base):
+    """Namespaced operational preferences (SPEC-015) -- quiet hours,
+    reminder lead time, contact preference. Explicitly NOT a place for
+    clinical facts: `platform/api/workflows/memory.py::ALLOWED_KEYS` is
+    an allow-listed key set (same discipline as `ALLOWED_SPAN_ATTRIBUTES`,
+    `src/sephiroth/contracts/trace.py`), enforced in code, not here --
+    a CheckConstraint can't express "key is one of a Python-side set"
+    portably, so the allow-list lives at the one write path
+    (`set_memory`) instead. Authoritative clinical memory stays in
+    `Patient`/`Consultation`/etc, never here (decision: CLAUDE.md #16)."""
+
+    __tablename__ = "automation_memory"
+    __table_args__ = (
+        UniqueConstraint("scope", "scope_id", "key", name="uq_automation_memory_scope_key"),
+        CheckConstraint("scope IN ('clinic','user','patient')", name="ck_automation_memory_scope"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    scope: Mapped[str] = mapped_column(String(10), index=True)
+    scope_id: Mapped[str] = mapped_column(String(36), index=True)
+    key: Mapped[str] = mapped_column(String(60))
+    value: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
 class WorkflowEvent(Base):
     """A durable record of something that happened, written inside the
     same transaction as the domain change that caused it -- an outbox,
@@ -852,4 +877,5 @@ __all__ = [
     "WorkflowEvent",
     "PendingAction",
     "FollowupPlan",
+    "AutomationMemory",
 ]
