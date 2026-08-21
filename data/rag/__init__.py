@@ -150,7 +150,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "ATS/IDSA",
             "year": 2023,
             "title": "Treatment of Community-Acquired Pneumonia",
-            "url": "https://www.atsjournals.org/doi/10.1164/rccm.201908-1581ST",
+            "url": "https://doi.org/10.1164/rccm.201908-1581ST",
         },
     ),
     Document(
@@ -250,7 +250,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "GINA",
             "year": 2024,
             "title": "Global Strategy for Asthma Management",
-            "url": "https://ginasthma.org/gina-reports/",
+            "url": "https://ginasthma.org/2026-gina-strategy-report/",
         },
     ),
     Document(
@@ -284,7 +284,7 @@ SEED_GUIDELINES: List[Document] = [
             "organization": "IDSA",
             "year": 2019,
             "title": "Treatment of Uncomplicated Cystitis",
-            "url": "https://www.idsociety.org/practice-guideline/uncomplicated-uti/",
+            "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/",
         },
     ),
     Document(
