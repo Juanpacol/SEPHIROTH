@@ -19,6 +19,7 @@ from api.routers import (
     agents,
     audit,
     dashboard,
+    internal,
     medical,
     notifications,
     patients,
@@ -108,6 +109,9 @@ app.include_router(results.router, prefix="/api/results", tags=["results"])
 # (`get_current_user`), so it mixes roles per-route like the three above
 # rather than carrying a blanket clinician-only guard.
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
+# The workflow tick: no /api prefix, no JWT-based dependency — see
+# internal.py's docstring for why. Guarded by its own shared-secret check.
+app.include_router(internal.router, tags=["internal"])
 
 
 @app.get("/health")

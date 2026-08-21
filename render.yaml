@@ -27,3 +27,14 @@ services:
         sync: false
       - key: GROQ_API_KEY
         sync: false
+      # SPEC-009 workflow tick. ENABLE_WORKFLOW_ENGINE stays "false" until
+      # a phase-7 deploy has been smoke-tested; flipping it on requires
+      # INTERNAL_TICK_TOKEN to already be set (>=32 chars — see
+      # Settings._check_tick_token) or the app fails to boot in production.
+      # Point an external cron (e.g. cron-job.org, free tier, every 5 min)
+      # at POST /internal/tick with header X-Internal-Token: <token> — no
+      # worker/Redis/Celery involved, see SPEC-009.
+      - key: ENABLE_WORKFLOW_ENGINE
+        value: "false"
+      - key: INTERNAL_TICK_TOKEN
+        sync: false # set manually in the Render dashboard — never committed

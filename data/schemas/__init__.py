@@ -357,6 +357,12 @@ class Notification(Base):
     related_appointment_id: Mapped[Optional[str]] = mapped_column(
         ForeignKey("appointments.id"), nullable=True
     )
+    # NULL for every pre-existing/non-workflow row (Postgres and SQLite both
+    # allow unlimited NULLs in a unique index, so this is additive, no
+    # backfill). Set by workflow steps to f"step:{step_id}:{user_id}" so a
+    # re-run of the same step can never double-notify the same recipient --
+    # see platform/api/workflows/channels.py::InAppChannel.
+    dedupe_key: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, unique=True)
     read_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
 
@@ -624,6 +630,86 @@ class AIEvaluation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
 
 
+class Workflow(Base):
+    """One running instance of a workflow definition (defined as Python
+    literals in `platform/api/workflows/registry.py`, never a DB row).
+    Anchored to at most one of an appointment/consultation/alert -- the
+    thing whose lifecycle drove this workflow into existence. `version`
+    snapshots the definition version at instantiation time so editing a
+    definition later never retroactively alters a live instance."""
+
+    __tablename__ = "workflows"
+    __table_args__ = (
+        CheckConstraint("status IN ('active','completed','cancelled','failed')", name="ck_workflow_status"),
+        CheckConstraint(
+            "(CASE WHEN appointment_id IS NULL THEN 0 ELSE 1 END"
+            " + CASE WHEN consultation_id IS NULL THEN 0 ELSE 1 END"
+            " + CASE WHEN alert_id IS NULL THEN 0 ELSE 1 END) <= 1",
+            name="ck_workflow_single_anchor",
+        ),
+        Index("ix_workflows_patient_definition_status", "patient_id", "definition_key", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    definition_key: Mapped[str] = mapped_column(String(60), index=True)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    appointment_id: Mapped[Optional[str]] = mapped_column(ForeignKey("appointments.id"), nullable=True)
+    consultation_id: Mapped[Optional[str]] = mapped_column(ForeignKey("consultations.id"), nullable=True)
+    alert_id: Mapped[Optional[str]] = mapped_column(ForeignKey("alerts.id"), nullable=True)
+    status: Mapped[str] = mapped_column(String(12), default="active", server_default="active", index=True)
+    created_by_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    context: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    steps: Mapped[List["WorkflowStep"]] = relationship(back_populates="workflow")
+
+
+class WorkflowStep(Base):
+    """One due-dated unit of work inside a `Workflow`, claimed and
+    executed by the tick (`POST /internal/tick` -> `platform/api/workflows/engine.py`).
+    `due_at` is the immutable anchor used for staleness math;
+    `run_after` is the mutable column the tick actually selects on
+    (starts equal to `due_at`, bumped by backoff on retry) -- kept
+    separate so `is_stale()` never has to reverse-engineer a step's
+    original due time from a value retries have since moved."""
+
+    __tablename__ = "workflow_steps"
+    __table_args__ = (
+        UniqueConstraint("workflow_id", "step_key", name="uq_workflow_step_key"),
+        CheckConstraint(
+            "status IN ('pending','running','succeeded','failed','skipped','superseded','cancelled')",
+            name="ck_workflow_step_status",
+        ),
+        CheckConstraint("attempts >= 0", name="ck_workflow_step_attempts_nonneg"),
+        CheckConstraint("max_attempts > 0", name="ck_workflow_step_max_attempts_positive"),
+        Index("ix_workflow_steps_status_run_after", "status", "run_after"),
+        Index("ix_workflow_steps_workflow_status", "workflow_id", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    workflow_id: Mapped[str] = mapped_column(ForeignKey("workflows.id"), index=True)
+    step_key: Mapped[str] = mapped_column(String(60))
+    step_type: Mapped[str] = mapped_column(String(60), index=True)
+    status: Mapped[str] = mapped_column(String(12), default="pending", server_default="pending", index=True)
+    due_at: Mapped[datetime] = mapped_column(DateTime)
+    run_after: Mapped[datetime] = mapped_column(DateTime, index=True)
+    max_lateness_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    max_attempts: Mapped[int] = mapped_column(Integer, default=3, server_default="3")
+    lease_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    claimed_by: Mapped[str] = mapped_column(String(40), default="", server_default="")
+    last_error: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    failure_category: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    payload: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    result: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    executed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    workflow: Mapped["Workflow"] = relationship(back_populates="steps")
+
+
 __all__ = [
     "Base",
     "User",
@@ -649,4 +735,6 @@ __all__ = [
     "MedicationOrder",
     "ImagingStudy",
     "AIEvaluation",
+    "Workflow",
+    "WorkflowStep",
 ]

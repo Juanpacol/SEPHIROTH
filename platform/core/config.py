@@ -153,6 +153,19 @@ class Settings(BaseSettings):
     enable_rag_embeddings: bool = True
     enable_agents: bool = True
 
+    # SPEC-009: the workflow-automation substrate. Off by default -- there
+    # is no worker process, so a cron (cron-job.org, free tier) POSTs to
+    # POST /internal/tick, authenticated by internal_tick_token. False
+    # keeps the endpoint a harmless 200 {"status":"disabled"} rather than
+    # a 404, so pointing cron at a not-yet-enabled deploy is a no-op, not
+    # an error.
+    enable_workflow_engine: bool = False
+    internal_tick_token: Optional[str] = None
+    workflow_tick_batch_size: int = 25
+    workflow_step_timeout_seconds: float = 5.0
+    workflow_tick_budget_seconds: float = 20.0
+    workflow_step_lease_seconds: int = 120
+
     class Config:
         env_file = ".env"
 
@@ -175,6 +188,18 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"jwt_secret must be >=32 chars in environment={self.environment!r} "
                 "(HS256 requires a sufficiently long key)."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_tick_token(self) -> "Settings":
+        if not self.enable_workflow_engine or self.environment not in ("staging", "production"):
+            return self
+        if not self.internal_tick_token or len(self.internal_tick_token) < 32:
+            raise ValueError(
+                "internal_tick_token must be set to a random value >=32 chars "
+                f"when enable_workflow_engine=True in environment={self.environment!r}, "
+                "e.g. `openssl rand -hex 32`."
             )
         return self
 

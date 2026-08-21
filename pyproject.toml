@@ -45,6 +45,7 @@ source = [
     "src/sephiroth/safety",
     "src/sephiroth/context",
     "src/sephiroth/telemetry",
+    "src/sephiroth/workflows",
     "intelligence/agents",
     "intelligence/mcp",
     "intelligence/evaluation",

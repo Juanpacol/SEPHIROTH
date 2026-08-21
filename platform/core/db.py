@@ -12,10 +12,17 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from core.config import settings
-from data.schemas import Base, Patient, TimelineEvent
+from data.schemas import Base, Patient, TimelineEvent, User
 from sephiroth.safety.alerts import generate_alerts_for_all_patients
 
 logger = logging.getLogger(__name__)
+
+# SPEC-009: the workflow tick has no JWT, so PHI-access rows it writes
+# (`platform/api/audit.py::add_phi_access`) need a real `users.id` to
+# satisfy that column's FK. This account is unloginable by construction
+# -- `is_active=False` makes `get_current_user` (auth/deps.py) reject it
+# even if its (blank) password hash were ever guessed.
+SYSTEM_WORKFLOW_USER_ID = "system-workflow"
 
 _ALEMBIC_INI_PATH = Path(__file__).parent.parent.parent / "alembic.ini"
 
@@ -139,3 +146,16 @@ async def init_db() -> None:
         # and automatically covers patients imported outside the seed path
         # (e.g. real_data/patients/import_synthea.py).
         await generate_alerts_for_all_patients(session)
+
+        if await session.get(User, SYSTEM_WORKFLOW_USER_ID) is None:
+            session.add(
+                User(
+                    id=SYSTEM_WORKFLOW_USER_ID,
+                    email="system+workflow@sephiroth.internal",
+                    name="Workflow Engine",
+                    hashed_password="",
+                    role="clinician",
+                    is_active=False,
+                )
+            )
+            await session.commit()
