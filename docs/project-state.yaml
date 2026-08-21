@@ -11,8 +11,8 @@
 schema_version: 1
 project: SEPHIROTH
 version: 1.0.0
-updated: 2026-08-19
-phase_current: 5
+updated: 2026-08-21
+phase_current: 7
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
@@ -21,36 +21,11 @@ phases:
   "3": {name: "Agent Runtime + DEBT-008 closure (LangGraph removed in the same phase)", status: done}
   "4": {name: "Context Engine (4a, done — SPEC-005) + Verification & Safety (4b, done — SPEC-004)", status: done}
   "5": {name: "Observability, recovery, relocation, dynamic planner, debt cleanup (SPEC-006/007/008)", status: done}
+  "6": {name: "Delete the 3 phase-5 shims owed by the charter's strangler-fig schedule", status: done}
+  "7": {name: "Workflow automation substrate — durable tick, no worker process (SPEC-009)", status: done}
 
 components:
   legacy:
-    intelligence/agents/citation_guard.py:
-      status: shim
-      description: >-
-        Phase 5, Part 3: relocated verbatim to
-        src/sephiroth/verification/citation_guard.py. This path is now a
-        pure re-export (identity-tested), not real implementation.
-      tests: [tests/test_shim_identity_relocation.py]
-      strangler_target: src/sephiroth/verification/citation_guard.py
-      removed_in_phase: 6
-    intelligence/agents/risk_engine.py:
-      status: shim
-      description: >-
-        Phase 5, Part 3: relocated verbatim to
-        src/sephiroth/safety/risk.py. This path is now a pure re-export
-        (identity-tested), not real implementation.
-      tests: [tests/test_shim_identity_relocation.py]
-      strangler_target: src/sephiroth/safety/risk.py
-      removed_in_phase: 6
-    intelligence/agents/explainability.py:
-      status: shim
-      description: >-
-        Phase 5, Part 3: relocated verbatim to
-        src/sephiroth/telemetry/explain.py. This path is now a pure
-        re-export (identity-tested), not real implementation.
-      tests: [tests/test_shim_identity_relocation.py]
-      strangler_target: src/sephiroth/telemetry/explain.py
-      removed_in_phase: 6
     intelligence/mcp:
       status: implemented
       description: >-
@@ -203,7 +178,20 @@ components:
         template-based (agents, tool_calls, citation_report) function, not
         yet reimplemented as an ExecutionTrace projection.
       tests: [tests/test_telemetry_span.py, tests/test_telemetry_build_trace.py,
-              tests/test_runtime_executor.py, tests/test_shim_identity_relocation.py]
+              tests/test_runtime_executor.py]
+    src/sephiroth/workflows:
+      status: implemented
+      phase: 7
+      spec: SPEC-009
+      description: >-
+        Pure staleness/retry policy (is_stale, next_run_after,
+        classify_step_failure, decide_step_recovery) for the workflow-tick
+        engine. The DB-touching half (engine/registry/handlers/channels/
+        instantiate) lives in platform/api/workflows/ per ADR-010 — see
+        that package's docstrings, not duplicated here.
+      tests: [tests/test_workflow_policy.py, tests/test_workflow_engine_tick.py,
+              tests/test_internal_tick_auth.py, tests/test_workflow_alert_refresh.py,
+              tests/test_workflow_channels.py]
 
 # Capabilities the target architecture requires that have no implementation yet.
 gaps:

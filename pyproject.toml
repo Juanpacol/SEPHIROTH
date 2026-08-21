@@ -83,10 +83,8 @@ exclude_lines = [
     "raise NotImplementedError",
 ]
 omit = [
-    # Shims (docs/00-migration-charter.md rule 4) — pure re-export, no logic.
-    "intelligence/agents/risk_engine.py",
-    "intelligence/agents/citation_guard.py",
-    "intelligence/agents/explainability.py",
+    # Phase 6: intelligence/agents/{risk_engine,citation_guard,explainability}.py
+    # shims deleted (docs/00-migration-charter.md rule 3) — nothing left to omit.
 ]
 
 [tool.ruff]

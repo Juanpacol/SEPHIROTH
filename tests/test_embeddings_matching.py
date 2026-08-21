@@ -107,7 +107,7 @@ def test_compound_query_surfaces_all_relevant_documents(rag_pipeline_with_artifa
 # matched sscm-2021-sepsis on keyword overlap alone, score 0.85). That is
 # retrieval doing its job correctly — surfacing the real guideline for the
 # real topic. The genuine safety boundary is the Citation Guard
-# (intelligence/agents/citation_guard.py), which checks whether the LLM's
+# (src/sephiroth/verification/citation_guard.py), which checks whether the LLM's
 # specific *claims* are grounded in what a retrieved document actually
 # says, not whether retrieval returns nothing for a topic it covers.
 #

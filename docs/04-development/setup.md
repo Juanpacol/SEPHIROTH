@@ -68,7 +68,7 @@ Step 4 is not optional. `allowed_tools` is enforced at dispatch by
    disclaimer + `role_prompt` + tool catalog.
 2. Select it from `route_specialists` in `src/sephiroth/runtime/planner.py`.
 3. Add an entry to `_ACTION_TEMPLATES` / `_NO_TOOL_ACTIONS` in
-   `intelligence/agents/explainability.py`.
+   `src/sephiroth/telemetry/explain.py`.
 
 Step 3 is easy to miss and degrades **historical** consultations: `explanation`
 is rebuilt on read rather than persisted, so a missing template changes how past

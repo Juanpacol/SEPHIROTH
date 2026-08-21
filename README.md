@@ -123,7 +123,7 @@ The Evidence Agent's RAG pipeline is measured against a 27-question golden datas
 | Recall@3 | **1.00** | 0.95 | Correct guideline is in the top 3 |
 | Recall@5 | **1.00** | 0.95 | Correct guideline is in the top 5 |
 | MRR | **1.00** | 0.93 | Mean reciprocal rank of the correct guideline |
-| Citation Precision | **0.64** | 0.60 | Fraction of citations in answers that are traceable to actual tool output (via [Citation Guard](intelligence/agents/citation_guard.py)) |
+| Citation Precision | **0.64** | 0.60 | Fraction of citations in answers that are traceable to actual tool output (via [Citation Guard](src/sephiroth/verification/citation_guard.py)) |
 | Faithfulness (LLM judge) | **0.28** | 0.25 | Fraction of answer claims a judge model rates as supported by the retrieved evidence |
 | Faithfulness (heuristic proxy, informational) | 0.57 | — | Deterministic token-overlap stand-in; runs in CI, not gated |
 

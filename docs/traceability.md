@@ -16,7 +16,7 @@ Requirements are defined in [scope.md](00-project/scope.md); features in
 
 | Requirement | Feature | Implementation | Test | Hypothesis | Metric | Status |
 |---|---|---|---|---|---|---|
-| **R-001** Claims traceable to evidence | F-003 citation guard | `intelligence/agents/citation_guard.py` | `test_citation_guard.py`, `_adversarial` | — | citation precision | ✅ implemented |
+| **R-001** Claims traceable to evidence | F-003 citation guard | `src/sephiroth/verification/citation_guard.py` | `test_citation_guard.py`, `_adversarial` | — | citation precision | ✅ implemented |
 | | F-006 hybrid retrieval | `data/rag/` | `test_rag_pipeline.py` | H2 | Recall@k, MRR | ✅ implemented |
 | | F-034 per-agent context views | `sephiroth/context/views.py` | `test_context_views.py` | — | — | ✅ implemented (phase 4a) |
 | | F-035 reranking/memory/budgeting | `sephiroth/context/{rerank,memory,budget}.py` | `test_context_{rerank,memory,budget}.py` | H2 | Recall@k, MRR (reranked) | ✅ implemented (phase 4a); H2 experiment not yet run against reranked results specifically |

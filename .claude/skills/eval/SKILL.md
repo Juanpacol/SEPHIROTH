@@ -14,7 +14,7 @@ cd clinical-ai-copilot
 PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ci
 ```
 
-Read the printed table. If it says `Overall: FAIL`, report which metric(s) dropped below threshold and by how much — check `git diff` on `data/rag/__init__.py`, `intelligence/agents/citation_guard.py`, or `intelligence/agents/__init__.py` (EvidenceAgent prompt) for what likely caused it.
+Read the printed table. If it says `Overall: FAIL`, report which metric(s) dropped below threshold and by how much — check `git diff` on `data/rag/__init__.py`, `src/sephiroth/verification/citation_guard.py`, or `intelligence/agents/__init__.py` (EvidenceAgent prompt) for what likely caused it.
 
 If it warns `results/latest.json is missing or stale`, the dataset or transcripts changed since the last full run — offer to run `--mode full --record` (below) if `GEMINI_API_KEY` is set, or tell the user it needs a refresh before merging.
 

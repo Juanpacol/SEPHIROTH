@@ -1,7 +1,7 @@
 """Risk engine tests — deterministic rule table, no LLM or DB needed.
 
 Retargeted (Phase 5) to `src/sephiroth/safety/risk.py`, the relocated
-implementation; `intelligence/agents/risk_engine.py` is now a shim."""
+implementation; that shim was deleted in Phase 6."""
 
 from sephiroth.safety.risk import assess_patient_risk, assess_risk_level
 

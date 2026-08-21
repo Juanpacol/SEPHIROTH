@@ -2,7 +2,7 @@
 
 **Version:** 1.0.0
 **Status:** Active
-**Governs:** architecture migration Phases 0–5
+**Governs:** architecture migration Phases 0–5, extended to the workflow-automation phases (6+, SPEC-009+) under the same rules
 
 This document is the standing contract for the migration. It defines the
 development loop, the strangler-fig rules, the external contracts that must not
@@ -105,7 +105,7 @@ are deleted one phase later.
 | `intelligence/llm/*` | Phase 1 | Phase 2 (actual: Phase 3, `DEBT-008`) |
 | `intelligence/mcp/registry.py` | Phase 2 | Phase 3 (actual: Phase 4, `DEBT-009`) |
 | `intelligence/agents/{base,workflow}.py` | Phase 3 | Phase 4 (actual: Phase 5, `DEBT-010`) — **already deleted** |
-| `intelligence/agents/{citation_guard,explainability,risk_engine}.py` | Phase 5 (was: not shimmed in Phase 4, deviation — see below) | Phase 6 |
+| `intelligence/agents/{citation_guard,explainability,risk_engine}.py` | Phase 5 (was: not shimmed in Phase 4, deviation — see below) | Phase 6 — **deleted on schedule** |
 
 **Deviation found during Phase 4 implementation (`SPEC-004` NG-4):** the plan
 above called for shimming `citation_guard`/`explainability`/`risk_engine` in
@@ -120,9 +120,16 @@ the phase that introduced it.
 `risk_engine.py` → `src/sephiroth/safety/risk.py`,
 `citation_guard.py` → `src/sephiroth/verification/citation_guard.py`,
 `explainability.py` → `src/sephiroth/telemetry/explain.py`. The old
-`intelligence/agents/` paths are now pure re-export shims (identity-tested
+`intelligence/agents/` paths were pure re-export shims (identity-tested
 in `tests/test_shim_identity_relocation.py`, omitted from the coverage
-gate per rule 4). Per rule 3, deleted in Phase 6, not before.
+gate per rule 4).
+
+**Update (Phase 6):** all three shim files and their identity test deleted,
+on schedule per rule 3 — every real caller already imported the
+`src/sephiroth/*` path directly (confirmed by grep before deletion); the
+shims had zero importers left besides the identity test itself. The
+`pyproject.toml` coverage omit entries for them were removed in the same
+commit.
 
 ---
 

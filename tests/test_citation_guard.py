@@ -1,8 +1,7 @@
 """Citation Guard unit tests — the anti-hallucination layer.
 
 Retargeted (Phase 5) to `src/sephiroth/verification/citation_guard.py`, the
-relocated implementation; `intelligence/agents/citation_guard.py` is now a
-shim."""
+relocated implementation; that shim was deleted in Phase 6."""
 
 from sephiroth.verification.citation_guard import audit, collect_allowed_citations, sanitize
 
