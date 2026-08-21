@@ -722,6 +722,53 @@ class WorkflowStep(Base):
     workflow: Mapped["Workflow"] = relationship(back_populates="steps")
 
 
+class PendingAction(Base):
+    """A proposed patient-facing action awaiting a clinician's
+    approve/reject click (SPEC-013) -- the human-in-the-loop gate. Anything
+    the *patient* will see must have a row here that reaches `approved`
+    before it can be sent; internal/fixed-template automation (Phase 9's
+    escalation, Phase 10's T-24h reminder) never creates one.
+
+    `ck_pending_action_requires_reviewer` makes the gate auditable as a
+    query, not just a code path: `SELECT * FROM pending_actions WHERE
+    status IN ('approved','rejected') AND reviewed_by IS NULL` must always
+    return zero rows, enforced at the DB level, not only by the router.
+    """
+
+    __tablename__ = "pending_actions"
+    __table_args__ = (
+        UniqueConstraint("workflow_step_id", name="uq_pending_action_workflow_step"),
+        CheckConstraint(
+            "status IN ('pending','approved','rejected','expired')", name="ck_pending_action_status"
+        ),
+        CheckConstraint("draft_source IN ('template','llm')", name="ck_pending_action_draft_source"),
+        CheckConstraint(
+            "status NOT IN ('approved','rejected') OR reviewed_by IS NOT NULL",
+            name="ck_pending_action_requires_reviewer",
+        ),
+        Index("ix_pending_actions_status_created", "status", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    workflow_step_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("workflow_steps.id"), nullable=True, index=True
+    )
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    action_type: Mapped[str] = mapped_column(String(40), index=True)
+    status: Mapped[str] = mapped_column(String(12), default="pending", server_default="pending", index=True)
+    draft_text: Mapped[str] = mapped_column(Text, default="")
+    draft_source: Mapped[str] = mapped_column(String(10), default="template", server_default="template")
+    draft_model: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    final_text: Mapped[str] = mapped_column(Text, default="")
+    proposed_payload: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    assigned_to_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
+    reviewed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    reject_reason: Mapped[str] = mapped_column(String(300), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+
+
 class WorkflowEvent(Base):
     """A durable record of something that happened, written inside the
     same transaction as the domain change that caused it -- an outbox,
@@ -779,4 +826,5 @@ __all__ = [
     "Workflow",
     "WorkflowStep",
     "WorkflowEvent",
+    "PendingAction",
 ]
