@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.routers import (
     agents,
+    alerts,
     audit,
     dashboard,
     internal,
@@ -28,6 +29,7 @@ from api.routers import (
     results,
     scheduling,
 )
+from api.workflows.subscriptions import register_subscriptions
 from auth import router as auth_router_module
 from auth.deps import require_clinician
 from core.config import settings
@@ -41,6 +43,7 @@ request_logger = logging.getLogger("api.request")
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await init_db()
+    register_subscriptions()
     yield
 
 
@@ -100,6 +103,7 @@ app.include_router(
     dashboard.router, prefix="/api/dashboard", tags=["dashboard"], dependencies=_clinician_only
 )
 app.include_router(audit.router, prefix="/api/audit", tags=["audit"], dependencies=_clinician_only)
+app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"], dependencies=_clinician_only)
 # Patient portal, scheduling, and results: each mixes roles per-route (no
 # blanket guard) — see portal.py/scheduling.py/results.py.
 app.include_router(portal.router, prefix="/api/portal", tags=["portal"])

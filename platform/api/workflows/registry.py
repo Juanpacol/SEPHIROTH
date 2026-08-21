@@ -47,7 +47,7 @@ class StepTypeSpec:
 
 
 def _build_step_types() -> Dict[str, StepTypeSpec]:
-    from . import handlers
+    from . import alert_escalation, handlers
 
     return {
         "alert_refresh": StepTypeSpec(
@@ -57,6 +57,14 @@ def _build_step_types() -> Dict[str, StepTypeSpec]:
             max_lateness_seconds=None,  # internal housekeeping -- always worth catching up
             timeout_seconds=10.0,
             reads_phi=False,  # reads lab/med data already visible to any clinician; not a per-patient PHI read event
+        ),
+        alert_escalation.STEP_TYPE: StepTypeSpec(
+            step_type=alert_escalation.STEP_TYPE,
+            handler=alert_escalation.escalate_if_unresolved,
+            max_attempts=3,
+            max_lateness_seconds=None,  # an overdue escalation still matters -- catch up forever
+            timeout_seconds=10.0,
+            reads_phi=True,  # notifies clinicians about a specific patient's alert
         ),
     }
 

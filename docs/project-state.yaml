@@ -12,7 +12,7 @@ schema_version: 1
 project: SEPHIROTH
 version: 1.0.0
 updated: 2026-08-21
-phase_current: 8
+phase_current: 9
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
@@ -24,6 +24,7 @@ phases:
   "6": {name: "Delete the 3 phase-5 shims owed by the charter's strangler-fig schedule", status: done}
   "7": {name: "Workflow automation substrate — durable tick, no worker process (SPEC-009)", status: done}
   "8": {name: "Event catalog — transactional outbox, no broker (SPEC-010)", status: done}
+  "9": {name: "Alert lifecycle mutation surface + escalation workflow (SPEC-011)", status: done}
 
 components:
   legacy:

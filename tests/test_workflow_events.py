@@ -37,9 +37,13 @@ async def test_emit_stages_row_that_rollback_discards(db_session):
 
 
 async def test_dispatch_pending_marks_no_subscriber_when_unwired(db_session):
+    # A reserved-but-genuinely-unwired event type: unlike CLINICAL_ALERT
+    # (which Phase 9's register_subscriptions() may have already wired
+    # elsewhere in this same test process -- SUBSCRIBERS is module-global
+    # state), PATIENT_MESSAGE has no subscriber anywhere in the codebase.
     patient = await _patient(db_session)
     workflow_events.emit(
-        db_session, workflow_events.CLINICAL_ALERT, "alert", "AL1", patient_id=patient.id
+        db_session, workflow_events.PATIENT_MESSAGE, "message", "M1", patient_id=patient.id
     )
     await db_session.commit()
 
