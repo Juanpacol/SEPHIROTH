@@ -26,6 +26,7 @@ from auth.deps import get_current_user, require_clinician
 from core.db import get_session
 from core.storage import get_blob_store
 from data.schemas import Notification, Patient, ResultAttachment, ResultShare, TimelineEvent, User
+from sephiroth.workflows import events as workflow_events
 
 router = APIRouter()
 
@@ -134,6 +135,10 @@ async def create_share(
         message=body.message,
     )
     session.add(share)
+    if event.type == "lab":
+        workflow_events.emit(
+            session, workflow_events.LAB_RESULT_AVAILABLE, "result_share", share.id, patient_id=body.patient_id
+        )
     await session.commit()
     await session.refresh(share, attribute_names=["event", "attachments"])
 

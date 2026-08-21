@@ -40,6 +40,8 @@ from data.schemas import (
     User,
 )
 
+from sephiroth.workflows import events as workflow_events
+
 from .. import scheduling as slots_module  # platform/api/scheduling.py (pure expand_slots)
 
 router = APIRouter()
@@ -544,6 +546,14 @@ async def book_appointment(
         created_by_user_id=user.id,
     )
     session.add(appt)
+    workflow_events.emit(
+        session,
+        workflow_events.NEW_APPOINTMENT,
+        "appointment",
+        appt.id,
+        patient_id=appt.patient_id,
+        payload={"start_at": appt.start_at.isoformat()},
+    )
     try:
         await session.commit()
     except IntegrityError:
@@ -609,6 +619,10 @@ async def update_appointment(
         appt.end_at = new_end
     if body.status is not None:
         appt.status = body.status
+        if body.status == "no_show":
+            workflow_events.emit(
+                session, workflow_events.MISSED_APPOINTMENT, "appointment", appt.id, patient_id=appt.patient_id
+            )
     if body.mode is not None:
         appt.mode = body.mode
     if body.notes is not None:

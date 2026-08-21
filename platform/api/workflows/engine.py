@@ -26,6 +26,7 @@ from core.config import settings
 from core.db import SYSTEM_WORKFLOW_USER_ID
 from data.schemas import Workflow, WorkflowStep
 from sephiroth.contracts.enums import RecoveryActionType
+from sephiroth.workflows.events import dispatch_pending
 from sephiroth.workflows.policy import classify_step_failure, decide_step_recovery, is_stale, next_run_after
 
 from .channels import get_channel
@@ -42,6 +43,7 @@ class TickSummary:
     failed: int = 0
     skipped: int = 0
     remaining: int = 0
+    events_dispatched: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -52,6 +54,7 @@ class TickSummary:
             "failed": self.failed,
             "skipped": self.skipped,
             "remaining": self.remaining,
+            "events_dispatched": self.events_dispatched,
         }
 
 
@@ -190,6 +193,7 @@ async def run_tick(session: AsyncSession, tick_id: str) -> TickSummary:
         .select_from(WorkflowStep)
         .where(WorkflowStep.status == "pending", WorkflowStep.run_after <= now)
     ) or 0
+    summary.events_dispatched = await dispatch_pending(session)
     return summary
 
 

@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from data.schemas import Alert, Patient
 from sephiroth.safety.risk import assess_patient_risk
+from sephiroth.workflows.events import CLINICAL_ALERT, emit
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,12 @@ async def generate_alerts_for_patient(session: AsyncSession, patient: Patient) -
             source="risk_engine",
         )
         session.add(alert)
+        # SPEC-010: recorded in the same transaction as the Alert itself,
+        # so an event can never exist for an alert that didn't actually
+        # get created (or vice versa). No subscriber wired yet (Phase 9's
+        # alert_escalation workflow is the first) -- the tick still
+        # records it as `no_subscriber` rather than dropping it.
+        emit(session, CLINICAL_ALERT, "alert", alert.id, patient_id=patient.id)
         created.append(alert)
         already_open.add((category, title))  # guards duplicate flags within this same call
 

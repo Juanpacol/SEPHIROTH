@@ -710,6 +710,35 @@ class WorkflowStep(Base):
     workflow: Mapped["Workflow"] = relationship(back_populates="steps")
 
 
+class WorkflowEvent(Base):
+    """A durable record of something that happened, written inside the
+    same transaction as the domain change that caused it -- an outbox,
+    not a broker (SPEC-010). A rolled-back booking can never leave a
+    phantom event; that atomicity is the actual property a message
+    broker cannot give for free. `dispatch_pending()`
+    (`platform/api/workflows/events.py`) runs from the tick and marks
+    each row `dispatched` (a registered handler ran) or `no_subscriber`
+    (recorded, nothing wired to it yet) -- never left `pending` forever."""
+
+    __tablename__ = "workflow_events"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending','dispatched','no_subscriber')", name="ck_workflow_event_status"
+        ),
+        Index("ix_workflow_events_status_created", "status", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    event_type: Mapped[str] = mapped_column(String(40), index=True)
+    entity_type: Mapped[str] = mapped_column(String(40))
+    entity_id: Mapped[str] = mapped_column(String(36))
+    patient_id: Mapped[Optional[str]] = mapped_column(ForeignKey("patients.id"), nullable=True, index=True)
+    payload: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(14), default="pending", server_default="pending", index=True)
+    dispatched_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+
+
 __all__ = [
     "Base",
     "User",
@@ -737,4 +766,5 @@ __all__ = [
     "AIEvaluation",
     "Workflow",
     "WorkflowStep",
+    "WorkflowEvent",
 ]

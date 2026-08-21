@@ -12,7 +12,7 @@ schema_version: 1
 project: SEPHIROTH
 version: 1.0.0
 updated: 2026-08-21
-phase_current: 7
+phase_current: 8
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
@@ -23,6 +23,7 @@ phases:
   "5": {name: "Observability, recovery, relocation, dynamic planner, debt cleanup (SPEC-006/007/008)", status: done}
   "6": {name: "Delete the 3 phase-5 shims owed by the charter's strangler-fig schedule", status: done}
   "7": {name: "Workflow automation substrate — durable tick, no worker process (SPEC-009)", status: done}
+  "8": {name: "Event catalog — transactional outbox, no broker (SPEC-010)", status: done}
 
 components:
   legacy:
@@ -186,12 +187,17 @@ components:
       description: >-
         Pure staleness/retry policy (is_stale, next_run_after,
         classify_step_failure, decide_step_recovery) for the workflow-tick
-        engine. The DB-touching half (engine/registry/handlers/channels/
-        instantiate) lives in platform/api/workflows/ per ADR-010 — see
-        that package's docstrings, not duplicated here.
+        engine. events.py (Phase 8, SPEC-010) is the one DB-touching
+        exception in this package — emit()/dispatch_pending() live here
+        rather than platform/api/workflows/ so src/sephiroth/safety/alerts.py
+        (already clinical logic living in src/, existing precedent) can
+        call emit() without platform/ importing back into src/ against
+        ADR-010's intended direction. The rest of the DB-touching half
+        (engine/registry/handlers/channels/instantiate) lives in
+        platform/api/workflows/ — see that package's docstrings.
       tests: [tests/test_workflow_policy.py, tests/test_workflow_engine_tick.py,
               tests/test_internal_tick_auth.py, tests/test_workflow_alert_refresh.py,
-              tests/test_workflow_channels.py]
+              tests/test_workflow_channels.py, tests/test_workflow_events.py]
 
 # Capabilities the target architecture requires that have no implementation yet.
 gaps:
