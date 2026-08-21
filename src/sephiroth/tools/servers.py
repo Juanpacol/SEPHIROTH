@@ -10,7 +10,14 @@ YAML loader — that level of generality belongs to the Phase 3 agent registry
 
 from __future__ import annotations
 
-from intelligence.mcp import drug_safety_server, imaging_server, nlp_server, rag_server, vision_server
+from intelligence.mcp import (
+    drug_safety_server,
+    imaging_server,
+    nlp_server,
+    patient_comms_server,
+    rag_server,
+    vision_server,
+)
 
 SERVERS = [
     nlp_server.mcp,
@@ -18,6 +25,7 @@ SERVERS = [
     rag_server.mcp,
     drug_safety_server.mcp,
     vision_server.mcp,
+    patient_comms_server.mcp,
 ]
 
 #: Every key must be a real tool name discoverable via `ToolRuntime.load()`.
@@ -30,6 +38,13 @@ TOOL_CAPABILITIES: dict[str, list[str]] = {
     "summarize_clinical_note": ["clinical_nlp"],
     "search_clinical_guidelines": ["evidence_retrieval"],
     "search_pubmed": ["evidence_retrieval"],
+    # SPEC-014: drafting only, never a decision. Not used by the runtime
+    # executor's own agents today -- called directly by
+    # platform/api/routers/approvals.py's on-demand draft endpoint. Still
+    # registered here so it is discoverable/authorized the same way as
+    # every other tool, and available to the coordinator if a future
+    # phase routes drafting through the agent loop instead.
+    "draft_patient_message": ["patient_communication", "drafting"],
 }
 
 __all__ = ["SERVERS", "TOOL_CAPABILITIES"]

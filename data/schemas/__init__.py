@@ -642,13 +642,35 @@ class AIEvaluation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
 
 
+class FollowupPlan(Base):
+    """A clinician-approved post-consultation follow-up schedule
+    (SPEC-014). Creating one IS the clinician's approval of the
+    schedule itself (day 3/7/30) -- the human-in-the-loop gate
+    (`PendingAction`) governs each check's *drafted patient message*,
+    not whether the follow-up happens at all."""
+
+    __tablename__ = "followup_plans"
+    __table_args__ = (
+        CheckConstraint("status IN ('active','completed','cancelled')", name="ck_followup_plan_status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    consultation_id: Mapped[Optional[str]] = mapped_column(ForeignKey("consultations.id"), nullable=True)
+    created_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    status: Mapped[str] = mapped_column(String(12), default="active", server_default="active", index=True)
+    instructions: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+
 class Workflow(Base):
     """One running instance of a workflow definition (defined as Python
     literals in `platform/api/workflows/registry.py`, never a DB row).
-    Anchored to at most one of an appointment/consultation/alert -- the
-    thing whose lifecycle drove this workflow into existence. `version`
-    snapshots the definition version at instantiation time so editing a
-    definition later never retroactively alters a live instance."""
+    Anchored to at most one of an appointment/consultation/alert/followup
+    plan -- the thing whose lifecycle drove this workflow into existence.
+    `version` snapshots the definition version at instantiation time so
+    editing a definition later never retroactively alters a live instance."""
 
     __tablename__ = "workflows"
     __table_args__ = (
@@ -656,7 +678,8 @@ class Workflow(Base):
         CheckConstraint(
             "(CASE WHEN appointment_id IS NULL THEN 0 ELSE 1 END"
             " + CASE WHEN consultation_id IS NULL THEN 0 ELSE 1 END"
-            " + CASE WHEN alert_id IS NULL THEN 0 ELSE 1 END) <= 1",
+            " + CASE WHEN alert_id IS NULL THEN 0 ELSE 1 END"
+            " + CASE WHEN followup_plan_id IS NULL THEN 0 ELSE 1 END) <= 1",
             name="ck_workflow_single_anchor",
         ),
         Index("ix_workflows_patient_definition_status", "patient_id", "definition_key", "status"),
@@ -669,6 +692,7 @@ class Workflow(Base):
     appointment_id: Mapped[Optional[str]] = mapped_column(ForeignKey("appointments.id"), nullable=True)
     consultation_id: Mapped[Optional[str]] = mapped_column(ForeignKey("consultations.id"), nullable=True)
     alert_id: Mapped[Optional[str]] = mapped_column(ForeignKey("alerts.id"), nullable=True)
+    followup_plan_id: Mapped[Optional[str]] = mapped_column(ForeignKey("followup_plans.id"), nullable=True)
     status: Mapped[str] = mapped_column(String(12), default="active", server_default="active", index=True)
     created_by_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
     context: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
@@ -827,4 +851,5 @@ __all__ = [
     "WorkflowStep",
     "WorkflowEvent",
     "PendingAction",
+    "FollowupPlan",
 ]

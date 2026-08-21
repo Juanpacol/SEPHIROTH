@@ -30,7 +30,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.deps import require_clinician
 from core.db import get_session
-from data.schemas import PendingAction, User
+from data.schemas import Patient, PendingAction, User
+from sephiroth.models import LLMUnavailableError
 
 router = APIRouter()
 
@@ -128,6 +129,44 @@ class RejectRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     reason: str = Field(..., min_length=1, max_length=300)
+
+
+@router.post("/{action_id}/draft")
+async def draft_pending_action(
+    action_id: str,
+    clinician: User = Depends(require_clinician),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Generates `draft_text` on demand -- the LLM is never called from
+    the tick (SPEC-009); this is the one place drafting actually
+    happens, triggered by a clinician opening the queue. Idempotent: a
+    second call is a no-op returning the existing draft, so opening the
+    same item twice never burns quota twice."""
+    from intelligence.mcp.patient_comms_server import draft_message
+
+    action = await _get_action(session, action_id)
+    if action.draft_source != "llm":
+        raise HTTPException(status_code=409, detail="This action does not use an LLM-generated draft")
+    if action.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Action is already {action.status}")
+    if action.draft_text:
+        return _action_out(action)
+
+    patient = await session.get(Patient, action.patient_id)
+    first_name = (patient.name.split(" ")[0] if patient and patient.name else "there")
+    facts = {k: v for k, v in action.proposed_payload.items() if k != "followup_plan_id"}
+
+    try:
+        draft = await draft_message(purpose=action.action_type, patient_first_name=first_name, facts=facts)
+    except LLMUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=f"Draft generation unavailable: {exc}")
+
+    from core.config import settings
+
+    action.draft_text = draft
+    action.draft_model = settings.gemini_model
+    await session.commit()
+    return _action_out(action)
 
 
 @router.post("/{action_id}/approve")

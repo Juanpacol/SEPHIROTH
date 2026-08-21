@@ -12,7 +12,7 @@ schema_version: 1
 project: SEPHIROTH
 version: 1.0.0
 updated: 2026-08-21
-phase_current: 11
+phase_current: 12
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
@@ -27,6 +27,7 @@ phases:
   "9": {name: "Alert lifecycle mutation surface + escalation workflow (SPEC-011)", status: done}
   "10": {name: "Appointment automation — T-24h reminder, patient confirm, T-2h unconfirmed escalation (SPEC-012)", status: done}
   "11": {name: "Human-in-the-loop approval gate — pending_actions (SPEC-013)", status: done}
+  "12": {name: "Patient follow-up (day 3/7/30) + draft_patient_message tool (SPEC-014)", status: done}
 
 components:
   legacy:

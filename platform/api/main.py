@@ -21,6 +21,7 @@ from api.routers import (
     approvals,
     audit,
     dashboard,
+    followups,
     internal,
     medical,
     notifications,
@@ -106,6 +107,7 @@ app.include_router(
 app.include_router(audit.router, prefix="/api/audit", tags=["audit"], dependencies=_clinician_only)
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"], dependencies=_clinician_only)
 app.include_router(approvals.router, prefix="/api/approvals", tags=["approvals"], dependencies=_clinician_only)
+app.include_router(followups.router, prefix="/api/followups", tags=["followups"], dependencies=_clinician_only)
 # Patient portal, scheduling, and results: each mixes roles per-route (no
 # blanket guard) — see portal.py/scheduling.py/results.py.
 app.include_router(portal.router, prefix="/api/portal", tags=["portal"])
