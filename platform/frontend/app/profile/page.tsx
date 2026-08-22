@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Bot } from "lucide-react";
 import { api } from "@/lib/api";
 import { updateStoredUser, useUser } from "@/lib/auth";
 import ThemeToggle from "@/components/theme-toggle";
@@ -80,6 +82,14 @@ export default function ProfilePage() {
           <ThemeToggle />
         </div>
       </div>
+
+      <Link href="/preferences" className="card flex items-center justify-between hover:bg-surface">
+        <div className="flex items-center gap-2">
+          <Bot size={16} className="text-primary" />
+          <span className="font-bold">Automation preferences</span>
+        </div>
+        <span className="text-sm text-muted">Reminder timing, quiet hours →</span>
+      </Link>
 
       <form onSubmit={saveProfile} className="card space-y-4">
         <h2 className="font-bold">Account details</h2>

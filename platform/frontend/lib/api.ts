@@ -384,6 +384,15 @@ export interface DescribeImageResponse {
   requires_professional_review?: boolean;
 }
 
+// --- Automation memory / preferences (SPEC-015) -----------------------------
+
+export interface AutomationMemoryValue {
+  scope: string;
+  scope_id: string;
+  key: string;
+  value: unknown;
+}
+
 // --- Follow-up plans (SPEC-014) --------------------------------------------
 
 export interface FollowupPlan {
@@ -483,6 +492,16 @@ async function patch<T>(path: string, body: unknown): Promise<T> {
   return handle<T>(
     await fetch(path, {
       method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(body),
+    })
+  );
+}
+
+async function put<T>(path: string, body: unknown): Promise<T> {
+  return handle<T>(
+    await fetch(path, {
+      method: "PUT",
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(body),
     })
@@ -704,4 +723,13 @@ export const api = {
   createFollowupPlan: (body: { patient_id: string; consultation_id?: string; instructions?: string }) =>
     post<FollowupPlan>("/api/followups", body),
   cancelFollowupPlan: (planId: string) => post<FollowupPlan>(`/api/followups/${planId}/cancel`, {}),
+
+  // --- Automation memory / preferences ------------------------------------
+  automationMemoryKeys: () => get<Record<string, string>>("/api/automation-memory/keys"),
+  readAutomationMemory: (scope: string, scopeId: string, key: string) =>
+    get<AutomationMemoryValue>(
+      `/api/automation-memory?scope=${encodeURIComponent(scope)}&scope_id=${encodeURIComponent(scopeId)}&key=${encodeURIComponent(key)}`
+    ),
+  writeAutomationMemory: (scope: string, scopeId: string, key: string, value: unknown) =>
+    put<AutomationMemoryValue>("/api/automation-memory", { scope, scope_id: scopeId, key, value }),
 };

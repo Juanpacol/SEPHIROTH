@@ -20,6 +20,7 @@ export const CLINICIAN_PREFIXES = [
   "/recommendations",
   "/approvals",
   "/alerts",
+  "/preferences",
 ] as const;
 
 export const PATIENT_PREFIXES = ["/portal"] as const;
