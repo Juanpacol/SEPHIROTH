@@ -383,6 +383,26 @@ export interface DescribeImageResponse {
   requires_professional_review?: boolean;
 }
 
+// --- Alerts (SPEC-011) ------------------------------------------------------
+
+export interface ClinicalAlert {
+  id: string;
+  patient_id: string;
+  category: string;
+  severity: "critical" | "high" | "medium" | "low";
+  status: "active" | "reviewed" | "resolved";
+  title: string;
+  detail: string;
+  source: string;
+  assigned_to_user_id: string | null;
+  due_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  resolved_at: string | null;
+  escalated_at: string | null;
+  created_at: string;
+}
+
 // --- Approvals (SPEC-013 human-in-the-loop gate) ---------------------------
 
 export interface PendingAction {
@@ -651,4 +671,12 @@ export const api = {
     }),
   rejectPendingAction: (actionId: string, reason: string) =>
     post<PendingAction>(`/api/approvals/${actionId}/reject`, { reason }),
+
+  // --- Alerts ---------------------------------------------------------
+  listAlerts: (params?: { status?: string; severity?: string; patient_id?: string }) => {
+    const qs = new URLSearchParams(params as Record<string, string>).toString();
+    return get<ClinicalAlert[]>(`/api/alerts${qs ? `?${qs}` : ""}`);
+  },
+  reviewAlert: (alertId: string) => post<ClinicalAlert>(`/api/alerts/${alertId}/review`, {}),
+  resolveAlert: (alertId: string) => post<ClinicalAlert>(`/api/alerts/${alertId}/resolve`, {}),
 };

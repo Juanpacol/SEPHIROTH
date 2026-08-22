@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
+  Bell,
   BookOpenCheck,
   CalendarDays,
   CheckCircle2,
@@ -32,6 +33,7 @@ const CLINICIAN_NAV = [
       { href: "/schedule", label: "Schedule", icon: CalendarDays },
       { href: "/recommendations", label: "My Recommendations", icon: CheckCircle2 },
       { href: "/approvals", label: "Approvals", icon: ClipboardCheck },
+      { href: "/alerts", label: "Alerts", icon: Bell },
     ],
   },
   {
