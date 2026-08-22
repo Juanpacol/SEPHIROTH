@@ -23,6 +23,16 @@ export default function PortalAppointmentsPage() {
     }
   };
 
+  const confirm = async (id: string) => {
+    try {
+      await api.confirmAppointment(id);
+      await queryClient.invalidateQueries({ queryKey: ["portal", "appointments"] });
+      showToast("Appointment confirmed.");
+    } catch (err) {
+      showToast(err instanceof ApiError ? err.message : "Could not confirm this appointment.", "error");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h1 className="text-lg font-bold">Appointments</h1>
@@ -55,6 +65,14 @@ export default function PortalAppointmentsPage() {
               </div>
               <div className="flex items-center gap-3">
                 <StatusPill label={a.status.replace("_", " ")} />
+                {a.status === "booked" && !a.confirmed_at && (
+                  <button
+                    onClick={() => confirm(a.id)}
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    Confirm
+                  </button>
+                )}
                 {a.status === "booked" && (
                   <button
                     onClick={() => cancel(a.id)}

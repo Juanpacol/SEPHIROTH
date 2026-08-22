@@ -320,6 +320,7 @@ export interface Appointment {
   notes?: string;
   cancellation_reason: string;
   series_id?: string | null;
+  confirmed_at: string | null;
 }
 
 export interface AppNotification {
@@ -381,6 +382,19 @@ export interface DescribeImageResponse {
   message?: string;
   error?: string;
   requires_professional_review?: boolean;
+}
+
+// --- Follow-up plans (SPEC-014) --------------------------------------------
+
+export interface FollowupPlan {
+  id: string;
+  patient_id: string;
+  consultation_id: string | null;
+  created_by_user_id: string;
+  status: "active" | "completed" | "cancelled";
+  instructions: string;
+  created_at: string;
+  completed_at: string | null;
 }
 
 // --- Alerts (SPEC-011) ------------------------------------------------------
@@ -620,6 +634,8 @@ export const api = {
   ) => patch<Appointment>(`/api/scheduling/appointments/${appointmentId}`, body),
   cancelAppointment: (appointmentId: string, reason?: string) =>
     del(`/api/scheduling/appointments/${appointmentId}${reason ? `?reason=${encodeURIComponent(reason)}` : ""}`),
+  confirmAppointment: (appointmentId: string) =>
+    post<Appointment>(`/api/scheduling/appointments/${appointmentId}/confirm`, {}),
   agendaToday: () => get<TodayAgenda>("/api/scheduling/agenda/today"),
 
   // --- Results -------------------------------------------------------------
@@ -679,4 +695,13 @@ export const api = {
   },
   reviewAlert: (alertId: string) => post<ClinicalAlert>(`/api/alerts/${alertId}/review`, {}),
   resolveAlert: (alertId: string) => post<ClinicalAlert>(`/api/alerts/${alertId}/resolve`, {}),
+
+  // --- Follow-up plans ---------------------------------------------------
+  listFollowupPlans: (params?: { patient_id?: string; status?: string }) => {
+    const qs = new URLSearchParams(params as Record<string, string>).toString();
+    return get<FollowupPlan[]>(`/api/followups${qs ? `?${qs}` : ""}`);
+  },
+  createFollowupPlan: (body: { patient_id: string; consultation_id?: string; instructions?: string }) =>
+    post<FollowupPlan>("/api/followups", body),
+  cancelFollowupPlan: (planId: string) => post<FollowupPlan>(`/api/followups/${planId}/cancel`, {}),
 };

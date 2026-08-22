@@ -20,6 +20,7 @@ import StatusPill from "@/components/status-pill";
 import AgentBadge from "@/components/agent-badge";
 import ShareResultSheet from "@/components/results/share-result-sheet";
 import InteractionCheckerCard from "@/components/patients/interaction-checker-card";
+import FollowupCard from "@/components/patients/followup-card";
 import { useToast } from "@/components/ui/toast";
 
 function AddNoteCard({ patientId }: { patientId: string }) {
@@ -182,6 +183,7 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <AddNoteCard patientId={patient.id} />
+          <FollowupCard patientId={patient.id} />
 
           {/* Intelligent Timeline — the differentiating feature */}
           <div className="card">
