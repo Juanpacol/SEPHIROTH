@@ -74,6 +74,38 @@ patient data:
    with a `PendingAction` created directly (see `tests/test_approval_send_path.py`
    for the exact shape) if you want to see a real send without waiting days.
 
+## Step 5 (optional) — Slack tick-health notifications
+
+Everything above tells you the engine is *installed*. This step tells you
+whether it's *actually running*, without opening the dashboard — a message
+lands in Slack whenever a tick advances something or something fails, and
+stays silent on a tick that had nothing to do.
+
+**What this is not.** It never carries patient content or a patient
+identifier — see `platform/api/workflows/ops_notify.py`'s allow-list.
+Messages to patients already go through the patient portal (the
+approvals send path); Slack here is purely an operator health signal:
+counters plus `workflow_id`/`step_id` (enough to look a row up in the
+database, never enough to identify a patient from the message itself).
+
+1. In Slack: **Apps → Incoming Webhooks** (or a Slack app you already
+   control) → create a webhook for the channel you want alerts in. Copy
+   the URL (`https://hooks.slack.com/services/...`).
+2. Render dashboard → the `sephiroth-api` service → **Environment** →
+   add `SLACK_WEBHOOK_URL` with that value. Save, let it redeploy.
+   There is no separate on/off flag — setting this variable is what turns
+   notifications on; removing it turns them off. Nothing else changes:
+   the tick behaves identically either way.
+3. Trigger a tick that has something to do (Step 4 above) and confirm a
+   message shows up in the Slack channel.
+4. **Also turn on cron-job.org's own failure alert** (its execution
+   settings → notify on failure/non-200, by email). This step's Slack
+   message is sent *by* the tick itself — if the tick stops running
+   entirely (the cron stops firing, or Render is down), Slack goes quiet
+   and silence is easy to mistake for "nothing happening." cron-job.org
+   noticing a missed or failed execution is the independent check that
+   catches exactly that case, and it's a checkbox, not code.
+
 ## Rollback
 
 If anything looks wrong after Step 2:
@@ -83,6 +115,9 @@ If anything looks wrong after Step 2:
 2. cron-job.org → pause or delete the cron job.
 3. No data is lost by doing this — `Workflow`/`WorkflowStep` rows just stop
    advancing until the engine is re-enabled.
+
+To turn off Slack notifications alone (engine keeps running): Render
+dashboard → remove `SLACK_WEBHOOK_URL` → save, redeploy.
 
 ## What this does *not* cover
 

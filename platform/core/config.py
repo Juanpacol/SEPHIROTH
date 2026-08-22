@@ -166,6 +166,13 @@ class Settings(BaseSettings):
     workflow_tick_budget_seconds: float = 20.0
     workflow_step_lease_seconds: int = 120
 
+    # Optional ops monitoring: a tick posts a health summary to this Slack
+    # incoming-webhook URL when set, and stays silent (no notifier, no
+    # error) when unset -- same degrade-gracefully posture as
+    # groq_api_key/s3_bucket above. No separate enable flag: the URL's
+    # presence IS the switch, see platform/api/workflows/ops_notify.py.
+    slack_webhook_url: Optional[str] = None
+
     class Config:
         env_file = ".env"
 

@@ -8,6 +8,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from core.config import settings
 from data.schemas import Base
 from sephiroth.models import ChatResult
 
@@ -33,6 +34,16 @@ def no_gemini_key(monkeypatch):
     """Never let a developer's local .env leak GEMINI_API_KEY into tests —
     the suite must pass with zero network calls."""
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+
+@pytest.fixture(autouse=True)
+def no_slack_webhook(monkeypatch):
+    """Same rule as no_gemini_key, for the ops-notify Slack integration --
+    a developer's local .env must never make a test post to a real
+    webhook. Patches the already-instantiated `settings` singleton
+    directly (not just the env var) since `Settings()` reads its env at
+    import time, before any per-test fixture runs."""
+    monkeypatch.setattr(settings, "slack_webhook_url", None)
 
 
 class FakeLLMClient:
