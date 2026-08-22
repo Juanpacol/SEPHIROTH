@@ -360,7 +360,9 @@ class Notification(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
-    type: Mapped[str] = mapped_column(String(30))  # appointment_booked|result_shared|waitlist_match
+    type: Mapped[str] = mapped_column(
+        String(30)
+    )  # appointment_booked|result_shared|waitlist_match|followup_message
     message: Mapped[str] = mapped_column(String(300))
     related_appointment_id: Mapped[Optional[str]] = mapped_column(
         ForeignKey("appointments.id"), nullable=True

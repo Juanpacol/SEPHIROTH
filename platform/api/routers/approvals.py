@@ -32,6 +32,9 @@ from auth.deps import require_clinician
 from core.db import SYSTEM_WORKFLOW_USER_ID, get_session
 from data.schemas import Patient, PendingAction, User
 from sephiroth.models import LLMUnavailableError
+from sephiroth.safety import check_input
+
+from ..workflows.channels import get_channel
 
 router = APIRouter()
 
@@ -174,6 +177,20 @@ async def draft_pending_action(
     first_name = patient.name.split(" ")[0] if patient and patient.name else "there"
     facts = {k: v for k, v in action.proposed_payload.items() if k != "followup_plan_id"}
 
+    # `instructions` is up to 2000 chars of clinician free text
+    # (followups.py's CreateFollowupPlanRequest), interpolated straight
+    # into the drafting prompt below (patient_comms_server._build_prompt).
+    # check_input is the same heuristic runtime/executor.py applies to a
+    # consultation query -- reused here because this is the other place
+    # free text reaches an LLM prompt in this codebase, just reachable
+    # from a routine click on a follow-up plan rather than an explicit
+    # consultation.
+    instructions = facts.get("instructions")
+    if isinstance(instructions, str) and check_input(instructions):
+        raise HTTPException(
+            status_code=422, detail="Follow-up instructions matched a prompt-injection heuristic pattern"
+        )
+
     try:
         draft = await draft_message(purpose=action.action_type, patient_first_name=first_name, facts=facts)
     except LLMUnavailableError as exc:
@@ -201,10 +218,34 @@ async def approve_action(
     if action.status != "pending":
         raise HTTPException(status_code=409, detail=f"Action is already {action.status}")
 
-    action.final_text = body.final_text if body.final_text is not None else action.draft_text
+    final_text = body.final_text if body.final_text is not None else action.draft_text
+    if check_input(final_text):
+        raise HTTPException(
+            status_code=422, detail="Approved text matched a prompt-injection heuristic pattern"
+        )
+
+    action.final_text = final_text
     action.status = "approved"
     action.reviewed_by = clinician.id
     action.reviewed_at = now
+
+    # The send path (SPEC-013's whole point): this is the first and only
+    # place `final_text` reaches a patient. A patient without a portal
+    # account (no linked User row -- not every Patient has one, see
+    # decision #20) has no channel to receive it; the approval still
+    # records the clinician's decision, it just has nowhere to deliver.
+    recipient = await session.scalar(
+        select(User.id).where(User.patient_id == action.patient_id, User.role == "patient")
+    )
+    if recipient is not None:
+        await get_channel().send(
+            session,
+            recipient,
+            "followup_message",
+            final_text,
+            dedupe_key=f"pending_action:{action.id}",
+        )
+
     await session.commit()
     return _action_out(action)
 

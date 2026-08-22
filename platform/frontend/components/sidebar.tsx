@@ -7,6 +7,7 @@ import {
   BookOpenCheck,
   CalendarDays,
   CheckCircle2,
+  ClipboardCheck,
   ClipboardList,
   FileText,
   LayoutDashboard,
@@ -30,6 +31,7 @@ const CLINICIAN_NAV = [
       { href: "/patients", label: "Patients", icon: Users },
       { href: "/schedule", label: "Schedule", icon: CalendarDays },
       { href: "/recommendations", label: "My Recommendations", icon: CheckCircle2 },
+      { href: "/approvals", label: "Approvals", icon: ClipboardCheck },
     ],
   },
   {

@@ -383,6 +383,27 @@ export interface DescribeImageResponse {
   requires_professional_review?: boolean;
 }
 
+// --- Approvals (SPEC-013 human-in-the-loop gate) ---------------------------
+
+export interface PendingAction {
+  id: string;
+  workflow_step_id: string | null;
+  patient_id: string;
+  action_type: string;
+  status: "pending" | "approved" | "rejected" | "expired";
+  draft_text: string;
+  draft_source: "template" | "llm";
+  draft_model: string | null;
+  final_text: string;
+  edited: boolean;
+  assigned_to_user_id: string | null;
+  expires_at: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  reject_reason: string;
+  created_at: string;
+}
+
 import { authHeaders, redirectToLogin } from "./auth";
 
 /** Carries the HTTP status so callers can tell a 403 ("not available for
@@ -614,4 +635,20 @@ export const api = {
   unreadNotificationCount: () => get<{ count: number }>("/api/notifications/unread-count"),
   markNotificationRead: (notificationId: string) =>
     postNoContent(`/api/notifications/${notificationId}/read`, {}),
+
+  // --- Approvals ---------------------------------------------------------
+  listPendingActions: (params?: { status?: string; patient_id?: string }) => {
+    const qs = new URLSearchParams(params as Record<string, string>).toString();
+    return get<PendingAction[]>(`/api/approvals${qs ? `?${qs}` : ""}`);
+  },
+  pendingActionCount: (status = "pending") =>
+    get<{ count: number }>(`/api/approvals/count?status=${encodeURIComponent(status)}`),
+  draftPendingAction: (actionId: string) =>
+    post<PendingAction>(`/api/approvals/${actionId}/draft`, {}),
+  approvePendingAction: (actionId: string, finalText?: string) =>
+    post<PendingAction>(`/api/approvals/${actionId}/approve`, {
+      final_text: finalText,
+    }),
+  rejectPendingAction: (actionId: string, reason: string) =>
+    post<PendingAction>(`/api/approvals/${actionId}/reject`, { reason }),
 };
