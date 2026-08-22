@@ -60,11 +60,18 @@ class FakeLLMClient:
         scripts: Optional[Dict[str, List[Tuple]]] = None,
         default_script: Optional[List[Tuple]] = None,
         json_payloads: Optional[List[Dict[str, Any]]] = None,
+        prompt_tokens: int = 0,
+        completion_tokens: int = 0,
     ):
         self.scripts = scripts or {}
         self.default_script = default_script or [("answer", "")]
         self.json_payloads = list(json_payloads or [])
         self.chat_calls: List[Dict[str, Any]] = []
+        # Real clients report real usage (SPEC-016); this double defaults to
+        # 0 (unset -- most tests don't care) but a test asserting on
+        # AgentResult.prompt_tokens/completion_tokens can set these.
+        self.prompt_tokens = prompt_tokens
+        self.completion_tokens = completion_tokens
 
     def _script_for(self, system_prompt: Optional[str]) -> List[Tuple]:
         system_prompt = system_prompt or ""
@@ -93,7 +100,13 @@ class FakeLLMClient:
                 executed.append({"name": name, "arguments": args, "result": result})
             elif kind == "answer":
                 content = step[1]
-        return ChatResult(content=content, tool_calls=executed, rounds=max(len(script), 1))
+        return ChatResult(
+            content=content,
+            tool_calls=executed,
+            rounds=max(len(script), 1),
+            prompt_tokens=self.prompt_tokens,
+            completion_tokens=self.completion_tokens,
+        )
 
     async def generate_json(
         self, prompt: str, schema: Dict[str, Any], system_prompt: Optional[str] = None

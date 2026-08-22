@@ -52,6 +52,15 @@ class RunState(BaseModel):
     # --- execution ---
     agent_results: dict[str, AgentResult] = Field(default_factory=dict)
     tool_calls: list[ToolCall] = Field(default_factory=list)
+    # Deliberately NOT folded into `agent_results` (SPEC-016): that dict
+    # doubles as the source of `agents_involved`/`agent_outputs`
+    # (`sorted(self.agent_results)`, persisted to `consultations.agents`,
+    # part of the frozen `final` SSE event's VALUE, not just its shape) --
+    # adding the coordinator there would silently change what every
+    # consultation reports as "agents involved". This is a separate
+    # ledger entry so build_trace can still see the coordinator's real
+    # token/latency usage without touching that contract.
+    coordinator_result: AgentResult | None = None
 
     # --- evidence and verification ---
     evidence: list[EvidenceRecord] = Field(default_factory=list)

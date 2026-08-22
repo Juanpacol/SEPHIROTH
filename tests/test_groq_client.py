@@ -1,6 +1,8 @@
 """Tests for GroqClient, mocking the HTTP transport with `httpx.MockTransport`
 — no real network calls. Mirrors the contract tests in test_gemini_client.py
-since both clients expose the same chat()/generate_json()/health() shape."""
+since both clients expose the same chat()/generate_json()/health() shape.
+
+Verifies AC-006-08 (docs/specs/SPEC-006-telemetry.md)."""
 
 import json as json_mod
 
@@ -15,11 +17,14 @@ async def _noop_sleep(_seconds):
     return None
 
 
-def _openai_response(content=None, tool_calls=None):
+def _openai_response(content=None, tool_calls=None, usage=None):
     message = {"role": "assistant", "content": content}
     if tool_calls:
         message["tool_calls"] = tool_calls
-    return {"choices": [{"message": message}]}
+    body = {"choices": [{"message": message}]}
+    if usage:
+        body["usage"] = {"prompt_tokens": usage[0], "completion_tokens": usage[1]}
+    return body
 
 
 def _make_client(handler, **kwargs):
@@ -41,6 +46,28 @@ async def test_chat_no_tool_calls_returns_content():
     assert result.content == "Hello there"
     assert result.tool_calls == []
     assert result.rounds == 1
+
+
+@pytest.mark.asyncio
+async def test_chat_reports_real_usage_when_present():
+    def handler(request):
+        return httpx.Response(200, json=_openai_response(content="Hello there", usage=(12, 34)))
+
+    client = _make_client(handler)
+    result = await client.chat(messages=[{"role": "user", "content": "hi"}])
+    assert result.prompt_tokens == 12
+    assert result.completion_tokens == 34
+
+
+@pytest.mark.asyncio
+async def test_chat_usage_defaults_to_zero_when_absent():
+    def handler(request):
+        return httpx.Response(200, json=_openai_response(content="Hello there"))
+
+    client = _make_client(handler)
+    result = await client.chat(messages=[{"role": "user", "content": "hi"}])
+    assert result.prompt_tokens == 0
+    assert result.completion_tokens == 0
 
 
 @pytest.mark.asyncio

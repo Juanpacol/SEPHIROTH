@@ -57,7 +57,7 @@
     },
     "AgentResult": {
       "additionalProperties": false,
-      "description": "What one agent produced during one plan step.",
+      "description": "What one agent produced during one plan step.\n\n`prompt_tokens`/`completion_tokens` (SPEC-016, closing SPEC-006 NG-2)\ncome straight from `ChatResult` -- real provider usage, not a\nplaceholder -- for any client that reports it (`GeminiClient`,\n`GroqClient`); 0 for a test double that doesn't.",
       "properties": {
         "agent": {
           "title": "Agent",
@@ -69,6 +69,12 @@
           },
           "title": "Claim Ids",
           "type": "array"
+        },
+        "completion_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Completion Tokens",
+          "type": "integer"
         },
         "content": {
           "default": "",
@@ -88,6 +94,12 @@
           "title": "Latency Ms",
           "type": "integer"
         },
+        "prompt_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Prompt Tokens",
+          "type": "integer"
+        },
         "rounds": {
           "default": 0,
           "minimum": 0,
@@ -98,12 +110,6 @@
           "default": "",
           "title": "Step Id",
           "type": "string"
-        },
-        "tokens": {
-          "default": 0,
-          "minimum": 0,
-          "title": "Tokens",
-          "type": "integer"
         },
         "tool_call_ids": {
           "items": {

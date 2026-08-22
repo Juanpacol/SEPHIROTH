@@ -2,11 +2,11 @@
 id: SPEC-006
 title: Telemetry — Trace-Based Observability
 phase: 5
-version: 1.0.0
+version: 1.1.0
 status: Implemented
 authors: [jbotero]
 created: 2026-08-19
-updated: 2026-08-19
+updated: 2026-08-21
 supersedes: []
 superseded_by: null
 depends_on: [SPEC-000, SPEC-003, SPEC-004]
@@ -53,20 +53,35 @@ not a debugging aid — this spec is where that instrument gets built.
 
 ## 4. Non-Goals
 
-- **NG-1** Live spans for `ModelProvider.chat` and `ToolRuntime.execute`.
-  `ToolRuntime` is a shared singleton with no per-request state — threading
-  one through would change `ToolExecutor`'s `Callable` signature that
-  `FakeLLMClient` and every `scoped_executor()` call site already depend
-  on. `Agent.run()` makes exactly one `chat()` call per turn today, so the
-  `Executor.step` span already bounds it as tightly as a nested `MODEL`
-  span would. Both are real future seams once agents make multiple direct
-  `chat()` calls or tool timing becomes independently measurable without
-  an API change.
-- **NG-2** Token/cost accounting. `ChatResult`/`AgentResult` don't carry
-  usage metadata from the model clients yet — `ExecutionTrace.tokens`/
-  `.cost_usd` are populated from whatever `AgentResult.tokens`/`.latency_ms`
-  already hold (currently `0`, since nothing sets them) — real numbers are
-  a separate future change to `GeminiClient`/`GroqClient`.
+- **NG-1** *(partially closed, v1.1.0 — SPEC-016)* Independent live spans
+  for `ModelProvider.chat` and `ToolRuntime.execute` as their own
+  `SpanKind.MODEL`/`SpanKind.TOOL` intervals. Still not built, and for
+  the reason originally given: `ToolRuntime` is a shared singleton with
+  no per-request state — threading one through would change
+  `ToolExecutor`'s `Callable` signature that `FakeLLMClient` and every
+  `scoped_executor()` call site already depend on. What v1.1.0 *does*
+  add: the existing `Executor.step` (`SpanKind.AGENT`) span now carries
+  a real `model` attribute, and — more importantly — `AgentResult`
+  (including the coordinator's own call, via the new
+  `RunState.coordinator_result`) carries real `prompt_tokens`/
+  `completion_tokens`/`latency_ms` from the actual provider response,
+  not a placeholder. A genuinely independent `MODEL` span is still
+  future work, justified once an agent makes more than one `chat()`
+  call per turn (today `Executor.step` already bounds the single call
+  as tightly as a nested span would).
+- **NG-2** *(closed, v1.1.0 — SPEC-016)* Token/cost accounting.
+  `ChatResult` now carries real `prompt_tokens`/`completion_tokens` from
+  `GeminiClient` (`response.usage_metadata`) and `GroqClient`
+  (`data["usage"]`, OpenAI-compatible shape), summed across every round
+  of the tool-calling loop and plumbed through `AgentResult` into
+  `ExecutionTrace.tokens`. `cost_usd` is a best-effort estimate from a
+  hand-maintained price table (`src/sephiroth/telemetry/pricing.py`) —
+  not a billing source of truth, and `0.0` for a model the table doesn't
+  recognize rather than a guess. **Still not covered:** `generate_json`
+  calls (claim extraction, verification, the dynamic planner) don't go
+  through `ChatResult` and report no usage — a real, separate, and
+  smaller gap than the one this closes, since those calls are one-shot
+  and typically far cheaper than the main `chat()` loop.
 - **NG-3** A pluggable `Tracer`/OTel emitter Protocol. `ADR-009` allows one
   ("OTel remains available as an emitter"), but building the abstraction
   now, with a single in-process consumer (Postgres JSON column) and no
@@ -162,6 +177,8 @@ closed by omission instead of by exception at this one call boundary.
 | AC-006-05 | `build_trace` projects `RunState` correctly, including the conditional `VerificationReport` | B-3 | `tests/test_telemetry_build_trace.py` |
 | AC-006-06 | A consultation run with tracing enabled vs. disabled produces an identical result apart from `trace`/`spans` (ADR-009 H6) | G-3 | `tests/test_runtime_executor.py::test_tracing_on_vs_off_produces_an_identical_run_apart_from_the_trace` |
 | AC-006-07 | The five frozen SSE events keep their pre-existing fields unchanged; `trace` is additive only | B-4 | `tests/test_sse_contract.py` (additively extended, not altered) |
+| AC-006-08 | `GeminiClient`/`GroqClient` report real `prompt_tokens`/`completion_tokens` on `ChatResult`, summed across tool-calling rounds, `0` when the response carries no usage metadata | NG-2 closure | `tests/test_gemini_client.py::test_chat_reports_real_usage_when_present`, `::test_chat_sums_usage_across_tool_rounds`, `::test_chat_usage_defaults_to_zero_when_absent`, `tests/test_groq_client.py::test_chat_reports_real_usage_when_present`, `::test_chat_usage_defaults_to_zero_when_absent` |
+| AC-006-09 | `ExecutionTrace.tokens`/`.cost_usd` reflect every specialist's real usage *and* the coordinator's, without the coordinator appearing in `agents_involved` | NG-2 closure | `tests/test_telemetry_build_trace.py::test_latency_and_tokens_summed_from_agent_results`, `::test_cost_estimated_from_known_model_pricing`, `::test_cost_is_zero_for_unrecognized_model`, `tests/test_runtime_executor.py::test_trace_tokens_include_both_specialists_and_coordinator` |
 
 ## 9. Test Matrix
 
@@ -198,8 +215,8 @@ as its own follow-up cycle, not part of this spec.
 
 | # | Risk / question | Resolution |
 |---|---|---|
-| 1 | Only 2 of `ADR-009`'s 4 named seams get real spans this cycle | Explicit non-goal (NG-1), with the concrete API friction that makes the other 2 non-trivial without a larger refactor |
-| 2 | Token/cost fields on the trace are placeholders (always 0 today) | Explicit non-goal (NG-2) — needs a separate change to the model clients to report usage |
+| 1 | Only 2 of `ADR-009`'s 4 named seams get an independent `Span` this cycle | Explicit non-goal (NG-1) — real token/model *data* now flows (v1.1.0), but not as separate `MODEL`/`TOOL` span intervals; the API friction blocking that is unchanged |
+| 2 | ~~Token/cost fields on the trace are placeholders (always 0 today)~~ Closed in v1.1.0 (SPEC-016) — see NG-2 | `generate_json` calls still report no usage (claim extraction, verification, dynamic planner) — smaller, separate gap |
 | 3 | No pluggable Tracer/OTel backend | Explicit non-goal (NG-3) — premature with a single consumer; `opentelemetry-api` is already present in the environment (a transitive dependency) but not wired to anything |
 | 4 | `explainability.py` still hand-rolls its own audit trail instead of reading `ExecutionTrace.spans` | Tracked as a follow-up alongside the `risk_engine.py` relocation cycle, not this spec |
 
@@ -214,3 +231,4 @@ as its own follow-up cycle, not part of this spec.
 | Version | Date | Change |
 |---|---|---|
 | 1.0.0 | 2026-08-19 | Initial version; implemented in the same phase it was approved. |
+| 1.1.0 | 2026-08-21 | Closes NG-2 (real token/cost, `GeminiClient`/`GroqClient` usage metadata + `pricing.py`); partially advances NG-1 (real `model`/token/latency data on the existing `AGENT` span and `AgentResult`, incl. the coordinator via new `RunState.coordinator_result` — still no independent `MODEL`/`TOOL` span). Additive only — see AC-006-08/09. |

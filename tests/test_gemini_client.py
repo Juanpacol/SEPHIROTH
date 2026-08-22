@@ -1,6 +1,8 @@
 """Tests for the Gemini tool-calling loop, mocking `client.aio.models`
 directly (this is the one place we go one layer lower than FakeLLMClient,
-since we're testing GeminiClient itself)."""
+since we're testing GeminiClient itself).
+
+Verifies AC-006-08 (docs/specs/SPEC-006-telemetry.md)."""
 
 from types import SimpleNamespace
 
@@ -23,11 +25,14 @@ def _function_call_part(name, args):
     return SimpleNamespace(function_call=SimpleNamespace(name=name, args=args), text=None)
 
 
-def _response(parts, finish_reason="STOP", text=None):
+def _response(parts, finish_reason="STOP", text=None, usage=None):
     content = SimpleNamespace(parts=parts)
     candidate = SimpleNamespace(content=content, finish_reason=finish_reason)
     resp_text = text if text is not None else "".join(p.text for p in parts if getattr(p, "text", None))
-    return SimpleNamespace(candidates=[candidate], text=resp_text or None)
+    usage_metadata = (
+        SimpleNamespace(prompt_token_count=usage[0], candidates_token_count=usage[1]) if usage else None
+    )
+    return SimpleNamespace(candidates=[candidate], text=resp_text or None, usage_metadata=usage_metadata)
 
 
 class _FakeModels:
@@ -73,6 +78,44 @@ async def test_chat_no_tool_calls_returns_content():
     assert result.content == "Hello there"
     assert result.tool_calls == []
     assert result.rounds == 1
+
+
+@pytest.mark.asyncio
+async def test_chat_reports_real_usage_when_present():
+    fake = _FakeModels(responses=[_response([_text_part("Hello there")], usage=(12, 34))])
+    client = _make_client(fake)
+
+    result = await client.chat(messages=[{"role": "user", "content": "hi"}])
+    assert result.prompt_tokens == 12
+    assert result.completion_tokens == 34
+
+
+@pytest.mark.asyncio
+async def test_chat_usage_defaults_to_zero_when_absent():
+    fake = _FakeModels(responses=[_response([_text_part("Hello there")])])
+    client = _make_client(fake)
+
+    result = await client.chat(messages=[{"role": "user", "content": "hi"}])
+    assert result.prompt_tokens == 0
+    assert result.completion_tokens == 0
+
+
+@pytest.mark.asyncio
+async def test_chat_sums_usage_across_tool_rounds():
+    fake = _FakeModels(
+        responses=[
+            _response([_function_call_part("check", {"x": 1})], usage=(10, 5)),
+            _response([_text_part("done")], usage=(15, 8)),
+        ]
+    )
+    client = _make_client(fake)
+
+    async def executor(name, args):
+        return {"ok": True}
+
+    result = await client.chat(messages=[{"role": "user", "content": "hi"}], tool_executor=executor)
+    assert result.prompt_tokens == 25
+    assert result.completion_tokens == 13
 
 
 @pytest.mark.asyncio

@@ -172,29 +172,35 @@ components:
     src/sephiroth/telemetry:
       status: partial
       phase: 5
-      spec: SPEC-006
+      spec: SPEC-006 (v1.1.0)
       description: >-
         Executes ADR-009: build_trace projects a populated RunState into
         the persisted ExecutionTrace contract (existing since Phase 0).
         traced_span records real spans for Executor.step and
-        Verifier.check only (NG-1) — ModelProvider.chat and
-        ToolRuntime.execute are not independently instrumented this cycle;
-        token/cost accounting is a placeholder (NG-2). No pluggable
-        Tracer/OTel backend yet (NG-3). explainability.py relocated here in
-        Phase 5, Part 3 (src/sephiroth/telemetry/explain.py) — still the
-        template-based (agents, tool_calls, citation_report) function, not
-        yet reimplemented as an ExecutionTrace projection. Phase 14
-        (SPEC-016) deliberately did NOT attempt NG-1/NG-2 here —
-        instrumenting ModelProvider.chat/ToolRuntime.execute and real
-        token/cost touches every LLM client class and would ripple
-        through the whole existing test suite (test_gemini_client.py,
-        test_fallback_client.py, etc.); that is real, separate work,
-        not something to fold into a workflow-automation phase. Phase
-        14 built the automation-specific dashboard
-        (GET /api/dashboard/automation) using metrics that already
-        existed after Phases 7-13 instead.
+        Verifier.check only — ModelProvider.chat and ToolRuntime.execute
+        still don't get an independent span (NG-1, unchanged: threading
+        request state through the shared ToolRuntime singleton would
+        change ToolExecutor's Callable signature every scoped_executor()
+        call site depends on). NG-2 (token/cost) CLOSED post-Phase-14:
+        GeminiClient/GroqClient report real prompt_tokens/completion_tokens
+        (response.usage_metadata / OpenAI-shaped "usage", summed across
+        tool-calling rounds) on ChatResult, plumbed through AgentResult
+        (including the coordinator's own call, via the new
+        RunState.coordinator_result — deliberately NOT folded into
+        agent_results, which doubles as agents_involved's source and is
+        part of the frozen final SSE event's value) into
+        ExecutionTrace.tokens; cost_usd is a best-effort estimate from
+        src/sephiroth/telemetry/pricing.py's hand-maintained price table,
+        0.0 for an unrecognized model. Still not covered: generate_json
+        calls (claim extraction, verification, dynamic planner) report no
+        usage — a real, smaller, separate gap. No pluggable Tracer/OTel
+        backend yet (NG-3). explainability.py relocated here in Phase 5,
+        Part 3 (src/sephiroth/telemetry/explain.py) — still the
+        template-based (agents, tool_calls, citation_report) function,
+        not yet reimplemented as an ExecutionTrace projection.
       tests: [tests/test_telemetry_span.py, tests/test_telemetry_build_trace.py,
-              tests/test_runtime_executor.py]
+              tests/test_telemetry_pricing.py, tests/test_runtime_executor.py,
+              tests/test_gemini_client.py, tests/test_groq_client.py]
     src/sephiroth/workflows:
       status: implemented
       phase: 7
@@ -220,7 +226,7 @@ gaps:
   - {capability: Context Engine tuning — max_context_chars/lambda_mult against real data (SPEC-005 NG-5) — requires a live GEMINI_API_KEY run, not a build cycle, phase: null}
   - {capability: Generic conversational/session memory — no validated product need yet (SPEC-005 NG-1), phase: null}
   - {capability: Output-facing safety beyond the prompt-injection heuristic — PHI/toxicity/jailbreak/HITL (SPEC-004 NG-2), phase: 5}
-  - {capability: Live spans for ModelProvider.chat/ToolRuntime.execute + token/cost accounting + pluggable Tracer backend (SPEC-006 NG-1/2/3), phase: 5}
+  - {capability: Independent ModelProvider.chat/ToolRuntime.execute spans + pluggable Tracer backend (SPEC-006 NG-1/NG-3 — NG-2 token/cost closed in v1.1.0), phase: 5}
   - {capability: H1 unnecessary-invocation-rate measurement for the dynamic planner (SPEC-008 NG-3) — requires live traffic with the flag on, not a build cycle, phase: null}
 
 quality_gates:

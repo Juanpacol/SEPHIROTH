@@ -288,3 +288,28 @@ async def test_tracing_on_vs_off_produces_an_identical_run_apart_from_the_trace(
     assert state_off["trace"]["spans"] == []
 
     assert _without_trace(state_on) == _without_trace(state_off)
+
+
+async def test_trace_tokens_include_both_specialists_and_coordinator():
+    """SPEC-016: `trace.tokens` must reflect every real chat() call in the
+    run -- not just the specialists (`state.agent_results`) but also the
+    coordinator's own call, which lives in `state.coordinator_result`
+    specifically so it doesn't pollute `agents_involved` (see that
+    field's docstring) while still counting toward the aggregate.
+
+    Verifies AC-006-09 (docs/specs/SPEC-006-telemetry.md)."""
+    client = FakeLLMClient(
+        default_script=[("answer", "an answer")], prompt_tokens=100, completion_tokens=50
+    )
+    state = await run_consultation(client, "what is the target A1C for a diabetic adult?")
+
+    trace = state["trace"]
+    # >=2 real chat() calls happened (>=1 specialist + the coordinator),
+    # each reporting the same scripted usage -- so the total must be more
+    # than a single call's worth, proving the coordinator's own usage was
+    # folded in rather than dropped.
+    assert trace["tokens"]["prompt_tokens"] >= 200
+    assert trace["tokens"]["completion_tokens"] >= 100
+    # "coordinator" must never appear in agents_involved -- confirms the
+    # separate-ledger fix didn't leak into the frozen wire contract.
+    assert "coordinator" not in state["agent_outputs"]

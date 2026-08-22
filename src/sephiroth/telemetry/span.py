@@ -3,17 +3,24 @@
 Real, live spans are recorded for exactly two of the four seams `ADR-009`
 names: `Executor.step` (one span per agent turn — specialist or
 coordinator) and `Verifier.check` (the claim-verification/abstention
-pass). `ModelProvider.chat` and `ToolRuntime.execute` are **not**
-independently instrumented this phase — see `docs/specs/SPEC-006-telemetry.md`
-NG-1: `ToolRuntime` is a shared singleton with no per-request state, and
-threading one through would change `ToolExecutor`'s `Callable` signature
-that `FakeLLMClient` and every `scoped_executor()` call site already
-depend on; and `Agent.run()` makes exactly one `chat()` call per turn
-today, so the `Executor.step` span already bounds it tightly enough that a
-nested `MODEL` span would just duplicate the same interval. Both are
-flagged as real future seams once agents make multiple direct `chat()`
-calls or tool timing becomes independently measurable without an API
-change.
+pass). `ModelProvider.chat` and `ToolRuntime.execute` still do **not**
+get their own independent span this phase — see
+`docs/specs/SPEC-006-telemetry.md` NG-1: `ToolRuntime` is a shared
+singleton with no per-request state, and threading one through would
+change `ToolExecutor`'s `Callable` signature that `FakeLLMClient` and
+every `scoped_executor()` call site already depend on; and `Agent.run()`
+makes exactly one `chat()` call per turn today, so the `Executor.step`
+span already bounds it tightly enough that a nested `MODEL` span would
+just duplicate the same interval. Both are flagged as real future seams
+once agents make multiple direct `chat()` calls or tool timing becomes
+independently measurable without an API change.
+
+As of v1.1.0 (SPEC-016), the `Executor.step` span DOES carry a real
+`model` attribute, and the per-agent `AgentResult` it wraps (including
+the coordinator's, via `RunState.coordinator_result`) carries real
+`prompt_tokens`/`completion_tokens`/`latency_ms` from the actual
+provider response -- closing NG-2 -- even though the timing interval
+itself still isn't independently split by model vs. tool.
 """
 
 from __future__ import annotations

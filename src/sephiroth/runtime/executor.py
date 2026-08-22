@@ -27,6 +27,7 @@ shape.
 from __future__ import annotations
 
 import asyncio
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
@@ -118,8 +119,16 @@ async def _run_specialist(
     attempt = 1
     while True:
         try:
-            with traced_span(state, SpanKind.AGENT, capability.id, agent=capability.id):
+            started = time.perf_counter()
+            with traced_span(
+                state,
+                SpanKind.AGENT,
+                capability.id,
+                agent=capability.id,
+                model=getattr(client, "model", ""),
+            ):
                 result = await agent.run(query, context_for_agent(capability, run_context))
+            latency_ms = int((time.perf_counter() - started) * 1000)
         except Exception as exc:
             failure = classify(exc, component=capability.id, attempt=attempt)
             state.failures.append(failure)
@@ -145,6 +154,9 @@ async def _run_specialist(
             content=result.content,
             tool_call_ids=[tc.id for tc in tool_calls],
             rounds=result.rounds,
+            prompt_tokens=result.prompt_tokens,
+            completion_tokens=result.completion_tokens,
+            latency_ms=latency_ms,
         )
         return capability, agent_result, tool_calls
 
@@ -210,13 +222,29 @@ async def run_consultation(
     sections = "\n\n".join(f"### {name} agent\n{output}" for name, output in state.agent_outputs.items())
     sections = truncate(sections, settings.max_context_chars)
     coordinator = Agent(COORDINATOR, client)
-    with traced_span(state, SpanKind.AGENT, COORDINATOR.id, agent=COORDINATOR.id):
+    coord_started = time.perf_counter()
+    with traced_span(state, SpanKind.AGENT, COORDINATOR.id, agent=COORDINATOR.id, model=getattr(client, "model", "")):
         coord_result = await coordinator.run(
             f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}",
             context_for_agent(COORDINATOR, run_context),
         )
     coord_tool_calls = to_tool_calls(coordinator.name, coord_result.tool_calls)
     state.tool_calls.extend(coord_tool_calls)
+    # Recorded after the fact (not via _run_specialist's retry loop -- the
+    # coordinator has none): without this, its usually-largest single
+    # chat() call (it sees every specialist's output at once) would be
+    # invisible to build_trace's token/cost/latency totals (SPEC-016).
+    # `state.coordinator_result`, NOT `state.agent_results` -- see that
+    # field's docstring for why.
+    state.coordinator_result = AgentResult(
+        agent=COORDINATOR.id,
+        content=coord_result.content,
+        tool_call_ids=[tc.id for tc in coord_tool_calls],
+        rounds=coord_result.rounds,
+        prompt_tokens=coord_result.prompt_tokens,
+        completion_tokens=coord_result.completion_tokens,
+        latency_ms=int((time.perf_counter() - coord_started) * 1000),
+    )
 
     citation_report = audit(coord_result.content, [_tool_call_wire(tc) for tc in state.tool_calls])
     sanitized = sanitize(coord_result.content, citation_report)
@@ -291,13 +319,25 @@ async def stream_consultation(
     sections = "\n\n".join(f"### {name} agent\n{output}" for name, output in state.agent_outputs.items())
     sections = truncate(sections, settings.max_context_chars)
     coordinator = Agent(COORDINATOR, client)
-    with traced_span(state, SpanKind.AGENT, COORDINATOR.id, agent=COORDINATOR.id):
+    coord_started = time.perf_counter()
+    with traced_span(state, SpanKind.AGENT, COORDINATOR.id, agent=COORDINATOR.id, model=getattr(client, "model", "")):
         coord_result = await coordinator.run(
             f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}",
             context_for_agent(COORDINATOR, run_context),
         )
     coord_tool_calls = to_tool_calls(coordinator.name, coord_result.tool_calls)
     state.tool_calls.extend(coord_tool_calls)
+    # See run_consultation's identical block for why this is
+    # `state.coordinator_result`, not `state.agent_results`.
+    state.coordinator_result = AgentResult(
+        agent=COORDINATOR.id,
+        content=coord_result.content,
+        tool_call_ids=[tc.id for tc in coord_tool_calls],
+        rounds=coord_result.rounds,
+        prompt_tokens=coord_result.prompt_tokens,
+        completion_tokens=coord_result.completion_tokens,
+        latency_ms=int((time.perf_counter() - coord_started) * 1000),
+    )
 
     citation_report = audit(coord_result.content, [_tool_call_wire(tc) for tc in state.tool_calls])
     sanitized = sanitize(coord_result.content, citation_report)

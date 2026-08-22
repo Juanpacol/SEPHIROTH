@@ -32,7 +32,12 @@ class ToolCall(BaseModel):
 
 
 class AgentResult(BaseModel):
-    """What one agent produced during one plan step."""
+    """What one agent produced during one plan step.
+
+    `prompt_tokens`/`completion_tokens` (SPEC-016, closing SPEC-006 NG-2)
+    come straight from `ChatResult` -- real provider usage, not a
+    placeholder -- for any client that reports it (`GeminiClient`,
+    `GroqClient`); 0 for a test double that doesn't."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -42,7 +47,8 @@ class AgentResult(BaseModel):
     claim_ids: list[str] = Field(default_factory=list)
     evidence_ids: list[str] = Field(default_factory=list)
     tool_call_ids: list[str] = Field(default_factory=list)
-    tokens: int = Field(default=0, ge=0)
+    prompt_tokens: int = Field(default=0, ge=0)
+    completion_tokens: int = Field(default=0, ge=0)
     latency_ms: int = Field(default=0, ge=0)
     rounds: int = Field(default=0, ge=0)
 

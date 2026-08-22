@@ -147,6 +147,8 @@ class GroqClient:
         history = self._to_messages(messages, system_prompt)
         executed_calls: List[Dict[str, Any]] = []
         started = time.perf_counter()
+        prompt_tokens = 0
+        completion_tokens = 0
 
         for round_idx in range(self.max_tool_rounds):
             payload: Dict[str, Any] = {
@@ -171,18 +173,27 @@ class GroqClient:
             message = data["choices"][0]["message"]
             tool_calls = message.get("tool_calls") or []
 
+            usage = data.get("usage") or {}
+            prompt_tokens += usage.get("prompt_tokens") or 0
+            completion_tokens += usage.get("completion_tokens") or 0
+
             if not tool_calls or tool_executor is None:
                 logger.info(
-                    "llm=chat provider=groq model=%s rounds=%s tool_calls=%s duration_ms=%s",
+                    "llm=chat provider=groq model=%s rounds=%s tool_calls=%s duration_ms=%s "
+                    "prompt_tokens=%s completion_tokens=%s",
                     self.model,
                     round_idx + 1,
                     len(executed_calls),
                     round((time.perf_counter() - started) * 1000),
+                    prompt_tokens,
+                    completion_tokens,
                 )
                 return ChatResult(
                     content=message.get("content") or "",
                     tool_calls=executed_calls,
                     rounds=round_idx + 1,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
                 )
 
             history.append(message)
@@ -216,6 +227,8 @@ class GroqClient:
             content="Tool-call limit reached without a final answer.",
             tool_calls=executed_calls,
             rounds=self.max_tool_rounds,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
         )
 
     async def generate_json(

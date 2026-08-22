@@ -25,11 +25,20 @@ class LLMUnavailableError(RuntimeError):
 
 @dataclass
 class ChatResult:
-    """Final result of a chat exchange, including the tool-call trace."""
+    """Final result of a chat exchange, including the tool-call trace.
+
+    `prompt_tokens`/`completion_tokens` are summed across every round of
+    the tool-calling loop (a multi-round exchange makes more than one
+    provider call). Default to 0 for any client that can't report usage
+    (`FakeLLMClient` in tests, a provider response missing usage
+    metadata) -- additive fields, so nothing that already constructs a
+    bare `ChatResult(content=...)` needs to change."""
 
     content: str
     tool_calls: List[Dict[str, Any]] = field(default_factory=list)
     rounds: int = 0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
 
 
 @runtime_checkable

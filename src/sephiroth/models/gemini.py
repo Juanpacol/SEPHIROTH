@@ -131,6 +131,17 @@ def _extract_text(response: types.GenerateContentResponse) -> str:
     return ""
 
 
+def _usage(response: types.GenerateContentResponse) -> tuple[int, int]:
+    """`(prompt_tokens, completion_tokens)`, `(0, 0)` if the response
+    carries no usage metadata (older mock responses in tests, or a
+    provider hiccup) -- never raises, since token accounting must not be
+    able to break an otherwise-successful chat call."""
+    meta = getattr(response, "usage_metadata", None)
+    if meta is None:
+        return 0, 0
+    return getattr(meta, "prompt_token_count", 0) or 0, getattr(meta, "candidates_token_count", 0) or 0
+
+
 class GeminiClient:
     """Thin wrapper around `google-genai` with a tool-calling loop."""
 
@@ -254,6 +265,8 @@ class GeminiClient:
 
         executed_calls: List[Dict[str, Any]] = []
         started = time.perf_counter()
+        prompt_tokens = 0
+        completion_tokens = 0
 
         for round_idx in range(self.max_tool_rounds):
             try:
@@ -266,22 +279,30 @@ class GeminiClient:
                 else:
                     raise
 
+            round_prompt_tokens, round_completion_tokens = _usage(response)
+            prompt_tokens += round_prompt_tokens
+            completion_tokens += round_completion_tokens
+
             candidate = response.candidates[0] if response.candidates else None
             parts = candidate.content.parts if candidate and candidate.content else []
             function_calls = [p.function_call for p in (parts or []) if getattr(p, "function_call", None)]
 
             if not function_calls or tool_executor is None:
                 logger.info(
-                    "llm=chat model=%s rounds=%s tool_calls=%s duration_ms=%s",
+                    "llm=chat model=%s rounds=%s tool_calls=%s duration_ms=%s prompt_tokens=%s completion_tokens=%s",
                     self.model,
                     round_idx + 1,
                     len(executed_calls),
                     round((time.perf_counter() - started) * 1000),
+                    prompt_tokens,
+                    completion_tokens,
                 )
                 return ChatResult(
                     content=_extract_text(response),
                     tool_calls=executed_calls,
                     rounds=round_idx + 1,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
                 )
 
             contents.append(candidate.content)
@@ -307,6 +328,8 @@ class GeminiClient:
             content="Tool-call limit reached without a final answer.",
             tool_calls=executed_calls,
             rounds=self.max_tool_rounds,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
         )
 
     async def generate_json(

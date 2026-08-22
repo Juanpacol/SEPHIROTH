@@ -1,7 +1,7 @@
 """`build_trace` — projects a populated `RunState` into `ExecutionTrace`
 (SPEC-006, `ADR-009`).
 
-Verifies AC-006-05 (docs/specs/SPEC-006-telemetry.md)."""
+Verifies AC-006-05, AC-006-09 (docs/specs/SPEC-006-telemetry.md)."""
 
 from sephiroth.contracts import AgentResult, Claim, Contradiction, RunState, VerificationStatus
 from sephiroth.telemetry import build_trace
@@ -32,14 +32,35 @@ def test_verification_report_built_from_claims_and_contradictions():
 def test_latency_and_tokens_summed_from_agent_results():
     state = RunState(trace_id="t1", request="q")
     state.agent_results = {
-        "evidence": AgentResult(agent="evidence", tokens=10, latency_ms=100),
-        "coordinator": AgentResult(agent="coordinator", tokens=20, latency_ms=200),
+        "evidence": AgentResult(agent="evidence", prompt_tokens=5, completion_tokens=10, latency_ms=100),
+        "coordinator": AgentResult(agent="coordinator", prompt_tokens=7, completion_tokens=20, latency_ms=200),
     }
 
     trace = build_trace(state)
 
+    assert trace.tokens.prompt_tokens == 12
     assert trace.tokens.completion_tokens == 30
     assert trace.latency_ms == 300
+
+
+def test_cost_estimated_from_known_model_pricing():
+    state = RunState(trace_id="t1", request="q")
+    state.agent_results = {
+        "evidence": AgentResult(agent="evidence", prompt_tokens=1_000_000, completion_tokens=1_000_000),
+    }
+
+    trace = build_trace(state, model="gemini-flash-latest")
+
+    assert trace.cost_usd == 0.5  # (1M * 0.10 + 1M * 0.40) / 1M
+
+
+def test_cost_is_zero_for_unrecognized_model():
+    state = RunState(trace_id="t1", request="q")
+    state.agent_results = {"evidence": AgentResult(agent="evidence", prompt_tokens=1000, completion_tokens=1000)}
+
+    trace = build_trace(state, model="some-future-model-nobody-has-priced-yet")
+
+    assert trace.cost_usd == 0.0
 
 
 def test_model_versions_populated_only_when_model_given():
