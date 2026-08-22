@@ -117,6 +117,34 @@ export interface DashboardPerformance {
   methodology: string;
 }
 
+export interface DashboardAutomation {
+  workflows: { active: number; completed: number; cancelled: number; failed: number; total: number };
+  steps: {
+    pending: number;
+    running: number;
+    succeeded: number;
+    failed: number;
+    skipped: number;
+    superseded: number;
+    cancelled: number;
+    overdue: number;
+    retried: number;
+  };
+  events: { pending: number; dispatched: number; no_subscriber: number; total: number };
+  approvals: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    expired: number;
+    approved_unedited: number;
+    approved_edited: number;
+    human_intervention_rate: number;
+  };
+  notifications: { total: number; read: number; read_rate: number | null };
+  tick_health: { overdue_steps: number; status: "healthy" | "behind" };
+  methodology: string;
+}
+
 export interface PatientSummary {
   id: string;
   name: string;
@@ -464,6 +492,7 @@ export const api = {
   dashboardEvidence: () => get<DashboardEvidence>("/api/dashboard/evidence"),
   dashboardPending: () => get<DashboardPending>("/api/dashboard/pending"),
   dashboardPerformance: () => get<DashboardPerformance>("/api/dashboard/performance"),
+  dashboardAutomation: () => get<DashboardAutomation>("/api/dashboard/automation"),
   agentsStatus: () => get<AgentsStatus>("/api/agents/status"),
   patients: (sort?: "risk") => get<PatientSummary[]>(`/api/patients${sort ? `?sort=${sort}` : ""}`),
   patient: (id: string) => get<Patient>(`/api/patients/${id}`),

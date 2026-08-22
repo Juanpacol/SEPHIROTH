@@ -12,7 +12,7 @@ schema_version: 1
 project: SEPHIROTH
 version: 1.0.0
 updated: 2026-08-21
-phase_current: 13
+phase_current: 14
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
@@ -29,6 +29,7 @@ phases:
   "11": {name: "Human-in-the-loop approval gate — pending_actions (SPEC-013)", status: done}
   "12": {name: "Patient follow-up (day 3/7/30) + draft_patient_message tool (SPEC-014)", status: done}
   "13": {name: "Operational memory — namespaced preferences, never clinical facts (SPEC-015)", status: done}
+  "14": {name: "Automation observability — GET /api/dashboard/automation + frontend tab (SPEC-016)", status: done}
 
 components:
   legacy:
@@ -182,7 +183,16 @@ components:
         Tracer/OTel backend yet (NG-3). explainability.py relocated here in
         Phase 5, Part 3 (src/sephiroth/telemetry/explain.py) — still the
         template-based (agents, tool_calls, citation_report) function, not
-        yet reimplemented as an ExecutionTrace projection.
+        yet reimplemented as an ExecutionTrace projection. Phase 14
+        (SPEC-016) deliberately did NOT attempt NG-1/NG-2 here —
+        instrumenting ModelProvider.chat/ToolRuntime.execute and real
+        token/cost touches every LLM client class and would ripple
+        through the whole existing test suite (test_gemini_client.py,
+        test_fallback_client.py, etc.); that is real, separate work,
+        not something to fold into a workflow-automation phase. Phase
+        14 built the automation-specific dashboard
+        (GET /api/dashboard/automation) using metrics that already
+        existed after Phases 7-13 instead.
       tests: [tests/test_telemetry_span.py, tests/test_telemetry_build_trace.py,
               tests/test_runtime_executor.py]
     src/sephiroth/workflows:

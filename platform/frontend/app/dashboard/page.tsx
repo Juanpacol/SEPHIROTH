@@ -20,6 +20,7 @@ const TABS = [
   "evidence",
   "pending",
   "performance",
+  "automation",
 ] as const;
 type Tab = (typeof TABS)[number];
 
@@ -130,6 +131,7 @@ export default function DashboardPage() {
         {tab === "evidence" && <EvidenceTab />}
         {tab === "pending" && <PendingTab />}
         {tab === "performance" && <PerformanceTab />}
+        {tab === "automation" && <AutomationTab />}
       </div>
     </div>
   );
@@ -344,6 +346,43 @@ function PerformanceTab() {
           value={data.specificity !== null ? `${Math.round(data.specificity * 100)}%` : null}
         />
         <StatCard label="AUC" value={data.auc ?? "N/D"} />
+      </div>
+      <p className="text-xs text-muted">{data.methodology}</p>
+    </div>
+  );
+}
+
+function AutomationTab() {
+  const { t } = useLanguage();
+  const { data } = useQuery({
+    queryKey: ["dashboard", "automation"],
+    queryFn: api.dashboardAutomation,
+    staleTime: TAB_STALE_TIME,
+  });
+  if (!data) return <TabLoading />;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard
+          label={t("automation.tickHealth")}
+          value={data.tick_health.status === "healthy" ? t("automation.healthy") : t("automation.behind")}
+          tone={data.tick_health.status === "healthy" ? "success" : "danger"}
+        />
+        <StatCard label={t("automation.workflowsActive")} value={data.workflows.active} tone="primary" />
+        <StatCard label={t("automation.stepsOverdue")} value={data.steps.overdue} tone="warning" />
+        <StatCard label={t("automation.approvalsPending")} value={data.approvals.pending} tone="warning" />
+      </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard label={t("automation.workflowsFailed")} value={data.workflows.failed} tone="danger" />
+        <StatCard label={t("automation.stepsRetried")} value={data.steps.retried} />
+        <StatCard
+          label={t("automation.humanInterventionRate")}
+          value={`${Math.round(data.approvals.human_intervention_rate * 100)}%`}
+        />
+        <StatCard
+          label={t("automation.notificationReadRate")}
+          value={data.notifications.read_rate !== null ? `${Math.round(data.notifications.read_rate * 100)}%` : "N/D"}
+        />
       </div>
       <p className="text-xs text-muted">{data.methodology}</p>
     </div>

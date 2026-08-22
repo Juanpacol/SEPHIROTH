@@ -21,7 +21,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.deps import require_clinician
 from core.db import get_session
-from data.schemas import AIEvaluation, Alert, Consultation, ImagingStudy, LabResult, MedicationOrder, Patient, User
+from data.schemas import (
+    AIEvaluation,
+    Alert,
+    Consultation,
+    ImagingStudy,
+    LabResult,
+    MedicationOrder,
+    Notification,
+    Patient,
+    PendingAction,
+    User,
+    Workflow,
+    WorkflowEvent,
+    WorkflowStep,
+)
 from intelligence.mcp.drug_safety_server import find_interactions
 from sephiroth.safety.priority import compute_priority_score
 from sephiroth.safety.risk import RISK_ORDER, assess_patient_risk, assess_risk_level
@@ -420,6 +434,86 @@ async def dashboard_performance(session: AsyncSession = Depends(get_session)) ->
         "specificity": round(specificity, 3) if specificity is not None else None,
         "auc": None,  # needs a probability score per prediction, not just a 3-level label — not computable
         "methodology": "proxy estimate from Consultation.outcome vs risk_level — no ground-truth dataset",
+    }
+
+
+@router.get("/automation", summary="Workflow automation metrics (SPEC-016)")
+async def dashboard_automation(session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
+    return await _cached("automation", lambda: _dashboard_automation(session))
+
+
+async def _dashboard_automation(session: AsyncSession) -> Dict[str, Any]:
+    """Column-only counts, never `select(Workflow)`/etc — same 512MB-instance
+    reasoning as `/stats` (see that function's own comment). `notifications`
+    is a *read* rate, not a delivery rate: there is no channel beyond the
+    in-app row (`Notification`'s own docstring), so "was it read" is the
+    only thing observable at all, same honesty convention as `/performance`'s
+    `methodology` field."""
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    async def _count(stmt) -> int:
+        from sqlalchemy import func
+
+        return (await session.scalar(select(func.count()).select_from(stmt.subquery()))) or 0
+
+    workflow_by_status = {
+        status: await _count(select(Workflow.id).where(Workflow.status == status))
+        for status in ("active", "completed", "cancelled", "failed")
+    }
+    step_by_status = {
+        status: await _count(select(WorkflowStep.id).where(WorkflowStep.status == status))
+        for status in ("pending", "running", "succeeded", "failed", "skipped", "superseded", "cancelled")
+    }
+    overdue_steps = await _count(
+        select(WorkflowStep.id).where(WorkflowStep.status == "pending", WorkflowStep.run_after < now)
+    )
+    retried_steps = await _count(select(WorkflowStep.id).where(WorkflowStep.attempts > 1))
+
+    event_by_status = {
+        status: await _count(select(WorkflowEvent.id).where(WorkflowEvent.status == status))
+        for status in ("pending", "dispatched", "no_subscriber")
+    }
+
+    approval_by_status = {
+        status: await _count(select(PendingAction.id).where(PendingAction.status == status))
+        for status in ("pending", "approved", "rejected", "expired")
+    }
+    approved_rows = (
+        await session.scalars(select(PendingAction).where(PendingAction.status == "approved"))
+    ).all()
+    approved_edited = sum(1 for a in approved_rows if a.final_text and a.final_text != a.draft_text)
+
+    notification_total = await _count(select(Notification.id))
+    notification_read = await _count(select(Notification.id).where(Notification.read_at.is_not(None)))
+
+    return {
+        "workflows": {**workflow_by_status, "total": sum(workflow_by_status.values())},
+        "steps": {**step_by_status, "overdue": overdue_steps, "retried": retried_steps},
+        "events": {**event_by_status, "total": sum(event_by_status.values())},
+        "approvals": {
+            **approval_by_status,
+            "approved_unedited": approval_by_status["approved"] - approved_edited,
+            "approved_edited": approved_edited,
+            "human_intervention_rate": round(
+                (approval_by_status["rejected"] + approved_edited)
+                / max(approval_by_status["approved"] + approval_by_status["rejected"], 1),
+                3,
+            ),
+        },
+        "notifications": {
+            "total": notification_total,
+            "read": notification_read,
+            "read_rate": round(notification_read / notification_total, 3) if notification_total else None,
+        },
+        "tick_health": {
+            "overdue_steps": overdue_steps,
+            "status": "healthy" if overdue_steps == 0 else "behind",
+        },
+        "methodology": (
+            "notifications.read_rate measures in-app read status, not delivery -- "
+            "no channel beyond the in-app row exists yet (Phase 8). "
+            "Agent latency/token/cost live in the /ai tab (Consultation.trace), not here."
+        ),
     }
 
 
