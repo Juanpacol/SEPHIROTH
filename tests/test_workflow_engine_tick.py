@@ -6,11 +6,12 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import select
 
 from api.workflows import registry as registry_module
 from api.workflows.engine import claim_step, execute_step, reclaim_expired_leases, run_tick
 from api.workflows.registry import StepContext, StepResult, StepTypeSpec
-from data.schemas import Patient, Workflow, WorkflowStep
+from data.schemas import Patient, PhiAccessLog, Workflow, WorkflowStep
 
 pytestmark = pytest.mark.asyncio
 
@@ -178,6 +179,70 @@ async def test_execute_step_retries_then_terminally_fails(db_session, monkeypatc
     refreshed = await db_session.get(WorkflowStep, step.id)
     assert second_outcome == "failed"
     assert refreshed.status == "failed"
+
+
+async def test_execute_step_handles_step_vanishing_after_rollback(db_session, monkeypatch):
+    """LOW-severity edge case from the security review: if the step row
+    is gone by the time we re-fetch it post-rollback (a concurrent
+    delete elsewhere -- not reproducible in a single-session test, so
+    simulated directly), `execute_step` must return "failed" rather
+    than raise `AttributeError` out of the whole tick batch."""
+
+    async def _always_raises(ctx: StepContext) -> StepResult:
+        raise RuntimeError("boom")
+
+    monkeypatch.setitem(
+        registry_module.STEP_TYPES,
+        "vanishing_test",
+        StepTypeSpec(step_type="vanishing_test", handler=_always_raises, reads_phi=False),
+    )
+
+    patient = await _patient(db_session)
+    wf = await _workflow(db_session, patient.id)
+    step = await _step(db_session, wf.id, "vanishing_test", status="running")
+
+    real_get = db_session.get
+    call_count = {"n": 0}
+
+    async def flaky_get(model, ident, *args, **kwargs):
+        if model is WorkflowStep and ident == step.id:
+            call_count["n"] += 1
+            if call_count["n"] > 1:  # first call is execute_step's own initial fetch
+                return None
+        return await real_get(model, ident, *args, **kwargs)
+
+    monkeypatch.setattr(db_session, "get", flaky_get)
+
+    outcome = await execute_step(db_session, step.id, NOW)
+    assert outcome == "failed"
+
+
+async def test_phi_audit_row_survives_handler_failure_and_rollback(db_session, monkeypatch):
+    """Security regression: the audit row must be committed before the
+    handler runs, not staged in the same transaction the handler's
+    rollback() would erase. A step that read PHI and then failed must
+    still leave a PhiAccessLog row -- the read already happened."""
+
+    async def _always_raises(ctx: StepContext) -> StepResult:
+        raise RuntimeError("boom after the PHI read already happened")
+
+    monkeypatch.setitem(
+        registry_module.STEP_TYPES,
+        "phi_audit_test",
+        StepTypeSpec(step_type="phi_audit_test", handler=_always_raises, reads_phi=True),
+    )
+
+    patient = await _patient(db_session)
+    wf = await _workflow(db_session, patient.id)
+    step = await _step(db_session, wf.id, "phi_audit_test", status="running")
+
+    outcome = await execute_step(db_session, step.id, NOW)
+
+    assert outcome == "failed"
+    rows = (await db_session.scalars(select(PhiAccessLog).where(PhiAccessLog.patient_id == patient.id))).all()
+    assert len(rows) == 1
+    assert rows[0].route == "tick:phi_audit_test"
+    assert rows[0].method == "SYSTEM"
 
 
 async def test_execute_step_success_completes_workflow_when_no_steps_remain(db_session, monkeypatch):

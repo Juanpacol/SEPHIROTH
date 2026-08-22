@@ -25,15 +25,28 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.deps import require_clinician
-from core.db import get_session
+from core.db import SYSTEM_WORKFLOW_USER_ID, get_session
 from data.schemas import Patient, PendingAction, User
 from sephiroth.models import LLMUnavailableError
 
 router = APIRouter()
+
+
+def _assert_real_reviewer(clinician: User) -> None:
+    """Defense-in-depth: `pending_actions.reviewed_by` is FK'd to
+    `users.id`, not role-constrained (the DB constraint proves *someone*
+    reviewed, not *a clinician*). `require_clinician` already makes this
+    branch unreachable in practice -- `system-workflow` has `role`
+    `"clinician"` but `is_active=False`, and `get_current_user` rejects
+    an inactive user before this dependency ever runs -- but an explicit
+    check here means a future change to that dependency chain fails
+    loudly instead of silently widening who can satisfy the gate."""
+    if clinician.id == SYSTEM_WORKFLOW_USER_ID or clinician.role != "clinician":
+        raise HTTPException(status_code=403, detail="Only a real clinician account may review this action")
 
 
 def _action_out(action: PendingAction) -> Dict[str, Any]:
@@ -62,29 +75,42 @@ async def _expire_if_due(session: AsyncSession, action: PendingAction, now: date
         action.status = "expired"
 
 
+async def _expire_due_pending(session: AsyncSession, now: datetime) -> int:
+    """Bulk flip, not a per-row Python loop over every action in the
+    table: a single `UPDATE ... WHERE` handles expiry for every caller
+    (list/count) without loading `draft_text`/`proposed_payload` for
+    rows nobody asked about. Returns the number of rows flipped."""
+    result = await session.execute(
+        update(PendingAction)
+        .where(
+            PendingAction.status == "pending",
+            PendingAction.expires_at.is_not(None),
+            PendingAction.expires_at < now,
+        )
+        .values(status="expired")
+    )
+    if result.rowcount:
+        await session.commit()
+    return result.rowcount or 0
+
+
 @router.get("")
 async def list_pending_actions(
     status_filter: Optional[str] = Query(None, alias="status"),
     patient_id: Optional[str] = None,
+    limit: int = Query(200, ge=1, le=500),
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
 ) -> List[Dict[str, Any]]:
-    stmt = select(PendingAction).order_by(PendingAction.created_at.desc())
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    await _expire_due_pending(session, now)
+
+    stmt = select(PendingAction).order_by(PendingAction.created_at.desc()).limit(limit)
     if patient_id is not None:
         stmt = stmt.where(PendingAction.patient_id == patient_id)
-    actions = (await session.scalars(stmt)).all()
-
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    touched = False
-    for action in actions:
-        before = action.status
-        await _expire_if_due(session, action, now)
-        touched = touched or action.status != before
-    if touched:
-        await session.commit()
-
     if status_filter is not None:
-        actions = [a for a in actions if a.status == status_filter]
+        stmt = stmt.where(PendingAction.status == status_filter)
+    actions = (await session.scalars(stmt)).all()
     return [_action_out(a) for a in actions]
 
 
@@ -95,16 +121,12 @@ async def count_pending_actions(
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, int]:
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    if status_filter == "pending":
-        # Expiry is lazy -- exclude anything already past its expires_at
-        # rather than lying about the badge count until someone next
-        # opens the full list.
-        rows = (await session.scalars(select(PendingAction).where(PendingAction.status == "pending"))).all()
-        count = sum(1 for a in rows if a.expires_at is None or a.expires_at >= now)
-    else:
-        count = len(
-            (await session.scalars(select(PendingAction).where(PendingAction.status == status_filter))).all()
+    await _expire_due_pending(session, now)
+    count = (
+        await session.scalar(
+            select(func.count()).select_from(PendingAction).where(PendingAction.status == status_filter)
         )
+    ) or 0
     return {"count": count}
 
 
@@ -172,6 +194,7 @@ async def approve_action(
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
+    _assert_real_reviewer(clinician)
     action = await _get_action(session, action_id)
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     await _expire_if_due(session, action, now)
@@ -193,6 +216,7 @@ async def reject_action(
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
+    _assert_real_reviewer(clinician)
     action = await _get_action(session, action_id)
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     await _expire_if_due(session, action, now)

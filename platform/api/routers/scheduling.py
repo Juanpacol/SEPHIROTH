@@ -492,7 +492,7 @@ async def book_appointment(
         raise HTTPException(status_code=403, detail="Only a clinician may force a booking")
 
     clinician = await session.scalar(
-        select(User).where(User.id == body.clinician_id, User.role == "clinician")
+        select(User).where(User.id == body.clinician_id, User.role == "clinician", User.is_active.is_(True))
     )
     if clinician is None:
         raise HTTPException(status_code=404, detail="Clinician not found")
@@ -789,7 +789,7 @@ async def create_series(
         raise HTTPException(status_code=403, detail="Cannot book a series for another patient")
 
     clinician = await session.scalar(
-        select(User).where(User.id == body.clinician_id, User.role == "clinician")
+        select(User).where(User.id == body.clinician_id, User.role == "clinician", User.is_active.is_(True))
     )
     if clinician is None:
         raise HTTPException(status_code=404, detail="Clinician not found")
@@ -956,7 +956,7 @@ async def join_waitlist(
         raise HTTPException(status_code=422, detail="window_start must be before window_end")
 
     clinician = await session.scalar(
-        select(User).where(User.id == body.clinician_id, User.role == "clinician")
+        select(User).where(User.id == body.clinician_id, User.role == "clinician", User.is_active.is_(True))
     )
     if clinician is None:
         raise HTTPException(status_code=404, detail="Clinician not found")

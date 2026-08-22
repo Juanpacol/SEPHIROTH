@@ -473,10 +473,15 @@ async def _dashboard_automation(session: AsyncSession) -> Dict[str, Any]:
         status: await _count(select(PendingAction.id).where(PendingAction.status == status))
         for status in ("pending", "approved", "rejected", "expired")
     }
-    approved_rows = (
-        await session.scalars(select(PendingAction).where(PendingAction.status == "approved"))
-    ).all()
-    approved_edited = sum(1 for a in approved_rows if a.final_text and a.final_text != a.draft_text)
+    # Column-only count, not a full-row load -- draft_text/proposed_payload
+    # can be large, and this only needs a boolean per row.
+    approved_edited = await _count(
+        select(PendingAction.id).where(
+            PendingAction.status == "approved",
+            PendingAction.final_text != "",
+            PendingAction.final_text != PendingAction.draft_text,
+        )
+    )
 
     notification_total = await _count(select(Notification.id))
     notification_read = await _count(select(Notification.id).where(Notification.read_at.is_not(None)))

@@ -127,9 +127,18 @@ async def execute_step(session: AsyncSession, step_id: str, now: datetime) -> st
         return "skipped"
 
     if spec.reads_phi:
+        # Committed immediately, before the handler runs -- PhiAccessLog is
+        # append-only by design (its own docstring: "an audit trail that
+        # could be edited by the audited party is not a trail"). Staging it
+        # in the same transaction as the handler meant a handler exception
+        # -> rollback() erased the audit row along with the failed attempt,
+        # so a step that read PHI and then failed left no record it ever
+        # happened. The read already occurred by this point regardless of
+        # what the handler does next, so the record must survive on its own.
         add_phi_access(
             session, SYSTEM_WORKFLOW_USER_ID, workflow.patient_id, f"tick:{step.step_type}", "SYSTEM"
         )
+        await session.commit()
 
     ctx = StepContext(session=session, step=step, workflow=workflow, now=now, channel=get_channel())
     try:
@@ -137,6 +146,13 @@ async def execute_step(session: AsyncSession, step_id: str, now: datetime) -> st
     except Exception as exc:  # noqa: BLE001 -- classified below, never re-raised past this point
         await session.rollback()
         step = await session.get(WorkflowStep, step_id)  # re-attach after rollback
+        if step is None:
+            # Deleted concurrently between claim and rollback -- nothing
+            # left to mark failed. Availability-only: this tick's batch
+            # would otherwise abort via an AttributeError below, leaving
+            # already-claimed steps stuck `running` until lease expiry.
+            logger.warning("workflow step %s vanished mid-execution; skipping", step_id)
+            return "failed"
         failure = classify_step_failure(exc)
         action = decide_step_recovery(step.attempts, step.max_attempts)
         step.failure_category = failure.category.value
