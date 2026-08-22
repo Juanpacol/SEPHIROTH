@@ -81,7 +81,9 @@ async def select_due_step_ids(session: AsyncSession, now: datetime, batch_size: 
     return list(rows.all())
 
 
-async def claim_step(session: AsyncSession, step_id: str, tick_id: str, now: datetime, lease_seconds: int) -> bool:
+async def claim_step(
+    session: AsyncSession, step_id: str, tick_id: str, now: datetime, lease_seconds: int
+) -> bool:
     """Status-CAS claim. Returns True iff this call won the race."""
     result = await session.execute(
         update(WorkflowStep)
@@ -125,7 +127,9 @@ async def execute_step(session: AsyncSession, step_id: str, now: datetime) -> st
         return "skipped"
 
     if spec.reads_phi:
-        add_phi_access(session, SYSTEM_WORKFLOW_USER_ID, workflow.patient_id, f"tick:{step.step_type}", "SYSTEM")
+        add_phi_access(
+            session, SYSTEM_WORKFLOW_USER_ID, workflow.patient_id, f"tick:{step.step_type}", "SYSTEM"
+        )
 
     ctx = StepContext(session=session, step=step, workflow=workflow, now=now, channel=get_channel())
     try:
@@ -189,11 +193,14 @@ async def run_tick(session: AsyncSession, tick_id: str) -> TickSummary:
         else:
             summary.failed += 1
 
-    summary.remaining = await session.scalar(
-        select(func.count())
-        .select_from(WorkflowStep)
-        .where(WorkflowStep.status == "pending", WorkflowStep.run_after <= now)
-    ) or 0
+    summary.remaining = (
+        await session.scalar(
+            select(func.count())
+            .select_from(WorkflowStep)
+            .where(WorkflowStep.status == "pending", WorkflowStep.run_after <= now)
+        )
+        or 0
+    )
     summary.events_dispatched = await dispatch_pending(session)
     return summary
 

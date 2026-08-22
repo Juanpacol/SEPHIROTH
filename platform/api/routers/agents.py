@@ -114,7 +114,9 @@ async def _persist(
         confidence=supported_ratio,
         requires_human_review=abstention_status != "answer" or consultation.risk_level == "high",
     )
-    logger.info("adding_ai_eval ai_eval_id=%s consultation_id=%s", ai_eval.id[:8], ai_eval.consultation_id[:8])
+    logger.info(
+        "adding_ai_eval ai_eval_id=%s consultation_id=%s", ai_eval.id[:8], ai_eval.consultation_id[:8]
+    )
     session.add(ai_eval)
     await session.commit()
     logger.info("ai_eval_persisted ai_eval_id=%s", ai_eval.id[:8])

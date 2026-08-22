@@ -3,14 +3,14 @@
 Direct Claude calls, no agent orchestration — simple, fast seeding of realistic
 clinical consultation data for real patients.
 
-    PYTHONPATH=.:platform CLAUDE_API_KEY=sk-ant-... python3 real_data/patients/seed_consultations_claude.py --limit 5
+    PYTHONPATH=.:platform CLAUDE_API_KEY=sk-ant-... python3 \
+        real_data/patients/seed_consultations_claude.py --limit 5
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
-import os
 
 import anthropic
 
@@ -68,7 +68,9 @@ async def _seed(limit: int, user_email: str) -> int:
                 select(func.count()).select_from(Consultation).where(Consultation.patient_id == patient.id)
             )
         if existing_count:
-            logging.info("Patient %s already has %d consultation(s), skipping", patient.id[:8], existing_count)
+            logging.info(
+                "Patient %s already has %d consultation(s), skipping", patient.id[:8], existing_count
+            )
             continue
 
         question = _question_for(patient.conditions)
@@ -125,7 +127,9 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(description="Seed real agent consultations using Claude API")
     parser.add_argument("--limit", type=int, default=5, help="Max new consultations to run")
-    parser.add_argument("--user-email", default="jbotero@aztia.co", help="Clinician user to attribute these to")
+    parser.add_argument(
+        "--user-email", default="jbotero@aztia.co", help="Clinician user to attribute these to"
+    )
     args = parser.parse_args()
 
     seeded = asyncio.run(_seed(args.limit, args.user_email))

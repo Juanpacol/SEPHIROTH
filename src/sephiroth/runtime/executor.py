@@ -223,7 +223,9 @@ async def run_consultation(
     sections = truncate(sections, settings.max_context_chars)
     coordinator = Agent(COORDINATOR, client)
     coord_started = time.perf_counter()
-    with traced_span(state, SpanKind.AGENT, COORDINATOR.id, agent=COORDINATOR.id, model=getattr(client, "model", "")):
+    with traced_span(
+        state, SpanKind.AGENT, COORDINATOR.id, agent=COORDINATOR.id, model=getattr(client, "model", "")
+    ):
         coord_result = await coordinator.run(
             f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}",
             context_for_agent(COORDINATOR, run_context),
@@ -320,7 +322,9 @@ async def stream_consultation(
     sections = truncate(sections, settings.max_context_chars)
     coordinator = Agent(COORDINATOR, client)
     coord_started = time.perf_counter()
-    with traced_span(state, SpanKind.AGENT, COORDINATOR.id, agent=COORDINATOR.id, model=getattr(client, "model", "")):
+    with traced_span(
+        state, SpanKind.AGENT, COORDINATOR.id, agent=COORDINATOR.id, model=getattr(client, "model", "")
+    ):
         coord_result = await coordinator.run(
             f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}",
             context_for_agent(COORDINATOR, run_context),

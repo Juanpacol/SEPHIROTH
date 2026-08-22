@@ -289,7 +289,8 @@ class GeminiClient:
 
             if not function_calls or tool_executor is None:
                 logger.info(
-                    "llm=chat model=%s rounds=%s tool_calls=%s duration_ms=%s prompt_tokens=%s completion_tokens=%s",
+                    "llm=chat model=%s rounds=%s tool_calls=%s duration_ms=%s prompt_tokens=%s "
+                    "completion_tokens=%s",
                     self.model,
                     round_idx + 1,
                     len(executed_calls),

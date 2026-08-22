@@ -12,7 +12,8 @@ Idempotent: only processes patients with zero existing consultations, so
 it's safe to re-run (e.g. across multiple sessions to respect Gemini's
 free-tier rate limit) without ever duplicating a seeded consultation.
 
-    PYTHONPATH=.:platform python3 real_data/patients/seed_consultations.py --limit 5 --user-email jbotero@aztia.co
+    PYTHONPATH=.:platform python3 real_data/patients/seed_consultations.py \
+        --limit 5 --user-email jbotero@aztia.co
 """
 
 from __future__ import annotations
@@ -46,7 +47,10 @@ async def _seed(limit: int, user_email: str) -> int:
     async with SessionLocal() as session:
         user = await session.scalar(select(User).where(User.email == user_email))
         if user is None:
-            print(f"No user found with email {user_email!r} — pass --user-email for an existing clinician account.")
+            print(
+                f"No user found with email {user_email!r} — pass --user-email for an "
+                "existing clinician account."
+            )
             return 0
         patients = (await session.scalars(select(Patient).order_by(Patient.id))).all()
 
@@ -90,7 +94,9 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(description="Seed real agent consultations for real patients")
     parser.add_argument("--limit", type=int, default=5, help="Max new consultations to run this invocation")
-    parser.add_argument("--user-email", default="jbotero@aztia.co", help="Clinician user to attribute these to")
+    parser.add_argument(
+        "--user-email", default="jbotero@aztia.co", help="Clinician user to attribute these to"
+    )
     args = parser.parse_args()
 
     seeded = asyncio.run(_seed(args.limit, args.user_email))

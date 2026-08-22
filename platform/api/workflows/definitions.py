@@ -12,6 +12,11 @@ exists.
 
 from __future__ import annotations
 
-from . import alert_escalation, appointment_reminder, handlers, patient_followup  # noqa: F401 -- imported for registration
+from . import (  # noqa: F401 -- imported for registration
+    alert_escalation,
+    appointment_reminder,
+    handlers,
+    patient_followup,
+)
 
 __all__: list[str] = []

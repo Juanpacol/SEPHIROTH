@@ -529,7 +529,9 @@ class Alert(Base):
     reviewed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     # Phase 9 (SPEC-011) additions — additive, no data migration needed.
-    assigned_to_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    assigned_to_user_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("users.id"), nullable=True, index=True
+    )
     due_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     escalated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
@@ -785,7 +787,9 @@ class PendingAction(Base):
     draft_model: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     final_text: Mapped[str] = mapped_column(Text, default="")
     proposed_payload: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
-    assigned_to_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    assigned_to_user_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("users.id"), nullable=True, index=True
+    )
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     reviewed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)

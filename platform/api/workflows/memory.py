@@ -14,7 +14,7 @@ API, proven standalone.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -28,9 +28,9 @@ VALID_SCOPES = ("clinic", "user", "patient")
 #: membership only (not a JSON Schema) -- the set is small and hand-reviewed,
 #: same "literal dict, not a generality" call as TOOL_CAPABILITIES.
 ALLOWED_KEYS: Dict[str, str] = {
-    "quiet_hours": "{'start': 'HH:MM', 'end': 'HH:MM'} in the scope's local time -- no reminder sent inside this window",
+    "quiet_hours": "{'start': 'HH:MM', 'end': 'HH:MM'} local time -- no reminder sent inside this window",
     "reminder_lead_hours": "int -- override the default 24h appointment reminder lead time",
-    "contact_preference": "'in_app' -- the only channel that exists (Phase 8); reserved for 'email'/'sms' later",
+    "contact_preference": "'in_app' -- the only channel that exists (Phase 8); reserved for 'email'/'sms'",
 }
 
 
@@ -42,25 +42,33 @@ def _validate(scope: str, key: str) -> None:
     if scope not in VALID_SCOPES:
         raise InvalidMemoryKey(f"scope must be one of {VALID_SCOPES}, got {scope!r}")
     if key not in ALLOWED_KEYS:
-        raise InvalidMemoryKey(f"key {key!r} is not in the allowed operational-memory key set: {sorted(ALLOWED_KEYS)}")
+        raise InvalidMemoryKey(
+            f"key {key!r} is not in the allowed operational-memory key set: {sorted(ALLOWED_KEYS)}"
+        )
 
 
 async def get_memory(session: AsyncSession, scope: str, scope_id: str, key: str, default: Any = None) -> Any:
     _validate(scope, key)
     row = await session.scalar(
         select(AutomationMemory).where(
-            AutomationMemory.scope == scope, AutomationMemory.scope_id == scope_id, AutomationMemory.key == key
+            AutomationMemory.scope == scope,
+            AutomationMemory.scope_id == scope_id,
+            AutomationMemory.key == key,
         )
     )
     return row.value if row is not None else default
 
 
-async def set_memory(session: AsyncSession, scope: str, scope_id: str, key: str, value: Any) -> AutomationMemory:
+async def set_memory(
+    session: AsyncSession, scope: str, scope_id: str, key: str, value: Any
+) -> AutomationMemory:
     """Upsert. Does not commit -- caller's transaction."""
     _validate(scope, key)
     row = await session.scalar(
         select(AutomationMemory).where(
-            AutomationMemory.scope == scope, AutomationMemory.scope_id == scope_id, AutomationMemory.key == key
+            AutomationMemory.scope == scope,
+            AutomationMemory.scope_id == scope_id,
+            AutomationMemory.key == key,
         )
     )
     if row is None:

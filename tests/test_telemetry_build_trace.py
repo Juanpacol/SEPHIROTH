@@ -33,7 +33,9 @@ def test_latency_and_tokens_summed_from_agent_results():
     state = RunState(trace_id="t1", request="q")
     state.agent_results = {
         "evidence": AgentResult(agent="evidence", prompt_tokens=5, completion_tokens=10, latency_ms=100),
-        "coordinator": AgentResult(agent="coordinator", prompt_tokens=7, completion_tokens=20, latency_ms=200),
+        "coordinator": AgentResult(
+            agent="coordinator", prompt_tokens=7, completion_tokens=20, latency_ms=200
+        ),
     }
 
     trace = build_trace(state)
@@ -56,7 +58,9 @@ def test_cost_estimated_from_known_model_pricing():
 
 def test_cost_is_zero_for_unrecognized_model():
     state = RunState(trace_id="t1", request="q")
-    state.agent_results = {"evidence": AgentResult(agent="evidence", prompt_tokens=1000, completion_tokens=1000)}
+    state.agent_results = {
+        "evidence": AgentResult(agent="evidence", prompt_tokens=1000, completion_tokens=1000)
+    }
 
     trace = build_trace(state, model="some-future-model-nobody-has-priced-yet")
 

@@ -137,7 +137,11 @@ async def create_share(
     session.add(share)
     if event.type == "lab":
         workflow_events.emit(
-            session, workflow_events.LAB_RESULT_AVAILABLE, "result_share", share.id, patient_id=body.patient_id
+            session,
+            workflow_events.LAB_RESULT_AVAILABLE,
+            "result_share",
+            share.id,
+            patient_id=body.patient_id,
         )
     await session.commit()
     await session.refresh(share, attribute_names=["event", "attachments"])

@@ -81,7 +81,10 @@ async def dispatch_pending(session: AsyncSession, batch_size: int = 50) -> int:
     the number of rows processed."""
     events = (
         await session.scalars(
-            select(WorkflowEvent).where(WorkflowEvent.status == "pending").order_by(WorkflowEvent.created_at).limit(batch_size)
+            select(WorkflowEvent)
+            .where(WorkflowEvent.status == "pending")
+            .order_by(WorkflowEvent.created_at)
+            .limit(batch_size)
         )
     ).all()
 

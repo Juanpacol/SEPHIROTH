@@ -99,11 +99,7 @@ async def count_pending_actions(
         # Expiry is lazy -- exclude anything already past its expires_at
         # rather than lying about the badge count until someone next
         # opens the full list.
-        rows = (
-            await session.scalars(
-                select(PendingAction).where(PendingAction.status == "pending")
-            )
-        ).all()
+        rows = (await session.scalars(select(PendingAction).where(PendingAction.status == "pending"))).all()
         count = sum(1 for a in rows if a.expires_at is None or a.expires_at >= now)
     else:
         count = len(
@@ -153,7 +149,7 @@ async def draft_pending_action(
         return _action_out(action)
 
     patient = await session.get(Patient, action.patient_id)
-    first_name = (patient.name.split(" ")[0] if patient and patient.name else "there")
+    first_name = patient.name.split(" ")[0] if patient and patient.name else "there"
     facts = {k: v for k, v in action.proposed_payload.items() if k != "followup_plan_id"}
 
     try:

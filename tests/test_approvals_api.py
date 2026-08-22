@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 
 from api.main import app
 from core.db import get_session
-from data.schemas import PendingAction, Patient
+from data.schemas import Patient, PendingAction
 
 pytestmark = pytest.mark.asyncio
 
@@ -36,8 +36,12 @@ async def pending_row(db_session):
     p = Patient(id="PPA1", name="Approval Patient", age=44, sex="M", medical_record_number="PT-PPA1")
     db_session.add(p)
     action = PendingAction(
-        id="PA1", patient_id="PPA1", action_type="followup_message", draft_text="Hi, checking in.",
-        draft_source="llm", draft_model="fake-model",
+        id="PA1",
+        patient_id="PPA1",
+        action_type="followup_message",
+        draft_text="Hi, checking in.",
+        draft_source="llm",
+        draft_model="fake-model",
     )
     db_session.add(action)
     await db_session.commit()
@@ -92,7 +96,10 @@ async def test_expired_action_cannot_be_approved(client, db_session):
     p = Patient(id="PPA2", name="Expired Patient", age=50, sex="F", medical_record_number="PT-PPA2")
     db_session.add(p)
     action = PendingAction(
-        id="PA2", patient_id="PPA2", action_type="followup_message", draft_text="x",
+        id="PA2",
+        patient_id="PPA2",
+        action_type="followup_message",
+        draft_text="x",
         expires_at=datetime.now() - timedelta(days=1),
     )
     db_session.add(action)
@@ -124,8 +131,12 @@ async def test_db_level_constraint_blocks_approved_without_reviewer(db_session):
     p = Patient(id="PPA3", name="Constraint Patient", age=33, sex="M", medical_record_number="PT-PPA3")
     db_session.add(p)
     bad_action = PendingAction(
-        id="PA3", patient_id="PPA3", action_type="followup_message", draft_text="x",
-        status="approved", reviewed_by=None,
+        id="PA3",
+        patient_id="PPA3",
+        action_type="followup_message",
+        draft_text="x",
+        status="approved",
+        reviewed_by=None,
     )
     db_session.add(bad_action)
     with pytest.raises(IntegrityError):

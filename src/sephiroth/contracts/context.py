@@ -26,7 +26,13 @@ class RunContext(BaseModel):
     image_path: str | None = None
     conditions: list[str] = Field(default_factory=list)
     history: str = Field(default="", description="Free-text past medical history, not conversational turns.")
-    language: str = Field(default="en", description="UI language code the client is set to (\"en\" or \"es\"); agents are asked to answer in this language.")
+    language: str = Field(
+        default="en",
+        description=(
+            'UI language code the client is set to ("en" or "es"); '
+            "agents are asked to answer in this language."
+        ),
+    )
     recent_consultations: list[str] = Field(
         default_factory=list,
         description=(

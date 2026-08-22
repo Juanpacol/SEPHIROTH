@@ -34,8 +34,12 @@ async def llm_action(db_session):
     p = Patient(id="PDRAFT1", name="Draft Patient", age=48, sex="M", medical_record_number="PT-PDRAFT1")
     db_session.add(p)
     action = PendingAction(
-        id="PADRAFT1", patient_id="PDRAFT1", action_type="followup_day3", draft_text="",
-        draft_source="llm", proposed_payload={"check": "day3", "instructions": "rest"},
+        id="PADRAFT1",
+        patient_id="PDRAFT1",
+        action_type="followup_day3",
+        draft_text="",
+        draft_source="llm",
+        proposed_payload={"check": "day3", "instructions": "rest"},
     )
     db_session.add(action)
     await db_session.commit()
@@ -69,7 +73,10 @@ async def test_draft_rejected_for_template_source_action(client, db_session):
     p = Patient(id="PDRAFT2", name="Template Patient", age=30, sex="F", medical_record_number="PT-PDRAFT2")
     db_session.add(p)
     action = PendingAction(
-        id="PADRAFT2", patient_id="PDRAFT2", action_type="reminder", draft_text="fixed template text",
+        id="PADRAFT2",
+        patient_id="PDRAFT2",
+        action_type="reminder",
+        draft_text="fixed template text",
         draft_source="template",
     )
     db_session.add(action)

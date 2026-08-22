@@ -27,7 +27,9 @@ async def alert_refresh(ctx: StepContext) -> StepResult:
         return StepResult(outcome="superseded", detail="patient no longer exists")
 
     created = await generate_alerts_for_patient(ctx.session, patient)
-    return StepResult(outcome="succeeded", detail=f"{len(created)} new alert(s)", data={"created": len(created)})
+    return StepResult(
+        outcome="succeeded", detail=f"{len(created)} new alert(s)", data={"created": len(created)}
+    )
 
 
 register_step_type(
@@ -37,7 +39,7 @@ register_step_type(
         max_attempts=3,
         max_lateness_seconds=None,  # internal housekeeping -- always worth catching up
         timeout_seconds=10.0,
-        reads_phi=False,  # reads lab/med data already visible to any clinician; not a per-patient PHI read event
+        reads_phi=False,  # lab/med data already visible to any clinician; not a per-patient PHI read
     )
 )
 

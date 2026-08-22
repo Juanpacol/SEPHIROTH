@@ -41,7 +41,9 @@ async def test_set_upserts_not_duplicates(db_session):
 
     rows = (
         await db_session.scalars(
-            select(AutomationMemory).where(AutomationMemory.scope == "user", AutomationMemory.scope_id == "U2")
+            select(AutomationMemory).where(
+                AutomationMemory.scope == "user", AutomationMemory.scope_id == "U2"
+            )
         )
     ).all()
     assert len(rows) == 1

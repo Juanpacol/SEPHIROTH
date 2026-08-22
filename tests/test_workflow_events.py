@@ -1,7 +1,5 @@
 """Event catalog (SPEC-010) — outbox recording + dispatch-to-registry."""
 
-from uuid import uuid4
-
 import pytest
 from sqlalchemy import select
 
@@ -42,9 +40,7 @@ async def test_dispatch_pending_marks_no_subscriber_when_unwired(db_session):
     # elsewhere in this same test process -- SUBSCRIBERS is module-global
     # state), PATIENT_MESSAGE has no subscriber anywhere in the codebase.
     patient = await _patient(db_session)
-    workflow_events.emit(
-        db_session, workflow_events.PATIENT_MESSAGE, "message", "M1", patient_id=patient.id
-    )
+    workflow_events.emit(db_session, workflow_events.PATIENT_MESSAGE, "message", "M1", patient_id=patient.id)
     await db_session.commit()
 
     from data.schemas import WorkflowEvent
@@ -81,7 +77,9 @@ async def test_dispatch_pending_runs_registered_subscriber(db_session, monkeypat
 
 async def test_dispatch_pending_is_idempotent_no_double_processing(db_session):
     patient = await _patient(db_session)
-    workflow_events.emit(db_session, workflow_events.LAB_RESULT_AVAILABLE, "result_share", "R1", patient_id=patient.id)
+    workflow_events.emit(
+        db_session, workflow_events.LAB_RESULT_AVAILABLE, "result_share", "R1", patient_id=patient.id
+    )
     await db_session.commit()
 
     first = await workflow_events.dispatch_pending(db_session)

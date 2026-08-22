@@ -29,8 +29,12 @@ async def _patient_with_login(session, pid="PAPT1"):
     p = Patient(id=pid, name="Reminder Patient", age=40, sex="F", medical_record_number=f"PT-{pid}")
     session.add(p)
     u = User(
-        id=str(uuid4()), email=f"{uuid4().hex[:8]}@example.org", name="Portal Patient",
-        hashed_password="x", role="patient", patient_id=pid,
+        id=str(uuid4()),
+        email=f"{uuid4().hex[:8]}@example.org",
+        name="Portal Patient",
+        hashed_password="x",
+        role="patient",
+        patient_id=pid,
     )
     session.add(u)
     await session.commit()
@@ -38,7 +42,13 @@ async def _patient_with_login(session, pid="PAPT1"):
 
 
 async def _clinician_user(session):
-    u = User(id=str(uuid4()), email=f"{uuid4().hex[:8]}@example.org", name="Dr. Book", hashed_password="x", role="clinician")
+    u = User(
+        id=str(uuid4()),
+        email=f"{uuid4().hex[:8]}@example.org",
+        name="Dr. Book",
+        hashed_password="x",
+        role="clinician",
+    )
     session.add(u)
     await session.commit()
     return u
@@ -46,8 +56,12 @@ async def _clinician_user(session):
 
 async def _appointment(session, patient_id, clinician_id, start_at=START_AT, status="booked"):
     appt = Appointment(
-        id=str(uuid4()), clinician_id=clinician_id, patient_id=patient_id,
-        start_at=start_at, end_at=start_at + timedelta(minutes=30), status=status,
+        id=str(uuid4()),
+        clinician_id=clinician_id,
+        patient_id=patient_id,
+        start_at=start_at,
+        end_at=start_at + timedelta(minutes=30),
+        status=status,
     )
     session.add(appt)
     await session.commit()
@@ -67,7 +81,9 @@ async def test_on_new_appointment_enrolls_two_steps_at_correct_offsets(db_sessio
     workflow = (await db_session.scalars(select(Workflow).where(Workflow.appointment_id == appt.id))).one()
     steps = {
         s.step_key: s
-        for s in (await db_session.scalars(select(WorkflowStep).where(WorkflowStep.workflow_id == workflow.id))).all()
+        for s in (
+            await db_session.scalars(select(WorkflowStep).where(WorkflowStep.workflow_id == workflow.id))
+        ).all()
     }
     assert set(steps) == {"reminder_t24", "unconfirmed_check"}
     assert steps["reminder_t24"].due_at == appt.start_at - REMINDER_LEAD_TIME
@@ -95,14 +111,23 @@ async def test_send_reminder_t24_notifies_patient(db_session):
     clinician = await _clinician_user(db_session)
     appt = await _appointment(db_session, patient.id, clinician.id)
     workflow = Workflow(
-        id=str(uuid4()), definition_key="appointment_reminder", patient_id=patient.id, appointment_id=appt.id,
-        status="active", context={"start_at": appt.start_at.isoformat()},
+        id=str(uuid4()),
+        definition_key="appointment_reminder",
+        patient_id=patient.id,
+        appointment_id=appt.id,
+        status="active",
+        context={"start_at": appt.start_at.isoformat()},
     )
     db_session.add(workflow)
     await db_session.commit()
     step = WorkflowStep(
-        id=str(uuid4()), workflow_id=workflow.id, step_key="reminder_t24", step_type="appointment_reminder_t24",
-        status="running", due_at=appt.start_at - REMINDER_LEAD_TIME, run_after=appt.start_at - REMINDER_LEAD_TIME,
+        id=str(uuid4()),
+        workflow_id=workflow.id,
+        step_key="reminder_t24",
+        step_type="appointment_reminder_t24",
+        status="running",
+        due_at=appt.start_at - REMINDER_LEAD_TIME,
+        run_after=appt.start_at - REMINDER_LEAD_TIME,
     )
     db_session.add(step)
     await db_session.commit()
@@ -112,7 +137,9 @@ async def test_send_reminder_t24_notifies_patient(db_session):
     result = await send_reminder_t24(ctx)
 
     assert result.outcome == "succeeded"
-    notifications = (await db_session.scalars(select(Notification).where(Notification.user_id == login.id))).all()
+    notifications = (
+        await db_session.scalars(select(Notification).where(Notification.user_id == login.id))
+    ).all()
     assert len(notifications) == 1
 
 
@@ -121,13 +148,22 @@ async def test_send_reminder_t24_superseded_after_cancellation(db_session):
     clinician = await _clinician_user(db_session)
     appt = await _appointment(db_session, patient.id, clinician.id)
     workflow = Workflow(
-        id=str(uuid4()), definition_key="appointment_reminder", patient_id=patient.id, appointment_id=appt.id,
-        status="active", context={"start_at": appt.start_at.isoformat()},
+        id=str(uuid4()),
+        definition_key="appointment_reminder",
+        patient_id=patient.id,
+        appointment_id=appt.id,
+        status="active",
+        context={"start_at": appt.start_at.isoformat()},
     )
     db_session.add(workflow)
     step = WorkflowStep(
-        id=str(uuid4()), workflow_id=workflow.id, step_key="reminder_t24", step_type="appointment_reminder_t24",
-        status="running", due_at=appt.start_at - REMINDER_LEAD_TIME, run_after=appt.start_at - REMINDER_LEAD_TIME,
+        id=str(uuid4()),
+        workflow_id=workflow.id,
+        step_key="reminder_t24",
+        step_type="appointment_reminder_t24",
+        status="running",
+        due_at=appt.start_at - REMINDER_LEAD_TIME,
+        run_after=appt.start_at - REMINDER_LEAD_TIME,
     )
     db_session.add(step)
     appt.status = "cancelled"
@@ -145,13 +181,22 @@ async def test_escalate_if_unconfirmed_creates_alert_when_not_confirmed(db_sessi
     clinician = await _clinician_user(db_session)
     appt = await _appointment(db_session, patient.id, clinician.id)
     workflow = Workflow(
-        id=str(uuid4()), definition_key="appointment_reminder", patient_id=patient.id, appointment_id=appt.id,
-        status="active", context={"start_at": appt.start_at.isoformat()},
+        id=str(uuid4()),
+        definition_key="appointment_reminder",
+        patient_id=patient.id,
+        appointment_id=appt.id,
+        status="active",
+        context={"start_at": appt.start_at.isoformat()},
     )
     db_session.add(workflow)
     step = WorkflowStep(
-        id=str(uuid4()), workflow_id=workflow.id, step_key="unconfirmed_check", step_type="appointment_unconfirmed_check",
-        status="running", due_at=appt.start_at - UNCONFIRMED_LEAD_TIME, run_after=appt.start_at - UNCONFIRMED_LEAD_TIME,
+        id=str(uuid4()),
+        workflow_id=workflow.id,
+        step_key="unconfirmed_check",
+        step_type="appointment_unconfirmed_check",
+        status="running",
+        due_at=appt.start_at - UNCONFIRMED_LEAD_TIME,
+        run_after=appt.start_at - UNCONFIRMED_LEAD_TIME,
     )
     db_session.add(step)
     await db_session.commit()
@@ -173,13 +218,22 @@ async def test_escalate_if_unconfirmed_superseded_when_confirmed(db_session):
     appt.confirmed_at = datetime.now(timezone.utc).replace(tzinfo=None)
     await db_session.commit()
     workflow = Workflow(
-        id=str(uuid4()), definition_key="appointment_reminder", patient_id=patient.id, appointment_id=appt.id,
-        status="active", context={"start_at": appt.start_at.isoformat()},
+        id=str(uuid4()),
+        definition_key="appointment_reminder",
+        patient_id=patient.id,
+        appointment_id=appt.id,
+        status="active",
+        context={"start_at": appt.start_at.isoformat()},
     )
     db_session.add(workflow)
     step = WorkflowStep(
-        id=str(uuid4()), workflow_id=workflow.id, step_key="unconfirmed_check", step_type="appointment_unconfirmed_check",
-        status="running", due_at=appt.start_at - UNCONFIRMED_LEAD_TIME, run_after=appt.start_at - UNCONFIRMED_LEAD_TIME,
+        id=str(uuid4()),
+        workflow_id=workflow.id,
+        step_key="unconfirmed_check",
+        step_type="appointment_unconfirmed_check",
+        status="running",
+        due_at=appt.start_at - UNCONFIRMED_LEAD_TIME,
+        run_after=appt.start_at - UNCONFIRMED_LEAD_TIME,
     )
     db_session.add(step)
     await db_session.commit()

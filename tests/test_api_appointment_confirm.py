@@ -40,8 +40,12 @@ async def patient_row(db_session):
 @pytest.fixture
 async def patient_headers(db_session, patient_row):
     user = User(
-        id="user-pconf1", email="pconf1@example.org", name="Confirm Patient",
-        hashed_password=await hash_password("password123"), role="patient", patient_id=patient_row.id,
+        id="user-pconf1",
+        email="pconf1@example.org",
+        name="Confirm Patient",
+        hashed_password=await hash_password("password123"),
+        role="patient",
+        patient_id=patient_row.id,
     )
     db_session.add(user)
     await db_session.commit()
@@ -110,11 +114,17 @@ async def test_patient_cannot_confirm_another_patients_appointment(client, patie
     )
     appt_id = book_res.json()["id"]
 
-    other_patient = Patient(id="PCONF2", name="Other Patient", age=40, sex="M", medical_record_number="PT-PCONF2")
+    other_patient = Patient(
+        id="PCONF2", name="Other Patient", age=40, sex="M", medical_record_number="PT-PCONF2"
+    )
     db_session.add(other_patient)
     other_user = User(
-        id="user-pconf2", email="pconf2@example.org", name="Other Patient",
-        hashed_password=await hash_password("password123"), role="patient", patient_id="PCONF2",
+        id="user-pconf2",
+        email="pconf2@example.org",
+        name="Other Patient",
+        hashed_password=await hash_password("password123"),
+        role="patient",
+        patient_id="PCONF2",
     )
     db_session.add(other_user)
     await db_session.commit()

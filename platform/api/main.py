@@ -107,8 +107,12 @@ app.include_router(
 )
 app.include_router(audit.router, prefix="/api/audit", tags=["audit"], dependencies=_clinician_only)
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"], dependencies=_clinician_only)
-app.include_router(approvals.router, prefix="/api/approvals", tags=["approvals"], dependencies=_clinician_only)
-app.include_router(followups.router, prefix="/api/followups", tags=["followups"], dependencies=_clinician_only)
+app.include_router(
+    approvals.router, prefix="/api/approvals", tags=["approvals"], dependencies=_clinician_only
+)
+app.include_router(
+    followups.router, prefix="/api/followups", tags=["followups"], dependencies=_clinician_only
+)
 app.include_router(
     automation_memory.router,
     prefix="/api/automation-memory",

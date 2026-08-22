@@ -623,7 +623,11 @@ async def update_appointment(
         appt.status = body.status
         if body.status == "no_show":
             workflow_events.emit(
-                session, workflow_events.MISSED_APPOINTMENT, "appointment", appt.id, patient_id=appt.patient_id
+                session,
+                workflow_events.MISSED_APPOINTMENT,
+                "appointment",
+                appt.id,
+                patient_id=appt.patient_id,
             )
     if body.mode is not None:
         appt.mode = body.mode
@@ -729,9 +733,7 @@ async def agenda_today(
     patient_names = dict(
         (
             await session.execute(
-                select(Patient.id, Patient.name).where(
-                    Patient.id.in_({a.patient_id for a in appointments})
-                )
+                select(Patient.id, Patient.name).where(Patient.id.in_({a.patient_id for a in appointments}))
             )
         ).all()
     )
@@ -843,9 +845,7 @@ async def create_series(
                 status_code=422,
                 detail=f"Occurrence {i + 1} ({occ_start.isoformat()}) is outside working hours",
             )
-        if any(
-            a.start_at < matching.end_at and a.end_at > occ_start for a in conflict_candidates
-        ):
+        if any(a.start_at < matching.end_at and a.end_at > occ_start for a in conflict_candidates):
             raise HTTPException(
                 status_code=409,
                 detail=f"Occurrence {i + 1} ({occ_start.isoformat()}) conflicts with an existing appointment",

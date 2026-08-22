@@ -38,7 +38,9 @@ def upgrade() -> None:
         sa.Column("reviewed_at", sa.DateTime(), nullable=True),
         sa.Column("reject_reason", sa.String(length=300), nullable=False),
         sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
-        sa.CheckConstraint("status IN ('pending','approved','rejected','expired')", name="ck_pending_action_status"),
+        sa.CheckConstraint(
+            "status IN ('pending','approved','rejected','expired')", name="ck_pending_action_status"
+        ),
         sa.CheckConstraint("draft_source IN ('template','llm')", name="ck_pending_action_draft_source"),
         sa.CheckConstraint(
             "status NOT IN ('approved','rejected') OR reviewed_by IS NOT NULL",
@@ -55,7 +57,10 @@ def upgrade() -> None:
     op.create_index(op.f("ix_pending_actions_action_type"), "pending_actions", ["action_type"], unique=False)
     op.create_index(op.f("ix_pending_actions_status"), "pending_actions", ["status"], unique=False)
     op.create_index(
-        op.f("ix_pending_actions_assigned_to_user_id"), "pending_actions", ["assigned_to_user_id"], unique=False
+        op.f("ix_pending_actions_assigned_to_user_id"),
+        "pending_actions",
+        ["assigned_to_user_id"],
+        unique=False,
     )
     op.create_index(op.f("ix_pending_actions_expires_at"), "pending_actions", ["expires_at"], unique=False)
     op.create_index(op.f("ix_pending_actions_created_at"), "pending_actions", ["created_at"], unique=False)

@@ -31,7 +31,7 @@ def is_stale(due_at: datetime, now: datetime, max_lateness_seconds: Optional[int
 def next_run_after(attempts: int, now: datetime) -> datetime:
     """Exponential backoff, capped, no jitter -- determinism over
     thundering-herd avoidance; the batch limit already caps concurrency."""
-    delay = min(STEP_BACKOFF_BASE_SECONDS * (2**max(attempts - 1, 0)), STEP_BACKOFF_CAP_SECONDS)
+    delay = min(STEP_BACKOFF_BASE_SECONDS * (2 ** max(attempts - 1, 0)), STEP_BACKOFF_CAP_SECONDS)
     return now + timedelta(seconds=delay)
 
 

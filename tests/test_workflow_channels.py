@@ -45,7 +45,9 @@ async def test_send_is_idempotent_on_dedupe_key(db_session):
 
     channel = InAppChannel()
     first = await channel.send(db_session, user.id, "workflow_reminder", "hello", dedupe_key="same-key")
-    second = await channel.send(db_session, user.id, "workflow_reminder", "hello again", dedupe_key="same-key")
+    second = await channel.send(
+        db_session, user.id, "workflow_reminder", "hello again", dedupe_key="same-key"
+    )
 
     assert first is True
     assert second is False

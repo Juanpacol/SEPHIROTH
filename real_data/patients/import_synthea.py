@@ -97,7 +97,7 @@ def _parse_dose_route(description: str) -> tuple[str, str]:
     match = _DOSE_RE.search(description)
     if not match:
         return "", ""
-    return match.group(0)[:60], description[match.end():].strip()[:30]
+    return match.group(0)[:60], description[match.end() :].strip()[:30]
 
 
 def _generic_drug_name(description: str) -> str:
@@ -213,9 +213,7 @@ def parse_patients(
             # Same drug/code/start can appear more than once (repeat
             # encounters, refill rows) — dedupe to one order per key,
             # keeping the row with the latest STOP (most complete picture).
-            order_id = str(
-                uuid.uuid5(_MEDICATION_ORDER_NAMESPACE, f"{pid}:{m.get('CODE', '')}:{m['START']}")
-            )
+            order_id = str(uuid.uuid5(_MEDICATION_ORDER_NAMESPACE, f"{pid}:{m.get('CODE', '')}:{m['START']}"))
             candidate = {
                 "id": order_id,
                 "name": generic,
@@ -304,7 +302,9 @@ async def _insert_into_db(parsed: List[ParsedPatient]) -> None:
             )
             if lab_count == 0:
                 systolic_by_date = {e["taken_at"]: e for e in p.lab_series if e["test_name"] == "bp_systolic"}
-                diastolic_by_date = {e["taken_at"]: e for e in p.lab_series if e["test_name"] == "bp_diastolic"}
+                diastolic_by_date = {
+                    e["taken_at"]: e for e in p.lab_series if e["test_name"] == "bp_diastolic"
+                }
                 for entry in p.lab_series:
                     if entry["test_name"] in ("bp_systolic", "bp_diastolic"):
                         pair_date = entry["taken_at"]

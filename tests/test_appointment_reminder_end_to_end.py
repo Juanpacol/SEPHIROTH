@@ -29,7 +29,9 @@ def client(db_session):
 async def test_booking_through_real_api_enrolls_reminder_workflow(client, db_session):
     register_subscriptions()
 
-    patient = Patient(id="PE2E2", name="Booking E2E Patient", age=29, sex="F", medical_record_number="PT-PE2E2")
+    patient = Patient(
+        id="PE2E2", name="Booking E2E Patient", age=29, sex="F", medical_record_number="PT-PE2E2"
+    )
     db_session.add(patient)
     await db_session.commit()
 
@@ -57,5 +59,7 @@ async def test_booking_through_real_api_enrolls_reminder_workflow(client, db_ses
     assert summary.events_dispatched >= 1
 
     workflow = (await db_session.scalars(select(Workflow).where(Workflow.appointment_id == appt_id))).one()
-    steps = (await db_session.scalars(select(WorkflowStep).where(WorkflowStep.workflow_id == workflow.id))).all()
+    steps = (
+        await db_session.scalars(select(WorkflowStep).where(WorkflowStep.workflow_id == workflow.id))
+    ).all()
     assert {s.step_key for s in steps} == {"reminder_t24", "unconfirmed_check"}

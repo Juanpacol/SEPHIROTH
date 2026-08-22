@@ -30,7 +30,9 @@ _SYSTEM_PROMPT = (
 )
 
 
-def _build_prompt(purpose: str, patient_first_name: str, facts: Dict[str, Any], language: str, reading_level: str) -> str:
+def _build_prompt(
+    purpose: str, patient_first_name: str, facts: Dict[str, Any], language: str, reading_level: str
+) -> str:
     fact_lines = "\n".join(f"- {k}: {v}" for k, v in facts.items()) or "(no additional facts given)"
     return (
         f"Purpose: {purpose}\n"
@@ -91,10 +93,7 @@ async def draft_patient_message(
         "language": language,
         "facts_used": facts,
         "requires_clinician_approval": True,
-        "disclaimer": (
-            "AI-drafted text. Not sent to the patient until a clinician reviews "
-            "and approves it."
-        ),
+        "disclaimer": ("AI-drafted text. Not sent to the patient until a clinician reviews and approves it."),
     }
 
 

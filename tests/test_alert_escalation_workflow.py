@@ -1,13 +1,17 @@
 """`alert_escalation` workflow definition (SPEC-011): the CLINICAL_ALERT
 subscriber + the escalate_if_unresolved step handler."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
 from sqlalchemy import select
 
-from api.workflows.alert_escalation import ESCALATION_WINDOW_BY_SEVERITY, escalate_if_unresolved, on_clinical_alert
+from api.workflows.alert_escalation import (
+    ESCALATION_WINDOW_BY_SEVERITY,
+    escalate_if_unresolved,
+    on_clinical_alert,
+)
 from api.workflows.channels import get_channel
 from api.workflows.registry import StepContext
 from data.schemas import Alert, Notification, Patient, User, Workflow, WorkflowStep
@@ -25,8 +29,14 @@ async def _patient(session, pid="PESC1"):
 
 async def _alert(session, patient_id, severity="critical", status="active"):
     a = Alert(
-        id=str(uuid4()), patient_id=patient_id, category="lab", severity=severity, status=status,
-        title="Test alert", detail="", source="risk_engine",
+        id=str(uuid4()),
+        patient_id=patient_id,
+        category="lab",
+        severity=severity,
+        status=status,
+        title="Test alert",
+        detail="",
+        source="risk_engine",
     )
     session.add(a)
     await session.commit()
@@ -35,8 +45,12 @@ async def _alert(session, patient_id, severity="critical", status="active"):
 
 async def _clinician_user(session):
     u = User(
-        id=str(uuid4()), email=f"{uuid4().hex[:8]}@example.org", name="Dr. Escalate",
-        hashed_password="x", role="clinician", is_active=True,
+        id=str(uuid4()),
+        email=f"{uuid4().hex[:8]}@example.org",
+        name="Dr. Escalate",
+        hashed_password="x",
+        role="clinician",
+        is_active=True,
     )
     session.add(u)
     await session.commit()
@@ -52,9 +66,7 @@ async def test_on_clinical_alert_creates_workflow_with_correct_due_date(db_sessi
     await on_clinical_alert(db_session, event)
     await db_session.commit()
 
-    workflow = (
-        await db_session.scalars(select(Workflow).where(Workflow.alert_id == alert.id))
-    ).one()
+    workflow = (await db_session.scalars(select(Workflow).where(Workflow.alert_id == alert.id))).one()
     step = (
         await db_session.scalars(select(WorkflowStep).where(WorkflowStep.workflow_id == workflow.id))
     ).one()
@@ -96,12 +108,23 @@ async def test_escalate_if_unresolved_notifies_active_clinicians(db_session):
     patient = await _patient(db_session)
     alert = await _alert(db_session, patient.id)
     clinician = await _clinician_user(db_session)
-    workflow = Workflow(id=str(uuid4()), definition_key="alert_escalation", patient_id=patient.id, alert_id=alert.id, status="active")
+    workflow = Workflow(
+        id=str(uuid4()),
+        definition_key="alert_escalation",
+        patient_id=patient.id,
+        alert_id=alert.id,
+        status="active",
+    )
     db_session.add(workflow)
     await db_session.commit()
     step = WorkflowStep(
-        id=str(uuid4()), workflow_id=workflow.id, step_key="escalate_check", step_type="alert_escalate_check",
-        status="running", due_at=datetime(2026, 1, 1), run_after=datetime(2026, 1, 1),
+        id=str(uuid4()),
+        workflow_id=workflow.id,
+        step_key="escalate_check",
+        step_type="alert_escalate_check",
+        status="running",
+        due_at=datetime(2026, 1, 1),
+        run_after=datetime(2026, 1, 1),
     )
     db_session.add(step)
     await db_session.commit()
@@ -124,12 +147,23 @@ async def test_escalate_if_unresolved_notifies_active_clinicians(db_session):
 async def test_escalate_if_unresolved_is_superseded_when_already_reviewed(db_session):
     patient = await _patient(db_session)
     alert = await _alert(db_session, patient.id, status="reviewed")
-    workflow = Workflow(id=str(uuid4()), definition_key="alert_escalation", patient_id=patient.id, alert_id=alert.id, status="active")
+    workflow = Workflow(
+        id=str(uuid4()),
+        definition_key="alert_escalation",
+        patient_id=patient.id,
+        alert_id=alert.id,
+        status="active",
+    )
     db_session.add(workflow)
     await db_session.commit()
     step = WorkflowStep(
-        id=str(uuid4()), workflow_id=workflow.id, step_key="escalate_check", step_type="alert_escalate_check",
-        status="running", due_at=datetime(2026, 1, 1), run_after=datetime(2026, 1, 1),
+        id=str(uuid4()),
+        workflow_id=workflow.id,
+        step_key="escalate_check",
+        step_type="alert_escalate_check",
+        status="running",
+        due_at=datetime(2026, 1, 1),
+        run_after=datetime(2026, 1, 1),
     )
     db_session.add(step)
     await db_session.commit()

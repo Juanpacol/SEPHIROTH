@@ -20,7 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from data.schemas import Alert, User, Workflow, WorkflowStep
-from sephiroth.workflows.events import CLINICAL_ALERT, WorkflowEvent
+from sephiroth.workflows.events import WorkflowEvent
 
 from .registry import StepContext, StepResult, StepTypeSpec, register_step_type
 

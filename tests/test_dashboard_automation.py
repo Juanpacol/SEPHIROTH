@@ -1,7 +1,6 @@
 """`GET /api/dashboard/automation` (SPEC-016)."""
 
-from datetime import datetime, timedelta
-from uuid import uuid4
+from datetime import datetime
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -47,8 +46,13 @@ async def test_automation_dashboard_counts_overdue_steps(client, db_session):
     wf = Workflow(id="WFDASH1", definition_key="alert_refresh", patient_id="PDASH1", status="active")
     db_session.add(wf)
     step = WorkflowStep(
-        id="STDASH1", workflow_id="WFDASH1", step_key="refresh", step_type="alert_refresh",
-        status="pending", due_at=datetime(2020, 1, 1), run_after=datetime(2020, 1, 1),
+        id="STDASH1",
+        workflow_id="WFDASH1",
+        step_key="refresh",
+        step_type="alert_refresh",
+        status="pending",
+        due_at=datetime(2020, 1, 1),
+        run_after=datetime(2020, 1, 1),
     )
     db_session.add(step)
     await db_session.commit()
@@ -64,12 +68,22 @@ async def test_automation_dashboard_human_intervention_rate(client, db_session):
     p = Patient(id="PDASH2", name="Dash Patient 2", age=41, sex="F", medical_record_number="PT-PDASH2")
     db_session.add(p)
     approved_edited = PendingAction(
-        id="PA-E1", patient_id="PDASH2", action_type="followup_day3", draft_text="draft",
-        final_text="edited final", status="approved", reviewed_by="someone",
+        id="PA-E1",
+        patient_id="PDASH2",
+        action_type="followup_day3",
+        draft_text="draft",
+        final_text="edited final",
+        status="approved",
+        reviewed_by="someone",
     )
     approved_unedited = PendingAction(
-        id="PA-E2", patient_id="PDASH2", action_type="followup_day3", draft_text="draft",
-        final_text="draft", status="approved", reviewed_by="someone",
+        id="PA-E2",
+        patient_id="PDASH2",
+        action_type="followup_day3",
+        draft_text="draft",
+        final_text="draft",
+        status="approved",
+        reviewed_by="someone",
     )
     db_session.add_all([approved_edited, approved_unedited])
     await db_session.commit()

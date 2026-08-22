@@ -31,8 +31,19 @@ async def _workflow(session, patient_id, definition_key="test_def"):
     return wf
 
 
-async def _step(session, workflow_id, step_type, *, status="pending", due_at=NOW, run_after=None,
-                 attempts=0, max_attempts=3, lease_expires_at=None, claimed_by=""):
+async def _step(
+    session,
+    workflow_id,
+    step_type,
+    *,
+    status="pending",
+    due_at=NOW,
+    run_after=None,
+    attempts=0,
+    max_attempts=3,
+    lease_expires_at=None,
+    claimed_by="",
+):
     step = WorkflowStep(
         id=str(uuid4()),
         workflow_id=workflow_id,
@@ -132,9 +143,7 @@ async def test_execute_step_past_max_lateness_is_skipped(db_session, monkeypatch
 
     patient = await _patient(db_session)
     wf = await _workflow(db_session, patient.id)
-    step = await _step(
-        db_session, wf.id, "stale_test", status="running", due_at=NOW - timedelta(hours=5)
-    )
+    step = await _step(db_session, wf.id, "stale_test", status="running", due_at=NOW - timedelta(hours=5))
 
     outcome = await execute_step(db_session, step.id, NOW)
 

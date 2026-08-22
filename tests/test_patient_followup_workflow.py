@@ -25,7 +25,13 @@ async def _patient(session, pid="PFU1"):
 
 
 async def _clinician(session):
-    u = User(id=str(uuid4()), email=f"{uuid4().hex[:8]}@example.org", name="Dr. Followup", hashed_password="x", role="clinician")
+    u = User(
+        id=str(uuid4()),
+        email=f"{uuid4().hex[:8]}@example.org",
+        name="Dr. Followup",
+        hashed_password="x",
+        role="clinician",
+    )
     session.add(u)
     await session.commit()
     return u
@@ -34,7 +40,13 @@ async def _clinician(session):
 async def test_enroll_plan_creates_three_steps_at_correct_offsets(db_session):
     patient = await _patient(db_session)
     clinician = await _clinician(db_session)
-    plan = FollowupPlan(id=str(uuid4()), patient_id=patient.id, created_by_user_id=clinician.id, instructions="rest and hydrate", created_at=CREATED_AT)
+    plan = FollowupPlan(
+        id=str(uuid4()),
+        patient_id=patient.id,
+        created_by_user_id=clinician.id,
+        instructions="rest and hydrate",
+        created_at=CREATED_AT,
+    )
     db_session.add(plan)
     await db_session.commit()
 
@@ -43,7 +55,9 @@ async def test_enroll_plan_creates_three_steps_at_correct_offsets(db_session):
 
     steps = {
         s.step_key: s
-        for s in (await db_session.scalars(select(WorkflowStep).where(WorkflowStep.workflow_id == workflow.id))).all()
+        for s in (
+            await db_session.scalars(select(WorkflowStep).where(WorkflowStep.workflow_id == workflow.id))
+        ).all()
     }
     assert set(steps) == {"day3", "day7", "day30"}
     for key, offset in CHECK_OFFSETS.items():
@@ -54,15 +68,28 @@ async def test_enroll_plan_creates_three_steps_at_correct_offsets(db_session):
 async def test_followup_check_due_creates_empty_draft_pending_action(db_session):
     patient = await _patient(db_session)
     clinician = await _clinician(db_session)
-    plan = FollowupPlan(id=str(uuid4()), patient_id=patient.id, created_by_user_id=clinician.id, created_at=CREATED_AT)
+    plan = FollowupPlan(
+        id=str(uuid4()), patient_id=patient.id, created_by_user_id=clinician.id, created_at=CREATED_AT
+    )
     db_session.add(plan)
     await db_session.commit()
-    workflow = Workflow(id=str(uuid4()), definition_key="patient_followup", patient_id=patient.id, followup_plan_id=plan.id, status="active")
+    workflow = Workflow(
+        id=str(uuid4()),
+        definition_key="patient_followup",
+        patient_id=patient.id,
+        followup_plan_id=plan.id,
+        status="active",
+    )
     db_session.add(workflow)
     await db_session.commit()
     step = WorkflowStep(
-        id=str(uuid4()), workflow_id=workflow.id, step_key="day3", step_type="followup_check_due",
-        status="running", due_at=CREATED_AT + timedelta(days=3), run_after=CREATED_AT + timedelta(days=3),
+        id=str(uuid4()),
+        workflow_id=workflow.id,
+        step_key="day3",
+        step_type="followup_check_due",
+        status="running",
+        due_at=CREATED_AT + timedelta(days=3),
+        run_after=CREATED_AT + timedelta(days=3),
         payload={"check": "day3"},
     )
     db_session.add(step)
@@ -73,7 +100,9 @@ async def test_followup_check_due_creates_empty_draft_pending_action(db_session)
     result = await followup_check_due(ctx)
 
     assert result.outcome == "succeeded"
-    action = (await db_session.scalars(select(PendingAction).where(PendingAction.patient_id == patient.id))).one()
+    action = (
+        await db_session.scalars(select(PendingAction).where(PendingAction.patient_id == patient.id))
+    ).one()
     assert action.draft_text == ""
     assert action.draft_source == "llm"
     assert action.action_type == "followup_day3"
@@ -83,15 +112,32 @@ async def test_followup_check_due_creates_empty_draft_pending_action(db_session)
 async def test_followup_check_due_superseded_when_plan_cancelled(db_session):
     patient = await _patient(db_session)
     clinician = await _clinician(db_session)
-    plan = FollowupPlan(id=str(uuid4()), patient_id=patient.id, created_by_user_id=clinician.id, created_at=CREATED_AT, status="cancelled")
+    plan = FollowupPlan(
+        id=str(uuid4()),
+        patient_id=patient.id,
+        created_by_user_id=clinician.id,
+        created_at=CREATED_AT,
+        status="cancelled",
+    )
     db_session.add(plan)
     await db_session.commit()
-    workflow = Workflow(id=str(uuid4()), definition_key="patient_followup", patient_id=patient.id, followup_plan_id=plan.id, status="active")
+    workflow = Workflow(
+        id=str(uuid4()),
+        definition_key="patient_followup",
+        patient_id=patient.id,
+        followup_plan_id=plan.id,
+        status="active",
+    )
     db_session.add(workflow)
     await db_session.commit()
     step = WorkflowStep(
-        id=str(uuid4()), workflow_id=workflow.id, step_key="day3", step_type="followup_check_due",
-        status="running", due_at=CREATED_AT + timedelta(days=3), run_after=CREATED_AT + timedelta(days=3),
+        id=str(uuid4()),
+        workflow_id=workflow.id,
+        step_key="day3",
+        step_type="followup_check_due",
+        status="running",
+        due_at=CREATED_AT + timedelta(days=3),
+        run_after=CREATED_AT + timedelta(days=3),
         payload={"check": "day3"},
     )
     db_session.add(step)
@@ -102,5 +148,7 @@ async def test_followup_check_due_superseded_when_plan_cancelled(db_session):
     result = await followup_check_due(ctx)
 
     assert result.outcome == "superseded"
-    actions = (await db_session.scalars(select(PendingAction).where(PendingAction.patient_id == patient.id))).all()
+    actions = (
+        await db_session.scalars(select(PendingAction).where(PendingAction.patient_id == patient.id))
+    ).all()
     assert actions == []

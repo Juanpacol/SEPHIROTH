@@ -10,7 +10,7 @@ exact same escalate-if-nobody-responds behavior a clinical alert does.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from typing import Optional
 from uuid import uuid4
 
@@ -104,11 +104,17 @@ async def send_reminder_t24(ctx: StepContext) -> StepResult:
     if appt is None:
         return StepResult(outcome="superseded", detail="appointment cancelled or rescheduled")
 
-    patient_login = await ctx.session.scalar(select(User).where(User.patient_id == appt.patient_id, User.is_active.is_(True)))
+    patient_login = await ctx.session.scalar(
+        select(User).where(User.patient_id == appt.patient_id, User.is_active.is_(True))
+    )
     if patient_login is None:
         return StepResult(outcome="skipped", detail="patient has no portal login")
 
-    when = appt.start_at.strftime("%A, %B %-d at %H:%M UTC") if hasattr(appt.start_at, "strftime") else str(appt.start_at)
+    when = (
+        appt.start_at.strftime("%A, %B %-d at %H:%M UTC")
+        if hasattr(appt.start_at, "strftime")
+        else str(appt.start_at)
+    )
     sent = await ctx.channel.send(
         ctx.session,
         patient_login.id,
@@ -129,7 +135,9 @@ async def escalate_if_unconfirmed(ctx: StepContext) -> StepResult:
 
     existing = await ctx.session.scalar(
         select(Alert).where(
-            Alert.category == "clinical", Alert.status == "active", Alert.source == "appointment_engine",
+            Alert.category == "clinical",
+            Alert.status == "active",
+            Alert.source == "appointment_engine",
             Alert.patient_id == appt.patient_id,
         )
     )

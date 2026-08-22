@@ -23,9 +23,7 @@ def upgrade() -> None:
     op.add_column("alerts", sa.Column("assigned_to_user_id", sa.String(length=36), nullable=True))
     op.add_column("alerts", sa.Column("due_at", sa.DateTime(), nullable=True))
     op.add_column("alerts", sa.Column("escalated_at", sa.DateTime(), nullable=True))
-    op.create_index(
-        op.f("ix_alerts_assigned_to_user_id"), "alerts", ["assigned_to_user_id"], unique=False
-    )
+    op.create_index(op.f("ix_alerts_assigned_to_user_id"), "alerts", ["assigned_to_user_id"], unique=False)
     op.create_foreign_key(
         "fk_alerts_assigned_to_user_id_users", "alerts", "users", ["assigned_to_user_id"], ["id"]
     )

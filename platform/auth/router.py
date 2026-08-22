@@ -400,10 +400,7 @@ async def mfa_verify(
     codes = [secrets.token_hex(5) for _ in range(MFA_RECOVERY_CODE_COUNT)]
     code_hashes = await hash_passwords(codes)
     session.add_all(
-        [
-            MfaRecoveryCode(id=str(uuid4()), user_id=user.id, code_hash=code_hash)
-            for code_hash in code_hashes
-        ]
+        [MfaRecoveryCode(id=str(uuid4()), user_id=user.id, code_hash=code_hash) for code_hash in code_hashes]
     )
     await session.commit()
     return MfaVerifyResponse(recovery_codes=codes)

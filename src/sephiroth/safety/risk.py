@@ -68,7 +68,10 @@ LAB_RULES: Dict[str, List[tuple]] = {
         (lambda v: v >= 40, LabRule("Severe obesity", "high", "BMI {value} (≥ 40)")),
     ],
     "cholesterol": [
-        (lambda v: v >= 240, LabRule("High total cholesterol", "medium", "Cholesterol {value} mg/dL (≥ 240)")),
+        (
+            lambda v: v >= 240,
+            LabRule("High total cholesterol", "medium", "Cholesterol {value} mg/dL (≥ 240)"),
+        ),
     ],
     "ldl": [
         (lambda v: 160 <= v < 190, LabRule("High LDL cholesterol", "medium", "LDL {value} mg/dL (≥ 160)")),

@@ -37,7 +37,8 @@ async def test_write_then_read(client):
     assert write_res.status_code == 200
 
     read_res = await client.get(
-        "/api/automation-memory", params={"scope": "user", "scope_id": "U1", "key": "reminder_lead_hours"},
+        "/api/automation-memory",
+        params={"scope": "user", "scope_id": "U1", "key": "reminder_lead_hours"},
         headers=headers,
     )
     assert read_res.json()["value"] == 12

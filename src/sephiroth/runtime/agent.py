@@ -43,7 +43,10 @@ class Agent:
         system_parts = [MEDICAL_DISCLAIMER, self.capability.role_prompt]
         language = (context or {}).get("language")
         if language and language in _LANGUAGE_NAMES:
-            system_parts.append(f"Respond in {_LANGUAGE_NAMES[language]}, regardless of the language used elsewhere in this prompt.")
+            system_parts.append(
+                f"Respond in {_LANGUAGE_NAMES[language]}, regardless of the language used "
+                "elsewhere in this prompt."
+            )
         tools: List[Dict[str, Any]] = []
         if allowed_tools:
             tools = registry.llm_tools(allowed_tools)

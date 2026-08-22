@@ -34,7 +34,9 @@ def upgrade() -> None:
         sa.Column("context", sa.JSON(), nullable=False),
         sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.Column("completed_at", sa.DateTime(), nullable=True),
-        sa.CheckConstraint("status IN ('active','completed','cancelled','failed')", name="ck_workflow_status"),
+        sa.CheckConstraint(
+            "status IN ('active','completed','cancelled','failed')", name="ck_workflow_status"
+        ),
         sa.CheckConstraint(
             "(CASE WHEN appointment_id IS NULL THEN 0 ELSE 1 END"
             " + CASE WHEN consultation_id IS NULL THEN 0 ELSE 1 END"

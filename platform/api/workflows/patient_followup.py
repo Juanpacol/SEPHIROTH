@@ -17,7 +17,7 @@ same split as `find_interactions`/`check_drug_interactions`.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from typing import Dict
 from uuid import uuid4
 
@@ -89,7 +89,11 @@ async def followup_check_due(ctx: StepContext) -> StepResult:
         action_type=f"followup_{check_name}",
         draft_text="",
         draft_source="llm",
-        proposed_payload={"followup_plan_id": plan.id, "check": check_name, "instructions": plan.instructions},
+        proposed_payload={
+            "followup_plan_id": plan.id,
+            "check": check_name,
+            "instructions": plan.instructions,
+        },
         expires_at=ctx.now + PENDING_ACTION_EXPIRES_AFTER,
     )
     ctx.session.add(action)

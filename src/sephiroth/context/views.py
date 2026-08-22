@@ -33,7 +33,9 @@ def context_for_agent(capability: AgentCapability, ctx: RunContext) -> Dict[str,
     if not capability.context_fields:
         return full
     projected = {name: value for name, value in full.items() if name in capability.context_fields}
-    projected["language"] = full["language"]  # response-language directive, not patient data — always passes through
+    projected["language"] = full[
+        "language"
+    ]  # response-language directive, not patient data — always passes through
     return projected
 
 

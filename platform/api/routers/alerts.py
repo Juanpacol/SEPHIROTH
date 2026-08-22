@@ -98,9 +98,7 @@ async def resolve_alert(
 ) -> Dict[str, Any]:
     alert = await _get_alert(session, alert_id)
     if alert.reviewed_at is None:
-        raise HTTPException(
-            status_code=409, detail="Alert must be reviewed before it can be resolved"
-        )
+        raise HTTPException(status_code=409, detail="Alert must be reviewed before it can be resolved")
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     alert.status = "resolved"
     alert.resolved_at = now

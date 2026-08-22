@@ -298,9 +298,7 @@ async def test_trace_tokens_include_both_specialists_and_coordinator():
     field's docstring) while still counting toward the aggregate.
 
     Verifies AC-006-09 (docs/specs/SPEC-006-telemetry.md)."""
-    client = FakeLLMClient(
-        default_script=[("answer", "an answer")], prompt_tokens=100, completion_tokens=50
-    )
+    client = FakeLLMClient(default_script=[("answer", "an answer")], prompt_tokens=100, completion_tokens=50)
     state = await run_consultation(client, "what is the target A1C for a diabetic adult?")
 
     trace = state["trace"]

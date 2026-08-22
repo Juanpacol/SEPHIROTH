@@ -49,6 +49,7 @@ router = APIRouter()
 _CACHE_TTL_SECONDS = 15.0
 _cache: Dict[str, tuple[float, Dict[str, Any]]] = {}
 
+
 async def _cached(key: str, compute: Callable[[], Awaitable[Dict[str, Any]]]) -> Dict[str, Any]:
     # pytest sets this env var for the duration of every test; each test gets
     # its own throwaway DB (tests/conftest.py), so a cache hit from a
@@ -177,9 +178,7 @@ async def _dashboard_alerts(session: AsyncSession) -> Dict[str, Any]:
     now = datetime.now(timezone.utc)
     recent_cutoff = now - timedelta(hours=24)
     review_durations = [
-        (a.reviewed_at - a.created_at).total_seconds()
-        for a in alerts
-        if a.reviewed_at is not None
+        (a.reviewed_at - a.created_at).total_seconds() for a in alerts if a.reviewed_at is not None
     ]
 
     def _naive_utc(dt: datetime) -> datetime:
@@ -285,9 +284,7 @@ async def dashboard_imaging(session: AsyncSession = Depends(get_session)) -> Dic
         by_patient_part.setdefault((s.patient_id, s.body_part), []).append(s)
 
     new_vs_prior = sum(
-        1
-        for group in by_patient_part.values()
-        if len(group) >= 2 and group[-1].is_new_finding
+        1 for group in by_patient_part.values() if len(group) >= 2 and group[-1].is_new_finding
     )
 
     analyzed = [s for s in studies if s.status == "analyzed"]
@@ -370,9 +367,7 @@ async def dashboard_evidence(session: AsyncSession = Depends(get_session)) -> Di
 @router.get("/pending", summary="Pending clinical items")
 async def dashboard_pending(session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
     alerts = (await session.scalars(select(Alert).where(Alert.status == "active"))).all()
-    consultation_rows = (
-        await session.execute(select(Consultation.acted_on, Consultation.risk_level))
-    ).all()
+    consultation_rows = (await session.execute(select(Consultation.acted_on, Consultation.risk_level))).all()
 
     pending_follow_up = {a.patient_id for a in alerts}
     return {

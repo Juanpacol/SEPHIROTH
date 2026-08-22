@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from uuid import uuid4
 
 logging.basicConfig(level=logging.INFO)
 
@@ -91,10 +90,13 @@ async def _seed(limit: int, user_email: str) -> int:
                 select(func.count()).select_from(Consultation).where(Consultation.patient_id == patient.id)
             )
         if existing_count:
-            logging.info("Patient %s already has %d consultation(s), skipping", patient.id[:8], existing_count)
+            logging.info(
+                "Patient %s already has %d consultation(s), skipping", patient.id[:8], existing_count
+            )
             continue
 
-        question = f"What is the current evidence-based first-line management for {patient.conditions[0] if patient.conditions else 'this patient'}?"
+        condition = patient.conditions[0] if patient.conditions else "this patient"
+        question = f"What is the current evidence-based first-line management for {condition}?"
         answer = _mock_answer_for(patient.conditions)
 
         logging.info("Seeding mock consultation for patient=%s", patient.id[:8])

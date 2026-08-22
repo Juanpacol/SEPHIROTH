@@ -34,7 +34,12 @@ async def alert_row(db_session):
     p = Patient(id="PAL1", name="Alert Patient", age=50, sex="M", medical_record_number="PT-PAL1")
     db_session.add(p)
     a = Alert(
-        id="AL1", patient_id="PAL1", category="lab", severity="high", title="High potassium", detail="",
+        id="AL1",
+        patient_id="PAL1",
+        category="lab",
+        severity="high",
+        title="High potassium",
+        detail="",
         source="risk_engine",
     )
     db_session.add(a)
@@ -64,7 +69,9 @@ async def test_review_then_resolve(client, alert_row, db_session):
 
 async def test_resolve_cancels_active_escalation_workflow(client, alert_row, db_session):
     headers = await _clinician(client)
-    workflow = Workflow(id="WFAL1", definition_key="alert_escalation", patient_id="PAL1", alert_id="AL1", status="active")
+    workflow = Workflow(
+        id="WFAL1", definition_key="alert_escalation", patient_id="PAL1", alert_id="AL1", status="active"
+    )
     db_session.add(workflow)
     from datetime import datetime
 

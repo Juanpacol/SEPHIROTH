@@ -32,7 +32,9 @@ async def _clinician(client, email="followup-clin@example.org") -> dict:
 
 @pytest.fixture
 async def patient_row(db_session):
-    p = Patient(id="PFUAPI1", name="Followup API Patient", age=61, sex="F", medical_record_number="PT-PFUAPI1")
+    p = Patient(
+        id="PFUAPI1", name="Followup API Patient", age=61, sex="F", medical_record_number="PT-PFUAPI1"
+    )
     db_session.add(p)
     await db_session.commit()
     return p
@@ -41,13 +43,17 @@ async def patient_row(db_session):
 async def test_create_plan_enrolls_three_steps(client, patient_row, db_session):
     headers = await _clinician(client)
     res = await client.post(
-        "/api/followups", json={"patient_id": patient_row.id, "instructions": "Monitor blood pressure"}, headers=headers
+        "/api/followups",
+        json={"patient_id": patient_row.id, "instructions": "Monitor blood pressure"},
+        headers=headers,
     )
     assert res.status_code == 201
     plan_id = res.json()["id"]
 
     workflow = (await db_session.scalars(select(Workflow).where(Workflow.followup_plan_id == plan_id))).one()
-    steps = (await db_session.scalars(select(WorkflowStep).where(WorkflowStep.workflow_id == workflow.id))).all()
+    steps = (
+        await db_session.scalars(select(WorkflowStep).where(WorkflowStep.workflow_id == workflow.id))
+    ).all()
     assert len(steps) == 3
 
 
@@ -61,7 +67,9 @@ async def test_cancel_plan_cancels_workflow_and_steps(client, patient_row, db_se
     assert cancel_res.json()["status"] == "cancelled"
 
     workflow = (await db_session.scalars(select(Workflow).where(Workflow.followup_plan_id == plan_id))).one()
-    steps = (await db_session.scalars(select(WorkflowStep).where(WorkflowStep.workflow_id == workflow.id))).all()
+    steps = (
+        await db_session.scalars(select(WorkflowStep).where(WorkflowStep.workflow_id == workflow.id))
+    ).all()
     assert workflow.status == "cancelled"
     assert all(s.status == "cancelled" for s in steps)
 

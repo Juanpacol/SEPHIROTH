@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Dict, List
+from typing import List
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,9 +41,7 @@ async def generate_alerts_for_patient(session: AsyncSession, patient: Patient) -
         return []
 
     existing_active = (
-        await session.scalars(
-            select(Alert).where(Alert.patient_id == patient.id, Alert.status == "active")
-        )
+        await session.scalars(select(Alert).where(Alert.patient_id == patient.id, Alert.status == "active"))
     ).all()
     already_open = {(a.category, a.title) for a in existing_active}
 

@@ -25,7 +25,9 @@ from data.schemas import (
 async def clinician(db_session):
     from auth.security import hash_password
 
-    user = User(id="clin1", email="clin1@example.org", name="Dr. Model", hashed_password=await hash_password("x"))
+    user = User(
+        id="clin1", email="clin1@example.org", name="Dr. Model", hashed_password=await hash_password("x")
+    )
     db_session.add(user)
     await db_session.commit()
     return user
