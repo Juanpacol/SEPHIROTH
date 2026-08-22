@@ -33,6 +33,15 @@ markers = [
 ]
 
 [tool.coverage.run]
+# concurrency="greenlet": SQLAlchemy's async ORM runs its sync DBAPI calls
+# inside a greenlet switch (greenlet_spawn). Without this, coverage's tracer
+# loses the current thread's trace function across that switch, so any code
+# after a *second* awaited query in the same coroutine silently reports as
+# uncovered even though it demonstrably ran (verified with a debug print
+# during the Phase C coverage investigation) -- a false negative, not a real
+# gap. See https://coverage.readthedocs.io/en/latest/config.html#run
+# (concurrency) and the SQLAlchemy asyncio/greenlet FAQ.
+concurrency = ["greenlet", "thread"]
 # One entry per package. Never add "src/sephiroth" wholesale — a wildcard root
 # silently absorbs future subpackages, so new code would be invisible to the
 # 87% gate while CI stayed green. Enforced by tests/test_coverage_config.py.
