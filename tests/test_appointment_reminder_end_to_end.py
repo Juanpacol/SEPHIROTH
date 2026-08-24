@@ -2,6 +2,8 @@
 event -> tick dispatch -> appointment_reminder workflow enrolled with both
 steps, through the actual register_subscriptions() wiring."""
 
+from datetime import date, timedelta
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
@@ -13,6 +15,15 @@ from core.db import get_session
 from data.schemas import Patient, Workflow, WorkflowStep
 
 pytestmark = pytest.mark.asyncio
+
+
+def _next_monday() -> date:
+    today = date.today()
+    days_ahead = (7 - today.weekday()) % 7 or 7  # always strictly in the future
+    return today + timedelta(days=days_ahead)
+
+
+NEXT_MONDAY_ISO = f"{_next_monday()}T09:00:00Z"
 
 
 @pytest.fixture
@@ -49,7 +60,7 @@ async def test_booking_through_real_api_enrolls_reminder_workflow(client, db_ses
     )
     book_res = await client.post(
         "/api/scheduling/appointments",
-        json={"clinician_id": clinician_id, "patient_id": patient.id, "start_at": "2026-08-24T09:00:00Z"},
+        json={"clinician_id": clinician_id, "patient_id": patient.id, "start_at": NEXT_MONDAY_ISO},
         headers=headers,
     )
     assert book_res.status_code == 201

@@ -1,6 +1,8 @@
 """Waitlist: join/list/leave, and the synchronous match-on-cancel that
 notifies the earliest-waiting request without auto-booking."""
 
+from datetime import date, timedelta
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -62,7 +64,16 @@ async def _set_up_availability(client, headers):
     )
 
 
-NEXT_MONDAY_ISO = "2026-08-24T09:00:00Z"  # 2026-08-24 is a Monday
+def _next_monday() -> date:
+    today = date.today()
+    days_ahead = (7 - today.weekday()) % 7 or 7  # always strictly in the future
+    return today + timedelta(days=days_ahead)
+
+
+NEXT_MONDAY = _next_monday()
+NEXT_MONDAY_ISO = f"{NEXT_MONDAY}T09:00:00Z"
+WINDOW_START_ISO = NEXT_MONDAY_ISO
+WINDOW_END_ISO = f"{NEXT_MONDAY}T11:00:00Z"
 
 
 async def test_patient_joins_and_lists_waitlist(client, patient_row, patient_login):
@@ -72,8 +83,8 @@ async def test_patient_joins_and_lists_waitlist(client, patient_row, patient_log
             "/api/scheduling/waitlist",
             json={
                 "clinician_id": clinician_id,
-                "window_start": "2026-08-24T09:00:00Z",
-                "window_end": "2026-08-24T11:00:00Z",
+                "window_start": WINDOW_START_ISO,
+                "window_end": WINDOW_END_ISO,
             },
             headers=patient_login,
         )
@@ -92,8 +103,8 @@ async def test_clinician_cannot_join_waitlist(client, patient_row):
             "/api/scheduling/waitlist",
             json={
                 "clinician_id": clinician_id,
-                "window_start": "2026-08-24T09:00:00Z",
-                "window_end": "2026-08-24T11:00:00Z",
+                "window_start": WINDOW_START_ISO,
+                "window_end": WINDOW_END_ISO,
             },
             headers=headers,
         )
@@ -108,8 +119,8 @@ async def test_leave_waitlist(client, patient_row, patient_login):
                 "/api/scheduling/waitlist",
                 json={
                     "clinician_id": clinician_id,
-                    "window_start": "2026-08-24T09:00:00Z",
-                    "window_end": "2026-08-24T11:00:00Z",
+                    "window_start": WINDOW_START_ISO,
+                    "window_end": WINDOW_END_ISO,
                 },
                 headers=patient_login,
             )
@@ -140,8 +151,8 @@ async def test_cancel_frees_slot_and_notifies_earliest_waiter(client, patient_ro
             "/api/scheduling/waitlist",
             json={
                 "clinician_id": clinician_id,
-                "window_start": "2026-08-24T09:00:00Z",
-                "window_end": "2026-08-24T11:00:00Z",
+                "window_start": WINDOW_START_ISO,
+                "window_end": WINDOW_END_ISO,
             },
             headers=patient_login,
         )

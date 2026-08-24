@@ -2,6 +2,8 @@
 booking, conflict rules, and the isolation between clinician/patient
 views, built against the real `api.main.app` wiring."""
 
+from datetime import date, timedelta
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -63,7 +65,15 @@ async def _set_up_availability(client, headers):
     )
 
 
-NEXT_MONDAY_ISO = "2026-08-24T09:00:00Z"  # 2026-08-24 is a Monday
+def _next_monday() -> date:
+    today = date.today()
+    days_ahead = (7 - today.weekday()) % 7 or 7  # always strictly in the future
+    return today + timedelta(days=days_ahead)
+
+
+NEXT_MONDAY = _next_monday()
+NEXT_MONDAY_ISO = f"{NEXT_MONDAY}T09:00:00Z"
+FAR_FUTURE_ISO = f"{date.today() + timedelta(days=200)}T09:00:00Z"  # beyond the 180-day horizon
 
 
 async def test_book_appointment_happy_path(client, patient_row):
@@ -84,7 +94,7 @@ async def test_book_appointment_happy_path(client, patient_row):
         assert res.status_code == 201
         body = res.json()
         assert body["status"] == "booked"
-        assert body["end_at"] == "2026-08-24T09:30:00"
+        assert body["end_at"] == f"{NEXT_MONDAY}T09:30:00"
 
 
 async def test_adjacent_appointments_do_not_conflict(client, patient_row, db_session):
@@ -108,7 +118,7 @@ async def test_adjacent_appointments_do_not_conflict(client, patient_row, db_ses
             json={
                 "clinician_id": clinician_id,
                 "patient_id": p2.id,
-                "start_at": "2026-08-24T09:30:00Z",
+                "start_at": f"{NEXT_MONDAY}T09:30:00Z",
             },
             headers=headers,
         )
@@ -170,7 +180,7 @@ async def test_booking_outside_working_hours_422(client, patient_row):
             json={
                 "clinician_id": clinician_id,
                 "patient_id": patient_row.id,
-                "start_at": "2026-08-24T20:00:00Z",
+                "start_at": f"{NEXT_MONDAY}T20:00:00Z",
             },
             headers=headers,
         )
@@ -200,7 +210,7 @@ async def test_booking_beyond_horizon_422(client, patient_row):
             json={
                 "clinician_id": clinician_id,
                 "patient_id": patient_row.id,
-                "start_at": "2027-06-01T09:00:00Z",
+                "start_at": FAR_FUTURE_ISO,
             },
             headers=headers,
         )
@@ -215,7 +225,7 @@ async def test_naive_datetime_rejected(client, patient_row):
             json={
                 "clinician_id": clinician_id,
                 "patient_id": patient_row.id,
-                "start_at": "2026-08-24T09:00:00",
+                "start_at": f"{NEXT_MONDAY}T09:00:00",
             },
             headers=headers,
         )
@@ -230,7 +240,7 @@ async def test_clinician_force_bypasses_working_hours(client, patient_row):
             json={
                 "clinician_id": clinician_id,
                 "patient_id": patient_row.id,
-                "start_at": "2026-08-24T20:00:00Z",
+                "start_at": f"{NEXT_MONDAY}T20:00:00Z",
             },
             headers=headers,
         )
@@ -245,7 +255,7 @@ async def test_patient_cannot_force_booking(client, patient_row, patient_token):
             json={
                 "clinician_id": clinician_id,
                 "patient_id": patient_row.id,
-                "start_at": "2026-08-24T20:00:00Z",
+                "start_at": f"{NEXT_MONDAY}T20:00:00Z",
             },
             headers={"Authorization": f"Bearer {patient_token}"},
         )
@@ -331,7 +341,7 @@ async def test_slots_endpoint_accessible_to_patient(client, patient_row, patient
 
         res = await client.get(
             "/api/scheduling/slots",
-            params={"clinician_id": clinician_id, "from": "2026-08-24", "to": "2026-08-25"},
+            params={"clinician_id": clinician_id, "from": str(NEXT_MONDAY), "to": str(NEXT_MONDAY + timedelta(days=1))},
             headers={"Authorization": f"Bearer {patient_token}"},
         )
         assert res.status_code == 200

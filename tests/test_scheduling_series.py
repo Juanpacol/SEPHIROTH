@@ -1,6 +1,8 @@
 """Recurring appointment series — eager expansion at creation time, all-
 or-nothing on conflict, cancel-future-only."""
 
+from datetime import date, timedelta
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -48,7 +50,14 @@ async def _set_up_availability(client, headers):
     )
 
 
-FIRST_MONDAY_ISO = "2026-08-24T09:00:00Z"  # 2026-08-24 is a Monday
+def _next_monday() -> date:
+    today = date.today()
+    days_ahead = (7 - today.weekday()) % 7 or 7  # always strictly in the future
+    return today + timedelta(days=days_ahead)
+
+
+FIRST_MONDAY = _next_monday()
+FIRST_MONDAY_ISO = f"{FIRST_MONDAY}T09:00:00Z"
 
 
 async def test_weekly_series_expands_all_occurrences(client, patient_row):
@@ -106,13 +115,13 @@ async def test_series_rejected_all_or_nothing_on_conflict(client, patient_row, d
         db_session.add(p2)
         await db_session.commit()
 
-        # Occupies week 3's slot (2026-08-24 + 14 days = 2026-09-07).
+        # Occupies week 3's slot (FIRST_MONDAY + 14 days).
         await client.post(
             "/api/scheduling/appointments",
             json={
                 "clinician_id": clinician_id,
                 "patient_id": p2.id,
-                "start_at": "2026-09-07T09:00:00Z",
+                "start_at": f"{FIRST_MONDAY + timedelta(days=14)}T09:00:00Z",
             },
             headers=headers,
         )

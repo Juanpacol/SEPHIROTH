@@ -6,6 +6,8 @@ instance -- `role="clinician"`, `is_active=False`, a hardcoded id shipped
 in every deployment. Before this fix, `POST /api/scheduling/appointments`
 (and `/series`, `/waitlist`) resolved a clinician by `role` alone."""
 
+from datetime import date, timedelta
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -16,7 +18,14 @@ from data.schemas import Patient, User
 
 pytestmark = pytest.mark.asyncio
 
-NEXT_MONDAY_ISO = "2026-08-24T09:00:00Z"
+
+def _next_monday() -> date:
+    today = date.today()
+    days_ahead = (7 - today.weekday()) % 7 or 7  # always strictly in the future
+    return today + timedelta(days=days_ahead)
+
+
+NEXT_MONDAY_ISO = f"{_next_monday()}T09:00:00Z"
 
 
 @pytest.fixture
@@ -129,8 +138,8 @@ async def test_waitlist_also_rejects_inactive_clinician(client, patient_headers,
         "/api/scheduling/waitlist",
         json={
             "clinician_id": inactive_clinician.id,
-            "window_start": "2026-08-24T09:00:00Z",
-            "window_end": "2026-08-24T17:00:00Z",
+            "window_start": NEXT_MONDAY_ISO,
+            "window_end": f"{_next_monday()}T17:00:00Z",
         },
         headers=patient_headers,
     )

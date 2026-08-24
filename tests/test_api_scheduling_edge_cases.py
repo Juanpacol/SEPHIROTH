@@ -2,6 +2,8 @@
 path suites don't exercise — ownership checks are the security-relevant
 branches worth locking down explicitly."""
 
+from datetime import date, timedelta
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -11,6 +13,16 @@ from core.db import get_session
 from data.schemas import Patient, User
 
 pytestmark = pytest.mark.asyncio
+
+
+def _next_monday() -> date:
+    today = date.today()
+    days_ahead = (7 - today.weekday()) % 7 or 7  # always strictly in the future
+    return today + timedelta(days=days_ahead)
+
+
+NEXT_MONDAY = _next_monday()
+NEXT_MONDAY_ISO = f"{NEXT_MONDAY}T09:00:00Z"
 
 
 @pytest.fixture
@@ -63,7 +75,7 @@ async def test_booking_nonexistent_clinician_404(client, patient_row):
             json={
                 "clinician_id": "does-not-exist",
                 "patient_id": patient_row.id,
-                "start_at": "2026-08-24T09:00:00Z",
+                "start_at": NEXT_MONDAY_ISO,
             },
             headers=headers,
         )
@@ -78,7 +90,7 @@ async def test_booking_nonexistent_patient_404(client):
             json={
                 "clinician_id": clinician_id,
                 "patient_id": "does-not-exist",
-                "start_at": "2026-08-24T09:00:00Z",
+                "start_at": NEXT_MONDAY_ISO,
             },
             headers=headers,
         )
@@ -98,7 +110,7 @@ async def test_cancel_appointment_by_non_owner_404(client, patient_row, db_sessi
             json={
                 "clinician_id": clinician_a,
                 "patient_id": patient_row.id,
-                "start_at": "2026-08-24T09:00:00Z",
+                "start_at": NEXT_MONDAY_ISO,
             },
             headers=headers_a,
         )
@@ -122,7 +134,7 @@ async def test_patient_can_cancel_own_appointment(client, patient_row, patient_t
             json={
                 "clinician_id": clinician_id,
                 "patient_id": patient_row.id,
-                "start_at": "2026-08-24T09:00:00Z",
+                "start_at": NEXT_MONDAY_ISO,
             },
             headers=headers,
         )
@@ -147,7 +159,7 @@ async def test_update_appointment_by_non_owning_clinician_404(client, patient_ro
             json={
                 "clinician_id": clinician_a,
                 "patient_id": patient_row.id,
-                "start_at": "2026-08-24T09:00:00Z",
+                "start_at": NEXT_MONDAY_ISO,
             },
             headers=headers_a,
         )
@@ -173,7 +185,7 @@ async def test_mark_appointment_completed(client, patient_row):
             json={
                 "clinician_id": clinician_id,
                 "patient_id": patient_row.id,
-                "start_at": "2026-08-24T09:00:00Z",
+                "start_at": NEXT_MONDAY_ISO,
             },
             headers=headers,
         )
@@ -202,21 +214,24 @@ async def test_list_appointments_date_filter(client, patient_row):
             json={
                 "clinician_id": clinician_id,
                 "patient_id": patient_row.id,
-                "start_at": "2026-08-24T09:00:00Z",
+                "start_at": NEXT_MONDAY_ISO,
             },
             headers=headers,
         )
 
         in_range = await client.get(
             "/api/scheduling/appointments",
-            params={"from": "2026-08-24T00:00:00Z", "to": "2026-08-25T00:00:00Z"},
+            params={"from": f"{NEXT_MONDAY}T00:00:00Z", "to": f"{NEXT_MONDAY + timedelta(days=1)}T00:00:00Z"},
             headers=headers,
         )
         assert len(in_range.json()) == 1
 
         out_of_range = await client.get(
             "/api/scheduling/appointments",
-            params={"from": "2026-09-01T00:00:00Z", "to": "2026-09-02T00:00:00Z"},
+            params={
+                "from": f"{NEXT_MONDAY + timedelta(days=10)}T00:00:00Z",
+                "to": f"{NEXT_MONDAY + timedelta(days=11)}T00:00:00Z",
+            },
             headers=headers,
         )
         assert out_of_range.json() == []

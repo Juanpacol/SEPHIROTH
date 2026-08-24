@@ -1,5 +1,7 @@
 """`POST /api/scheduling/appointments/{id}/confirm` (SPEC-012)."""
 
+from datetime import date, timedelta
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -9,6 +11,15 @@ from core.db import get_session
 from data.schemas import Patient, User
 
 pytestmark = pytest.mark.asyncio
+
+
+def _next_monday() -> date:
+    today = date.today()
+    days_ahead = (7 - today.weekday()) % 7 or 7  # always strictly in the future
+    return today + timedelta(days=days_ahead)
+
+
+NEXT_MONDAY_ISO = f"{_next_monday()}T09:00:00Z"
 
 
 @pytest.fixture
@@ -63,7 +74,7 @@ async def test_patient_can_confirm_own_appointment(client, patient_row, patient_
     )
     book_res = await client.post(
         "/api/scheduling/appointments",
-        json={"clinician_id": clinician_id, "patient_id": patient_row.id, "start_at": "2026-08-24T09:00:00Z"},
+        json={"clinician_id": clinician_id, "patient_id": patient_row.id, "start_at": NEXT_MONDAY_ISO},
         headers=clin_headers,
     )
     appt_id = book_res.json()["id"]
@@ -87,7 +98,7 @@ async def test_confirm_is_idempotent(client, patient_row, patient_headers):
     )
     book_res = await client.post(
         "/api/scheduling/appointments",
-        json={"clinician_id": clinician_id, "patient_id": patient_row.id, "start_at": "2026-08-24T09:00:00Z"},
+        json={"clinician_id": clinician_id, "patient_id": patient_row.id, "start_at": NEXT_MONDAY_ISO},
         headers=clin_headers,
     )
     appt_id = book_res.json()["id"]
@@ -109,7 +120,7 @@ async def test_patient_cannot_confirm_another_patients_appointment(client, patie
     )
     book_res = await client.post(
         "/api/scheduling/appointments",
-        json={"clinician_id": clinician_id, "patient_id": patient_row.id, "start_at": "2026-08-24T09:00:00Z"},
+        json={"clinician_id": clinician_id, "patient_id": patient_row.id, "start_at": NEXT_MONDAY_ISO},
         headers=clin_headers,
     )
     appt_id = book_res.json()["id"]

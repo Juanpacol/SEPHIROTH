@@ -2,6 +2,8 @@
 overlap re-check at all — this closes that gap. Uses the same fixtures/
 patterns as `test_api_scheduling_appointments.py`."""
 
+from datetime import date, timedelta
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -47,7 +49,14 @@ async def _set_up_availability(client, headers):
     )
 
 
-NEXT_MONDAY_ISO = "2026-08-24T09:00:00Z"  # 2026-08-24 is a Monday
+def _next_monday() -> date:
+    today = date.today()
+    days_ahead = (7 - today.weekday()) % 7 or 7  # always strictly in the future
+    return today + timedelta(days=days_ahead)
+
+
+NEXT_MONDAY = _next_monday()
+NEXT_MONDAY_ISO = f"{NEXT_MONDAY}T09:00:00Z"
 
 
 async def test_reschedule_into_occupied_slot_is_rejected(client, patient_row, db_session):
@@ -70,7 +79,7 @@ async def test_reschedule_into_occupied_slot_is_rejected(client, patient_row, db
             json={
                 "clinician_id": clinician_id,
                 "patient_id": p2.id,
-                "start_at": "2026-08-24T10:00:00Z",
+                "start_at": f"{NEXT_MONDAY}T10:00:00Z",
             },
             headers=headers,
         )
@@ -121,11 +130,11 @@ async def test_reschedule_to_a_free_slot_succeeds(client, patient_row):
 
         res = await client.patch(
             f"/api/scheduling/appointments/{appt_id}",
-            json={"start_at": "2026-08-24T11:00:00Z"},
+            json={"start_at": f"{NEXT_MONDAY}T11:00:00Z"},
             headers=headers,
         )
         assert res.status_code == 200
-        assert res.json()["start_at"] == "2026-08-24T11:00:00"
+        assert res.json()["start_at"] == f"{NEXT_MONDAY}T11:00:00"
 
 
 async def test_reschedule_of_cancelled_appointment_skips_conflict_check(client, patient_row, db_session):
@@ -151,7 +160,7 @@ async def test_reschedule_of_cancelled_appointment_skips_conflict_check(client, 
             json={
                 "clinician_id": clinician_id,
                 "patient_id": p2.id,
-                "start_at": "2026-08-24T10:00:00Z",
+                "start_at": f"{NEXT_MONDAY}T10:00:00Z",
             },
             headers=headers,
         )
