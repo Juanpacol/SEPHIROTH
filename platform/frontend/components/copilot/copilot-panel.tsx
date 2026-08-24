@@ -6,12 +6,13 @@
  * navigation away from whatever the clinician was looking at. No page-level
  * chrome (h1/subtitle) here; the widget's own header carries that. */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2,
   ChevronDown,
   Download,
+  Loader2,
   Send,
   ShieldAlert,
   ShieldCheck,
@@ -46,10 +47,10 @@ interface Exchange {
 /** Suggested starter questions — kept in English regardless of UI locale,
  * matching the clinical literature/citations the agents cite. */
 const SUGGESTED_QUESTIONS = [
-  "What is the first-line treatment for hypertension?",
-  "What is the target A1C for adults with type 2 diabetes?",
-  "When is anticoagulation recommended for atrial fibrillation?",
-  "What are the first-line antibiotics for community-acquired pneumonia?",
+  "What's the best first medicine for high blood pressure?",
+  "When does someone with atrial fibrillation need blood thinners?",
+  "What antibiotic should I use for pneumonia caught outside the hospital?",
+  "Do warfarin and ibuprofen interact?",
 ];
 
 /** Token-overlap match — mirrors the >=0.5 overlap threshold Citation Guard
@@ -269,6 +270,17 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
   const [streaming, setStreaming] = useState(false);
   const [pdfPreview, setPdfPreview] = useState<PdfPreview | null>(null);
   const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
+  const [inputFocused, setInputFocused] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize, same idea as kokonutui's useAutoResizeTextarea: grow with
+  // content up to a cap, then let the textarea itself scroll.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [query]);
 
   const openPdfPreview = async (exchange: Exchange) => {
     if (!exchange.id) return;
@@ -301,25 +313,6 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
   };
 
   const { data: patients } = useQuery({ queryKey: ["patients"], queryFn: () => api.patients() });
-  const { data: history } = useQuery({ queryKey: ["history"], queryFn: api.history });
-
-  // Restore persisted history (oldest first) once per mount.
-  useEffect(() => {
-    if (history && exchanges.length === 0 && history.length > 0) {
-      setExchanges(
-        [...history].reverse().map((item) => ({
-          id: item.id,
-          question: item.query,
-          answer: item.answer,
-          agents: item.agents_involved,
-          toolCalls: item.tool_calls,
-          citations: item.citation_report,
-          explanation: item.explanation,
-        }))
-      );
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history]);
 
   const patch = (update: Partial<Exchange>) =>
     setExchanges((prev) =>
@@ -433,10 +426,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
             <div className="ml-auto w-fit max-w-[85%] rounded-2xl bg-primary px-4 py-2.5 text-sm text-white">
               {exchange.question}
             </div>
-            <div
-              className="max-w-[95%] rounded-2xl border-2 bg-card p-4 text-sm shadow-card"
-              style={{ borderImage: "linear-gradient(135deg,#8C92AC,#D1D5DB) 1" }}
-            >
+            <div className="ai-ring max-w-[95%] rounded-squircle bg-card p-4 text-sm shadow-card">
               {exchange.pending ? (
                 <div className="space-y-2">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted">
@@ -507,34 +497,58 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
         ))}
       </div>
 
-      <div className="card flex items-center gap-2 !p-3">
-        <select
-          value={patientId}
-          onChange={(e) => setPatientId(e.target.value)}
-          className="rounded-xl border border-line/70 bg-card px-2 py-2 text-sm"
-        >
-          <option value="">{t("copilot.noPatient")}</option>
-          {patients?.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-        <input
+      <div
+        className={`flex cursor-text flex-col rounded-squircle bg-card shadow-card ring-1 ring-line/70 transition-all duration-200 ${
+          inputFocused ? "ring-primary/50" : ""
+        }`}
+        onClick={() => textareaRef.current?.focus()}
+      >
+        <textarea
+          ref={textareaRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          onFocus={() => setInputFocused(true)}
+          onBlur={() => setInputFocused(false)}
           placeholder={t("copilot.placeholder")}
-          className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
+          rows={1}
+          className="max-h-40 min-h-[44px] w-full resize-none bg-transparent px-4 pt-3 text-sm leading-relaxed outline-none placeholder:text-muted"
         />
-        <button
-          onClick={() => submit()}
-          disabled={streaming}
-          className="rounded-xl bg-primary p-2.5 text-white transition-opacity disabled:opacity-40"
-          aria-label="Send"
-        >
-          <Send size={16} />
-        </button>
+        <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5 pt-1.5">
+          <select
+            value={patientId}
+            onChange={(e) => setPatientId(e.target.value)}
+            className="rounded-full border-none bg-surface px-3 py-1.5 text-xs font-medium text-ink/70 outline-none"
+          >
+            <option value="">{t("copilot.noPatient")}</option>
+            {patients?.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => submit()}
+            disabled={streaming || !query.trim()}
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
+              query.trim() && !streaming
+                ? "bg-primary-soft text-primary"
+                : "bg-surface text-muted"
+            } disabled:cursor-not-allowed`}
+            aria-label="Send"
+          >
+            {streaming ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <Send size={15} />
+            )}
+          </button>
+        </div>
       </div>
 
       {pdfPreview && (
