@@ -341,7 +341,11 @@ async def test_slots_endpoint_accessible_to_patient(client, patient_row, patient
 
         res = await client.get(
             "/api/scheduling/slots",
-            params={"clinician_id": clinician_id, "from": str(NEXT_MONDAY), "to": str(NEXT_MONDAY + timedelta(days=1))},
+            params={
+                "clinician_id": clinician_id,
+                "from": str(NEXT_MONDAY),
+                "to": str(NEXT_MONDAY + timedelta(days=1)),
+            },
             headers={"Authorization": f"Bearer {patient_token}"},
         )
         assert res.status_code == 200
