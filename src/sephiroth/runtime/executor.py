@@ -475,9 +475,7 @@ async def stream_consultation(
 
     single = settings.enable_single_agent_mode
     tasks = [
-        asyncio.ensure_future(
-            _run_specialist(cap, client, query, run_context, state, answering=single)
-        )
+        asyncio.ensure_future(_run_specialist(cap, client, query, run_context, state, answering=single))
         for cap in capabilities
     ]
     answer = ""

@@ -21,9 +21,7 @@ def test_lay_symptom_question_is_never_flagged():
 
 
 def test_tax_question_is_flagged():
-    flags = check_scope(
-        "What do the guidelines recommend for filing quarterly small-business tax returns?"
-    )
+    flags = check_scope("What do the guidelines recommend for filing quarterly small-business tax returns?")
     assert len(flags) == 1
     assert flags[0].code == "out_of_scope"
 

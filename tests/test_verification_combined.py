@@ -151,8 +151,12 @@ async def test_contradictions_are_returned():
         json_payloads=[
             {
                 "claims": [
-                    {"id": "c1", "text": "metformin is first-line", "status": "supported",
-                     "evidence_ids": ["e1"]},
+                    {
+                        "id": "c1",
+                        "text": "metformin is first-line",
+                        "status": "supported",
+                        "evidence_ids": ["e1"],
+                    },
                     {"id": "c2", "text": "metformin is contraindicated", "status": "unsupported"},
                 ],
                 "contradictions": [
@@ -176,8 +180,14 @@ async def test_contradiction_referencing_an_unknown_claim_is_dropped():
     client = FakeLLMClient(
         json_payloads=[
             {
-                "claims": [{"id": "c1", "text": "metformin is first-line", "status": "supported",
-                            "evidence_ids": ["e1"]}],
+                "claims": [
+                    {
+                        "id": "c1",
+                        "text": "metformin is first-line",
+                        "status": "supported",
+                        "evidence_ids": ["e1"],
+                    }
+                ],
                 "contradictions": [{"claim_id": "does-not-exist", "description": "phantom"}],
             }
         ]
@@ -225,8 +235,12 @@ async def test_evidence_ids_outside_the_provided_set_are_dropped():
         json_payloads=[
             {
                 "claims": [
-                    {"id": "c1", "text": "metformin is preferred initial agent", "status": "supported",
-                     "evidence_ids": ["e1", "hallucinated-id"]}
+                    {
+                        "id": "c1",
+                        "text": "metformin is preferred initial agent",
+                        "status": "supported",
+                        "evidence_ids": ["e1", "hallucinated-id"],
+                    }
                 ]
             }
         ]
@@ -246,9 +260,7 @@ async def test_no_evidence_marks_every_claim_unknown():
     abstention gate needs to see a high-risk claim was made) but no verdict
     may be positive."""
     client = FakeLLMClient(
-        json_payloads=[
-            {"claims": [{"text": "Double the warfarin dose", "risk": "critical"}]}
-        ]
+        json_payloads=[{"claims": [{"text": "Double the warfarin dose", "risk": "critical"}]}]
     )
 
     report = await extract_and_verify(ANSWER, [], client)

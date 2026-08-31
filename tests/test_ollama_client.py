@@ -281,9 +281,7 @@ async def test_describe_image_uses_configured_vision_model():
     client = _make_client(handler, vision_model="qwen2.5vl:7b")
     assert client.supports_vision is True
 
-    result = await client.describe_image(
-        image_bytes=_TINY_PNG, mime_type="image/png", prompt="describe this"
-    )
+    result = await client.describe_image(image_bytes=_TINY_PNG, mime_type="image/png", prompt="describe this")
 
     assert result == "Bilateral infiltrates visible."
     assert captured["body"]["model"] == "qwen2.5vl:7b"

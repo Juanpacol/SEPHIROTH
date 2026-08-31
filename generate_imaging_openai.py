@@ -79,11 +79,7 @@ async def main():
     async with async_session() as session:
         # Clean slate: remove the previously-generated (truncated) entries
         # for these exact files before reinserting full-length versions.
-        existing = (
-            await session.scalars(
-                select(TimelineEvent).where(TimelineEvent.type == "imaging")
-            )
-        ).all()
+        existing = (await session.scalars(select(TimelineEvent).where(TimelineEvent.type == "imaging"))).all()
         removed = 0
         for e in existing:
             if any(f"image_path:{IMAGE_DIR}/{fn}]" in e.detail for fn, _, _ in IMAGES):
@@ -98,7 +94,7 @@ async def main():
             patient = patients[i]
             image_path = f"{IMAGE_DIR}/{filename}"
 
-            print(f"[{i+1}/{len(IMAGES)}] {patient.name} - {filename} ({modality})...", end=" ", flush=True)
+            print(f"[{i + 1}/{len(IMAGES)}] {patient.name} - {filename} ({modality})...", end=" ", flush=True)
 
             try:
                 description = describe_image(client, image_path, focus)

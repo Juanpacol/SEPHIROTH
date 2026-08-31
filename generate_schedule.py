@@ -27,9 +27,7 @@ PASSWORD = "TestPassword123!"
 
 async def login() -> str:
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{API_URL}/api/auth/login", json={"email": EMAIL, "password": PASSWORD}
-        )
+        response = await client.post(f"{API_URL}/api/auth/login", json={"email": EMAIL, "password": PASSWORD})
         if response.status_code != 200:
             print(f"Login failed: {response.text}")
             return None

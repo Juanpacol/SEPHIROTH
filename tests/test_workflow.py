@@ -89,9 +89,7 @@ async def test_run_consultation_end_to_end_with_fake_client(monkeypatch, single_
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("single_agent", [True, False], ids=["single-agent", "multi-agent"])
-async def test_run_consultation_sanitizes_fabricated_citation_in_final_answer(
-    monkeypatch, single_agent
-):
+async def test_run_consultation_sanitizes_fabricated_citation_in_final_answer(monkeypatch, single_agent):
     """Citation sanitization is a safety guarantee, so it must hold in both
     execution modes. The fabricated citation is scripted into whichever
     agent produces the final answer for that mode: the specialist itself

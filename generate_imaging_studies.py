@@ -43,9 +43,7 @@ async def main():
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with async_session() as session:
-        events = (
-            await session.scalars(select(TimelineEvent).where(TimelineEvent.type == "imaging"))
-        ).all()
+        events = (await session.scalars(select(TimelineEvent).where(TimelineEvent.type == "imaging"))).all()
 
         created = 0
         for event in events:

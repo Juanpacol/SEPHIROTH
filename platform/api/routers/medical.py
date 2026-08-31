@@ -249,9 +249,7 @@ async def preview_image(path: str, user: User = Depends(get_current_user)) -> Fi
 _IMAGE_PATH_RE = re.compile(r"^\[image_path:([^\]]+)\]\s*(?:\[model:([^\]]+)\]\s*)?(.*)$", re.DOTALL)
 
 
-@router.get(
-    "/imaging/recent", summary="Recently AI-analyzed imaging studies, with preview + description"
-)
+@router.get("/imaging/recent", summary="Recently AI-analyzed imaging studies, with preview + description")
 async def recent_imaging_analyses(
     limit: int = 12,
     user: User = Depends(get_current_user),

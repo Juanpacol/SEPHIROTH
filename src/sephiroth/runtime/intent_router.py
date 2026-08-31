@@ -189,9 +189,7 @@ async def _llm_classify(client: "ModelProvider", query: str) -> str:
     return agent
 
 
-async def route_intent(
-    query: str, context: Optional[Dict[str, Any]], client: "ModelProvider"
-) -> str:
+async def route_intent(query: str, context: Optional[Dict[str, Any]], client: "ModelProvider") -> str:
     """Return the single specialist node name that should answer `query`."""
     if not query or not query.strip():
         return DEFAULT_ROUTE
