@@ -204,7 +204,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: ${{ github.event_name == 'pull_request' && 1 || 0 }}
+          # gitleaks diffs `HEAD^..HEAD` — depth 1 on a pull_request checkout
+          # leaves no parent commit to diff against ("unknown revision"),
+          # failing the job on every PR regardless of content. Depth 2 is
+          # enough for that single-commit diff; push events keep full
+          # history (0) for their own broader scans.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
       - name: gitleaks (secret scanning)
         uses: gitleaks/gitleaks-action@v2
         env:
