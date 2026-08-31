@@ -1,31 +1,55 @@
 {
   "case_id": "uti-first-line-agents",
-  "answer": "Based on the search of clinical guidelines, the first-line antibiotics for uncomplicated cystitis in women are Nitrofurantoin for 5 days or trimethoprim-sulfamethoxazole for 3 days. Fluoroquinolones are reserved for cases where first-line agents are not suitable.\n\n[Source: Treatment of Uncomplicated Cystitis, IDSA, 2019]",
+  "answer": "The first-line antibiotics for uncomplicated cystitis in women, according to the **IDSA 2019 guideline**, are:  \n- **Nitrofurantoin** for 5 days, or  \n- **Trimethoprim-sulfamethoxazole (TMP/SMX)** for 3 days.  \n\nFluoroquinolones are reserved for cases where first-line agents are contraindicated or not suitable [IDSA, 2019].  \n\n**Source**: *Treatment of Uncomplicated Cystitis*, IDSA, 2019 [IDSA, 2019].  \n\nThis recommendation is based on clinical guidelines and requires professional review for individual patient application.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "First-line antibiotics for uncomplicated cystitis in women",
-        "top_k": "1"
+        "query": "first-line antibiotics for uncomplicated cystitis in women",
+        "top_k": 2
       },
       "result": {
-        "query": "First-line antibiotics for uncomplicated cystitis in women",
+        "query": "first-line antibiotics for uncomplicated cystitis in women",
         "results": [
           {
             "id": "idsa-2019-uti",
             "content": "Nitrofurantoin for 5 days or trimethoprim-sulfamethoxazole for 3 days are first-line agents for uncomplicated cystitis in women. Fluoroquinolones are reserved for cases where first-line agents are not suitable.",
             "source": "IDSA Uncomplicated UTI Guideline",
             "citation": "Treatment of Uncomplicated Cystitis, IDSA, 2019",
-            "score": 1.4924,
+            "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/",
+            "score": 0.0492,
             "metadata": {
+              "category": "infectious_disease",
               "organization": "IDSA",
               "year": 2019,
-              "title": "Treatment of Uncomplicated Cystitis"
+              "title": "Treatment of Uncomplicated Cystitis",
+              "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/"
+            }
+          },
+          {
+            "id": "uspstf-2024-breast",
+            "content": "The USPSTF recommends biennial screening mammography for women aged 40 to 74 years. Evidence is insufficient to assess the balance of benefits and harms of screening in women 75 years and older.",
+            "source": "USPSTF Breast Cancer Screening Recommendation",
+            "citation": "Screening for Breast Cancer, USPSTF, 2024",
+            "url": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/breast-cancer-screening",
+            "score": 0.0161,
+            "metadata": {
+              "category": "screening",
+              "organization": "USPSTF",
+              "year": 2024,
+              "title": "Screening for Breast Cancer",
+              "url": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/breast-cancer-screening"
             }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
-  ]
+  ],
+  "latency_ms": 28580,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2131,
+  "completion_tokens": 610,
+  "cost_usd": 0.0
 }

@@ -1,24 +1,28 @@
 """Patient endpoints — CRUD + Intelligent Timeline, backed by Postgres."""
 
+import logging
 import secrets
 from datetime import date as date_cls
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from api.audit import log_phi_access
+from api.workflows.channels import get_channel
 from auth.deps import get_current_user
 from auth.security import hash_password
 from core.db import SessionLocal, get_session
 from data.schemas import ClinicalNote, Patient, PatientInvite, TimelineEvent, User
 from sephiroth.models import get_llm_client
 from sephiroth.safety.risk import RISK_ORDER, assess_patient_risk, assess_risk_level
+
+logger = logging.getLogger("api.patients")
 
 INVITE_TTL = timedelta(hours=72)
 _MAX_NOTE_UPLOAD_BYTES = 20 * 1024 * 1024  # 20 MB — same ceiling as medical.py's imaging upload
@@ -132,21 +136,69 @@ class NoteCreate(BaseModel):
     note_date: Optional[str] = Field(None, description="ISO date the note refers to; defaults to today")
 
 
+async def _extract_events_background(patient_id: str, content: str, resolved_date: str) -> None:
+    """Phase 2 of the note pipeline, run after the HTTP response is already
+    sent (see `_ingest_note`). The LLM call here is the slow, variable part
+    (~10s-90s+ on a local model) — running it in the request/response cycle
+    made the dev proxy time out and return a false failure to the clinician
+    while the backend kept working underneath; the note was always saved
+    either way, just the extracted events arrived after the UI had already
+    given up. Failures here are logged and swallowed — the note itself is
+    already persisted, so there's nothing to roll back."""
+    from intelligence.nlp.timeline_extractor import extract_events
+
+    try:
+        extracted = await extract_events(get_llm_client(), content, resolved_date)
+    except Exception:
+        logger.exception("Background timeline extraction failed for patient %s", patient_id)
+        return
+
+    if not extracted:
+        return
+
+    async with SessionLocal() as session:
+        patient = await session.scalar(
+            select(Patient).where(Patient.id == patient_id).options(selectinload(Patient.timeline))
+        )
+        if patient is None:
+            return  # patient deleted while extraction was in flight
+
+        # Dedupe against existing events on (date, title).
+        existing = {(e.date.isoformat(), e.title.lower()) for e in patient.timeline}
+        new_events: List[TimelineEvent] = []
+        for event in extracted:
+            key = (event.date, event.title.lower())
+            if key in existing:
+                continue
+            existing.add(key)
+            new_events.append(
+                TimelineEvent(
+                    patient_id=patient_id,
+                    date=date_cls.fromisoformat(event.date),
+                    type=event.type,
+                    title=event.title,
+                    detail=event.detail,
+                    ai_generated=True,
+                )
+            )
+        session.add_all(new_events)
+        await session.commit()
+
+
 async def _ingest_note(
     patient: Patient,
     user: User,
     content: str,
     note_type: str,
     note_date: Optional[str],
+    background_tasks: BackgroundTasks,
 ) -> Dict[str, Any]:
-    """Shared note pipeline: extract entities/events (LLM calls, network,
-    rate-limited), then persist the note + AI-extracted Intelligent Timeline
-    events (deduped on date+title) in a short-lived session opened only for
-    the write. Deliberately takes no request-scoped session — holding one
-    open across the LLM calls below would pin a pooled connection
-    idle-in-transaction for as long as extraction takes (same reasoning as
-    `agents.py::consult`)."""
-    from intelligence.nlp.timeline_extractor import extract_events
+    """Shared note pipeline, phase 1: lexicon entity extraction (fast, no
+    network) and persisting the note row — returns in well under a second
+    regardless of LLM latency. The slow part (LLM timeline-event extraction)
+    is hand off to `_extract_events_background` via `background_tasks`, so
+    this response is never held open waiting on it (see that function's
+    docstring for why that matters)."""
     from sephiroth.tools import get_tool_runtime
 
     resolved_date = note_date or datetime.now(timezone.utc).date().isoformat()
@@ -154,7 +206,6 @@ async def _ingest_note(
     registry = get_tool_runtime()
     await registry.load()
     entities = await registry.execute("extract_medical_entities", {"text": content})
-    extracted = await extract_events(get_llm_client(), content, resolved_date)
 
     note = ClinicalNote(
         id=str(uuid4()),
@@ -165,37 +216,17 @@ async def _ingest_note(
         extracted_entities=entities,
     )
 
-    # Dedupe against existing events on (date, title).
-    existing = {(e.date.isoformat(), e.title.lower()) for e in patient.timeline}
-    new_events: List[TimelineEvent] = []
-    for event in extracted:
-        key = (event.date, event.title.lower())
-        if key in existing:
-            continue
-        existing.add(key)
-        new_events.append(
-            TimelineEvent(
-                patient_id=patient.id,
-                date=date_cls.fromisoformat(event.date),
-                type=event.type,
-                title=event.title,
-                detail=event.detail,
-                ai_generated=True,
-            )
-        )
-    # See add_timeline_event's comment: keeps `patient.timeline` correct for
-    # any later code in this request that reuses this Patient instance.
-    patient.timeline.extend(new_events)
-
     async with SessionLocal() as session:
         session.add(note)
-        session.add_all(new_events)
         await session.commit()
+
+    background_tasks.add_task(_extract_events_background, patient.id, content, resolved_date)
 
     return {
         "note_id": note.id,
         "entities_found": len(entities.get("entities", [])),
-        "events_added": [_event(e) for e in new_events],
+        "events_added": [],
+        "processing": True,
     }
 
 
@@ -203,17 +234,69 @@ async def _ingest_note(
 async def add_clinical_note(
     patient_id: str,
     body: NoteCreate,
+    background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
 ) -> Dict[str, Any]:
-    """Store a clinical note and auto-extract Intelligent Timeline events."""
+    """Store a clinical note and auto-extract Intelligent Timeline events
+    (the extraction itself runs in the background — see `_ingest_note`)."""
     async with SessionLocal() as session:
         patient = await _get_patient(session, patient_id)
-    return await _ingest_note(patient, user, body.content, body.note_type, body.note_date)
+    return await _ingest_note(patient, user, body.content, body.note_type, body.note_date, background_tasks)
+
+
+class MedicationCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(..., min_length=1, max_length=120)
+    dosage: str = Field("", max_length=60)
+
+
+@router.post(
+    "/{patient_id}/medications",
+    status_code=201,
+    summary="Prescribe a new medication (notifies the patient portal, if claimed)",
+)
+async def add_medication(
+    patient_id: str,
+    body: MedicationCreate,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """The only place `Patient.medications` changes after patient
+    creation — there was no endpoint for this before (only set once, at
+    `POST /api/patients`). Appends the new entry and, if this patient has
+    claimed a portal login (`PatientInvite` redemption), notifies them
+    in-app via the same `NotificationChannel` seam `scheduling.py`/
+    `results.py` already use. Silent no-op on the notification side if no
+    portal account exists yet -- prescribing a medication must never fail
+    because the patient hasn't claimed their account. Uses the injectable
+    `Depends(get_session)` (not `SessionLocal()` directly) so this is
+    exercised against the test DB, same as scheduling.py/results.py."""
+    entry = f"{body.name.strip()} {body.dosage.strip()}".strip()
+
+    patient = await _get_patient(session, patient_id)
+    patient.medications = [*patient.medications, entry]
+    await session.commit()
+
+    portal_user = await session.scalar(
+        select(User).where(User.patient_id == patient_id, User.role == "patient")
+    )
+    if portal_user is not None:
+        await get_channel().send(
+            session,
+            portal_user.id,
+            "medication_prescribed",
+            f"Your clinician prescribed a new medication: {entry}",
+        )
+        await session.commit()
+
+    return {"medications": patient.medications}
 
 
 @router.post("/{patient_id}/notes/upload", status_code=201, summary="Upload a clinical note as PDF")
 async def upload_clinical_note(
     patient_id: str,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     note_type: str = Form("progress_note"),
     note_date: Optional[str] = Form(None),
@@ -260,7 +343,7 @@ async def upload_clinical_note(
             ),
         )
 
-    result = await _ingest_note(patient, user, text, note_type, note_date)
+    result = await _ingest_note(patient, user, text, note_type, note_date, background_tasks)
     result["source_file"] = file.filename
     result["characters_extracted"] = len(text)
     return result

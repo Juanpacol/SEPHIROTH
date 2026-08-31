@@ -56,10 +56,13 @@ async def test_blank_claim_text_is_skipped():
 
 
 @pytest.mark.asyncio
-async def test_invalid_risk_value_defaults_to_low():
+async def test_invalid_risk_value_defaults_to_high():
+    """Fail-safe, not fail-open: a missing/malformed risk value must default
+    to HIGH so the abstention gate's unsupported-high-risk check still
+    applies — defaulting to LOW would silently exempt the claim."""
     client = FakeLLMClient(json_payloads=[{"claims": [{"text": "x", "risk": "extreme"}]}])
     claims = await extract_claims("x", client)
-    assert claims[0].risk is RiskLevel.LOW
+    assert claims[0].risk is RiskLevel.HIGH
 
 
 @pytest.mark.asyncio

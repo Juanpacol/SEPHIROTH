@@ -194,6 +194,30 @@ def test_hybrid_retrieval_fuses_keyword_and_dense_signals():
     assert "dense-match" in ids
 
 
+def test_indexing_survives_partial_embedding_cache_miss():
+    """A single document with no cached embedding (e.g. added without
+    rebuilding the artifact) must degrade only that document to
+    keyword-only — the rest of the vector store must still index and be
+    retrievable via the dense signal. Regression test for the bug where
+    `_index_documents` embedded the whole corpus in one batch call and a
+    single `EmbeddingUnavailable` silently emptied the entire vector store."""
+    indexed_doc = Document(id="indexed-doc", content="statin therapy cardiovascular disease", source="s")
+    missing_doc = Document(id="missing-doc", content="hypertension blood pressure target adults", source="s")
+    query = "statin therapy cardiovascular"
+
+    pipeline = RAGPipeline(seed=False, min_similarity=0.5)
+    pipeline.documents = [indexed_doc, missing_doc]
+    pipeline._embedding_provider = _FakeEmbeddingProvider(
+        {indexed_doc.content: [1.0, 0.0], query: [1.0, 0.0]}
+        # missing_doc.content deliberately absent -> raises EmbeddingUnavailable
+    )
+    pipeline._index_documents(pipeline.documents)
+
+    results = pipeline.retrieve(query, top_k=3)
+    assert results
+    assert results[0]["id"] == "indexed-doc"
+
+
 def test_hybrid_retrieval_output_shape_matches_keyword_only():
     doc = Document(id="shape-doc", content="statin therapy cardiovascular disease", source="s")
     pipeline = _pipeline_with_docs_and_vectors([(doc, [1.0, 0.0])])

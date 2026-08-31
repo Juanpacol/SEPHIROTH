@@ -3,15 +3,16 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Circle, TrendingUp } from "lucide-react";
 import { api, type HistoryItem } from "@/lib/api";
+import { useLanguage } from "@/lib/language";
 import AgentBadge from "@/components/agent-badge";
 
-const OUTCOMES: { value: "improved" | "not_improved" | "unclear"; label: string }[] = [
-  { value: "improved", label: "Improved" },
-  { value: "not_improved", label: "Not improved" },
-  { value: "unclear", label: "Unclear" },
-];
-
 function RecommendationRow({ item }: { item: HistoryItem }) {
+  const { t } = useLanguage();
+  const OUTCOMES: { value: "improved" | "not_improved" | "unclear"; label: string }[] = [
+    { value: "improved", label: t("recommendations.outcome.improved") },
+    { value: "not_improved", label: t("recommendations.outcome.notImproved") },
+    { value: "unclear", label: t("recommendations.outcome.unclear") },
+  ];
   const queryClient = useQueryClient();
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["history"] });
@@ -38,7 +39,9 @@ function RecommendationRow({ item }: { item: HistoryItem }) {
           <span className="text-xs text-muted">{new Date(item.created_at).toLocaleString()}</span>
         </div>
         <span className="text-xs text-muted">
-          {item.patient_id ? `Patient ${item.patient_id}` : "General question"}
+          {item.patient_id
+            ? t("recommendations.patientLabel").replace("{id}", item.patient_id)
+            : t("recommendations.generalQuestion")}
         </span>
       </div>
 
@@ -53,7 +56,7 @@ function RecommendationRow({ item }: { item: HistoryItem }) {
           }`}
         >
           {item.acted_on ? <CheckCircle2 size={14} /> : <Circle size={14} />}
-          {item.acted_on ? "Acted on" : "I acted on this"}
+          {item.acted_on ? t("recommendations.actedOn") : t("recommendations.actOnThis")}
         </button>
 
         {item.acted_on && (
@@ -79,6 +82,7 @@ function RecommendationRow({ item }: { item: HistoryItem }) {
 }
 
 export default function RecommendationsPage() {
+  const { t } = useLanguage();
   const { data: history, isLoading } = useQuery({ queryKey: ["history"], queryFn: api.history });
   const { data: stats } = useQuery({
     queryKey: ["recommendation-stats"],
@@ -88,32 +92,33 @@ export default function RecommendationsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-extrabold">My Recommendations</h1>
-        <p className="text-sm text-muted">
-          Mark whether you acted on a consultation, then how the patient did — so this adds up to
-          something over time.
-        </p>
+        <h1 className="text-xl font-extrabold">{t("nav.recommendations")}</h1>
+        <p className="text-sm text-muted">{t("recommendations.subtitle")}</p>
       </div>
 
       {stats && (
         <div className="card flex items-center gap-3">
           <TrendingUp size={18} className="text-primary" />
           <p className="text-sm">
-            Acted on <span className="font-bold">{stats.acted_on}</span> of{" "}
-            <span className="font-bold">{stats.total}</span> recommendations
+            {t("recommendations.stats.actedOnLead")}{" "}
+            <span className="font-bold">{stats.acted_on}</span> {t("recommendations.stats.of")}{" "}
+            <span className="font-bold">{stats.total}</span> {t("recommendations.stats.total")}
             {stats.acted_on > 0 && (
               <>
-                {" "}
-                · of those, <span className="font-bold">{stats.improved}</span> improved
+                {" · "}
+                {t("recommendations.stats.improvedNote").replace(
+                  "{count}",
+                  String(stats.improved)
+                )}
               </>
             )}
           </p>
         </div>
       )}
 
-      {isLoading && <div className="text-muted">Loading…</div>}
+      {isLoading && <div className="text-muted">{t("common.loading")}</div>}
       {!isLoading && (!history || history.length === 0) && (
-        <div className="card text-muted">No consultations yet — ask Copilot something first.</div>
+        <div className="card text-muted">{t("recommendations.empty")}</div>
       )}
 
       <div className="space-y-4">

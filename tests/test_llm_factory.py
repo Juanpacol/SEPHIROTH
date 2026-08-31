@@ -10,7 +10,7 @@ shim was deleted in Phase 3 (DEBT-008).
 """
 
 import sephiroth.models.factory as factory_module
-from sephiroth.models import FallbackLLMClient, GeminiClient, GroqClient
+from sephiroth.models import FallbackLLMClient, GeminiClient, GroqClient, OllamaClient, VisionChatSplitClient
 
 
 def _reload_settings(monkeypatch, **overrides):
@@ -58,6 +58,40 @@ def test_llm_provider_groq_yields_a_bare_groq_primary_client(monkeypatch):
     client = factory_module.get_llm_client()
     assert isinstance(client, GroqClient)
     assert not isinstance(client, FallbackLLMClient)
+
+
+def test_llm_provider_split_routes_vision_to_gemini_chat_to_ollama_with_groq_fallback(monkeypatch):
+    """AC (runtime audit, vision/chat split): llm_provider='split' sends
+    describe_image to a bare GeminiClient and chat/generate_json to a
+    FallbackLLMClient(primary=Ollama, secondary=Groq) — the architecture
+    decided after comparing providers with the eval harness."""
+    _reload_settings(
+        monkeypatch,
+        gemini_api_key="fake-gemini-key",
+        groq_api_key="fake-groq-key",
+        ollama_api_key="fake-openrouter-key",
+        llm_provider="split",
+    )
+    client = factory_module.get_llm_client()
+    assert isinstance(client, VisionChatSplitClient)
+    assert isinstance(client.vision_client, GeminiClient)
+    assert isinstance(client.chat_client, FallbackLLMClient)
+    assert isinstance(client.chat_client.primary, OllamaClient)
+    assert isinstance(client.chat_client.secondary, GroqClient)
+
+
+def test_llm_provider_split_without_groq_key_has_no_chat_fallback(monkeypatch):
+    _reload_settings(
+        monkeypatch,
+        gemini_api_key="fake-gemini-key",
+        groq_api_key=None,
+        ollama_api_key="fake-openrouter-key",
+        llm_provider="split",
+    )
+    client = factory_module.get_llm_client()
+    assert isinstance(client, VisionChatSplitClient)
+    assert isinstance(client.chat_client, OllamaClient)
+    assert not isinstance(client.chat_client, FallbackLLMClient)
 
 
 def test_llm_provider_groq_ignores_gemini_key(monkeypatch):

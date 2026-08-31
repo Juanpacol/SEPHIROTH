@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { BookOpenCheck, Bot, CalendarPlus, Eye, Loader2, ScanEye } from "lucide-react";
-import { api } from "@/lib/api";
+import { BookOpenCheck, Bot, CalendarPlus, Clock, Eye, Loader2 } from "lucide-react";
+import { api, type RecentImagingAnalysis } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
+import { useLanguage } from "@/lib/language";
 import AgentBadge from "@/components/agent-badge";
 import ImageDropzone from "@/components/image-dropzone";
 import { OPEN_COPILOT_EVENT } from "@/components/copilot/copilot-widget";
@@ -12,7 +13,75 @@ import { useToast } from "@/components/ui/toast";
 
 const modalities = ["xray", "ct", "mri", "ultrasound", "pathology"];
 
+const PREVIEW_TIMEOUT_MS = 15000;
+
+/** `/imaging/preview` requires a JWT Bearer header, which a plain <img src>
+ * can never send (browsers don't attach custom headers to image requests) —
+ * so the preview is fetched as an authenticated blob and rendered via an
+ * object URL instead of pointing <img> at the API path directly. A large
+ * study (several MB) on a slow connection can otherwise hang the fetch
+ * indefinitely with no visible error, so this also times out and offers a
+ * manual retry rather than spinning forever. */
+function AuthenticatedPreview({ path, alt }: { path: string; alt: string }) {
+  const { t } = useLanguage();
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    let url: string | null = null;
+    setFailed(false);
+    setObjectUrl(null);
+
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) setFailed(true);
+    }, PREVIEW_TIMEOUT_MS);
+
+    api
+      .imagePreviewBlob(path)
+      .then((blob) => {
+        if (cancelled) return;
+        clearTimeout(timeoutId);
+        url = URL.createObjectURL(blob);
+        setObjectUrl(url);
+      })
+      .catch(() => {
+        clearTimeout(timeoutId);
+        if (!cancelled) setFailed(true);
+      });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [path, attempt]);
+
+  if (failed) {
+    return (
+      <button
+        onClick={() => setAttempt((n) => n + 1)}
+        className="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-muted hover:text-ink"
+      >
+        <span>{t("imaging.previewFailed")}</span>
+        <span className="font-semibold text-primary">{t("common.retry")}</span>
+      </button>
+    );
+  }
+  if (!objectUrl) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <Loader2 size={16} className="animate-spin text-muted" />
+      </div>
+    );
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={objectUrl} alt={alt} className="h-full w-full object-cover" />;
+}
+
 export default function ImagingPage() {
+  const { t } = useLanguage();
   const showToast = useToast();
   const [imagePath, setImagePath] = useState("");
   const [modality, setModality] = useState("xray");
@@ -25,11 +94,12 @@ export default function ImagingPage() {
   const [describeError, setDescribeError] = useState<string | null>(null);
   const [describing, setDescribing] = useState(false);
   const [addedToTimeline, setAddedToTimeline] = useState(false);
+  const [expandedAnalysis, setExpandedAnalysis] = useState<RecentImagingAnalysis | null>(null);
 
   const { data: patients } = useQuery({ queryKey: ["patients"], queryFn: () => api.patients() });
-
-  const analyze = useMutation({
-    mutationFn: () => api.analyzeImage({ image_path: imagePath, modality, target }),
+  const { data: recentAnalyses, isLoading: recentLoading } = useQuery({
+    queryKey: ["imaging-recent"],
+    queryFn: () => api.recentImagingAnalyses(12),
   });
 
   const evidence = useMutation({ mutationFn: (q: string) => api.searchEvidence(q) });
@@ -43,9 +113,9 @@ export default function ImagingPage() {
       }),
     onSuccess: () => {
       setAddedToTimeline(true);
-      showToast("Added to the patient's timeline.");
+      showToast(t("imaging.toast.addedToTimeline"));
     },
-    onError: () => showToast("Could not add to the timeline.", "error"),
+    onError: () => showToast(t("imaging.error.addToTimeline"), "error"),
   });
 
   const onUploaded = async (path: string) => {
@@ -61,6 +131,32 @@ export default function ImagingPage() {
     } catch {
       // Best-effort only — the clinician can always pick the modality by hand.
     }
+  };
+
+  /** Loads a past analysis's image back into the workspace above so the
+   * clinician can re-run the Vision AI description on it — the recent
+   * card only ever shows the description text it was generated with. */
+  const openInAnalyzer = (a: RecentImagingAnalysis) => {
+    if (!a.image_path) {
+      showToast(t("imaging.error.noOriginal"), "error");
+      return;
+    }
+    setExpandedAnalysis(null);
+    setImagePath(a.image_path);
+    setPatientId(a.patient_id);
+    const guess = a.title.split(" ")[0].toLowerCase();
+    if (modalities.includes(guess)) {
+      setModality(guess);
+      setModalityAuto(false);
+    }
+    setDescribeText("");
+    setDescribeError(null);
+    setDescribeModel(null);
+    setAddedToTimeline(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    showToast(
+      t("imaging.toast.loadedIntoWorkspace").replace("{button}", t("imaging.describeVisionAi"))
+    );
   };
 
   const runDescribe = async () => {
@@ -111,46 +207,45 @@ export default function ImagingPage() {
         }
       }
     } catch {
-      setDescribeError("Could not reach the vision model.");
+      setDescribeError(t("imaging.error.visionUnreachable"));
     } finally {
       setDescribing(false);
     }
   };
 
   const askSephiroth = () => {
+    const focus = target ? t("imaging.askPrefillFocus").replace("{target}", target) : "";
     window.dispatchEvent(
       new CustomEvent(OPEN_COPILOT_EVENT, {
         detail: {
-          prefill: `A vision model described this ${modality} image as: "${describeText}"${
-            target ? ` (focus: ${target})` : ""
-          }. What should I consider clinically, and what evidence supports it?`,
+          prefill: t("imaging.askPrefill")
+            .replace("{modality}", modality)
+            .replace("{description}", describeText)
+            .replace("{focus}", focus),
         },
       })
     );
   };
 
-  const hasResult = describeText || describeError || analyze.data;
+  const hasResult = describeText || describeError;
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
       <div>
-        <h1 className="text-xl font-extrabold">Imaging Analysis</h1>
-        <p className="text-sm text-muted">
-          MONAI-backed analysis + Gemini vision reasoning for X-Ray, CT, MRI, ultrasound and
-          pathology images
-        </p>
+        <h1 className="text-xl font-extrabold">{t("nav.imaging")}</h1>
+        <p className="text-sm text-muted">{t("imaging.subtitle")}</p>
       </div>
 
       <div className="card space-y-4">
         <div className="flex gap-4">
           <div className="flex-1">
-            <label className="mb-1 block text-sm font-semibold">Patient (optional)</label>
+            <label className="mb-1 block text-sm font-semibold">{t("imaging.patientOptional")}</label>
             <select
               value={patientId}
               onChange={(e) => setPatientId(e.target.value)}
               className="w-full rounded-xl border border-line/70 bg-card px-3 py-2.5 text-sm"
             >
-              <option value="">No patient</option>
+              <option value="">{t("copilot.noPatient")}</option>
               {patients?.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -160,10 +255,10 @@ export default function ImagingPage() {
           </div>
           <div className="flex-1">
             <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold">
-              Modality
+              {t("imaging.modality")}
               {modalityAuto && (
                 <span className="rounded-full bg-primary-soft px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                  auto-detected
+                  {t("imaging.autoDetected")}
                 </span>
               )}
             </label>
@@ -183,32 +278,24 @@ export default function ImagingPage() {
             </select>
           </div>
           <div className="flex-1">
-            <label className="mb-1 block text-sm font-semibold">Target (optional)</label>
+            <label className="mb-1 block text-sm font-semibold">{t("imaging.targetOptional")}</label>
             <input
               value={target}
               onChange={(e) => setTarget(e.target.value)}
-              placeholder="e.g. lung, liver"
+              placeholder={t("imaging.targetPlaceholder")}
               className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
             />
           </div>
         </div>
         <div className="flex gap-3">
           <button
-            onClick={() => analyze.mutate()}
-            disabled={!imagePath || analyze.isPending}
-            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
-          >
-            <ScanEye size={16} />
-            {analyze.isPending ? "Analyzing…" : "Analyze image"}
-          </button>
-          <button
             onClick={runDescribe}
             disabled={!imagePath || describing}
-            className="ai-badge flex items-center gap-2 rounded-xl !px-4 !py-2.5 !text-sm font-semibold disabled:opacity-40"
-            aria-label="Describe image with the vision model"
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+            aria-label={t("imaging.describeAria")}
           >
             <Eye size={16} />
-            {describing ? "Sampling…" : "Describe with Vision AI"}
+            {describing ? t("imaging.sampling") : t("imaging.describeVisionAi")}
           </button>
         </div>
       </div>
@@ -226,20 +313,16 @@ export default function ImagingPage() {
             <div className="card space-y-3">
               <div className="flex items-center gap-2">
                 <Eye size={16} className="text-primary" />
-                <h2 className="font-bold">What this looks like</h2>
+                <h2 className="font-bold">{t("imaging.whatThisLooksLike")}</h2>
                 <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                  Sample
+                  {t("imaging.sample")}
                 </span>
               </div>
-              <p className="text-sm text-muted">
-                Upload an image on the left and this panel fills in with the same kind of
-                streamed vision description and cited evidence shown below — from a real
-                consultation, not a mockup.
-              </p>
+              <p className="text-sm text-muted">{t("imaging.sampleDescription")}</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/landing/imaging-vision.jpg"
-                alt="Example of a completed Imaging Analysis: a streamed vision description alongside cited guideline evidence"
+                alt={t("imaging.sampleAlt")}
                 className="w-full rounded-xl border border-line/60"
               />
             </div>
@@ -251,8 +334,8 @@ export default function ImagingPage() {
               style={{ borderImage: "linear-gradient(135deg,#8C92AC,#D1D5DB) 1" }}
             >
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="font-bold">Vision description</h2>
-                <AgentBadge name="vision-ai" />
+                <h2 className="font-bold">{t("imaging.visionDescription")}</h2>
+                <AgentBadge name={t("imaging.visionAiBadge")} />
               </div>
               {describeError ? (
                 <p className="text-sm text-danger">{describeError}</p>
@@ -266,7 +349,7 @@ export default function ImagingPage() {
               )}
               {describeModel && (
                 <p className="mt-3 text-xs text-muted">
-                  Generated by {describeModel} — describes what's visible only; not a diagnosis.
+                  {t("imaging.generatedByDisclaimer").replace("{model}", describeModel)}
                 </p>
               )}
 
@@ -275,18 +358,22 @@ export default function ImagingPage() {
                   <button
                     onClick={() => addToTimeline.mutate()}
                     disabled={!patientId || addToTimeline.isPending || addedToTimeline}
-                    title={!patientId ? "Select a patient first" : undefined}
+                    title={!patientId ? t("imaging.selectPatientFirst") : undefined}
                     className="flex items-center gap-1.5 rounded-xl border border-line/70 px-3 py-2 text-xs font-semibold text-ink/80 hover:bg-surface disabled:opacity-40"
                   >
                     <CalendarPlus size={13} />
-                    {addedToTimeline ? "Added to timeline" : addToTimeline.isPending ? "Adding…" : "Add to Timeline"}
+                    {addedToTimeline
+                      ? t("imaging.addedToTimeline")
+                      : addToTimeline.isPending
+                        ? t("imaging.addingToTimeline")
+                        : t("imaging.addToTimeline")}
                   </button>
                   <button
                     onClick={askSephiroth}
                     className="flex items-center gap-1.5 rounded-xl border border-line/70 px-3 py-2 text-xs font-semibold text-ink/80 hover:bg-surface"
                   >
                     <Bot size={13} />
-                    Ask SEPHIROTH
+                    {t("imaging.askSephiroth")}
                   </button>
                 </div>
               )}
@@ -297,10 +384,10 @@ export default function ImagingPage() {
             <div className="card">
               <div className="mb-3 flex items-center gap-2">
                 <BookOpenCheck size={16} className="text-primary" />
-                <h2 className="font-bold">Related guideline evidence</h2>
+                <h2 className="font-bold">{t("imaging.relatedEvidence")}</h2>
               </div>
               {evidence.isPending ? (
-                <p className="text-sm text-muted">Searching indexed guidelines…</p>
+                <p className="text-sm text-muted">{t("imaging.searchingGuidelines")}</p>
               ) : (
                 <div className="space-y-3">
                   {evidence.data!.results.map((r, i) => (
@@ -309,34 +396,128 @@ export default function ImagingPage() {
                       <p className="mt-1.5 text-xs font-semibold text-primary">{r.citation}</p>
                     </div>
                   ))}
-                  <p className="text-xs text-muted">
-                    Cited literature about similar findings — not a match to this patient. Verify
-                    clinically.
-                  </p>
+                  <p className="text-xs text-muted">{t("imaging.evidenceDisclaimer")}</p>
                 </div>
               )}
             </div>
           )}
 
-          {analyze.data && (
-            <div
-              className="card border-2"
-              style={{ borderImage: "linear-gradient(135deg,#8C92AC,#D1D5DB) 1" }}
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="font-bold">Analysis result</h2>
-                <AgentBadge name="radiology" />
-              </div>
-              <pre className="overflow-x-auto rounded-xl bg-surface p-4 text-xs leading-relaxed">
-                {JSON.stringify(analyze.data, null, 2)}
-              </pre>
-              <p className="mt-3 text-xs text-muted">
-                Requires professional review — not a diagnosis.
-              </p>
-            </div>
-          )}
         </div>
       </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Clock size={16} className="text-primary" />
+          <h2 className="text-base font-bold">{t("imaging.recentAnalyses")}</h2>
+          <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+            {t("imaging.aiGenerated")}
+          </span>
+        </div>
+
+        {recentLoading && <p className="text-sm text-muted">{t("imaging.loadingRecent")}</p>}
+
+        {!recentLoading && (!recentAnalyses || recentAnalyses.length === 0) && (
+          <div className="card">
+            <p className="text-sm text-muted">{t("imaging.noneYet")}</p>
+          </div>
+        )}
+
+        {!recentLoading && recentAnalyses && recentAnalyses.length > 0 && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {recentAnalyses.map((a) => (
+              <div key={a.id} className="card flex flex-col gap-3 !p-3">
+                <div className="aspect-square w-full overflow-hidden rounded-lg bg-surface">
+                  {a.image_path ? (
+                    <AuthenticatedPreview path={a.image_path} alt={a.title} />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-xs text-muted">
+                      {t("imaging.noPreview")}
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-bold">{a.title}</p>
+                    <span className="whitespace-nowrap text-[10px] text-muted">{a.date}</span>
+                  </div>
+                  <p className="text-xs font-semibold text-primary">{a.patient_name}</p>
+                  <p className="line-clamp-4 text-xs leading-relaxed text-ink/80">{a.description}</p>
+                  {a.model && (
+                    <p className="text-[10px] text-muted">
+                      {t("imaging.modelLabel").replace("{model}", a.model)}
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2 border-t border-line/60 pt-2">
+                  <button
+                    onClick={() => setExpandedAnalysis(a)}
+                    className="flex-1 rounded-lg border border-line/70 px-2 py-1.5 text-xs font-semibold text-ink/80 hover:bg-surface"
+                  >
+                    {t("imaging.viewFull")}
+                  </button>
+                  <button
+                    onClick={() => openInAnalyzer(a)}
+                    disabled={!a.image_path}
+                    className="flex-1 rounded-lg bg-primary px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+                  >
+                    {t("imaging.analyzePrecisely")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {expandedAnalysis && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setExpandedAnalysis(null)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-card p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="font-bold">{expandedAnalysis.title}</h2>
+                <p className="text-xs font-semibold text-primary">{expandedAnalysis.patient_name}</p>
+                <p className="text-[10px] text-muted">{expandedAnalysis.date}</p>
+              </div>
+              <button
+                onClick={() => setExpandedAnalysis(null)}
+                className="rounded-lg border border-line/70 px-2 py-1 text-xs font-semibold text-ink/80 hover:bg-surface"
+              >
+                {t("common.close")}
+              </button>
+            </div>
+
+            {expandedAnalysis.image_path && (
+              <div className="mb-4 max-h-80 overflow-hidden rounded-xl bg-surface">
+                <AuthenticatedPreview path={expandedAnalysis.image_path} alt={expandedAnalysis.title} />
+              </div>
+            )}
+
+            <p className="whitespace-pre-wrap text-sm leading-relaxed">{expandedAnalysis.description}</p>
+            {expandedAnalysis.model && (
+              <p className="mt-3 text-xs text-muted">
+                {t("imaging.generatedByDisclaimer").replace("{model}", expandedAnalysis.model)}
+              </p>
+            )}
+
+            <div className="mt-4 border-t border-line/60 pt-3">
+              <button
+                onClick={() => openInAnalyzer(expandedAnalysis)}
+                disabled={!expandedAnalysis.image_path}
+                className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+              >
+                <Eye size={16} />
+                {t("imaging.runPreciseAnalysis")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

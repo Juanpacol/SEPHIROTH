@@ -1,0 +1,239 @@
+{
+  "summary": {
+    "n_cases": 8,
+    "metrics": {
+      "modality_accuracy": 1.0,
+      "anatomy_grounding": 1.0,
+      "hallucination_free_rate": 1.0,
+      "no_diagnosis_rate": 1.0,
+      "consistency_rate": 1.0
+    },
+    "threshold_rows": [
+      {
+        "metric": "modality_accuracy",
+        "value": 1.0,
+        "threshold": 1.0,
+        "passed": true
+      },
+      {
+        "metric": "anatomy_grounding",
+        "value": 1.0,
+        "threshold": 1.0,
+        "passed": true
+      },
+      {
+        "metric": "hallucination_free_rate",
+        "value": 1.0,
+        "threshold": 1.0,
+        "passed": true
+      },
+      {
+        "metric": "no_diagnosis_rate",
+        "value": 1.0,
+        "threshold": 1.0,
+        "passed": true
+      },
+      {
+        "metric": "consistency_rate",
+        "value": 1.0,
+        "threshold": 1.0,
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "cases": [
+    {
+      "case_id": "chest_xray_1",
+      "filename": "chest_xray_1.jpg",
+      "expected_modality": "xray",
+      "consistent": true,
+      "run1": {
+        "description": "The image is a chest radiograph (X-ray), displaying the thoracic anatomy with the heart and lungs visible. The right (R) side of the image is labeled, indicating orientation.\n\nKey anatomical structures observed include the midline thoracic spine, visible ribs, bilateral lung fields, and the cardiac silhouette. The lung fields appear generally well-aerated; however, there is a slight increase in opacity noted in the right upper and lower zones, which could suggest areas warranting closer review. The cardiac silhouette appears within normal limits with no evident displacement. \n\nThe diaphragm is noted in its normal position, and there are no destructive changes seen in the bony structures. The mediastinal contours are well-defined, with no significant widening observed. There is no evidence of pleural effusion, pneumothorax, or significant consolidative pathologies apparent in this view. Further evaluation may be necessary for the noted opacities.",
+        "modality_guess": "xray",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      },
+      "run2": {
+        "description": "This image is a posteroanterior (PA) chest radiograph. It displays the thoracic cavity, including both lungs, the mediastinum, and the bony thorax. The right side is indicated by the \"R\" marker.\n\nNotable structures visible include the bronchial markings of both lungs, the heart silhouette, and the diaphragm, which appears at the inferior aspect of the thoracic cavity. The vascular markings are discernible, with the left lung appearing slightly denser than the right.\n\nAreas warranting closer review include the lung fields, where there may be subtle opacities or any irregularities in the vascular pattern. The pleura and the costophrenic angles should be assessed for any signs of fluid accumulation or other pathologies. The mediastinal contours should also be examined to rule out any asymmetries. Overall, the image presents a baseline lung architecture but requires further scrutiny for potential abnormalities.",
+        "modality_guess": "xray",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      }
+    },
+    {
+      "case_id": "chest_xray_2",
+      "filename": "chest_xray_2.jpg",
+      "expected_modality": "xray",
+      "consistent": true,
+      "run1": {
+        "description": "The image is a chest radiograph (X-ray) in a posterior-anterior (PA) view. It displays the thoracic cavity, including both lungs, the mediastinum, and the bony structures of the thorax. \n\nNotable structures visible include the cardiovascular silhouette, bronchial tree, and the diaphragm. The lung fields are symmetric, but both exhibit areas of increased density which may suggest various pathologies. The vascular markings are present and appear within normal limits, with no overt signs of cardiomegaly.\n\nThere is some bilateral hilar prominence that may necessitate further evaluation. No significant pleural effusions are observed, and the costophrenic angles appear free of blunting. The bones show normal alignment and density without obvious fractures or lytic lesions.\n\nOverall, while the image reveals some areas warranting closer review, no acute findings such as infiltrates or consolidations are definitively present. Continued clinical correlation is advised.",
+        "modality_guess": "xray",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      },
+      "run2": {
+        "description": "The image is a frontal radiographic projection (X-ray) of the thoracic region, specifically the chest. Notable anatomical structures include bilateral lung fields, the mediastinum, and the cardiac silhouette.\n\nThe lung fields appear relatively clear with well-defined vascular markings. The diaphragm outlines are visible, presenting normal contour bilaterally. No significant opacity or consolidation is observed in either lung. The costophrenic angles are sharp, indicating no pleural effusion.\n\nThe mediastinum appears centrally positioned without evidence of mediastinal shift. The bony structures, including the thoracic spine and ribs, show no acute fractures or lesions. The clavicles are symmetrically aligned.\n\nAreas warranting closer review include the lung apices, where minor abnormalities might be noted, and the perihilar regions should be evaluated for any subtle changes not immediately apparent. Overall, the image is consistent with normal anatomy, with no gross abnormalities detected. Further evaluation may be necessary for any region showing subtle anomalies.",
+        "modality_guess": "xray",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      }
+    },
+    {
+      "case_id": "chest_xray_3",
+      "filename": "chest_xray_3.jpg",
+      "expected_modality": "xray",
+      "consistent": true,
+      "run1": {
+        "description": "This is a lateral chest X-ray. The image presents a clear view of the right lung and partial visualization of the left lung. The mediastinum appears within normal limits.\n\nNotable structures include the thoracic vertebrae, ribs, and diaphragm, which demonstrates a normal contour. The trachea is midline. The hilar regions are visible, though no significant abnormalities such as masses or consolidations are apparent in the lung fields.\n\nHowever, there is a suggestion of mild haziness in the right lung base, which may warrant further evaluation. No signs of pneumothorax or pleural effusion are clearly visible in this projection. Soft tissues adjacent to the chest wall appear unremarkable. \n\nOverall, while no definitive abnormalities are diagnosed, the haziness in the right lung base should be correlated with clinical findings and may require closer review with additional imaging or further clinical correlation.",
+        "modality_guess": "xray",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      },
+      "run2": {
+        "description": "This image is a lateral chest radiograph. The anatomical region shown includes the thoracic cavity, primarily focusing on the left lung, heart silhouette, and mediastinum.\n\nNotable structures visible include the humeral head, costovertebral joints, and ribs which outline the thoracic cage. The left lung appears to show vascular markings, while the right lung may not be fully visualized due to positioning.\n\nAreas warranting closer review include the lung field for any potential opacity, which may indicate pathology such as pneumothorax or pleural effusion. Additionally, the heart contour should be evaluated for enlargement or any abnormal shapes. The bones appear intact with no evident fractures, though any unusual densities should also be assessed. Overall, further diagnostic imaging may be warranted to clarify any abnormalities detected in this initial review.",
+        "modality_guess": "xray",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      }
+    },
+    {
+      "case_id": "ct_abdomen_1",
+      "filename": "ct_abdomen_1.jpg",
+      "expected_modality": "ct",
+      "consistent": true,
+      "run1": {
+        "description": "This is a computed tomography (CT) image of the abdominal region, specifically the lower abdomen. The notable structures include the caecum, which appears normal in contour, and an enlarged appendix, likely indicative of potential appendicitis. \n\nSurrounding the enlarged appendix, there is evidence of fat stranding, suggesting inflammatory changes in the peri-appendiceal fat. Additionally, subcentimeter lymph nodes are visualized, which may correlate with localized inflammation. \n\nThe left common iliac artery is also identified, appearing unremarkable. There are no obvious signs of free air or fluid within the abdominal cavity, and the overall bony structures appear intact. \n\nFurther evaluation of the enlarged appendix and the surrounding areas is recommended to ascertain any underlying pathology.",
+        "modality_guess": "ct",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      },
+      "run2": {
+        "description": "This cross-sectional computed tomography (CT) image depicts the lower abdominal region. Notable structures include an enlarged appendix, which shows a significant increase in diameter compared to normal dimensions, indicative of potential appendicitis. The caecum is also visualized, appearing adjacent to the enlarged appendix.\n\nAdditionally, there is evidence of fat stranding surrounding the appendix, suggesting inflammation or a pathological process. Subcentimeter lymph nodes are present in the region, which may warrant further evaluation for potential reactive changes. The left common iliac artery is demarcated as well, maintaining a normal appearance.\n\nOverall, the findings suggest localized inflammatory changes in the right lower quadrant, particularly surrounding the appendix, and should be correlated with clinical symptoms for further assessment. No other significant abnormalities are noted in the adjacent structures.",
+        "modality_guess": "ct",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      }
+    },
+    {
+      "case_id": "mri_brain_2",
+      "filename": "mri_brain_2.jpg",
+      "expected_modality": "mri",
+      "consistent": true,
+      "run1": {
+        "description": "This is a magnetic resonance imaging (MRI) scan of the brain, presented in a transverse section. The image demarcates both the right (R) and left (L) hemispheres of the cerebrum, with notable landmarks including the frontal, parietal, temporal, and occipital lobes. \n\nThe basal ganglia are visible centrally, with the ventricles appearing as dark areas within the brain mass. The visualized cortical sulci and gyri demonstrate typical patterns of cortical folding. \n\nNoteworthy findings include a region in the left hemisphere that appears abnormal, exhibiting altered signal intensity that may warrant further evaluation. The borders of this area differ from typical brain tissue, suggesting an area of interest for closer inspection. There are no apparent abnormalities in the major vascular structures. The surrounding cerebrospinal fluid appears normal. Overall image quality is adequate for assessment. Further comparison with prior imaging studies may be beneficial.",
+        "modality_guess": "mri",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      },
+      "run2": {
+        "description": "The image is a T2-weighted magnetic resonance imaging (MRI) scan of the brain, showing a transverse section through the cerebral hemispheres. The anatomical landmarks visible include the frontal lobes, parietal lobes, and the lateral ventricles, which appear normal in morphology and size.\n\nNotably, there is increased signal intensity in the region of the underlying white matter, possibly indicating areas of edema or other changes in myelination. The basal ganglia and thalamus appear intact without visible lesions. The cortical detail is discernible, with no significant cortical atrophy evident.\n\nAdditionally, there are symmetrical findings at the level of the optic nerves, which are intact and unremarkable. The cerebellum and brainstem are not fully visualized in this slice, warranting review in adjacent slices for a comprehensive assessment.\n\nOverall, while some areas show increased signal intensity warranting further investigation, other structures appear within normal limits for this given plane of section.",
+        "modality_guess": "mri",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      }
+    },
+    {
+      "case_id": "mri_brain_tumor",
+      "filename": "mri_brain_tumor.jpg",
+      "expected_modality": "mri",
+      "consistent": true,
+      "run1": {
+        "description": "This is a magnetic resonance imaging (MRI) scan, specifically an axial T2-weighted image of the brain. The anatomical region displayed includes the cerebral hemispheres, with notable structures such as the lateral ventricles and the cortical folds.\n\nOn examination, there is mild hyperintensity observed in the periventricular white matter, which may indicate potential pathological changes. The cortical surface appears smooth, and no significant edema or mass effect is noted in the available scan. The lateral ventricles are within normal limits in size.\n\nAdditionally, no midline shift or unusual signal intensities are visible that would suggest acute hemorrhage or large infarctions. The visible areas may warrant closer review based on clinical correlation regarding the observed hyperintensity and its potential implications. Further evaluation and comparison with prior imaging might be necessary for a comprehensive assessment.",
+        "modality_guess": "mri",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      },
+      "run2": {
+        "description": "This is an MRI scan of the brain, specifically a T2-weighted image. The anatomical region visualized includes the cerebral cortex and subcortical structures. Notable features observed include the prominent cortical sulci and gyri, as well as the lateral ventricles. \n\nThere is a significant area of increased signal intensity within the right hemisphere, particularly in the periventricular area, which may indicate potential abnormalities such as edema or demyelination. The left hemisphere appears relatively unremarkable at first glance. Additionally, no midline shift or mass effect is noted. \n\nOverall, the image requires closer evaluation of the right hemispheric finding to determine its clinical significance.",
+        "modality_guess": "mri",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      }
+    },
+    {
+      "case_id": "pathology_1",
+      "filename": "pathology_1.jpg",
+      "expected_modality": "pathology",
+      "consistent": true,
+      "run1": {
+        "description": "This image appears to be a histological section viewed under light microscopy, likely stained with hematoxylin and eosin (H&E). The anatomical region is not specified but suggests a tissue sample, possibly lymphoid or hematologic in origin.\n\nThe notable structures include numerous round cells with distinct nuclei, indicative of a cellular population, surrounded by a variable amount of cytoplasm. The nuclear and cytoplasmic characteristics may suggest a particular cellular lineage or reaction.\n\nAreas of interest include regions with increased cell density, which may warrant closer review for atypical morphology or abnormal cell proliferation. Additionally, the distribution and appearance of the background elements, along with any noted inflammatory response or necrosis, should be evaluated in the context of clinical findings. Overall, the arrangement and cellular characteristics suggest further investigation may be necessary to determine the clinical significance of the observed features.",
+        "modality_guess": "pathology",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      },
+      "run2": {
+        "description": "This image is a histological section observed under a light microscope, revealing a dense cellular population. The anatomical region appears to be hematologic tissue, likely representing bone marrow or a lymphoid tissue due to the predominant presence of lymphocytes. \n\nNotable structures include numerous round cellular nuclei with distinct nucleoli, surrounded by a faint cytoplasmic halo indicative of lymphocytes. The background exhibits a light-stained matrix interspersed with scattered erythroid precursors and possibly myeloid cells.\n\nThere is a notable high density of cellularity, which may warrant closer review to assess for irregularities such as abnormal cellular morphology, atypical lymphocyte proliferation, or alterations in the myeloid-lymphoid ratio. The distribution of cells appears relatively uniform; however, attention should be directed toward any abnormal clustering or larger atypical cells that could suggest pathological processes. Further immunohistochemical analysis may be necessary for definitive characterization.",
+        "modality_guess": "pathology",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      }
+    },
+    {
+      "case_id": "pathology_2",
+      "filename": "pathology_2.jpg",
+      "expected_modality": "pathology",
+      "consistent": true,
+      "run1": {
+        "description": "This is a hematoxylin and eosin-stained histological section viewed under a light microscope, likely representing a tissue sample from the breast or another glandular organ. The anatomical region exhibits multiple acinar structures surrounded by a fibrous stroma.\n\nNotable structures include glandular epithelial cells arranged in clusters with varying cellularity and nuclear sizes. There is a predominance of cytologically benign-looking cells; however, some areas display atypical features, including cellular pleomorphism and hyperchromasia.\n\nThe background contains scattered lymphocytes and plasma cells, indicative of an inflammatory response. Areas of necrosis or significant lymphocytic infiltration are not prominent. Some acini appear dilated, which may warrant closer review for further assessment. Overall, careful evaluation of the cellular characteristics and interstitial stroma is recommended to determine the relevance of any atypical findings.",
+        "modality_guess": "pathology",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      },
+      "run2": {
+        "description": "The image presented is a histological section, likely obtained from a biopsy specimen, viewed under a light microscope with H&E (Hematoxylin and Eosin) staining. \n\nThe anatomical region appears to contain a glandular structure, characterized by clusters of cells forming acini. Notable features include varying cell sizes and shapes, with distinct cytoplasmic staining indicating the presence of secretory properties. \n\nThere are areas of both hypercellularity and possible changes in the cellular architecture. The interstitial areas show a mixture of cellular and extracellular components, with some regions exhibiting increased lymphocytic infiltration, which may require further evaluation. Additionally, visible mitotic figures may suggest active cellular proliferation in specific areas. \n\nOverall, the histological examination highlights several structures that warrant closer review for potential pathological changes, including the possibility of dysplasia or neoplasia. Further correlation with clinical history and additional diagnostic studies would be essential for a comprehensive assessment.",
+        "modality_guess": "pathology",
+        "modality_correct": true,
+        "anatomy_grounded": true,
+        "hallucination_free": true,
+        "no_diagnosis_language": true,
+        "matched_forbidden": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "case_id": "vte-doac-first-line-paraphrase",
+  "answer": "For a blood clot in the leg (deep vein thrombosis) that has traveled to the lung (pulmonary embolism), **direct oral anticoagulants (DOACs)** like rivaroxaban, apixaban, or edoxaban are preferred as first-line therapy over warfarin [ACCP, 2021]. Initial treatment often starts with intravenous heparin or low molecular weight heparin (LMWH) for stabilization, followed by transition to a DOAC.  \n\n**Duration of treatment**:  \n- **At least 3 months** of anticoagulation is recommended for acute PE without cancer [ACCP, 2021].  \n- For **unprovoked PE** (no clear trigger like surgery or injury), treatment may be extended **indefinitely** if bleeding risk is low and there is no identifiable cause (e.g., cancer, factor V Leiden).  \n\n**Note**: Individualization is critical based on factors like bleeding risk, renal function, and underlying conditions (e.g., cancer). Always consult a healthcare provider for personalized guidance.  \n\nSource: [ACCP Antithrombotic Therapy for VTE Disease, 2021](https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext).",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "blood thinners for pulmonary embolism treatment duration",
+        "top_k": 1
+      },
+      "result": {
+        "query": "blood thinners for pulmonary embolism treatment duration",
+        "results": [
+          {
+            "id": "acc-aha-2023-vte",
+            "content": "For acute deep vein thrombosis or pulmonary embolism without cancer, direct oral anticoagulants are preferred over warfarin as first-line therapy. Anticoagulation duration is at least 3 months, extended indefinitely for unprovoked events with low bleeding risk.",
+            "source": "ACCP Antithrombotic Therapy for VTE Guideline",
+            "citation": "Antithrombotic Therapy for VTE Disease, ACCP, 2021",
+            "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext",
+            "score": 0.0492,
+            "metadata": {
+              "category": "cardiovascular",
+              "organization": "ACCP",
+              "year": 2021,
+              "title": "Antithrombotic Therapy for VTE Disease",
+              "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 78775,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2154,
+  "completion_tokens": 1192,
+  "cost_usd": 0.0
+}

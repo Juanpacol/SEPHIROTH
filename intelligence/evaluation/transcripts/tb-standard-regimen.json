@@ -1,55 +1,40 @@
 {
   "case_id": "tb-standard-regimen",
-  "answer": "For non-drug resistant TB, the standard regimen is a 6-month course of isoniazid, rifampicin, pyrazinamide, and ethambutol for 2 months, followed by isoniazid and rifampicin for 4 months. (Source: WHO Consolidated Guidelines on Tuberculosis, 2022)",
+  "answer": "The standard treatment duration for drug-susceptible pulmonary tuberculosis is **6 months**, divided into two phases:  \n- **Intensive phase**: 2 months of isoniazid, rifampicin, pyrazinamide, and ethambutol [WHO, 2022].  \n- **Continuation phase**: 4 months of isoniazid and rifampicin [WHO, 2022].  \n\nThis regimen is recommended for non-drug-resistant tuberculosis. Always confirm treatment plans with a healthcare provider, as individual factors may alter duration or drugs [WHO, 2022].  \n\n**Source**: WHO Consolidated Guidelines on Tuberculosis, 2022 [Treatment of Drug-Susceptible Tuberculosis].",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "TB treatment duration non-drug resistant",
-        "top_k": "10"
+        "query": "treatment duration for non-drug-resistant tuberculosis",
+        "top_k": 1
       },
       "result": {
-        "query": "TB treatment duration non-drug resistant",
+        "query": "treatment duration for non-drug-resistant tuberculosis",
         "results": [
-          {
-            "id": "nice-2022-depression",
-            "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
-            "source": "NICE Guideline on Depression in Adults",
-            "citation": "Management of Depression in Adults, NICE, 2022",
-            "score": 0.2236,
-            "metadata": {
-              "organization": "NICE",
-              "year": 2022,
-              "title": "Management of Depression in Adults"
-            }
-          },
           {
             "id": "who-2022-tb",
             "content": "The standard regimen for drug-susceptible pulmonary tuberculosis is a 6-month course of isoniazid, rifampicin, pyrazinamide, and ethambutol for 2 months, followed by isoniazid and rifampicin for 4 months.",
             "source": "WHO Consolidated Guidelines on Tuberculosis",
             "citation": "Treatment of Drug-Susceptible Tuberculosis, WHO, 2022",
-            "score": 0.2182,
+            "url": "https://www.who.int/publications/i/item/9789240048126",
+            "score": 0.0492,
             "metadata": {
+              "category": "infectious_disease",
               "organization": "WHO",
               "year": 2022,
-              "title": "Treatment of Drug-Susceptible Tuberculosis"
-            }
-          },
-          {
-            "id": "gina-2024-asthma",
-            "content": "For adults and adolescents with asthma, as-needed low-dose ICS-formoterol is preferred as reliever therapy over short-acting beta-agonist alone, even at the mildest step of treatment, to reduce exacerbation risk.",
-            "source": "Global Initiative for Asthma Report",
-            "citation": "Global Strategy for Asthma Management, GINA, 2024",
-            "score": 0.1925,
-            "metadata": {
-              "organization": "GINA",
-              "year": 2024,
-              "title": "Global Strategy for Asthma Management"
+              "title": "Treatment of Drug-Susceptible Tuberculosis",
+              "url": "https://www.who.int/publications/i/item/9789240048126"
             }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
-  ]
+  ],
+  "latency_ms": 36789,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2086,
+  "completion_tokens": 813,
+  "cost_usd": 0.0
 }

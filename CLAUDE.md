@@ -59,23 +59,35 @@ All colors + typography live in `platform/frontend/tailwind.config.ts`. Reuse th
 
 ## How It Works (Architecture)
 
+A consultation takes one of three paths, cheapest first:
+
 ```
 User Query
     ↓
-FastAPI endpoint (agents.py, patients.py, etc.)
+platform/api/fast_path.py — pure lookup? (guideline search, drug interaction)
+    ├─ YES → tool result returned verbatim with its own citation.  0 LLM calls, ~4s
+    └─ NO ↓
+src/sephiroth/runtime/executor.py
     ↓
-ClinicalCoordinator agent (Agent bound to the coordinator capability)
+enable_single_agent_mode? (default True)
+    │
+    ├─ YES → intent_router picks ONE specialist → it answers directly.  1 LLM call
+    │
+    └─ NO  → route_specialists fans out to N specialists in parallel
+             → coordinator merges their sections.                      N+1 LLM calls
     ↓
-Gemini (tool-calling loop in src/sephiroth/models/gemini.py)
-    ↓
-├─ RadiologyAgent + imaging_server → MONAI inference + vision description
-├─ LabAgent + patient data → lab result interpretation
-├─ EvidenceAgent + rag_server → PubMed/guidelines search + citations
-├─ DrugSafetyAgent + drug_safety_server → interaction checking
-└─ Final answer aggregated, returned with source citations
+citation guard (deterministic) → claim verification (1 LLM call)
+    → abstention gate (deterministic) → trace
     ↓
 Frontend displays agent badges (Sephiroth gradient), cites sources
 ```
+
+The specialists, in both modes:
+
+- RadiologyAgent + imaging_server → MONAI inference + vision description
+- LabAgent + patient data → lab result interpretation
+- EvidenceAgent + rag_server → PubMed/guidelines search + citations
+- DrugSafetyAgent + drug_safety_server → interaction checking
 
 Each agent is an `Agent` (`src/sephiroth/runtime/agent.py`) bound to an `AgentCapability` record with:
 - A **system prompt** (clinical reasoning instructions)
@@ -98,11 +110,13 @@ MCP tools are FastMCP servers in `intelligence/mcp/`:
 1. **Cloud LLM via Gemini, not local Ollama.** Migrated from a fully local Ollama setup to the free Google Gemini API — the only free tier covering native multi-round tool-calling, JSON-Schema structured output, and vision in one provider. PHI now leaves the machine; see the privacy notice above.
 2. **One shared `GeminiClient`, no host/Docker split.** `sephiroth.models.factory::get_llm_client()` is a lazy singleton used by agents, timeline extraction, and vision alike — one API key, one rate limiter, one retry/backoff path.
 3. **One agent per MCP server.** Specialist agents are small and focused; the executor in `src/sephiroth/runtime/` orchestrates them.
+24. **One specialist answers, by default — no coordinator turn.** `settings.enable_single_agent_mode` (default **True**) routes a consultation to exactly ONE specialist via `src/sephiroth/runtime/intent_router.py`, whose answer IS the final answer. This cut a consultation from 4-8 sequential model round-trips to 3 (1 answer + 2 verification), which is what makes the chat usable on a free/local model — measured: every free provider tried (Groq's 8000 TPM account cap, OpenRouter's saturated free models, local Ollama at ~23 tok/s) made the multi-agent path take 90s-3m43s. The router is three tiers, cheapest first: keyword rules on the question (zero latency, resolves most real phrasing), then structured context signals (`analyze()`), then one `generate_json` classification — degrading to `evidence` at every failure. Rules match on **intent, not topic**: "What A1C goal is appropriate?" names a lab test but asks for a guideline, so `evidence` is checked first and wins. Set the flag False to restore the parallel fan-out + coordinator (`enable_dynamic_planner` only applies then). Everything downstream — citation guard, claim verification, abstention, trace — is byte-identical in both modes; the closing disclaimer, which the coordinator's prompt used to carry, is appended deterministically by `executor._with_disclaimer` rather than trusted to a smaller model's instruction-following.
 4. **Sephiroth gradient = AI signal.** Whenever the UI shows AI-generated content, that gradient appears (badge, card border, etc.). Helps users trust the source.
 5. **All answers must cite sources.** EvidenceAgent always returns `(finding, [source_citation1, source_citation2, ...])`. This is baked into the RAG pipeline.
 6. **Citation Guard on every answer.** `src/sephiroth/verification/citation_guard.py` (relocated verbatim from `intelligence/agents/citation_guard.py` in Phase 5; that shim was deleted in Phase 6) audits the coordinator's final answer against actual tool output; fabricated citations are stripped (`[unverified — removed]`) and reported in `citation_report` (shown in the UI). Since Phase 4 it's a pre-filter feeding claim-level verification, not the terminal check — see #15.
+25. **Claim extraction and verification are one model call, not two.** `settings.enable_combined_verification` (default **True**) routes `_verify_and_decide` through `src/sephiroth/verification/combined.py::extract_and_verify`, which decomposes the answer into claims AND judges each against the retrieved evidence in a single `generate_json`. The two-call path (`extract_claims` → `verify_claims`) is strictly sequential — the judge needs the extractor's claim ids — and measured 47s of a 74s consultation on a local model, more than producing the answer itself. The merge preserves every guarantee and imports rather than reimplements them: the same claim fields and risk enum, ADR-006's deterministic low-overlap downgrade (`verify._overlap_supports` — a `supported` verdict whose claim shares almost no vocabulary with its cited evidence is demoted to `partially_supported`), contradiction detection, no-evidence ⇒ every claim `UNKNOWN` never `SUPPORTED`, and degrade-to-empty on any malformed payload or exception. `tests/test_runtime_executor.py::test_run_consultation_abstains_on_unsupported_high_risk_claim` is parametrized over both paths so the abstention gate is proven equally strong either way. Set the flag False to restore the two calls.
 15. **Claim verification and abstention gate every consultation.** `src/sephiroth/verification/` decomposes the (citation-sanitized) answer into claims and classifies each against retrieved evidence content (5-state `VerificationStatus`, not citation_guard's binary check); `src/sephiroth/safety/abstention.py` gates on the result — an unsupported high-risk claim, a contradiction, or low confidence overrides a plain `answer` with `partial` (caveat banner) or `abstain` (declines, replacing the answer). Confidence is always derived from existing signals, never self-reported by the model.
-16. **Each agent sees only the context fields it declares.** `AgentCapability.context_fields` (`src/sephiroth/runtime/registry.py`) names which `RunContext` fields an agent needs; `src/sephiroth/context/views.py::context_for_agent` projects down to just those before the executor calls it. "Memory" is scoped narrowly to a patient's own recent consultations (`src/sephiroth/context/memory.py`, injected by the router into `context["recent_consultations"]`, seen only by the coordinator) — not a generic multi-turn chat session, which doesn't exist in this product yet (see ADR-011).
+16. **Each agent sees only the context fields it declares.** `AgentCapability.context_fields` (`src/sephiroth/runtime/registry.py`) names which `RunContext` fields an agent needs; `src/sephiroth/context/views.py::context_for_agent` projects down to just those before the executor calls it. "Memory" is scoped narrowly to a patient's own recent consultations (`src/sephiroth/context/memory.py`, injected by the router into `context["recent_consultations"]`) and reaches **only the agent that writes the final answer** — the coordinator in multi-agent mode, the routed specialist in single-agent mode (`context_for_agent(..., answering=True)`, which adds `recent_consultations` and nothing else, so memory widens without clinical-data access widening). Not a generic multi-turn chat session, which doesn't exist in this product yet (see ADR-011).
 17. **Every consultation builds a replayable trace, persisted alongside it.** `src/sephiroth/telemetry/build_trace` projects the executor's `RunState` into `ExecutionTrace` (`sephiroth.contracts.trace`) at the end of a run; `traced_span` records real timing spans around each agent turn and the verification pass, redacted via an attribute allow-list (never patient content). Toggled by `settings.enable_tracing` — disabling it must not change anything else about a run's result (ADR-009). `ExecutionTrace.tokens`/`.cost_usd` are real, not placeholders (SPEC-006 v1.1.0/SPEC-016): `GeminiClient`/`GroqClient` report actual `prompt_tokens`/`completion_tokens` on `ChatResult`, summed per agent (including the coordinator, via `RunState.coordinator_result` — deliberately kept out of `agent_results`/`agents_involved`, the frozen SSE `final` event's value) and priced through `src/sephiroth/telemetry/pricing.py`'s hand-maintained table (`0.0` for an unrecognized model). `generate_json` calls (claim extraction, verification, dynamic planner) still report no usage — a known, smaller gap.
 7. **Auth = JWT, two roles.** `User.role` (`"clinician"` | `"patient"`) plus a nullable, unique `patient_id` FK bind a portal login to exactly one `Patient` record. Role is re-read from the DB on every request (`auth/deps.py`), never carried in the JWT, so a role change takes effect immediately. Clinician-only routers (`patients`, `dashboard`, `agents`, `medical`, `rag`) carry a router-level `dependencies=[Depends(require_clinician)]`, so a new route added to any of those files is protected the moment it exists. Consultations are persisted per user (`consultations` table); patients are shared across clinicians (no per-clinician scoping — every clinician sees every patient, unchanged). `JWT_SECRET` must be a strong, non-default value in staging/production — `Settings` fails fast at startup otherwise (see `platform/core/config.py`).
 23. **The landing page at `/` and the brand mark.** `app/(marketing)/` is a route group with its own nav/footer (`components/landing/`), escaping `AppShell`'s chrome via the same `isChromelessRoute()` predicate the login/claim pages use. A logged-in visitor never sees it: an inline `<head>` script (`lib/auth-gate.ts`, same pre-paint pattern as `THEME_INIT_SCRIPT`) checks `localStorage` and redirects to `/dashboard` or `/portal` before first paint — deliberately no `middleware.ts`, same reasoning as decision #22. The brand mark (`components/brand/wing-mark.tsx`, `app/icon.svg`) is an original, hand-authored single-wing signature built from stated arithmetic construction rules (one quadratic spine + feather-rib arcs) — nothing traced from any existing character or logo. It renders in `currentColor`/stroke, never the `sephiroth` gradient, which stays reserved as the "this is AI-generated" signal (decision #4) — the landing page's 4 interactive demos (`components/landing/`) are the only place that gradient appears outside the main app, and only on the mock AI-output cards within them.

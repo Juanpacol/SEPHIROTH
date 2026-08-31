@@ -67,9 +67,12 @@ async def extract_claims(answer: str, client: ModelProvider) -> List[Claim]:
         if not text:
             continue
         try:
-            risk = RiskLevel(raw.get("risk", "low"))
+            # Fail-safe, not fail-open: a missing/malformed risk field must
+            # not silently exempt the claim from the abstention gate's
+            # unsupported-high-risk check (safety/abstention.py).
+            risk = RiskLevel(raw.get("risk", "high"))
         except ValueError:
-            risk = RiskLevel.LOW
+            risk = RiskLevel.HIGH
         claims.append(
             Claim(
                 id=uuid.uuid4().hex,

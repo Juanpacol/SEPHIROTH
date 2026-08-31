@@ -78,6 +78,7 @@ class FakeLLMClient:
         self.default_script = default_script or [("answer", "")]
         self.json_payloads = list(json_payloads or [])
         self.chat_calls: List[Dict[str, Any]] = []
+        self.last_prompt: Optional[str] = None
         # Real clients report real usage (SPEC-016); this double defaults to
         # 0 (unset -- most tests don't care) but a test asserting on
         # AgentResult.prompt_tokens/completion_tokens can set these.
@@ -122,6 +123,9 @@ class FakeLLMClient:
     async def generate_json(
         self, prompt: str, schema: Dict[str, Any], system_prompt: Optional[str] = None
     ) -> Any:
+        # Recorded so a test can assert on what the model was actually shown
+        # (e.g. that evidence is referenced by short alias, not raw uuid).
+        self.last_prompt = prompt
         if self.json_payloads:
             return self.json_payloads.pop(0)
         return {}

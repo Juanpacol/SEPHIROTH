@@ -1,0 +1,59 @@
+{
+  "_comment": "Golden cases for the text consultation pipeline (Evidence + patient-context agents). Two families: evidence_library (no patient — grounded purely in the RAG guideline corpus) and patient_grounded (a real seeded patient's actual conditions/medications/labs — must_mention checks the agent used that patient's real data, must_not_mention is a cross-contamination/hallucination guard using another patient's medications or values never given to this one).",
+  "cases": [
+    {
+      "id": "a1c_target",
+      "family": "evidence_library",
+      "query": "What is the target A1C for adults with type 2 diabetes?",
+      "patient_id": null,
+      "context": {},
+      "must_mention_any": ["7%", "a1c", "hba1c"]
+    },
+    {
+      "id": "afib_anticoagulation",
+      "family": "evidence_library",
+      "query": "When is anticoagulation recommended for atrial fibrillation?",
+      "patient_id": null,
+      "context": {},
+      "must_mention_any": ["cha2ds2-vasc", "stroke", "anticoagulation", "anticoagulant"]
+    },
+    {
+      "id": "p001_diabetes_htn_control",
+      "family": "patient_grounded",
+      "query": "Given this patient's current medications and lab values, are they meeting their diabetes and blood pressure targets?",
+      "patient_id": "P001",
+      "context": {
+        "conditions": ["Type 2 Diabetes", "Hypertension"],
+        "medications": ["metformin", "lisinopril"],
+        "lab_results": {"hba1c": "6.8%", "bp": "138/86", "ldl": "102 mg/dL"}
+      },
+      "must_mention_any": ["metformin", "lisinopril", "6.8", "138/86", "hba1c"],
+      "must_not_mention": ["warfarin", "furosemide", "digoxin", "insulin"]
+    },
+    {
+      "id": "p002_hf_afib_regimen",
+      "family": "patient_grounded",
+      "query": "Is this patient's current medication regimen and lab values appropriate for their heart failure and atrial fibrillation?",
+      "patient_id": "P002",
+      "context": {
+        "conditions": ["Heart Failure (HFrEF)", "Atrial Fibrillation"],
+        "medications": ["warfarin", "furosemide", "digoxin"],
+        "lab_results": {"bnp": "450 pg/mL", "ef": "35%", "inr": "2.4", "potassium": "3.4 mEq/L"}
+      },
+      "must_mention_any": ["warfarin", "furosemide", "digoxin", "inr", "potassium", "ejection fraction", "35%"],
+      "must_not_mention": ["metformin", "lisinopril", "insulin"]
+    },
+    {
+      "id": "p002_drug_interactions",
+      "family": "patient_grounded",
+      "query": "Check this patient's medications for any drug interactions.",
+      "patient_id": "P002",
+      "context": {
+        "conditions": ["Heart Failure (HFrEF)", "Atrial Fibrillation"],
+        "medications": ["warfarin", "furosemide", "digoxin"]
+      },
+      "must_mention_any": ["warfarin", "digoxin", "furosemide"],
+      "must_not_mention": ["metformin", "lisinopril", "aspirin"]
+    }
+  ]
+}

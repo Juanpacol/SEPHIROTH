@@ -10,19 +10,18 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2,
-  ChevronDown,
   Download,
   Loader2,
   Send,
   ShieldAlert,
   ShieldCheck,
-  Wrench,
   X,
 } from "lucide-react";
 import { api, type CitationReport, type Explanation, type ToolCall } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import AgentBadge from "@/components/agent-badge";
+import AnswerText from "@/components/copilot/answer-text";
 import ExplainabilityPanel from "@/components/explainability-panel";
 
 interface AgentProgress {
@@ -45,11 +44,21 @@ interface Exchange {
 }
 
 /** Suggested starter questions — kept in English regardless of UI locale,
- * matching the clinical literature/citations the agents cite. */
+ * matching the clinical literature/citations the agents cite.
+ *
+ * Ordered general reference first, then specialist decisions. Every one was
+ * checked against the retrieval corpus (`data/rag`) before being listed: a
+ * suggested question the corpus cannot answer abstains, which reads as the
+ * product being broken rather than as it being careful. The last one routes
+ * to the drug-safety agent rather than evidence, so the set exercises both
+ * answering paths. */
 const SUGGESTED_QUESTIONS = [
-  "What's the best first medicine for high blood pressure?",
-  "When does someone with atrial fibrillation need blood thinners?",
-  "What antibiotic should I use for pneumonia caught outside the hospital?",
+  "What blood pressure reading is considered high?",
+  "What are the warning signs of a stroke?",
+  "What is the A1C target for adults with type 2 diabetes?",
+  "When should anticoagulation be started in atrial fibrillation?",
+  "Which empiric antibiotics for outpatient community-acquired pneumonia?",
+  "Which patients with type 2 diabetes and CKD should get an SGLT2 inhibitor?",
   "Do warfarin and ibuprofen interact?",
 ];
 
@@ -190,57 +199,27 @@ function ThinkingDots() {
   );
 }
 
-function ToolCallRow({ call }: { call: ToolCall }) {
-  const [open, setOpen] = useState(false);
-  const hasDetail = call.arguments || call.result !== undefined;
-  return (
-    <div className="border-b border-line/50 last:border-0">
-      <button
-        onClick={() => hasDetail && setOpen((o) => !o)}
-        className={`flex w-full items-center gap-1.5 py-1.5 text-left ${hasDetail ? "cursor-pointer" : "cursor-default"}`}
-        aria-expanded={open}
-      >
-        {hasDetail && (
-          <ChevronDown
-            size={11}
-            className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`}
-          />
-        )}
-        <span className="truncate">
-          {call.agent && <span className="text-muted">{call.agent} → </span>}
-          <code className="text-ink/80">{call.name}</code>
-        </span>
-      </button>
-      {open && hasDetail && (
-        <pre className="mb-2 max-h-48 overflow-auto rounded-lg bg-card p-2 text-[11px] leading-relaxed text-muted">
-{JSON.stringify({ arguments: call.arguments, result: call.result }, null, 2)}
-        </pre>
-      )}
-    </div>
-  );
-}
-
 function CitationsPanel({ report, toolCalls }: { report: CitationReport; toolCalls?: ToolCall[] }) {
   const { t } = useLanguage();
   const verified = report.verified ?? [];
   const fabricated = report.fabricated ?? [];
   if (verified.length === 0 && fabricated.length === 0) return null;
   return (
-    <div className="rounded-xl bg-surface p-3 text-xs">
-      <div className="mb-1.5 flex items-center gap-1 font-semibold text-ink/80">
-        <ShieldCheck size={13} className="text-success" /> {t("copilot.citationGuard")}
+    <div className="rounded-xl bg-surface p-3 text-xs text-muted">
+      <div className="mb-1.5 flex items-center gap-1 font-semibold">
+        <ShieldCheck size={13} /> {t("copilot.citationGuard")}
       </div>
       {verified.map((citation) => {
         const url = citationUrl(citation, toolCalls);
         return (
-          <div key={citation} className="flex items-start gap-1.5 text-muted">
-            <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-success" />
+          <div key={citation} className="flex items-start gap-1.5">
+            <CheckCircle2 size={12} className="mt-0.5 shrink-0" />
             {url ? (
               <a
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary underline underline-offset-2"
+                className="underline underline-offset-2"
               >
                 {citation} — {t("copilot.viewSource")}
               </a>
@@ -426,7 +405,11 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
             <div className="ml-auto w-fit max-w-[85%] rounded-2xl bg-primary px-4 py-2.5 text-sm text-white">
               {exchange.question}
             </div>
-            <div className="ai-ring max-w-[95%] rounded-squircle bg-card p-4 text-sm shadow-card">
+            {/* No `ai-ring` here: its 2px #8c92ac halo read as a stray light
+                border around every answer. The AI-provenance signal that ring
+                carried (design decision #4) still ships on each answer via
+                AgentBadge, which uses the same Sephiroth gradient. */}
+            <div className="max-w-[95%] rounded-squircle bg-card p-4 text-sm shadow-card">
               {exchange.pending ? (
                 <div className="space-y-2">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted">
@@ -473,22 +456,12 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                       </button>
                     )}
                   </div>
-                  <div className="whitespace-pre-wrap leading-relaxed">{exchange.answer}</div>
+                  <AnswerText answer={exchange.answer ?? ""} />
                   {exchange.citations && (
                     <CitationsPanel report={exchange.citations} toolCalls={exchange.toolCalls} />
                   )}
                   {exchange.explanation && (
                     <ExplainabilityPanel explanation={exchange.explanation} />
-                  )}
-                  {exchange.toolCalls && exchange.toolCalls.length > 0 && (
-                    <div className="rounded-xl bg-surface p-3 text-xs text-muted">
-                      <div className="mb-1 flex items-center gap-1 font-semibold">
-                        <Wrench size={12} /> {t("copilot.toolsUsed")}
-                      </div>
-                      {exchange.toolCalls.map((call, j) => (
-                        <ToolCallRow key={j} call={call} />
-                      ))}
-                    </div>
                   )}
                 </div>
               )}

@@ -1,0 +1,40 @@
+{
+  "case_id": "aki-staging-management",
+  "answer": "Acute kidney injury (AKI) is staged based on serum creatinine levels or urine output, per KDIGO guidelines [KDIGO, 2012]:  \n- **Stage 1**: Serum creatinine increases 1.5-1.9\u00d7 baseline or urine output <0.5 mL/kg/h for 6-12 hours.  \n- **Stage 2**: Serum creatinine increases 2-2.9\u00d7 baseline.  \n- **Stage 3**: Serum creatinine \u22653\u00d7 baseline or initiation of renal replacement therapy.  \n\n**Management** includes:  \n1. **Supportive care**: Optimize volume status, avoid nephrotoxins (e.g., NSAIDs, contrast agents), and adjust doses of renally cleared medications.  \n2. **Dialysis**: Reserved for refractory fluid overload, hyperkalemia (>6.5 mEq/L), severe acidosis (pH <7.1), or uremic symptoms.  \n\nThis staged approach guides clinical decision-making but requires professional review for individual patient contexts.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "top_k": 1,
+        "query": "acute kidney injury staging management"
+      },
+      "result": {
+        "query": "acute kidney injury staging management",
+        "results": [
+          {
+            "id": "kdigo-2012-aki",
+            "content": "Acute kidney injury is staged by the rise in serum creatinine or decline in urine output: Stage 1 is a 1.5-1.9x creatinine rise or <0.5 mL/kg/h urine output for 6-12h. Management is supportive \u2014 optimize volume status, avoid nephrotoxins, and adjust renally-cleared drug doses; dialysis is reserved for refractory fluid overload, hyperkalemia, or acidosis.",
+            "source": "KDIGO Clinical Practice Guideline for Acute Kidney Injury",
+            "citation": "Diagnosis and Management of Acute Kidney Injury, KDIGO, 2012",
+            "url": "https://kdigo.org/guidelines/acute-kidney-injury/",
+            "score": 0.0492,
+            "metadata": {
+              "category": "nephrology",
+              "organization": "KDIGO",
+              "year": 2012,
+              "title": "Diagnosis and Management of Acute Kidney Injury",
+              "url": "https://kdigo.org/guidelines/acute-kidney-injury/"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 32746,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 1922,
+  "completion_tokens": 706,
+  "cost_usd": 0.0
+}

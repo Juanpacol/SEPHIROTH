@@ -5,163 +5,259 @@
       "id": "dm-a1c-target",
       "category": "golden",
       "query": "What A1C goal is appropriate for most nonpregnant adults with type 2 diabetes?",
-      "relevant_doc_ids": ["ada-2024-hba1c"],
-      "expected_citation_substrings": ["ADA Standards of Care in Diabetes"],
-      "must_not_cite": ["UpToDate"]
+      "relevant_doc_ids": [
+        "ada-2024-hba1c"
+      ],
+      "expected_citation_substrings": [
+        "ADA Standards of Care in Diabetes"
+      ],
+      "must_not_cite": [
+        "UpToDate"
+      ]
     },
     {
       "id": "htn-bp-target",
       "category": "golden",
       "query": "What blood pressure target is recommended for most adults with hypertension?",
-      "relevant_doc_ids": ["acc-aha-2023-htn"],
-      "expected_citation_substrings": ["ACC/AHA Hypertension Guideline"]
+      "relevant_doc_ids": [
+        "acc-aha-2023-htn"
+      ],
+      "expected_citation_substrings": [
+        "ACC/AHA Hypertension Guideline"
+      ]
     },
     {
       "id": "hf-sglt2-therapy",
       "category": "golden",
       "query": "What guideline-directed medical therapy is recommended for heart failure with reduced ejection fraction?",
-      "relevant_doc_ids": ["aha-2022-hf"],
-      "expected_citation_substrings": ["AHA/ACC/HFSA Heart Failure Guideline"]
+      "relevant_doc_ids": [
+        "aha-2022-hf"
+      ],
+      "expected_citation_substrings": [
+        "AHA/ACC/HFSA Heart Failure Guideline"
+      ]
     },
     {
       "id": "copd-laba-lama",
       "category": "golden",
       "query": "What inhaler therapy is preferred for COPD patients with frequent exacerbations?",
-      "relevant_doc_ids": ["gold-2024-copd"],
-      "expected_citation_substrings": ["GOLD COPD Report"]
+      "relevant_doc_ids": [
+        "gold-2024-copd"
+      ],
+      "expected_citation_substrings": [
+        "GOLD COPD Report"
+      ]
     },
     {
       "id": "cap-outpatient-antibiotics",
       "category": "golden",
       "query": "What antibiotics are recommended for outpatient community-acquired pneumonia in healthy adults?",
-      "relevant_doc_ids": ["idsa-2023-cap"],
-      "expected_citation_substrings": ["ATS/IDSA Community-Acquired Pneumonia Guideline"]
+      "relevant_doc_ids": [
+        "idsa-2023-cap"
+      ],
+      "expected_citation_substrings": [
+        "ATS/IDSA Community-Acquired Pneumonia Guideline"
+      ]
     },
     {
       "id": "ckd-sglt2-egfr",
       "category": "golden",
       "query": "When is an SGLT2 inhibitor recommended for chronic kidney disease in type 2 diabetes?",
-      "relevant_doc_ids": ["ada-2024-ckd"],
-      "expected_citation_substrings": ["ADA Standards of Care in Diabetes"]
+      "relevant_doc_ids": [
+        "ada-2024-ckd"
+      ],
+      "expected_citation_substrings": [
+        "ADA Standards of Care in Diabetes"
+      ]
     },
     {
       "id": "colorectal-screening-age",
       "category": "golden",
       "query": "At what age should colorectal cancer screening begin for average-risk adults?",
-      "relevant_doc_ids": ["uspstf-2021-colorectal"],
-      "expected_citation_substrings": ["USPSTF Colorectal Cancer Screening Recommendation"]
+      "relevant_doc_ids": [
+        "uspstf-2021-colorectal"
+      ],
+      "expected_citation_substrings": [
+        "USPSTF Colorectal Cancer Screening Recommendation"
+      ]
     },
     {
       "id": "breast-mammography-interval",
       "category": "golden",
       "query": "How often should women aged 40 to 74 get a screening mammogram?",
-      "relevant_doc_ids": ["uspstf-2024-breast"],
-      "expected_citation_substrings": ["USPSTF Breast Cancer Screening Recommendation"]
+      "relevant_doc_ids": [
+        "uspstf-2024-breast"
+      ],
+      "expected_citation_substrings": [
+        "USPSTF Breast Cancer Screening Recommendation"
+      ]
     },
     {
       "id": "statin-primary-prevention",
       "category": "golden",
       "query": "Who should receive high-intensity statin therapy for primary prevention of cardiovascular disease?",
-      "relevant_doc_ids": ["acc-aha-2018-lipids"],
-      "expected_citation_substrings": ["ACC/AHA Multi-Society Cholesterol Guideline"]
+      "relevant_doc_ids": [
+        "acc-aha-2018-lipids"
+      ],
+      "expected_citation_substrings": [
+        "ACC/AHA Multi-Society Cholesterol Guideline"
+      ]
     },
     {
       "id": "asthma-reliever-therapy",
       "category": "golden",
       "query": "What reliever therapy is preferred for adults with asthma to reduce exacerbation risk?",
-      "relevant_doc_ids": ["gina-2024-asthma"],
-      "expected_citation_substrings": ["Global Initiative for Asthma Report"]
+      "relevant_doc_ids": [
+        "gina-2024-asthma"
+      ],
+      "expected_citation_substrings": [
+        "Global Initiative for Asthma Report"
+      ]
     },
     {
       "id": "stroke-tpa-window",
       "category": "golden",
       "query": "What is the time window for giving intravenous alteplase in acute ischemic stroke?",
-      "relevant_doc_ids": ["aha-asa-2021-stroke"],
-      "expected_citation_substrings": ["AHA/ASA Acute Ischemic Stroke Guideline"]
+      "relevant_doc_ids": [
+        "aha-asa-2021-stroke"
+      ],
+      "expected_citation_substrings": [
+        "AHA/ASA Acute Ischemic Stroke Guideline"
+      ]
     },
     {
       "id": "uti-first-line-agents",
       "category": "golden",
       "query": "What are the first-line antibiotics for uncomplicated cystitis in women?",
-      "relevant_doc_ids": ["idsa-2019-uti"],
-      "expected_citation_substrings": ["IDSA Uncomplicated UTI Guideline"]
+      "relevant_doc_ids": [
+        "idsa-2019-uti"
+      ],
+      "expected_citation_substrings": [
+        "IDSA Uncomplicated UTI Guideline"
+      ]
     },
     {
       "id": "sepsis-antibiotic-timing",
       "category": "golden",
       "query": "How quickly should antibiotics be given in septic shock?",
-      "relevant_doc_ids": ["sscm-2021-sepsis"],
-      "expected_citation_substrings": ["Surviving Sepsis Campaign Guidelines"]
+      "relevant_doc_ids": [
+        "sscm-2021-sepsis"
+      ],
+      "expected_citation_substrings": [
+        "Surviving Sepsis Campaign Guidelines"
+      ]
     },
     {
       "id": "afib-anticoagulation-threshold",
       "category": "golden",
       "query": "At what CHA2DS2-VASc score should oral anticoagulation be started in atrial fibrillation?",
-      "relevant_doc_ids": ["accp-2024-afib"],
-      "expected_citation_substrings": ["Atrial Fibrillation Guideline"]
+      "relevant_doc_ids": [
+        "accp-2024-afib"
+      ],
+      "expected_citation_substrings": [
+        "Atrial Fibrillation Guideline"
+      ]
     },
     {
       "id": "gout-urate-lowering",
       "category": "golden",
       "query": "What is the preferred first-line urate-lowering therapy for recurrent gout?",
-      "relevant_doc_ids": ["acr-2020-gout"],
-      "expected_citation_substrings": ["ACR Guideline for Management of Gout"]
+      "relevant_doc_ids": [
+        "acr-2020-gout"
+      ],
+      "expected_citation_substrings": [
+        "ACR Guideline for Management of Gout"
+      ]
     },
     {
       "id": "tb-standard-regimen",
       "category": "paraphrase",
       "query": "How long do you treat regular TB that isn't drug resistant?",
-      "relevant_doc_ids": ["who-2022-tb"],
-      "expected_citation_substrings": ["WHO Consolidated Guidelines on Tuberculosis"]
+      "relevant_doc_ids": [
+        "who-2022-tb"
+      ],
+      "expected_citation_substrings": [
+        "WHO Consolidated Guidelines on Tuberculosis"
+      ]
     },
     {
       "id": "obesity-glp1-dm",
       "category": "paraphrase",
       "query": "Are GLP-1 drugs a good option for weight loss in someone with type 2 diabetes?",
-      "relevant_doc_ids": ["ada-2024-obesity"],
-      "expected_citation_substrings": ["ADA Standards of Care in Diabetes"]
+      "relevant_doc_ids": [
+        "ada-2024-obesity"
+      ],
+      "expected_citation_substrings": [
+        "ADA Standards of Care in Diabetes"
+      ]
     },
     {
       "id": "preeclampsia-aspirin-timing",
       "category": "paraphrase",
       "query": "Should a high-risk pregnant patient start baby aspirin, and when?",
-      "relevant_doc_ids": ["acog-2020-preeclampsia"],
-      "expected_citation_substrings": ["ACOG Practice Bulletin on Preeclampsia"]
+      "relevant_doc_ids": [
+        "acog-2020-preeclampsia"
+      ],
+      "expected_citation_substrings": [
+        "ACOG Practice Bulletin on Preeclampsia"
+      ]
     },
     {
       "id": "otitis-media-kids-antibiotic",
       "category": "paraphrase",
-      "query": "My kid has an ear infection — what's the go-to antibiotic?",
-      "relevant_doc_ids": ["aap-2013-otitis"],
-      "expected_citation_substrings": ["AAP Clinical Practice Guideline on Acute Otitis Media"]
+      "query": "My kid has an ear infection \u2014 what's the go-to antibiotic?",
+      "relevant_doc_ids": [
+        "aap-2013-otitis"
+      ],
+      "expected_citation_substrings": [
+        "AAP Clinical Practice Guideline on Acute Otitis Media"
+      ]
     },
     {
       "id": "afib-doac-vs-warfarin",
       "category": "paraphrase",
       "query": "Is a DOAC or warfarin better for most people needing blood thinners for AFib?",
-      "relevant_doc_ids": ["accp-2024-afib"],
-      "expected_citation_substrings": ["Atrial Fibrillation Guideline"]
+      "relevant_doc_ids": [
+        "accp-2024-afib"
+      ],
+      "expected_citation_substrings": [
+        "Atrial Fibrillation Guideline"
+      ]
     },
     {
       "id": "depression-treatment-combo",
       "category": "paraphrase",
-      "query": "What's the best approach for someone with fairly severe depression — meds, therapy, or both?",
-      "relevant_doc_ids": ["nice-2022-depression"],
-      "expected_citation_substrings": ["NICE Guideline on Depression in Adults"]
+      "query": "What's the best approach for someone with fairly severe depression \u2014 meds, therapy, or both?",
+      "relevant_doc_ids": [
+        "nice-2022-depression"
+      ],
+      "expected_citation_substrings": [
+        "NICE Guideline on Depression in Adults"
+      ]
     },
     {
       "id": "aspirin-primary-prevention-elderly",
       "category": "paraphrase",
       "query": "Should a healthy 65-year-old take a daily aspirin to prevent a heart attack?",
-      "relevant_doc_ids": ["acc-aha-2019-primary-prevention"],
-      "expected_citation_substrings": ["Primary Prevention of Cardiovascular Disease"]
+      "relevant_doc_ids": [
+        "acc-aha-2019-primary-prevention"
+      ],
+      "expected_citation_substrings": [
+        "Primary Prevention of Cardiovascular Disease"
+      ]
     },
     {
       "id": "diabetes-hypertension-agent-choice",
       "category": "paraphrase",
       "query": "For a diabetic patient with high blood pressure and protein in the urine, which BP medication class fits best?",
-      "relevant_doc_ids": ["ada-2024-hypertension-dm", "ada-2024-ckd", "acc-aha-2023-htn"],
-      "expected_citation_substrings": ["ADA Standards of Care in Diabetes"]
+      "relevant_doc_ids": [
+        "ada-2024-hypertension-dm",
+        "ada-2024-ckd",
+        "acc-aha-2023-htn"
+      ],
+      "expected_citation_substrings": [
+        "ADA Standards of Care in Diabetes"
+      ]
     },
     {
       "id": "adv-autism-semaglutide",
@@ -169,7 +265,9 @@
       "query": "What do the clinical guidelines say about using semaglutide to treat autism spectrum disorder?",
       "relevant_doc_ids": [],
       "expects_abstention": true,
-      "must_not_cite": ["ADA Standards of Care in Diabetes"]
+      "must_not_cite": [
+        "ADA Standards of Care in Diabetes"
+      ]
     },
     {
       "id": "adv-crystal-healing-cancer",
@@ -184,7 +282,9 @@
       "query": "What homeopathic remedy is recommended as first-line treatment for septic shock?",
       "relevant_doc_ids": [],
       "expects_abstention": true,
-      "must_not_cite": ["Surviving Sepsis Campaign Guidelines"]
+      "must_not_cite": [
+        "Surviving Sepsis Campaign Guidelines"
+      ]
     },
     {
       "id": "adv-unrelated-tax-advice",
@@ -192,6 +292,723 @@
       "query": "What do the guidelines recommend for filing quarterly small-business tax returns?",
       "relevant_doc_ids": [],
       "expects_abstention": true
+    },
+    {
+      "id": "acs-stemi-reperfusion",
+      "category": "golden",
+      "query": "What is the preferred reperfusion strategy for STEMI and how fast should it happen?",
+      "relevant_doc_ids": [
+        "acc-aha-2025-acs"
+      ],
+      "expected_citation_substrings": [
+        "ACC/AHA Acute Coronary Syndrome Guideline"
+      ]
+    },
+    {
+      "id": "acs-stemi-reperfusion-paraphrase",
+      "category": "paraphrase",
+      "query": "My patient is having a heart attack with ST elevation \u2014 angioplasty or clot-busting drugs first?",
+      "relevant_doc_ids": [
+        "acc-aha-2025-acs"
+      ],
+      "expected_citation_substrings": [
+        "ACC/AHA Acute Coronary Syndrome Guideline"
+      ]
+    },
+    {
+      "id": "vte-doac-first-line",
+      "category": "golden",
+      "query": "What anticoagulant is first-line for acute DVT or PE without cancer?",
+      "relevant_doc_ids": [
+        "acc-aha-2023-vte"
+      ],
+      "expected_citation_substrings": [
+        "ACCP Antithrombotic Therapy for VTE Guideline"
+      ]
+    },
+    {
+      "id": "vte-doac-first-line-paraphrase",
+      "category": "paraphrase",
+      "query": "Blood thinners for a blood clot in the leg that traveled to the lung \u2014 which one and for how long?",
+      "relevant_doc_ids": [
+        "acc-aha-2023-vte"
+      ],
+      "expected_citation_substrings": [
+        "ACCP Antithrombotic Therapy for VTE Guideline"
+      ]
+    },
+    {
+      "id": "hypothyroidism-levothyroxine",
+      "category": "golden",
+      "query": "What is the first-line treatment for primary hypothyroidism and what TSH target?",
+      "relevant_doc_ids": [
+        "ata-2014-hypothyroidism"
+      ],
+      "expected_citation_substrings": [
+        "ATA Guidelines for Hypothyroidism"
+      ]
+    },
+    {
+      "id": "hypothyroidism-levothyroxine-paraphrase",
+      "category": "paraphrase",
+      "query": "My thyroid is underactive, what medicine do I take and how should I take it?",
+      "relevant_doc_ids": [
+        "ata-2014-hypothyroidism"
+      ],
+      "expected_citation_substrings": [
+        "ATA Guidelines for Hypothyroidism"
+      ]
+    },
+    {
+      "id": "dm-microvascular-screening",
+      "category": "golden",
+      "query": "What screening exams should adults with type 2 diabetes have every year?",
+      "relevant_doc_ids": [
+        "ada-2024-microvascular-screening"
+      ],
+      "expected_citation_substrings": [
+        "ADA Standards of Care in Diabetes"
+      ]
+    },
+    {
+      "id": "dm-microvascular-screening-paraphrase",
+      "category": "paraphrase",
+      "query": "How often does a diabetic need their eyes and feet checked?",
+      "relevant_doc_ids": [
+        "ada-2024-microvascular-screening"
+      ],
+      "expected_citation_substrings": [
+        "ADA Standards of Care in Diabetes"
+      ]
+    },
+    {
+      "id": "cellulitis-empiric-therapy",
+      "category": "golden",
+      "query": "What is the empiric antibiotic choice for non-purulent versus purulent cellulitis?",
+      "relevant_doc_ids": [
+        "idsa-2014-cellulitis"
+      ],
+      "expected_citation_substrings": [
+        "IDSA Skin and Soft Tissue Infection Guideline"
+      ]
+    },
+    {
+      "id": "cellulitis-empiric-therapy-paraphrase",
+      "category": "paraphrase",
+      "query": "My leg is red and swollen with no pus, what antibiotic treats that skin infection?",
+      "relevant_doc_ids": [
+        "idsa-2014-cellulitis"
+      ],
+      "expected_citation_substrings": [
+        "IDSA Skin and Soft Tissue Infection Guideline"
+      ]
+    },
+    {
+      "id": "copd-exacerbation-management",
+      "category": "golden",
+      "query": "How is an acute COPD exacerbation treated?",
+      "relevant_doc_ids": [
+        "gold-2024-copd-exacerbation"
+      ],
+      "expected_citation_substrings": [
+        "GOLD COPD Report"
+      ]
+    },
+    {
+      "id": "copd-exacerbation-management-paraphrase",
+      "category": "paraphrase",
+      "query": "My COPD is flaring up with more coughing and mucus, what treatment do I need?",
+      "relevant_doc_ids": [
+        "gold-2024-copd-exacerbation"
+      ],
+      "expected_citation_substrings": [
+        "GOLD COPD Report"
+      ]
+    },
+    {
+      "id": "aki-staging-management",
+      "category": "golden",
+      "query": "How is acute kidney injury staged and managed?",
+      "relevant_doc_ids": [
+        "kdigo-2012-aki"
+      ],
+      "expected_citation_substrings": [
+        "KDIGO Clinical Practice Guideline for Acute Kidney Injury"
+      ]
+    },
+    {
+      "id": "aki-staging-management-paraphrase",
+      "category": "paraphrase",
+      "query": "My patient's kidney function suddenly dropped, how do you grade how bad it is and treat it?",
+      "relevant_doc_ids": [
+        "kdigo-2012-aki"
+      ],
+      "expected_citation_substrings": [
+        "KDIGO Clinical Practice Guideline for Acute Kidney Injury"
+      ]
+    },
+    {
+      "id": "general-blood-pressure-explainer",
+      "category": "golden",
+      "query": "What is blood pressure and what counts as a normal reading?",
+      "relevant_doc_ids": [
+        "medlineplus-blood-pressure"
+      ],
+      "expected_citation_substrings": [
+        "MedlinePlus"
+      ]
+    },
+    {
+      "id": "general-blood-pressure-explainer-paraphrase",
+      "category": "paraphrase",
+      "query": "What do the top and bottom blood pressure numbers actually mean?",
+      "relevant_doc_ids": [
+        "medlineplus-blood-pressure"
+      ],
+      "expected_citation_substrings": [
+        "MedlinePlus"
+      ]
+    },
+    {
+      "id": "general-a1c-explainer",
+      "category": "golden",
+      "query": "What does the A1C test measure and what do the numbers mean?",
+      "relevant_doc_ids": [
+        "medlineplus-a1c"
+      ],
+      "expected_citation_substrings": [
+        "MedlinePlus"
+      ]
+    },
+    {
+      "id": "general-a1c-explainer-paraphrase",
+      "category": "paraphrase",
+      "query": "What's the difference between a normal A1C and prediabetes?",
+      "relevant_doc_ids": [
+        "medlineplus-a1c"
+      ],
+      "expected_citation_substrings": [
+        "MedlinePlus"
+      ]
+    },
+    {
+      "id": "general-cholesterol-explainer",
+      "category": "golden",
+      "query": "What is the difference between LDL and HDL cholesterol?",
+      "relevant_doc_ids": [
+        "medlineplus-cholesterol"
+      ],
+      "expected_citation_substrings": [
+        "MedlinePlus"
+      ]
+    },
+    {
+      "id": "general-cholesterol-explainer-paraphrase",
+      "category": "paraphrase",
+      "query": "Which cholesterol number is the bad one and which is good?",
+      "relevant_doc_ids": [
+        "medlineplus-cholesterol"
+      ],
+      "expected_citation_substrings": [
+        "MedlinePlus"
+      ]
+    },
+    {
+      "id": "general-hydration",
+      "category": "golden",
+      "query": "How much water should a person drink each day?",
+      "relevant_doc_ids": [
+        "cdc-hydration"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ]
+    },
+    {
+      "id": "general-hydration-paraphrase",
+      "category": "paraphrase",
+      "query": "How do I know if I'm drinking enough water?",
+      "relevant_doc_ids": [
+        "cdc-hydration"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ]
+    },
+    {
+      "id": "general-heart-rate",
+      "category": "golden",
+      "query": "What is a normal resting heart rate for an adult?",
+      "relevant_doc_ids": [
+        "medlineplus-heart-rate"
+      ],
+      "expected_citation_substrings": [
+        "MedlinePlus"
+      ]
+    },
+    {
+      "id": "general-heart-rate-paraphrase",
+      "category": "paraphrase",
+      "query": "My pulse is 55 at rest, is that too low?",
+      "relevant_doc_ids": [
+        "medlineplus-heart-rate"
+      ],
+      "expected_citation_substrings": [
+        "MedlinePlus"
+      ]
+    },
+    {
+      "id": "general-sleep",
+      "category": "golden",
+      "query": "How many hours of sleep do adults need each night?",
+      "relevant_doc_ids": [
+        "cdc-sleep"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ]
+    },
+    {
+      "id": "general-sleep-paraphrase",
+      "category": "paraphrase",
+      "query": "What happens to your health if you don't get enough sleep?",
+      "relevant_doc_ids": [
+        "cdc-sleep"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ]
+    },
+    {
+      "id": "general-stroke-warning-signs",
+      "category": "golden",
+      "query": "What are the warning signs of a stroke and what should you do?",
+      "relevant_doc_ids": [
+        "cdc-stroke-warning-signs"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ]
+    },
+    {
+      "id": "general-stroke-warning-signs-paraphrase",
+      "category": "paraphrase",
+      "query": "How can you tell if someone is having a stroke using FAST?",
+      "relevant_doc_ids": [
+        "cdc-stroke-warning-signs"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ]
+    },
+    {
+      "id": "headache-what-to-do",
+      "category": "golden",
+      "query": "What do I do if I have a headache?",
+      "relevant_doc_ids": [
+        "ichd3-tension-headache"
+      ],
+      "expected_citation_substrings": [
+        "International Headache Society"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "headache-what-to-do-spanish",
+      "category": "paraphrase",
+      "query": "Qu\u00e9 hago si tengo dolor de cabeza",
+      "relevant_doc_ids": [
+        "ichd3-tension-headache"
+      ],
+      "expected_citation_substrings": [
+        "International Headache Society"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "migraine-acute-treatment",
+      "category": "golden",
+      "query": "What is the first-line acute treatment for migraine?",
+      "relevant_doc_ids": [
+        "ahs-2021-migraine"
+      ],
+      "expected_citation_substrings": [
+        "American Headache Society"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "headache-red-flags",
+      "category": "golden",
+      "query": "What headache symptoms mean I should seek urgent care?",
+      "relevant_doc_ids": [
+        "cdc-headache-red-flags"
+      ],
+      "expected_citation_substrings": [
+        "MedlinePlus"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "dizziness-bppv-treatment",
+      "category": "golden",
+      "query": "What is the first-line treatment for benign paroxysmal positional vertigo?",
+      "relevant_doc_ids": [
+        "aao-hns-2017-dizziness"
+      ],
+      "expected_citation_substrings": [
+        "AAO-HNS"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "low-back-pain-treatment",
+      "category": "golden",
+      "query": "What is the first-line treatment for acute low back pain?",
+      "relevant_doc_ids": [
+        "acp-2017-low-back-pain"
+      ],
+      "expected_citation_substrings": [
+        "American College of Physicians"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "low-back-pain-red-flags",
+      "category": "golden",
+      "query": "What are the red flags for low back pain that need urgent evaluation?",
+      "relevant_doc_ids": [
+        "nice-2020-back-pain-red-flags"
+      ],
+      "expected_citation_substrings": [
+        "NICE"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "ankle-sprain-management",
+      "category": "golden",
+      "query": "How is an acute ankle sprain managed and when does it need an X-ray?",
+      "relevant_doc_ids": [
+        "aaos-ankle-sprain"
+      ],
+      "expected_citation_substrings": [
+        "AAOS"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "common-cold-care",
+      "category": "golden",
+      "query": "What is the recommended treatment for a common cold?",
+      "relevant_doc_ids": [
+        "cdc-2023-common-cold"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "common-cold-care-paraphrase",
+      "category": "paraphrase",
+      "query": "I have a runny nose and cough, what should I do?",
+      "relevant_doc_ids": [
+        "cdc-2023-common-cold"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "sore-throat-strep-criteria",
+      "category": "golden",
+      "query": "What criteria determine if a sore throat needs a strep test?",
+      "relevant_doc_ids": [
+        "idsa-2012-pharyngitis-centor"
+      ],
+      "expected_citation_substrings": [
+        "IDSA"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "cough-duration-evaluation",
+      "category": "golden",
+      "query": "When does a cough need further evaluation instead of just resolving on its own?",
+      "relevant_doc_ids": [
+        "acc-cough-guideline"
+      ],
+      "expected_citation_substrings": [
+        "American College of Chest Physicians"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "flu-antiviral-timing",
+      "category": "golden",
+      "query": "When should antiviral treatment for influenza be started?",
+      "relevant_doc_ids": [
+        "cdc-flu-2024"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "fever-adults-when-to-worry",
+      "category": "golden",
+      "query": "What fever in an adult requires medical attention?",
+      "relevant_doc_ids": [
+        "medlineplus-fever-adults"
+      ],
+      "expected_citation_substrings": [
+        "MedlinePlus"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "fever-infant-evaluation",
+      "category": "golden",
+      "query": "Does a fever in a young infant always need medical evaluation?",
+      "relevant_doc_ids": [
+        "aap-2011-fever-children"
+      ],
+      "expected_citation_substrings": [
+        "American Academy of Pediatrics"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "gastroenteritis-management",
+      "category": "golden",
+      "query": "How should acute vomiting and diarrhea be managed at home?",
+      "relevant_doc_ids": [
+        "cdc-gastroenteritis"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "gerd-first-line-treatment",
+      "category": "golden",
+      "query": "What is the first-line treatment for GERD?",
+      "relevant_doc_ids": [
+        "acg-2022-gerd"
+      ],
+      "expected_citation_substrings": [
+        "American College of Gastroenterology"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "abdominal-pain-red-flags",
+      "category": "golden",
+      "query": "What abdominal pain symptoms need urgent evaluation?",
+      "relevant_doc_ids": [
+        "acg-2021-abdominal-pain-red-flags"
+      ],
+      "expected_citation_substrings": [
+        "American College of Gastroenterology"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "hives-urticaria-treatment",
+      "category": "golden",
+      "query": "What is the first-line treatment for acute hives?",
+      "relevant_doc_ids": [
+        "aad-2014-urticaria"
+      ],
+      "expected_citation_substrings": [
+        "American Academy of Dermatology"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "contact-dermatitis-treatment",
+      "category": "golden",
+      "query": "How is contact dermatitis treated?",
+      "relevant_doc_ids": [
+        "aad-contact-dermatitis"
+      ],
+      "expected_citation_substrings": [
+        "American Academy of Dermatology"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "gad-first-line-treatment",
+      "category": "golden",
+      "query": "What is the first-line treatment for generalized anxiety disorder?",
+      "relevant_doc_ids": [
+        "nice-2019-gad"
+      ],
+      "expected_citation_substrings": [
+        "NICE"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "insomnia-sleep-hygiene",
+      "category": "golden",
+      "query": "What helps with occasional insomnia before trying medication?",
+      "relevant_doc_ids": [
+        "cdc-2022-sleep-hygiene"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "allergic-rhinitis-treatment",
+      "category": "golden",
+      "query": "What is the most effective treatment for allergic rhinitis?",
+      "relevant_doc_ids": [
+        "aaaai-allergic-rhinitis"
+      ],
+      "expected_citation_substrings": [
+        "American Academy of Allergy"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "acetaminophen-max-dose",
+      "category": "golden",
+      "query": "What is the maximum daily dose of acetaminophen for an adult?",
+      "relevant_doc_ids": [
+        "fda-acetaminophen-dosing"
+      ],
+      "expected_citation_substrings": [
+        "FDA"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "nsaid-safety-cautions",
+      "category": "golden",
+      "query": "What are the risks of taking NSAIDs regularly?",
+      "relevant_doc_ids": [
+        "medlineplus-nsaid-cautions"
+      ],
+      "expected_citation_substrings": [
+        "MedlinePlus"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "when-to-see-a-doctor",
+      "category": "golden",
+      "query": "When should minor symptoms prompt seeing a doctor instead of self-care?",
+      "relevant_doc_ids": [
+        "medlineplus-when-to-see-doctor"
+      ],
+      "expected_citation_substrings": [
+        "MedlinePlus"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "conjunctivitis-treatment",
+      "category": "golden",
+      "query": "How is viral conjunctivitis (pink eye) treated?",
+      "relevant_doc_ids": [
+        "aao-2019-conjunctivitis"
+      ],
+      "expected_citation_substrings": [
+        "American Academy of Ophthalmology"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "earache-adults-evaluation",
+      "category": "golden",
+      "query": "What causes an earache in adults and how is it treated?",
+      "relevant_doc_ids": [
+        "aafp-earache-adults"
+      ],
+      "expected_citation_substrings": [
+        "American Academy of Family Physicians"
+      ],
+      "must_not_cite": [],
+      "expects_abstention": false
+    },
+    {
+      "id": "oos-tax-filing",
+      "category": "adversarial-out-of-scope",
+      "query": "What do the guidelines recommend for filing quarterly small-business tax returns?",
+      "relevant_doc_ids": [],
+      "expects_abstention": true,
+      "expected_citation_substrings": [],
+      "must_not_cite": []
+    },
+    {
+      "id": "oos-tax-filing-spanish",
+      "category": "adversarial-out-of-scope",
+      "query": "C\u00f3mo hago la declaraci\u00f3n de impuestos trimestrales de mi negocio?",
+      "relevant_doc_ids": [],
+      "expects_abstention": true,
+      "expected_citation_substrings": [],
+      "must_not_cite": []
+    },
+    {
+      "id": "oos-legal-advice",
+      "category": "adversarial-out-of-scope",
+      "query": "I need legal advice on how to file a lawsuit against my landlord",
+      "relevant_doc_ids": [],
+      "expects_abstention": true,
+      "expected_citation_substrings": [],
+      "must_not_cite": []
+    },
+    {
+      "id": "oos-recipe",
+      "category": "adversarial-out-of-scope",
+      "query": "What's a good recipe for chocolate chip cookies?",
+      "relevant_doc_ids": [],
+      "expects_abstention": true,
+      "expected_citation_substrings": [],
+      "must_not_cite": []
+    },
+    {
+      "id": "oos-programming",
+      "category": "adversarial-out-of-scope",
+      "query": "Can you write some python code to sort a list?",
+      "relevant_doc_ids": [],
+      "expects_abstention": true,
+      "expected_citation_substrings": [],
+      "must_not_cite": []
     }
   ]
 }

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -19,6 +20,7 @@ from data.rag import RAGPipeline
 from intelligence.evaluation import metrics
 from intelligence.evaluation.dataset import GoldenCase, load_dataset
 from intelligence.evaluation.faithfulness import heuristic_proxy
+from sephiroth.telemetry.pricing import estimate_cost_usd
 
 EVAL_DIR = Path(__file__).parent
 DATASET_PATH = EVAL_DIR / "datasets" / "golden.json"
@@ -223,14 +225,25 @@ async def run_full_mode(
     if skip_pubmed:
         agent.allowed_tools = ["search_clinical_guidelines"]
 
+    model_name = getattr(client, "model", "unknown")
     transcripts: List[Dict[str, Any]] = []
     for case in cases:
+        started = time.perf_counter()
         chat_result = await agent.run(case.query)
+        latency_ms = round((time.perf_counter() - started) * 1000)
         transcripts.append(
             {
                 "case_id": case.id,
                 "answer": chat_result.content,
                 "tool_calls": chat_result.tool_calls,
+                "latency_ms": latency_ms,
+                "tool_call_count": len(chat_result.tool_calls),
+                "rounds": chat_result.rounds,
+                "prompt_tokens": chat_result.prompt_tokens,
+                "completion_tokens": chat_result.completion_tokens,
+                "cost_usd": round(
+                    estimate_cost_usd(model_name, chat_result.prompt_tokens, chat_result.completion_tokens), 6
+                ),
             }
         )
 
@@ -264,11 +277,34 @@ async def run_full_mode(
     ]
     abstention_metrics = compute_abstention_metrics(abstention_results)
 
+    # Merge tool-call/latency/cost fields (from `transcripts`) into the
+    # existing per-case faithfulness rows, keyed by case id — one row per
+    # case in the final output instead of two parallel lists.
+    perf_by_case = {t["case_id"]: t for t in transcripts}
+    for row in per_case_faithfulness:
+        perf = perf_by_case.get(row["id"], {})
+        row["latency_ms"] = perf.get("latency_ms")
+        row["tool_call_count"] = perf.get("tool_call_count")
+        row["rounds"] = perf.get("rounds")
+        row["prompt_tokens"] = perf.get("prompt_tokens")
+        row["completion_tokens"] = perf.get("completion_tokens")
+        row["cost_usd"] = perf.get("cost_usd")
+
+    n = len(transcripts) or 1
+    performance = {
+        "avg_latency_ms": round(sum(t["latency_ms"] for t in transcripts) / n, 1),
+        "avg_tool_call_count": round(sum(t["tool_call_count"] for t in transcripts) / n, 2),
+        "total_prompt_tokens": sum(t["prompt_tokens"] for t in transcripts),
+        "total_completion_tokens": sum(t["completion_tokens"] for t in transcripts),
+        "total_cost_usd": round(sum(t["cost_usd"] for t in transcripts), 6),
+    }
+
     results = {
         "run": {
             "mode": "full",
             "timestamp": run_timestamp,
             "model": getattr(client, "model", "unknown"),
+            "provider": type(client).__name__,
             "git_sha": git_sha,
             "n_cases": len(cases),
             "dataset_sha256": sha256_file(dataset_path),
@@ -281,6 +317,7 @@ async def run_full_mode(
             "heuristic_proxy": round(replay["faithfulness_heuristic_proxy"], 4),
             "claims_checked": sum(f["claims_checked"] for f in per_case_faithfulness),
         },
+        "performance": performance,
         "per_case": per_case_faithfulness,
         "abstention": abstention_metrics,
     }

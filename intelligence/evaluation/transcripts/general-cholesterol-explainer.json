@@ -1,0 +1,55 @@
+{
+  "case_id": "general-cholesterol-explainer",
+  "answer": "The difference between LDL (low-density lipoprotein) and HDL (high-density lipoprotein) cholesterol is as follows:  \n- **LDL cholesterol** is labeled \"bad\" cholesterol because high levels contribute to plaque buildup in arterial walls, increasing cardiovascular disease risk [MedlinePlus, 2024].  \n- **HDL cholesterol** is labeled \"good\" cholesterol because it helps transport excess cholesterol from tissues back to the liver for excretion, reducing arterial plaque [MedlinePlus, 2024].  \n\nClinical guidelines emphasize managing LDL levels through lifestyle changes and medications (e.g., statins) to mitigate atherosclerosis risk, though HDL's specific role in prevention is less definitively outlined in current recommendations [ACC/AHA, 2018].  \n\nAlways consult a healthcare provider for personalized guidance.  \n\n<tools>  \n</tools>",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "difference between LDL and HDL cholesterol",
+        "top_k": 2
+      },
+      "result": {
+        "query": "difference between LDL and HDL cholesterol",
+        "results": [
+          {
+            "id": "medlineplus-cholesterol",
+            "content": "Cholesterol travels in the blood in two main forms: LDL ('bad' cholesterol), which builds up in artery walls, and HDL ('good' cholesterol), which helps remove it. A cholesterol panel also reports triglycerides, another blood fat linked to heart disease risk when elevated.",
+            "source": "MedlinePlus",
+            "citation": "Cholesterol Levels: What They Mean, MedlinePlus (U.S. National Library of Medicine), 2024",
+            "url": "https://medlineplus.gov/cholesterollevelswhattheymean.html",
+            "score": 0.0492,
+            "metadata": {
+              "category": "general_health",
+              "organization": "MedlinePlus (U.S. National Library of Medicine)",
+              "year": 2024,
+              "title": "Cholesterol Levels: What They Mean",
+              "url": "https://medlineplus.gov/cholesterollevelswhattheymean.html"
+            }
+          },
+          {
+            "id": "acc-aha-2018-lipids",
+            "content": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C >=190 mg/dL or diabetes with additional risk factors.",
+            "source": "ACC/AHA Multi-Society Cholesterol Guideline",
+            "citation": "Management of Blood Cholesterol, ACC/AHA, 2018",
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000625",
+            "score": 0.0161,
+            "metadata": {
+              "category": "cardiovascular",
+              "organization": "ACC/AHA",
+              "year": 2018,
+              "title": "Management of Blood Cholesterol",
+              "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000625"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 47358,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2319,
+  "completion_tokens": 1016,
+  "cost_usd": 0.0
+}

@@ -60,10 +60,18 @@ class Settings(BaseSettings):
     gemini_rpm_limit: int = 10
     llm_max_tool_rounds: int = 6
 
+    # OpenAI API (for data generation, testing, etc.)
+    openai_api_key: Optional[str] = None
+
     # Which provider `get_llm_client()` builds as primary. "gemini" (default)
     # preserves all pre-Phase-1 behavior, including Groq fallback below.
     # "groq" returns a bare GroqClient, never wrapped the other way around.
-    llm_provider: Literal["gemini", "groq"] = "gemini"
+    # "ollama" returns a bare OllamaClient — local dev only, no fallback.
+    # "split" routes vision to Gemini only and chat/tool-calling to Ollama
+    # (nemotron via OpenRouter's OpenAI-compatible endpoint by default,
+    # `ollama_base_url`/`ollama_model`), falling back to Groq for chat —
+    # see `VisionChatSplitClient` and the runtime audit's model comparison.
+    llm_provider: Literal["gemini", "groq", "ollama", "split"] = "gemini"
 
     # Fallback LLM — Groq (OpenAI-compatible API), free tier. Used only for
     # text/tool-calling when Gemini is unavailable (rate-limited or its
@@ -89,6 +97,19 @@ class Settings(BaseSettings):
     groq_rpm_limit: int = 0
     llm_enable_fallback: bool = True
 
+    # Local dev via Ollama (`llm_provider="ollama"`) — free, no rate limits,
+    # no key required by default. `ollama_base_url` can also point at
+    # OpenRouter's OpenAI-compatible endpoint (with `ollama_api_key` set) to
+    # run the same client against a hosted version of the same model.
+    ollama_base_url: str = "http://localhost:11434/v1"
+    ollama_model: str = "qwen2.5:14b"
+    ollama_vision_model: Optional[str] = None
+    ollama_api_key: Optional[str] = None
+    ollama_max_retries: int = 3
+    ollama_timeout_seconds: int = 120
+    ollama_max_output_tokens: int = 2048
+    ollama_rpm_limit: int = 0
+
     # Medical AI model weights (optional — features degrade gracefully)
     medcat_model_path: Optional[str] = None
     monai_model_path: Optional[str] = None
@@ -103,6 +124,20 @@ class Settings(BaseSettings):
     # dense embeddings (unlike keyword overlap) almost never score exactly 0.
     retrieval_min_similarity: float = 0.70
     retrieval_mode: Literal["hybrid", "keyword_only"] = "hybrid"
+    # Floor for `api/fast_path.py`'s guideline branch, which skips citation
+    # guard and verification entirely (see that module's docstring) — a weak
+    # top-1 hit must never become the final answer unchecked. NOT a cosine
+    # similarity like `retrieval_min_similarity` above: `RAGPipeline.retrieve`'s
+    # "score" is the RRF-fused value from `data/rag/__init__.py::_fuse`
+    # (RRF_K=60, dense weight 2.0, keyword weight 1.0), whose whole range sits
+    # under ~0.05 — a rank-0 dense-only hit scores ~0.0328, a rank-0
+    # keyword-only hit (no embedding signal at all) scores ~0.0164. 0.02 sits
+    # between those two: it requires at least a real embedding-corroborated
+    # match, rejecting a hit that only coincidentally shares a keyword.
+    # Calibrated against the seed corpus at write time (see
+    # `data/rag/corpus_primary_care.py`); recalibrate against the rebuilt
+    # embeddings artifact if the corpus changes materially.
+    fast_path_min_score: float = 0.02
 
     # Feature flags
     # Enforce each agent's `allowed_tools` whitelist at dispatch time, not just
@@ -133,6 +168,27 @@ class Settings(BaseSettings):
     # Default False — the offline eval (--mode ci) has no live model, so
     # leaving this off keeps eval deterministic.
     enable_dynamic_planner: bool = False
+
+    # When True, a consultation routes to exactly ONE specialist
+    # (`sephiroth.runtime.intent_router`) whose answer is returned
+    # directly, skipping both the parallel fan-out and the coordinator
+    # turn that merges its results. Cuts a consultation from 4-8
+    # sequential model round-trips to 3 (1 answer + 2 verification),
+    # which is what makes the chat usable on a free/local model.
+    # Verification, citation guard, and abstention are unaffected —
+    # they run identically in both modes. Set False to restore the
+    # multi-agent fan-out; `enable_dynamic_planner` only applies then.
+    enable_single_agent_mode: bool = True
+
+    # Claim extraction and claim verification are two strictly sequential
+    # `generate_json` calls (the second needs the first's claim ids).
+    # Measured on a local model they were 47s of a 74s consultation — more
+    # than producing the answer. When True, `verification.combined`
+    # does both in one call. Every guarantee is preserved: same claim
+    # fields, the same deterministic low-overlap downgrade from
+    # `verify.py`, contradictions, and the same degrade-to-empty on any
+    # failure. Set False to restore the two-call path.
+    enable_combined_verification: bool = True
 
     # Attachment byte storage (platform/core/storage.py). "postgres"
     # (default) keeps today's behavior unchanged; "s3" requires
@@ -172,6 +228,15 @@ class Settings(BaseSettings):
     # groq_api_key/s3_bucket above. No separate enable flag: the URL's
     # presence IS the switch, see platform/api/workflows/ops_notify.py.
     slack_webhook_url: Optional[str] = None
+
+    # Clinician-facing Slack channel -- deliberately a SEPARATE webhook
+    # from slack_webhook_url above. That one is engineering/ops (workflow
+    # health, PHI-free by contract); this one exists BECAUSE a clinician
+    # needs patient-identifying clinical signal (a new critical alert, an
+    # AI answer flagged for review, a daily digest). See
+    # platform/api/workflows/clinical_notify.py's module docstring for the
+    # privacy posture. Same degrade-gracefully pattern: unset = silent.
+    clinical_slack_webhook_url: Optional[str] = None
 
     class Config:
         env_file = ".env"

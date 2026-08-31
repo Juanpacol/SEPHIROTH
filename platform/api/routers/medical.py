@@ -10,20 +10,25 @@ auth; this brings these six in line.
 
 import json
 import mimetypes
+import re
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.deps import get_current_user
 from core.config import settings
-from data.schemas import User
+from core.db import get_session
+from data.schemas import Patient, TimelineEvent, User
 from intelligence.mcp.vision_server import (
     _MIME_OVERRIDES,
+    DESCRIPTION_MAX_OUTPUT_TOKENS,
     DESCRIPTION_PROMPT,
     MAX_IMAGE_BYTES,
     READABLE_FORMATS,
@@ -143,7 +148,10 @@ async def describe_image_stream(
         try:
             client = get_llm_client()
             async for chunk in client.describe_image_stream(
-                image_bytes=image_bytes, mime_type=mime_type, prompt=prompt
+                image_bytes=image_bytes,
+                mime_type=mime_type,
+                prompt=prompt,
+                max_output_tokens=DESCRIPTION_MAX_OUTPUT_TOKENS,
             ):
                 full_text.append(chunk)
                 yield f"data: {json.dumps({'event': 'chunk', 'text': chunk})}\n\n"
@@ -232,6 +240,65 @@ async def preview_image(path: str, user: User = Depends(get_current_user)) -> Fi
         raise HTTPException(status_code=404, detail="File not found")
     media_type = mimetypes.guess_type(file_path.name)[0] or "application/octet-stream"
     return FileResponse(file_path, media_type=media_type)
+
+
+# Matches the "[image_path:...] [model:...] description text" convention this
+# imaging flow writes into `TimelineEvent.detail` (see analyze/describe above
+# and the bulk-generation scripts) — TimelineEvent has no dedicated column
+# for it, so the recent-analyses view has to parse it back out.
+_IMAGE_PATH_RE = re.compile(r"^\[image_path:([^\]]+)\]\s*(?:\[model:([^\]]+)\]\s*)?(.*)$", re.DOTALL)
+
+
+@router.get(
+    "/imaging/recent", summary="Recently AI-analyzed imaging studies, with preview + description"
+)
+async def recent_imaging_analyses(
+    limit: int = 12,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> List[Dict[str, Any]]:
+    """Powers the Imaging page's "Recent analyses" section — every imaging
+    `TimelineEvent`, across all patients, newest first, with the source
+    image path (if still readable, for `/imaging/preview`) split out from
+    the AI description."""
+    stmt = (
+        select(TimelineEvent, Patient.name)
+        .join(Patient, Patient.id == TimelineEvent.patient_id)
+        .where(TimelineEvent.type == "imaging")
+        .order_by(TimelineEvent.date.desc(), TimelineEvent.id.desc())
+        .limit(limit)
+    )
+    rows = (await session.execute(stmt)).all()
+
+    results: List[Dict[str, Any]] = []
+    for event, patient_name in rows:
+        image_path: Optional[str] = None
+        model: Optional[str] = None
+        description = event.detail
+
+        match = _IMAGE_PATH_RE.match(event.detail)
+        if match:
+            candidate = match.group(1)
+            model = match.group(2)
+            description = match.group(3).strip()
+            candidate_path = Path(candidate)
+            if candidate_path.suffix.lower() in _PREVIEWABLE_EXTENSIONS and candidate_path.is_file():
+                image_path = candidate
+
+        results.append(
+            {
+                "id": event.id,
+                "patient_id": event.patient_id,
+                "patient_name": patient_name,
+                "title": event.title,
+                "date": event.date.isoformat(),
+                "image_path": image_path,
+                "model": model,
+                "description": description,
+                "ai_generated": event.ai_generated,
+            }
+        )
+    return results
 
 
 class DrugCheckRequest(BaseModel):

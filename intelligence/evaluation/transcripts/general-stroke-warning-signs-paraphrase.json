@@ -1,0 +1,40 @@
+{
+  "case_id": "general-stroke-warning-signs-paraphrase",
+  "answer": "To assess for a stroke using **FAST** (Face, Arms, Speech, Time), follow these steps:\n\n1. **Face**: Ask the person to smile. Look for facial drooping or asymmetry on one side [CDC, 2023].  \n2. **Arms**: Instruct them to raise both arms. Observe if one arm drifts downward or cannot be raised [CDC, 2023].  \n3. **Speech**: Ask them to repeat a simple phrase. Check for slurred, garbled, or difficult speech [CDC, 2023].  \n4. **Time**: If any of the above signs are present, **call emergency services immediately**. Time is critical for effective stroke treatment [CDC, 2023].  \n\nThis tool is widely endorsed for rapid stroke recognition. Always confirm with professional medical evaluation.  \n\n**Source**: Stroke Signs and Symptoms (F.A.S.T.), Centers for Disease Control and Prevention, 2023 [CDC, 2023].",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "FAST stroke assessment",
+        "top_k": 1
+      },
+      "result": {
+        "query": "FAST stroke assessment",
+        "results": [
+          {
+            "id": "cdc-stroke-warning-signs",
+            "content": "The F.A.S.T. warning signs of stroke are: Face drooping on one side, Arm weakness or drift when raised, Speech that is slurred or strange, and Time to call emergency services immediately if any of these signs appear, even if they resolve. Fast treatment significantly improves outcomes.",
+            "source": "CDC",
+            "citation": "Stroke Signs and Symptoms (F.A.S.T.), Centers for Disease Control and Prevention, 2023",
+            "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html",
+            "score": 0.0492,
+            "metadata": {
+              "category": "general_health",
+              "organization": "Centers for Disease Control and Prevention",
+              "year": 2023,
+              "title": "Stroke Signs and Symptoms (F.A.S.T.)",
+              "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 39506,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 1908,
+  "completion_tokens": 669,
+  "cost_usd": 0.0
+}

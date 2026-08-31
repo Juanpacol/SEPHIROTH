@@ -6,6 +6,13 @@ metadata. `search_clinical_guidelines` (via `RAGPipeline.retrieve()`) returns
 real passage `content`; `search_pubmed` returns only title/journal/authors —
 no abstract. Claims backed only by PubMed evidence are content-verified more
 weakly than claims backed by guidelines — a known limitation, not a bug.
+
+`check_drug_interactions` returns its rows under `interactions`, not
+`results`. Reading only `results` left every drug-safety consultation with
+zero evidence, so `extract_and_verify` took its no-evidence branch and marked
+each claim UNKNOWN; whether the run then answered or abstained came down to
+whether claim extraction happened to return zero claims that time. Same
+question, same code, different outcome per run.
 """
 
 from __future__ import annotations
@@ -17,6 +24,43 @@ from typing import List
 from sephiroth.contracts import Citation, EvidenceRecord, RetrievalMethod, SourceType, ToolCall
 
 _CONTENT_KEYS = ("content", "abstract", "summary", "text", "snippet")
+
+# Which list-valued keys of a tool result hold citable evidence. Deliberately
+# an allowlist rather than citation_guard's recursive sweep: imaging's
+# `findings` and vision's `description` are the model's *own* output, and
+# admitting those as evidence would let an answer verify itself.
+_EVIDENCE_LIST_KEYS = ("results", "interactions")
+
+# `check_drug_interactions` hand-curated rows carry no provenance field of
+# their own (DDInter-sourced rows do, and keep theirs).
+_DRUG_TABLE_SOURCE = "Curated drug-interaction table"
+
+
+def _as_evidence_item(item: dict, key: str) -> dict:
+    """Reshape a result entry into the citation/content shape the record
+    builders expect.
+
+    Only `interactions` needs this: its fields (`pair`, `severity`, `effect`,
+    `recommendation`) match no `_CONTENT_KEYS` and no citation key, so the
+    record would otherwise carry empty `content` — and `_overlap_supports`
+    skips content-less evidence, which downgrades every claim it grounds.
+    """
+    if key != "interactions":
+        return item
+
+    pair = item.get("pair")
+    pair_text = " + ".join(str(drug) for drug in pair) if isinstance(pair, list) else ""
+    severity = str(item.get("severity") or "")
+    parts = [
+        f"{pair_text}: {severity} interaction".strip() if severity else pair_text,
+        str(item.get("effect") or ""),
+        str(item.get("recommendation") or ""),
+    ]
+    return {
+        **item,
+        "content": " ".join(part for part in parts if part),
+        "source": item.get("source") or _DRUG_TABLE_SOURCE,
+    }
 
 
 def _content_of(item: dict) -> str:
@@ -51,25 +95,29 @@ def harvest_evidence(tool_calls: List[ToolCall]) -> List[EvidenceRecord]:
     records: List[EvidenceRecord] = []
     for call in tool_calls:
         result = call.result
-        items = result.get("results") if isinstance(result, dict) else None
-        if not isinstance(items, list):
+        if not isinstance(result, dict):
             continue
-        for item in items:
-            if not isinstance(item, dict):
+        for key in _EVIDENCE_LIST_KEYS:
+            items = result.get(key)
+            if not isinstance(items, list):
                 continue
-            records.append(
-                EvidenceRecord(
-                    id=uuid.uuid4().hex,
-                    source=str(item.get("source") or item.get("journal") or call.tool),
-                    source_type=_source_type_for(item),
-                    retrieval_method=RetrievalMethod.TOOL,
-                    relevance=_relevance_of(item),
-                    citation=_citation_for(item),
-                    originating_agent=call.agent,
-                    timestamp=datetime.now(timezone.utc),
-                    content=_content_of(item),
+            for raw in items:
+                if not isinstance(raw, dict):
+                    continue
+                item = _as_evidence_item(raw, key)
+                records.append(
+                    EvidenceRecord(
+                        id=uuid.uuid4().hex,
+                        source=str(item.get("source") or item.get("journal") or call.tool),
+                        source_type=_source_type_for(item),
+                        retrieval_method=RetrievalMethod.TOOL,
+                        relevance=_relevance_of(item),
+                        citation=_citation_for(item),
+                        originating_agent=call.agent,
+                        timestamp=datetime.now(timezone.utc),
+                        content=_content_of(item),
+                    )
                 )
-            )
     return records
 
 

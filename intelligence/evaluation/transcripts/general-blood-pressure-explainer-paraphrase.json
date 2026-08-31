@@ -1,0 +1,11 @@
+{
+  "case_id": "general-blood-pressure-explainer-paraphrase",
+  "answer": "The top number in a blood pressure reading is the **systolic pressure**, which represents the force exerted on arteries when the heart contracts (beats). The bottom number is the **diastolic pressure**, reflecting the pressure in arteries when the heart relaxes between beats [American Heart Association, 2023]. \n\nNormal ranges are defined as:\n- **Systolic < 120 mmHg** and **Diastolic < 80 mmHg** (normal).\n- **Systolic 120\u2013129 mmHg** and **Diastolic < 80 mmHg** (elevated).\n- **Systolic \u2265 130 mmHg** or **Diastolic \u2265 80 mmHg** (hypertension) [AHA, 2023].\n\nThese thresholds guide clinical decisions about cardiovascular risk and treatment. Always confirm interpretations with a healthcare provider.",
+  "tool_calls": [],
+  "latency_ms": 22478,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 686,
+  "completion_tokens": 479,
+  "cost_usd": 0.0
+}

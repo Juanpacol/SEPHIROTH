@@ -1,0 +1,55 @@
+{
+  "case_id": "general-a1c-explainer",
+  "answer": "The A1C test measures average blood glucose levels over the past 2-3 months by assessing the percentage of hemoglobin bonded to glucose [MedlinePlus, 2024]. \n\n**What the numbers mean:**  \n- **Below 5.7%**: Normal range [MedlinePlus, 2024].  \n- **5.7\u20136.4%**: Prediabetes [MedlinePlus, 2024].  \n- **6.5% or higher**: Diabetes [MedlinePlus, 2024].  \n\nNote: These thresholds are for diagnostic purposes. For management, the American Diabetes Association recommends a target of <7% for many nonpregnant adults with diabetes, though individualization is required [ADA, 2024].  \n\nAlways confirm interpretation with a healthcare provider.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "top_k": 2,
+        "query": "A1C test measurement and interpretation"
+      },
+      "result": {
+        "query": "A1C test measurement and interpretation",
+        "results": [
+          {
+            "id": "medlineplus-a1c",
+            "content": "The A1C (or HbA1c) test shows average blood sugar levels over the past 2-3 months. An A1C below 5.7% is normal, 5.7-6.4% indicates prediabetes, and 6.5% or higher indicates diabetes. Unlike a daily finger-stick, A1C reflects a longer-term trend rather than a single moment.",
+            "source": "MedlinePlus",
+            "citation": "The A1C Test and Diabetes, MedlinePlus (U.S. National Library of Medicine), 2024",
+            "url": "https://medlineplus.gov/a1c.html",
+            "score": 0.0492,
+            "metadata": {
+              "category": "general_health",
+              "organization": "MedlinePlus (U.S. National Library of Medicine)",
+              "year": 2024,
+              "title": "The A1C Test and Diabetes",
+              "url": "https://medlineplus.gov/a1c.html"
+            }
+          },
+          {
+            "id": "ada-2024-hba1c",
+            "content": "An A1C goal for many nonpregnant adults with diabetes of <7% without significant hypoglycemia is appropriate. Metformin is the preferred initial pharmacologic agent for type 2 diabetes.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Glycemic Targets & Pharmacologic Approaches, American Diabetes Association, 2024",
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
+            "score": 0.0161,
+            "metadata": {
+              "category": "endocrinology",
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Glycemic Targets & Pharmacologic Approaches",
+              "url": "https://diabetesjournals.org/care/issue/47/Supplement_1"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 44714,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2367,
+  "completion_tokens": 945,
+  "cost_usd": 0.0
+}

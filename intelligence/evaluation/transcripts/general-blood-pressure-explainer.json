@@ -1,0 +1,11 @@
+{
+  "case_id": "general-blood-pressure-explainer",
+  "answer": "Blood pressure is the force exerted by circulating blood against the walls of blood vessels, measured in millimeters of mercury (mmHg) as two numbers: systolic (during heartbeats) and diastolic (between heartbeats) [WHO, 2021]. \n\nA normal blood pressure reading is defined as **systolic <120 mmHg** and **diastolic <80 mmHg** [AHA, 2023]. Readings between 120-129 mmHg systolic and <80 mmHg diastolic are classified as \"elevated\" (Stage 1 hypertension), while \u2265130 mmHg systolic or \u226580 mmHg diastolic indicates Stage 2 hypertension [AHA, 2023]. \n\nThese thresholds are based on clinical guidelines that emphasize the risks of uncontrolled hypertension and its association with cardiovascular disease [WHO, 2021]. Individualized assessment by a healthcare provider is recommended for accurate diagnosis and management.",
+  "tool_calls": [],
+  "latency_ms": 23875,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 686,
+  "completion_tokens": 529,
+  "cost_usd": 0.0
+}

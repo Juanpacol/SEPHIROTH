@@ -8,6 +8,8 @@ from .factory import get_llm_client, reset_llm_client
 from .fallback import FallbackLLMClient
 from .gemini import GeminiClient
 from .groq import GroqClient, GroqToolUseFailedError
+from .ollama import OllamaClient
+from .vision_split import VisionChatSplitClient
 
 __all__ = [
     "ChatResult",
@@ -17,7 +19,9 @@ __all__ = [
     "GroqToolUseFailedError",
     "LLMUnavailableError",
     "ModelProvider",
+    "OllamaClient",
     "ToolExecutor",
+    "VisionChatSplitClient",
     "get_llm_client",
     "reset_llm_client",
 ]

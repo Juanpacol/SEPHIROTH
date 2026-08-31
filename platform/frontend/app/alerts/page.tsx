@@ -21,7 +21,7 @@ function AlertRow({ alert }: { alert: ClinicalAlert }) {
       showToast(t("alerts.reviewed"));
       queryClient.invalidateQueries({ queryKey: ["alerts"] });
     },
-    onError: () => showToast("Could not mark as reviewed — try again.", "error"),
+    onError: () => showToast(t("alerts.error.review"), "error"),
   });
 
   const resolve = useMutation({
@@ -30,7 +30,7 @@ function AlertRow({ alert }: { alert: ClinicalAlert }) {
       showToast(t("alerts.resolvedToast"));
       queryClient.invalidateQueries({ queryKey: ["alerts"] });
     },
-    onError: () => showToast("Could not resolve — try again.", "error"),
+    onError: () => showToast(t("alerts.error.resolve"), "error"),
   });
 
   return (

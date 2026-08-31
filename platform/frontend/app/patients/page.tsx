@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useLanguage } from "@/lib/language";
 import StatusPill from "@/components/status-pill";
 
 export default function PatientsPage() {
+  const { t } = useLanguage();
   const sortByRisk = useSearchParams().get("sort") === "risk";
   const { data: patients, isLoading } = useQuery({
     queryKey: ["patients", sortByRisk ? "risk" : "name"],
@@ -16,27 +18,27 @@ export default function PatientsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-extrabold">Patients</h1>
-        <p className="text-sm text-muted">Detailed overview of patients under AI-assisted care</p>
+        <h1 className="text-xl font-extrabold">{t("patients.title")}</h1>
+        <p className="text-sm text-muted">{t("patients.subtitle")}</p>
       </div>
 
       <div className="card overflow-x-auto !p-0">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-line/60 text-left text-xs uppercase tracking-wider text-muted">
-              <th className="px-5 py-3.5">Patient</th>
-              <th className="px-5 py-3.5">MRN</th>
-              <th className="px-5 py-3.5">Age / Sex</th>
-              <th className="px-5 py-3.5">Conditions</th>
-              <th className="px-5 py-3.5">Risk</th>
-              <th className="px-5 py-3.5">Status</th>
+              <th className="px-5 py-3.5">{t("patients.table.patient")}</th>
+              <th className="px-5 py-3.5">{t("patients.table.mrn")}</th>
+              <th className="px-5 py-3.5">{t("patients.table.ageSex")}</th>
+              <th className="px-5 py-3.5">{t("patients.table.conditions")}</th>
+              <th className="px-5 py-3.5">{t("patients.table.risk")}</th>
+              <th className="px-5 py-3.5">{t("patients.table.status")}</th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
                 <td colSpan={6} className="px-5 py-6 text-muted">
-                  Loading patients…
+                  {t("patients.loading")}
                 </td>
               </tr>
             )}

@@ -26,7 +26,7 @@ function ActionDetail({ action, onDone }: { action: PendingAction; onDone: () =>
   const draft = useMutation({
     mutationFn: () => api.draftPendingAction(action.id),
     onSuccess: (updated) => setText(updated.draft_text),
-    onError: () => showToast("Could not generate a draft — try again.", "error"),
+    onError: () => showToast(t("approvals.error.generateDraft"), "error"),
   });
 
   const approve = useMutation({
@@ -39,8 +39,8 @@ function ActionDetail({ action, onDone }: { action: PendingAction; onDone: () =>
     onError: (err) =>
       showToast(
         err instanceof ApiError && err.status === 422
-          ? "Text flagged by the safety screen — revise before approving."
-          : "Could not approve — try again.",
+          ? t("approvals.error.approveFlagged")
+          : t("approvals.error.approve"),
         "error"
       ),
   });
@@ -52,7 +52,7 @@ function ActionDetail({ action, onDone }: { action: PendingAction; onDone: () =>
       queryClient.invalidateQueries({ queryKey: ["pending-actions"] });
       onDone();
     },
-    onError: () => showToast("Could not reject — try again.", "error"),
+    onError: () => showToast(t("approvals.error.reject"), "error"),
   });
 
   const isPending = action.status === "pending";

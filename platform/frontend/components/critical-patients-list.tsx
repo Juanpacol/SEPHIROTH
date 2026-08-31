@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import type { CriticalPatient } from "@/lib/api";
+import { useLanguage } from "@/lib/language";
 import StatusPill from "@/components/status-pill";
 
 export default function CriticalPatientsList({ patients }: { patients: CriticalPatient[] }) {
+  const { t } = useLanguage();
   if (patients.length === 0) {
-    return <p className="text-sm text-muted">No high or medium-risk patients right now.</p>;
+    return <p className="text-sm text-muted">{t("criticalPatients.empty")}</p>;
   }
 
   return (
@@ -26,7 +28,8 @@ export default function CriticalPatientsList({ patients }: { patients: CriticalP
                 {p.top_flag && (
                   <div className="truncate text-sm text-muted">
                     {p.top_flag}
-                    {p.flag_count > 1 && ` · +${p.flag_count - 1} more`}
+                    {p.flag_count > 1 &&
+                      ` · ${t("criticalPatients.moreFlags").replace("{count}", String(p.flag_count - 1))}`}
                   </div>
                 )}
               </div>

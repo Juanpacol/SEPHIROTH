@@ -34,6 +34,10 @@ _ABSTAIN_MESSAGES = {
     AbstentionReason.POLICY_RESTRICTION: (
         "This request could not be safely processed. Please rephrase your clinical question."
     ),
+    AbstentionReason.OUT_OF_SCOPE: (
+        "This looks like a non-clinical question. I can only help with medical "
+        "and clinical topics — please rephrase as a clinical question."
+    ),
     AbstentionReason.UNSUPPORTED_HIGH_RISK_CLAIM: (
         "I can't confidently answer this — a high-risk claim in this response "
         "isn't backed by strong supporting evidence. Please consult the "
@@ -63,13 +67,19 @@ def _abstain(reason: AbstentionReason, confidence: float, ratio: float) -> Abste
 def decide(
     report: VerificationReport, confidence: float, input_flags: List[SafetyFlag]
 ) -> AbstentionDecision:
-    """Priority order: policy > unsupported high-risk claim > contradiction >
-    confidence thresholds. Each earlier check overrides a later, more lenient
-    one."""
+    """Priority order: policy/scope > unsupported high-risk claim >
+    contradiction > confidence thresholds. Each earlier check overrides a
+    later, more lenient one. `out_of_scope` sits at the same priority as
+    `prompt_injection` — both are input-level hard stops decided before any
+    evidence-based reasoning is even consulted; see `runtime/executor.py`,
+    which checks these flags before routing so an off-topic question never
+    reaches a specialist or a model call at all."""
     ratio = report.supported_claim_ratio
 
     if any(flag.code == "prompt_injection" for flag in input_flags):
         return _abstain(AbstentionReason.POLICY_RESTRICTION, confidence, ratio)
+    if any(flag.code == "out_of_scope" for flag in input_flags):
+        return _abstain(AbstentionReason.OUT_OF_SCOPE, confidence, ratio)
     if report.has_unsupported_high_risk_claim:
         return _abstain(AbstentionReason.UNSUPPORTED_HIGH_RISK_CLAIM, confidence, ratio)
     if report.contradictions:

@@ -23,16 +23,32 @@ from sephiroth.contracts import AgentCapability, RunContext
 logger = logging.getLogger("sephiroth.context.views")
 
 
-def context_for_agent(capability: AgentCapability, ctx: RunContext) -> Dict[str, Any]:
+def context_for_agent(
+    capability: AgentCapability, ctx: RunContext, *, answering: bool = False
+) -> Dict[str, Any]:
     """Projects `ctx` down to the fields `capability.context_fields` names.
 
     An empty `context_fields` (the default) means "every field" — backward
     compatible with any capability that hasn't declared a narrower view.
+
+    `answering=True` marks the agent that produces the consultation's final
+    answer. In multi-agent mode that is always the coordinator, whose empty
+    `context_fields` already grants it everything — including the
+    `recent_consultations` digest the router injects (ADR-011: memory is
+    scoped to the answering agent, never fanned out to every specialist).
+    In single-agent mode a specialist answers directly, so it needs that
+    same digest or per-patient memory would silently vanish. Only
+    `recent_consultations` is added — the rest of the specialist's narrow
+    view is unchanged, so this widens memory access without widening
+    clinical-data access.
     """
     full = ctx.model_dump(mode="python")
     if not capability.context_fields:
         return full
-    projected = {name: value for name, value in full.items() if name in capability.context_fields}
+    fields = set(capability.context_fields)
+    if answering:
+        fields.add("recent_consultations")
+    projected = {name: value for name, value in full.items() if name in fields}
     projected["language"] = full[
         "language"
     ]  # response-language directive, not patient data — always passes through

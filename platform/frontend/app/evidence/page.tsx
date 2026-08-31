@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { BookOpenCheck, ChevronRight, Search } from "lucide-react";
 import { api, type EvidenceItem } from "@/lib/api";
+import { useLanguage } from "@/lib/language";
 
 function CategoryGroup({ slug, label, count }: { slug: string; label: string; count: number }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const { data: items, isLoading } = useQuery({
     queryKey: ["evidence-category", slug],
@@ -31,7 +33,7 @@ function CategoryGroup({ slug, label, count }: { slug: string; label: string; co
 
       {open && (
         <div className="border-t border-line/60 px-4 pb-4 pt-1">
-          {isLoading && <p className="py-2 text-sm text-muted">Loading…</p>}
+          {isLoading && <p className="py-2 text-sm text-muted">{t("common.loading")}</p>}
           <ul className="divide-y divide-line/50">
             {items?.map((item) => <EvidenceRow key={item.id} item={item} />)}
           </ul>
@@ -42,6 +44,7 @@ function CategoryGroup({ slug, label, count }: { slug: string; label: string; co
 }
 
 function EvidenceRow({ item }: { item: EvidenceItem }) {
+  const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
   return (
     <li className="py-3">
@@ -62,7 +65,7 @@ function EvidenceRow({ item }: { item: EvidenceItem }) {
               rel="noopener noreferrer"
               className="mt-2 inline-block text-xs font-semibold text-primary underline underline-offset-2"
             >
-              {item.citation} — view source ↗
+              {item.citation} — {t("copilot.viewSource")}
             </a>
           ) : (
             <p className="mt-2 text-xs font-semibold text-primary">{item.citation}</p>
@@ -74,6 +77,7 @@ function EvidenceRow({ item }: { item: EvidenceItem }) {
 }
 
 export default function EvidencePage() {
+  const { t } = useLanguage();
   const [query, setQuery] = useState("");
   const search = useMutation({ mutationFn: (q: string) => api.searchEvidence(q) });
   const { data: categories, isLoading: categoriesLoading } = useQuery({
@@ -86,11 +90,8 @@ export default function EvidencePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-5">
       <div>
-        <h1 className="text-xl font-extrabold">Evidence Library</h1>
-        <p className="text-sm text-muted">
-          Browse indexed clinical guidelines by category, or search a specific question — every
-          result carries its citation.
-        </p>
+        <h1 className="text-xl font-extrabold">{t("nav.evidence")}</h1>
+        <p className="text-sm text-muted">{t("evidence.subtitle")}</p>
       </div>
 
       <div className="card flex items-center gap-2 !p-3">
@@ -99,7 +100,7 @@ export default function EvidencePage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
-          placeholder="e.g. blood pressure target for adults with hypertension"
+          placeholder={t("evidence.searchPlaceholder")}
           className="min-w-0 flex-1 bg-transparent text-sm outline-none"
         />
         <button
@@ -107,7 +108,7 @@ export default function EvidencePage() {
           disabled={search.isPending}
           className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
         >
-          Search
+          {t("evidence.search")}
         </button>
       </div>
 
@@ -128,7 +129,7 @@ export default function EvidencePage() {
                       rel="noopener noreferrer"
                       className="mt-2 inline-block text-xs font-semibold text-primary underline underline-offset-2"
                     >
-                      {result.citation} — view source ↗
+                      {result.citation} — {t("copilot.viewSource")}
                     </a>
                   ) : (
                     <p className="mt-2 text-xs font-semibold text-primary">{result.citation}</p>
@@ -138,15 +139,15 @@ export default function EvidencePage() {
             </div>
           ))}
           {search.data.results.length === 0 && (
-            <div className="card text-sm text-muted">No matching guidelines found.</div>
+            <div className="card text-sm text-muted">{t("evidence.noResults")}</div>
           )}
         </div>
       ) : (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
-            Browse by category
+            {t("evidence.browseByCategory")}
           </h2>
-          {categoriesLoading && <p className="text-sm text-muted">Loading categories…</p>}
+          {categoriesLoading && <p className="text-sm text-muted">{t("evidence.loadingCategories")}</p>}
           {categories?.map((c) => <CategoryGroup key={c.slug} {...c} />)}
         </div>
       )}

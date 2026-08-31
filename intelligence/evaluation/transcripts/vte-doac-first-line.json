@@ -1,0 +1,40 @@
+{
+  "case_id": "vte-doac-first-line",
+  "answer": "For acute deep vein thrombosis (DVT) or pulmonary embolism (PE) without cancer, **direct oral anticoagulants (DOACs)** are recommended as first-line therapy over vitamin K antagonists like warfarin [ACCP, 2021]. The ACCP guideline specifies that anticoagulation should last at least 3 months, with indefinite extension for unprovoked events in low bleeding risk patients [ACCP, 2021](https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext).\n\n**Note:** Specific DOACs (e.g., rivaroxaban, apixaban, dabigatran) are commonly used but were not explicitly mentioned in the retrieved guideline excerpt. Clinical decisions should consider individual patient factors and local guidelines. \n\n*Citation: Antithrombotic Therapy for VTE Disease, ACCP, 2021*",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "first-line anticoagulant for acute DVT or PE without cancer",
+        "top_k": 1
+      },
+      "result": {
+        "query": "first-line anticoagulant for acute DVT or PE without cancer",
+        "results": [
+          {
+            "id": "acc-aha-2023-vte",
+            "content": "For acute deep vein thrombosis or pulmonary embolism without cancer, direct oral anticoagulants are preferred over warfarin as first-line therapy. Anticoagulation duration is at least 3 months, extended indefinitely for unprovoked events with low bleeding risk.",
+            "source": "ACCP Antithrombotic Therapy for VTE Guideline",
+            "citation": "Antithrombotic Therapy for VTE Disease, ACCP, 2021",
+            "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext",
+            "score": 0.0492,
+            "metadata": {
+              "category": "cardiovascular",
+              "organization": "ACCP",
+              "year": 2021,
+              "title": "Antithrombotic Therapy for VTE Disease",
+              "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 35287,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 1963,
+  "completion_tokens": 697,
+  "cost_usd": 0.0
+}

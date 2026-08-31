@@ -1,0 +1,40 @@
+{
+  "case_id": "dm-microvascular-screening-paraphrase",
+  "answer": "According to the American Diabetes Association (ADA) 2024 Standards of Care, adults with type 2 diabetes should have:  \n\n- **Annual dilated eye exams** for retinopathy [ADA, 2024].  \n- **Annual comprehensive foot exams** with monofilament testing for peripheral neuropathy, starting at diabetes diagnosis [ADA, 2024].  \n\nThese recommendations apply to routine screening. Individualized adjustments may be necessary based on severity of diabetes, presence of complications, or other risk factors. Always consult a healthcare provider for personalized guidance.  \n\n**Source**: Microvascular Complications Screening in Diabetes, American Diabetes Association, 2024 [ADA, 2024].",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "diabetic eye and foot exam frequency",
+        "top_k": 2
+      },
+      "result": {
+        "query": "diabetic eye and foot exam frequency",
+        "results": [
+          {
+            "id": "ada-2024-microvascular-screening",
+            "content": "Adults with type 2 diabetes should have an annual dilated eye exam for retinopathy, an annual urine albumin-to-creatinine ratio for nephropathy, and an annual comprehensive foot exam with monofilament testing for peripheral neuropathy, starting at diagnosis.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Microvascular Complications Screening in Diabetes, American Diabetes Association, 2024",
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
+            "score": 0.0492,
+            "metadata": {
+              "category": "endocrinology",
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Microvascular Complications Screening in Diabetes",
+              "url": "https://diabetesjournals.org/care/issue/47/Supplement_1"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 36253,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 1960,
+  "completion_tokens": 749,
+  "cost_usd": 0.0
+}

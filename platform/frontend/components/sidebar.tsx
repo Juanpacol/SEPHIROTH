@@ -21,38 +21,41 @@ import { clearAuth, useUser } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import WingMark from "@/components/brand/wing-mark";
 
+// `id` keys into the `nav.*`/`nav.group*` dictionary entries (see
+// `lib/i18n/dictionaries.{en,es}.ts`) — the label text itself lives only in
+// the dictionaries now, so adding a language never means touching this array.
 const CLINICIAN_NAV = [
   {
-    label: null,
-    items: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+    groupId: null,
+    items: [{ href: "/dashboard", id: "dashboard", icon: LayoutDashboard }],
   },
   {
-    label: "Clinical",
+    groupId: "groupClinical",
     items: [
-      { href: "/patients", label: "Patients", icon: Users },
-      { href: "/schedule", label: "Schedule", icon: CalendarDays },
-      { href: "/recommendations", label: "My Recommendations", icon: CheckCircle2 },
-      { href: "/approvals", label: "Approvals", icon: ClipboardCheck },
-      { href: "/alerts", label: "Alerts", icon: Bell },
+      { href: "/patients", id: "patients", icon: Users },
+      { href: "/schedule", id: "schedule", icon: CalendarDays },
+      { href: "/recommendations", id: "recommendations", icon: CheckCircle2 },
+      { href: "/approvals", id: "approvals", icon: ClipboardCheck },
+      { href: "/alerts", id: "alerts", icon: Bell },
     ],
   },
   {
-    label: "Intelligence",
+    groupId: "groupIntelligence",
     items: [
-      { href: "/imaging", label: "Imaging Analysis", icon: ScanEye },
-      { href: "/evidence", label: "Evidence Library", icon: BookOpenCheck },
-      { href: "/agents", label: "Agents Activity", icon: Activity },
+      { href: "/imaging", id: "imaging", icon: ScanEye },
+      { href: "/evidence", id: "evidence", icon: BookOpenCheck },
+      { href: "/agents", id: "agents", icon: Activity },
     ],
   },
 ];
 
 const PATIENT_NAV = [
   {
-    label: null,
+    groupId: null,
     items: [
-      { href: "/portal", label: "My Health", icon: LayoutDashboard },
-      { href: "/portal/appointments", label: "Appointments", icon: ClipboardList },
-      { href: "/portal/results", label: "My Results", icon: FileText },
+      { href: "/portal", id: "portalHome", icon: LayoutDashboard },
+      { href: "/portal/appointments", id: "portalAppointments", icon: ClipboardList },
+      { href: "/portal/results", id: "portalResults", icon: FileText },
     ],
   },
 ];
@@ -99,9 +102,9 @@ export default function Sidebar() {
 
       <nav className="mt-2 flex-1">
         {groups.map((group) => (
-          <div key={group.label ?? "root"}>
-            {group.label && <div className="nav-group-label">{group.label}</div>}
-            {group.items.map(({ href, label, icon: Icon }) => {
+          <div key={group.groupId ?? "root"}>
+            {group.groupId && <div className="nav-group-label">{t(`nav.${group.groupId}`)}</div>}
+            {group.items.map(({ href, id, icon: Icon }) => {
               const active = pathname === href || pathname.startsWith(href + "/");
               return (
                 <Link
@@ -110,7 +113,7 @@ export default function Sidebar() {
                   className={`nav-item ${active ? "nav-item-active" : ""}`}
                 >
                   <Icon size={17} />
-                  {label}
+                  {t(`nav.${id}`)}
                 </Link>
               );
             })}
@@ -124,9 +127,9 @@ export default function Sidebar() {
             {initials}
           </div>
           <div className="min-w-0 text-sm leading-tight">
-            <div className="truncate font-semibold">{user?.name ?? "Not signed in"}</div>
+            <div className="truncate font-semibold">{user?.name ?? t("nav.notSignedIn")}</div>
             <div className="text-xs text-muted">
-              {user ? (user.role === "patient" ? "Patient" : "Clinician") : ""}
+              {user ? t(user.role === "patient" ? "nav.rolePatient" : "nav.roleClinician") : ""}
             </div>
           </div>
         </Link>

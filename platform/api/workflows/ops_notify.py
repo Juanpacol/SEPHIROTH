@@ -5,6 +5,14 @@ metric summary with no user, no persistence, and must never carry
 patient content. Mixing the two would blur "text for a patient" with
 "metric for an operator", exactly the line PHI safety depends on.
 
+Also deliberately separate from `clinical_notify.py` (a different
+webhook, `SLACK_WEBHOOK_URL` vs `CLINICAL_SLACK_WEBHOOK_URL`) -- that one
+is for clinicians and needs patient-identifying clinical signal; this one
+is for engineers and must never carry it. Same **structured, not plain
+text** posture as that module, though: Slack Block Kit wrapped in a
+color-barred attachment, not a single mrkdwn string, so a run of failures
+reads as a scannable card instead of a paragraph of `key=value` pairs.
+
 **Redaction is a contract, not a convention** -- same posture as
 `sephiroth.contracts.trace.ALLOWED_SPAN_ATTRIBUTES` (SPEC-005): an
 allow-list, because a deny-list fails open. `patient_id` is
@@ -15,7 +23,7 @@ a third-party service's servers.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Protocol
+from typing import Any, Dict, List, Protocol, Tuple
 
 import httpx
 
@@ -32,11 +40,19 @@ ALLOWED_OPS_FIELDS = frozenset(
         "skipped",
         "remaining",
         "events_dispatched",
-        "workflow_id",
-        "step_id",
-        "step_type",
+        "failed_steps",
+        "failed_steps_more",
     }
 )
+
+#: Keys permitted inside each `failed_steps` entry -- same allow-list
+#: discipline as `ALLOWED_OPS_FIELDS` one level down, so a nested field
+#: (e.g. an accidental `patient_id`) can't slip through unnoticed.
+ALLOWED_FAILED_STEP_FIELDS = frozenset({"step_id", "workflow_id", "step_type"})
+
+_COLOR_OK = "#2EB67D"
+_COLOR_PARTIAL = "#ECB22E"
+_COLOR_FAILED = "#E01E5A"
 
 
 class OpsNotifier(Protocol):
@@ -45,13 +61,80 @@ class OpsNotifier(Protocol):
         ...
 
 
-def _format_text(fields: Dict[str, Any]) -> str:
-    filtered = {k: v for k, v in fields.items() if k in ALLOWED_OPS_FIELDS}
+def _header(text: str) -> Dict[str, Any]:
+    return {"type": "header", "text": {"type": "plain_text", "text": text, "emoji": True}}
+
+
+def _context(text: str) -> Dict[str, Any]:
+    return {"type": "context", "elements": [{"type": "mrkdwn", "text": text}]}
+
+
+def _fields_section(pairs: List[Tuple[str, str]]) -> Dict[str, Any]:
+    return {
+        "type": "section",
+        "fields": [{"type": "mrkdwn", "text": f"*{label}:*\n{value}"} for label, value in pairs],
+    }
+
+
+def _format_blocks(fields: Dict[str, Any]) -> Tuple[str, List[Dict[str, Any]], str]:
+    """Renders a tick summary as Slack Block Kit -- a status-emoji
+    header, a 2x3 field grid for the counters, and (only when there were
+    failures) one line per failed step instead of three parallel
+    comma-joined columns the reader has to align by eye. Returns
+    (fallback_text, blocks, color) for `_post_blocks`."""
     disallowed = set(fields) - ALLOWED_OPS_FIELDS
     if disallowed:
         raise ValueError(f"ops notification fields are allow-listed; drop or rename: {sorted(disallowed)}")
-    parts = [f"{k}={v}" for k, v in filtered.items()]
-    return "tick " + " ".join(parts)
+
+    for step in fields.get("failed_steps", []):
+        bad = set(step) - ALLOWED_FAILED_STEP_FIELDS
+        if bad:
+            raise ValueError(f"failed_steps entries are allow-listed; drop or rename: {sorted(bad)}")
+
+    tick_id = fields.get("tick_id", "unknown")
+    claimed = fields.get("claimed", 0)
+    succeeded = fields.get("succeeded", 0)
+    failed = fields.get("failed", 0)
+    skipped = fields.get("skipped", 0)
+    remaining = fields.get("remaining", 0)
+    events_dispatched = fields.get("events_dispatched", 0)
+
+    if failed == 0:
+        emoji, color, status_word = "✅", _COLOR_OK, "OK"
+    elif succeeded == 0 and claimed > 0:
+        emoji, color, status_word = "🔴", _COLOR_FAILED, "Failed"
+    else:
+        emoji, color, status_word = "⚠️", _COLOR_PARTIAL, "Partial"
+
+    blocks: List[Dict[str, Any]] = [
+        _header(f"{emoji} Workflow Tick — {status_word}"),
+        _context(f"`{tick_id}`"),
+        _fields_section(
+            [
+                ("Claimed", str(claimed)),
+                ("Succeeded", str(succeeded)),
+                ("Failed", str(failed)),
+                ("Skipped", str(skipped)),
+                ("Remaining", str(remaining)),
+                ("Events dispatched", str(events_dispatched)),
+            ]
+        ),
+    ]
+
+    failed_steps = fields.get("failed_steps", [])
+    if failed_steps:
+        blocks.append({"type": "divider"})
+        lines = [
+            f"• `{step['step_type']}` — step `{step['step_id']}` (workflow `{step['workflow_id']}`)"
+            for step in failed_steps
+        ]
+        more = fields.get("failed_steps_more")
+        if more:
+            lines.append(f"…and {more} more")
+        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Failed steps:*\n" + "\n".join(lines)}})
+
+    fallback = f"{emoji} Workflow tick {tick_id}: claimed {claimed}, succeeded {succeeded}, failed {failed}"
+    return fallback, blocks, color
 
 
 class SlackNotifier:
@@ -64,10 +147,11 @@ class SlackNotifier:
         self._webhook_url = webhook_url
 
     async def notify(self, fields: Dict[str, Any]) -> bool:
-        text = _format_text(fields)
+        fallback_text, blocks, color = _format_blocks(fields)
+        payload = {"text": fallback_text, "attachments": [{"color": color, "blocks": blocks}]}
         try:
             async with httpx.AsyncClient(timeout=5) as client:
-                response = await client.post(self._webhook_url, json={"text": text})
+                response = await client.post(self._webhook_url, json=payload)
                 response.raise_for_status()
             return True
         except httpx.HTTPError:

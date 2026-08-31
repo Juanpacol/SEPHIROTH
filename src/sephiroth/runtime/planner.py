@@ -53,25 +53,41 @@ def route_specialists(context: Dict[str, Any] | None) -> List[str]:
 def _routing_system_prompt() -> str:
     lines = [f"- {node}: {cap.description}" for node, cap in CAPABILITY_REGISTRY.items()]
     return (
-        "You are a clinical intake router. Given the patient context signals "
-        "below, decide which specialist agents should analyze this case. "
-        "Available agents:\n" + "\n".join(lines) + "\n"
-        "Select only agents whose specialty is relevant to the provided "
-        "context — do not select a specialist for data that is not present."
+        "You are a clinical intake router. Read the clinician's question "
+        "itself, not just the structured-data flags — a specialist can be "
+        "relevant because the question asks about their domain (e.g. drug "
+        "interactions, an imaging finding, a lab value) even if that data "
+        "hasn't been entered into a structured field yet. Available "
+        "agents:\n" + "\n".join(lines) + "\n"
+        "Select only agents whose specialty is actually relevant to this "
+        "question and context — do not select a specialist that has "
+        "nothing to contribute."
     )
 
 
-def _routing_prompt(context: Dict[str, Any] | None) -> str:
+def _routing_prompt(context: Dict[str, Any] | None, query: str = "") -> str:
     signals = analyze(context)
-    return (
-        f"has_image: {signals['has_image']}\n"
-        f"has_lab_results: {signals['has_lab_results']}\n"
-        f"has_medications: {signals['has_medications']}"
-    )
+    conditions = (context or {}).get("conditions") or []
+    lines = [f"Clinical question: {query.strip()}" if query.strip() else "Clinical question: (none provided)"]
+    if conditions:
+        lines.append(f"Known conditions: {', '.join(str(c) for c in conditions)}")
+    lines.append(f"has_image: {signals['has_image']}")
+    lines.append(f"has_lab_results: {signals['has_lab_results']}")
+    lines.append(f"has_medications: {signals['has_medications']}")
+    return "\n".join(lines)
 
 
-async def route_specialists_dynamic(context: Dict[str, Any] | None, client: "ModelProvider") -> List[str]:
+async def route_specialists_dynamic(
+    context: Dict[str, Any] | None, client: "ModelProvider", query: str = ""
+) -> List[str]:
     """LLM-driven capability matching (SPEC-008) — closes SPEC-003 NG-1.
+
+    Reads the clinician's actual question (`query`) plus `conditions` from
+    context, not just the three structured-data booleans — otherwise this
+    routes almost as blindly as the static heuristic it's meant to improve
+    on (e.g. "check for drug interactions with metformin" typed as free
+    text, with no `medications` field populated, previously never reached
+    `drug_safety`).
 
     Degrades to `route_specialists` (the static heuristic) on any
     `generate_json` exception, a non-dict payload, a missing/empty/invalid
@@ -83,7 +99,7 @@ async def route_specialists_dynamic(context: Dict[str, Any] | None, client: "Mod
     fallback = route_specialists(context)
     try:
         payload = await client.generate_json(
-            prompt=_routing_prompt(context),
+            prompt=_routing_prompt(context, query),
             schema=_ROUTING_SCHEMA,
             system_prompt=_routing_system_prompt(),
         )

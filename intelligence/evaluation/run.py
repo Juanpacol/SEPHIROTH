@@ -17,6 +17,7 @@ import os
 import subprocess
 import sys
 from datetime import datetime, timezone
+from typing import Optional
 
 from intelligence.evaluation import runner
 
@@ -59,12 +60,33 @@ def _run_ci() -> int:
     return 0 if result["passed"] else 1
 
 
-def _run_full(record: bool, skip_pubmed: bool, model: str) -> int:
+def _build_client(provider: str, model: Optional[str]):
+    """One client per eval run, built directly (not the cached app-wide
+    singleton in `sephiroth.models.factory`) so `--provider` can compare
+    Gemini/Groq/Ollama in the same process without touching global state."""
     from core.config import settings  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
+
+    if provider == "groq":
+        from sephiroth.models.groq import GroqClient
+
+        return GroqClient(api_key=settings.groq_api_key, model=model or settings.groq_model)
+    if provider == "ollama":
+        from sephiroth.models.ollama import OllamaClient
+
+        return OllamaClient(
+            model=model or settings.ollama_model,
+            base_url=settings.ollama_base_url,
+            api_key=settings.ollama_api_key,
+        )
+
     from sephiroth.models.gemini import GeminiClient
 
+    return GeminiClient(api_key=settings.gemini_api_key, model=model or settings.gemini_model)
+
+
+def _run_full(record: bool, skip_pubmed: bool, provider: str, model: Optional[str]) -> int:
     async def _main() -> int:
-        client = GeminiClient(api_key=settings.gemini_api_key, model=model)
+        client = _build_client(provider, model)
         results = await runner.run_full_mode(
             client,
             record=record,
@@ -72,10 +94,11 @@ def _run_full(record: bool, skip_pubmed: bool, model: str) -> int:
             git_sha=_git_sha(),
             run_timestamp=datetime.now(timezone.utc).isoformat(),
         )
-        print(f"Model: {results['run']['model']}")
+        print(f"Provider: {results['run']['provider']}  Model: {results['run']['model']}")
         print(f"Retrieval: {results['retrieval']}")
         print(f"Citation: {results['citation']}")
         print(f"Faithfulness: {results['faithfulness']}")
+        print(f"Performance: {results['performance']}")
         if record:
             print(f"\nWrote {runner.RESULTS_PATH} and transcripts to {runner.TRANSCRIPTS_DIR}")
         return 0
@@ -93,18 +116,22 @@ def main() -> int:
         help="full mode: disable search_pubmed for reproducibility",
     )
     parser.add_argument(
+        "--provider",
+        choices=["gemini", "groq", "ollama"],
+        default="gemini",
+        help="full mode: which ModelProvider to run the golden set against (default: gemini)",
+    )
+    parser.add_argument(
         "--model",
         default=None,
-        help="full mode: Gemini model override (defaults to settings.gemini_model)",
+        help="full mode: model name override (defaults to that provider's configured model)",
     )
     args = parser.parse_args()
 
     if args.mode == "ci":
         return _run_ci()
 
-    from core.config import settings  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
-
-    return _run_full(args.record, args.skip_pubmed, args.model or settings.gemini_model)
+    return _run_full(args.record, args.skip_pubmed, args.provider, args.model)
 
 
 if __name__ == "__main__":

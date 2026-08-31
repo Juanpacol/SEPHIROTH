@@ -1,0 +1,43 @@
+{
+  "_comment": "Ground truth for 4 real, public-domain medical images (Wikimedia Commons, CC0/PD, verified license+author) stored permanently in real_data/imaging/samples/ — not the app's /tmp upload scratch dir. ct_abdomen_real and mri_brain_real are documented NORMAL scans (no injury/abnormality in the source description), so must_not_mention includes specific fabricated-finding terms, not just cross-region anatomy — this is what catches a model inventing 'liver lesion' or 'acute ischemic stroke' on a normal image. pathology_real does show a real finding (anthracotic pigment deposition), so it only guards against cross-modality confusion.",
+  "cases": [
+    {
+      "id": "chest_xray_real",
+      "filename": "chest_xray_real.png",
+      "source": "Wikimedia Commons: Chest Xray PA 3-8-2010.png (Stillwaterising, CC0 1.0)",
+      "modality": "xray",
+      "must_mention_any": ["chest", "thorax", "lung", "pulmonary"],
+      "must_not_mention": ["brain", "cerebral", "abdomen", "appendix", "histolog", "biopsy"]
+    },
+    {
+      "id": "ct_abdomen_real",
+      "filename": "ct_abdomen_real.png",
+      "source": "Wikimedia Commons: CT of a normal abdomen and pelvis, axial plane 94.png (Mikael Häggström, CC0 1.0) — documented normal, post-trauma workup, no injury found",
+      "modality": "ct",
+      "must_mention_any": ["abdomen", "abdominal", "pelvis"],
+      "must_not_mention": [
+        "brain", "cerebral", "chest radiograph", "histolog", "biopsy",
+        "lesion", "mass", "tumor", "malignant", "malignancy", "calculi", "stone"
+      ]
+    },
+    {
+      "id": "mri_brain_real",
+      "filename": "mri_brain_real.jpg",
+      "source": "Wikimedia Commons: Brain MRI.jpg (Dr. Leon Kaufman / NCI, public domain, 1989) — no documented abnormality",
+      "modality": "mri",
+      "must_mention_any": ["brain", "cerebral", "cranial", "cerebrum"],
+      "must_not_mention": [
+        "abdomen", "appendix", "chest radiograph", "histolog", "biopsy",
+        "stroke", "ischemic", "ischaemia", "hemorrhage", "haemorrhage", "tumor", "mass", "lesion"
+      ]
+    },
+    {
+      "id": "pathology_real",
+      "filename": "pathology_real.jpg",
+      "source": "Wikimedia Commons: Histopathology of pulmonary anthracosis.jpg (Mikael Häggström, CC0 1.0) — real finding: anthracotic pigment deposition",
+      "modality": "pathology",
+      "must_mention_any": ["cell", "tissue", "histolog", "microsc", "alveol", "lung"],
+      "must_not_mention": ["radiograph", "x-ray", "mri scan", "ct scan"]
+    }
+  ]
+}

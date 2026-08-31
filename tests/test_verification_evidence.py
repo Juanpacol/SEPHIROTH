@@ -16,6 +16,72 @@ def _tool_call(result):
     )
 
 
+def _drug_tool_call(result):
+    return ToolCall(
+        id="tc2",
+        tool="check_drug_interactions",
+        agent="drug_safety",
+        result=result,
+        timestamp=datetime.now(timezone.utc),
+    )
+
+
+# `check_drug_interactions` returns rows under `interactions`, and its fields
+# match neither `_CONTENT_KEYS` nor any citation key. Reading only `results`
+# left drug-safety runs with zero evidence — every claim UNKNOWN, and the
+# answer/abstain outcome decided by whether extraction returned any claims.
+DRUG_RESULT = {
+    "medications_checked": ["warfarin", "ibuprofen"],
+    "interactions_found": 1,
+    "interactions": [
+        {
+            "pair": ["ibuprofen", "warfarin"],
+            "severity": "major",
+            "effect": "NSAIDs increase bleeding risk and may raise INR.",
+            "recommendation": "Prefer acetaminophen for analgesia in anticoagulated patients.",
+        }
+    ],
+    "disclaimer": "Screening against a curated table only.",
+}
+
+
+def test_drug_interactions_become_evidence():
+    records = harvest_evidence([_drug_tool_call(DRUG_RESULT)])
+
+    assert len(records) == 1
+    assert records[0].originating_agent == "drug_safety"
+
+
+def test_drug_interaction_evidence_carries_verifiable_content():
+    # Empty content is not merely cosmetic: `_overlap_supports` skips
+    # content-less evidence, which downgrades every claim grounded on it.
+    content = harvest_evidence([_drug_tool_call(DRUG_RESULT)])[0].content
+
+    assert content
+    for expected in ("ibuprofen", "warfarin", "major", "bleeding risk", "acetaminophen"):
+        assert expected in content
+
+
+def test_drug_interaction_without_source_falls_back_to_the_table_label():
+    record = harvest_evidence([_drug_tool_call(DRUG_RESULT)])[0]
+    assert record.source == "Curated drug-interaction table"
+
+
+def test_ddinter_sourced_interaction_keeps_its_own_provenance():
+    result = {"interactions": [{"pair": ["a", "b"], "severity": "moderate", "source": "DDInter 2.0"}]}
+    assert harvest_evidence([_drug_tool_call(result)])[0].source == "DDInter 2.0"
+
+
+def test_model_generated_tool_output_is_never_treated_as_evidence():
+    # Imaging `findings` and vision `description` are the model's own output;
+    # admitting them would let an answer verify itself.
+    imaging = {"status": "ok", "findings": [{"label": "abnormal", "probability": 0.91}]}
+    vision = {"status": "ok", "description": "There is a left-basilar opacity."}
+
+    assert harvest_evidence([_tool_call(imaging)]) == []
+    assert harvest_evidence([_tool_call(vision)]) == []
+
+
 def test_harvests_guideline_content():
     result = {
         "results": [

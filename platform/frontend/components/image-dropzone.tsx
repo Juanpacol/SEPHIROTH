@@ -4,7 +4,7 @@
  * `/imaging`. Shows an instant client-side preview via `URL.createObjectURL`
  * the moment a file is dropped/picked — before the upload round trip even
  * finishes — then uploads it and reports back the server path
- * `analyzeImage`/`describeImage` still expect (see `api.uploadImage`). */
+ * `describeImage` still expects (see `api.uploadImage`). */
 
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";

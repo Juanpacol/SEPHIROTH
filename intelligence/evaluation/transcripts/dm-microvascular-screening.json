@@ -1,0 +1,55 @@
+{
+  "case_id": "dm-microvascular-screening",
+  "answer": "Adults with type 2 diabetes should undergo the following annual screening exams as per the American Diabetes Association (ADA) 2024 guidelines:  \n1. **Annual dilated eye exam** for retinopathy [ADA, 2024].  \n2. **Annual urine albumin-to-creatinine ratio** to screen for nephropathy [ADA, 2024].  \n3. **Annual comprehensive foot exam** with monofilament testing for peripheral neuropathy, starting at diagnosis [ADA, 2024].  \n\nThese recommendations are part of microvascular complication screening. For additional screenings (e.g., lipid profile, blood pressure, or HbA1c), refer to broader diabetes management guidelines. Always consult a healthcare provider for individualized care.  \n\n**Source**: Microvascular Complications Screening in Diabetes, American Diabetes Association, 2024 [ADA, 2024].",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "annual screening exams for type 2 diabetes",
+        "top_k": 2
+      },
+      "result": {
+        "query": "annual screening exams for type 2 diabetes",
+        "results": [
+          {
+            "id": "ada-2024-microvascular-screening",
+            "content": "Adults with type 2 diabetes should have an annual dilated eye exam for retinopathy, an annual urine albumin-to-creatinine ratio for nephropathy, and an annual comprehensive foot exam with monofilament testing for peripheral neuropathy, starting at diagnosis.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Microvascular Complications Screening in Diabetes, American Diabetes Association, 2024",
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
+            "score": 0.0492,
+            "metadata": {
+              "category": "endocrinology",
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Microvascular Complications Screening in Diabetes",
+              "url": "https://diabetesjournals.org/care/issue/47/Supplement_1"
+            }
+          },
+          {
+            "id": "ada-2024-hba1c",
+            "content": "An A1C goal for many nonpregnant adults with diabetes of <7% without significant hypoglycemia is appropriate. Metformin is the preferred initial pharmacologic agent for type 2 diabetes.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Glycemic Targets & Pharmacologic Approaches, American Diabetes Association, 2024",
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
+            "score": 0.0161,
+            "metadata": {
+              "category": "endocrinology",
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Glycemic Targets & Pharmacologic Approaches",
+              "url": "https://diabetesjournals.org/care/issue/47/Supplement_1"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 35234,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2015,
+  "completion_tokens": 602,
+  "cost_usd": 0.0
+}

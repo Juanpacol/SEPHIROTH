@@ -11,12 +11,16 @@ see `retrieve()`.
 
 from __future__ import annotations
 
+import logging
 import re
-from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from data.embeddings.base import EmbeddingProvider, EmbeddingUnavailable
+from data.rag.corpus_primary_care import PRIMARY_CARE_GUIDELINES
+from data.rag.document import Document
 from data.vectors import InMemoryVectorStore, VectorStore
+
+logger = logging.getLogger(__name__)
 
 RRF_K = 60
 # Dense embeddings are the more semantically precise signal when available;
@@ -49,24 +53,6 @@ STOPWORDS = {
     "be",
     "my",
 }
-
-
-@dataclass
-class Document:
-    """Medical document with mandatory citation metadata."""
-
-    id: str
-    content: str
-    source: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-    @property
-    def citation(self) -> str:
-        org = self.metadata.get("organization", "")
-        year = self.metadata.get("year", "")
-        title = self.metadata.get("title", self.source)
-        parts = [p for p in [title, org, str(year) if year else ""] if p]
-        return ", ".join(parts)
 
 
 # Seed corpus: short excerpts from public clinical guidelines. Extend by
@@ -457,7 +443,271 @@ SEED_GUIDELINES: List[Document] = [
             "url": "https://www.nice.org.uk/guidance/ng222",
         },
     ),
-]
+    # --- Strengthening existing categories (cardiovascular, endocrinology,
+    # infectious_disease, pulmonology, nephrology, rheumatology,
+    # psychiatry) with adjacent, frequently-asked topics those categories
+    # didn't cover yet. ---
+    Document(
+        id="acc-aha-2025-acs",
+        content=(
+            "For ST-elevation myocardial infarction (STEMI), primary "
+            "percutaneous coronary intervention within 90 minutes of first "
+            "medical contact is preferred over fibrinolysis. Dual antiplatelet "
+            "therapy (aspirin plus a P2Y12 inhibitor) is recommended for all "
+            "acute coronary syndrome patients regardless of reperfusion strategy."
+        ),
+        source="ACC/AHA Acute Coronary Syndrome Guideline",
+        metadata={
+            "category": "cardiovascular",
+            "organization": "ACC/AHA",
+            "year": 2025,
+            "title": "Management of Acute Coronary Syndromes",
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001168",
+        },
+    ),
+    Document(
+        id="acc-aha-2023-vte",
+        content=(
+            "For acute deep vein thrombosis or pulmonary embolism without "
+            "cancer, direct oral anticoagulants are preferred over warfarin as "
+            "first-line therapy. Anticoagulation duration is at least 3 months, "
+            "extended indefinitely for unprovoked events with low bleeding risk."
+        ),
+        source="ACCP Antithrombotic Therapy for VTE Guideline",
+        metadata={
+            "category": "cardiovascular",
+            "organization": "ACCP",
+            "year": 2021,
+            "title": "Antithrombotic Therapy for VTE Disease",
+            "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext",
+        },
+    ),
+    Document(
+        id="ata-2014-hypothyroidism",
+        content=(
+            "Levothyroxine is the first-line treatment for primary "
+            "hypothyroidism, dosed to normalize TSH (typical target 0.4-4.0 "
+            "mIU/L, adjusted for age). Levothyroxine should be taken on an "
+            "empty stomach, separated from calcium or iron supplements by at "
+            "least 4 hours to avoid reduced absorption."
+        ),
+        source="ATA Guidelines for Hypothyroidism",
+        metadata={
+            "category": "endocrinology",
+            "organization": "American Thyroid Association",
+            "year": 2014,
+            "title": "Guidelines for the Treatment of Hypothyroidism",
+            "url": "https://www.thyroid.org/hypothyroidism/",
+        },
+    ),
+    Document(
+        id="ada-2024-microvascular-screening",
+        content=(
+            "Adults with type 2 diabetes should have an annual dilated eye "
+            "exam for retinopathy, an annual urine albumin-to-creatinine ratio "
+            "for nephropathy, and an annual comprehensive foot exam with "
+            "monofilament testing for peripheral neuropathy, starting at "
+            "diagnosis."
+        ),
+        source="ADA Standards of Care in Diabetes",
+        metadata={
+            "category": "endocrinology",
+            "organization": "American Diabetes Association",
+            "year": 2024,
+            "title": "Microvascular Complications Screening in Diabetes",
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
+        },
+    ),
+    Document(
+        id="idsa-2014-cellulitis",
+        content=(
+            "For non-purulent cellulitis, empiric therapy should cover "
+            "streptococci with an agent such as cephalexin or dicloxacillin. "
+            "Purulent cellulitis or abscess should be covered for MRSA with "
+            "trimethoprim-sulfamethoxazole, doxycycline, or clindamycin, plus "
+            "incision and drainage of any abscess."
+        ),
+        source="IDSA Skin and Soft Tissue Infection Guideline",
+        metadata={
+            "category": "infectious_disease",
+            "organization": "IDSA",
+            "year": 2014,
+            "title": "Diagnosis and Management of Skin and Soft Tissue Infections",
+            "url": "https://academic.oup.com/cid/article/59/2/e10/2895845",
+        },
+    ),
+    Document(
+        id="gold-2024-copd-exacerbation",
+        content=(
+            "Acute COPD exacerbations are treated with short-acting "
+            "bronchodilators, a short course of oral corticosteroids "
+            "(prednisone 40mg for 5 days), and antibiotics if increased "
+            "sputum purulence is present alongside increased dyspnea or "
+            "sputum volume."
+        ),
+        source="GOLD COPD Report",
+        metadata={
+            "category": "pulmonology",
+            "organization": "GOLD",
+            "year": 2024,
+            "title": "Management of COPD Exacerbations",
+            "url": "https://goldcopd.org/2024-gold-report/",
+        },
+    ),
+    Document(
+        id="kdigo-2012-aki",
+        content=(
+            "Acute kidney injury is staged by the rise in serum creatinine or "
+            "decline in urine output: Stage 1 is a 1.5-1.9x creatinine rise or "
+            "<0.5 mL/kg/h urine output for 6-12h. Management is supportive — "
+            "optimize volume status, avoid nephrotoxins, and adjust "
+            "renally-cleared drug doses; dialysis is reserved for refractory "
+            "fluid overload, hyperkalemia, or acidosis."
+        ),
+        source="KDIGO Clinical Practice Guideline for Acute Kidney Injury",
+        metadata={
+            "category": "nephrology",
+            "organization": "KDIGO",
+            "year": 2012,
+            "title": "Diagnosis and Management of Acute Kidney Injury",
+            "url": "https://kdigo.org/guidelines/acute-kidney-injury/",
+        },
+    ),
+    # --- General health knowledge: patient-education-level explanations,
+    # not treatment guidance — a distinct category (`general_health`) from
+    # the clinician-facing guideline excerpts above, sourced from public
+    # patient-education bodies (MedlinePlus, CDC, WHO, AHA patient
+    # materials). Serves both a clinician wanting a plain-language check
+    # and the patient portal, which has had no knowledge source at all
+    # until now. ---
+    Document(
+        id="medlineplus-blood-pressure",
+        content=(
+            "Blood pressure measures the force of blood against artery walls, "
+            "given as two numbers: systolic (pressure while the heart beats) "
+            "over diastolic (pressure between beats). A normal reading is "
+            "below 120/80 mmHg. High blood pressure often has no symptoms, "
+            "which is why regular checks matter even when feeling fine."
+        ),
+        source="MedlinePlus",
+        metadata={
+            "category": "general_health",
+            "organization": "MedlinePlus (U.S. National Library of Medicine)",
+            "year": 2024,
+            "title": "Understanding Blood Pressure Readings",
+            "url": "https://medlineplus.gov/highbloodpressure.html",
+        },
+    ),
+    Document(
+        id="medlineplus-a1c",
+        content=(
+            "The A1C (or HbA1c) test shows average blood sugar levels over "
+            "the past 2-3 months. An A1C below 5.7% is normal, 5.7-6.4% "
+            "indicates prediabetes, and 6.5% or higher indicates diabetes. "
+            "Unlike a daily finger-stick, A1C reflects a longer-term trend "
+            "rather than a single moment."
+        ),
+        source="MedlinePlus",
+        metadata={
+            "category": "general_health",
+            "organization": "MedlinePlus (U.S. National Library of Medicine)",
+            "year": 2024,
+            "title": "The A1C Test and Diabetes",
+            "url": "https://medlineplus.gov/a1c.html",
+        },
+    ),
+    Document(
+        id="medlineplus-cholesterol",
+        content=(
+            "Cholesterol travels in the blood in two main forms: LDL ('bad' "
+            "cholesterol), which builds up in artery walls, and HDL ('good' "
+            "cholesterol), which helps remove it. A cholesterol panel also "
+            "reports triglycerides, another blood fat linked to heart disease "
+            "risk when elevated."
+        ),
+        source="MedlinePlus",
+        metadata={
+            "category": "general_health",
+            "organization": "MedlinePlus (U.S. National Library of Medicine)",
+            "year": 2024,
+            "title": "Cholesterol Levels: What They Mean",
+            "url": "https://medlineplus.gov/cholesterollevelswhattheymean.html",
+        },
+    ),
+    Document(
+        id="cdc-hydration",
+        content=(
+            "There is no single daily water target that fits everyone — needs "
+            "vary with body size, activity, climate, and health conditions. "
+            "Thirst and pale-yellow urine are practical everyday indicators of "
+            "adequate hydration; dark urine, dizziness, or infrequent "
+            "urination can signal a need to drink more."
+        ),
+        source="CDC",
+        metadata={
+            "category": "general_health",
+            "organization": "Centers for Disease Control and Prevention",
+            "year": 2022,
+            "title": "Water and Healthier Drinks",
+            "url": "https://www.cdc.gov/nutrition/data-statistics/plain-water-the-healthier-choice.html",
+        },
+    ),
+    Document(
+        id="medlineplus-heart-rate",
+        content=(
+            "A normal resting heart rate for most adults is 60-100 beats per "
+            "minute, measured after sitting quietly. Well-conditioned "
+            "athletes may have a lower resting rate, sometimes 40-60 bpm. A "
+            "rate consistently outside 60-100 at rest, especially with "
+            "symptoms like dizziness or chest discomfort, warrants medical "
+            "evaluation."
+        ),
+        source="MedlinePlus",
+        metadata={
+            "category": "general_health",
+            "organization": "MedlinePlus (U.S. National Library of Medicine)",
+            "year": 2023,
+            "title": "Understanding Your Heart Rate",
+            "url": "https://medlineplus.gov/ency/article/003399.htm",
+        },
+    ),
+    Document(
+        id="cdc-sleep",
+        content=(
+            "Most adults need at least 7 hours of sleep per night for optimal "
+            "health. Consistently getting less than 7 hours is linked to "
+            "higher risk of obesity, diabetes, high blood pressure, heart "
+            "disease, and depression. Sleep needs are higher for teens "
+            "(8-10 hours) and school-age children (9-12 hours)."
+        ),
+        source="CDC",
+        metadata={
+            "category": "general_health",
+            "organization": "Centers for Disease Control and Prevention",
+            "year": 2022,
+            "title": "How Much Sleep Do I Need?",
+            "url": "https://www.cdc.gov/sleep/about/index.html",
+        },
+    ),
+    Document(
+        id="cdc-stroke-warning-signs",
+        content=(
+            "The F.A.S.T. warning signs of stroke are: Face drooping on one "
+            "side, Arm weakness or drift when raised, Speech that is slurred "
+            "or strange, and Time to call emergency services immediately if "
+            "any of these signs appear, even if they resolve. Fast treatment "
+            "significantly improves outcomes."
+        ),
+        source="CDC",
+        metadata={
+            "category": "general_health",
+            "organization": "Centers for Disease Control and Prevention",
+            "year": 2023,
+            "title": "Stroke Signs and Symptoms (F.A.S.T.)",
+            "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html",
+        },
+    ),
+] + PRIMARY_CARE_GUIDELINES
 
 
 def _tokenize(text: str) -> List[str]:
@@ -490,12 +740,27 @@ class RAGPipeline:
             self._index_documents(self.documents)
 
     def _index_documents(self, docs: List[Document]) -> None:
-        try:
-            vectors = self._embedding_provider.embed_documents([d.content for d in docs])
-        except EmbeddingUnavailable:
-            return  # stay keyword-only for this session; never raises to callers
-        for doc, vector in zip(docs, vectors):
+        """Index documents one at a time so a single cache miss (a doc added
+        without rebuilding the embeddings artifact) degrades only that one
+        document to keyword-only, instead of silently emptying the entire
+        vector store — the whole-corpus batch call used to raise on the
+        first miss and `_index_documents` swallowed it with a bare `return`,
+        leaving every other document unindexed too."""
+        skipped = 0
+        for doc in docs:
+            try:
+                vector = self._embedding_provider.embed_documents([doc.content])[0]
+            except EmbeddingUnavailable:
+                skipped += 1
+                continue
             self._vector_store.upsert(doc.id, vector, {})
+        if skipped:
+            logger.warning(
+                "RAGPipeline: %d/%d document(s) have no cached embedding and were "
+                "left keyword-only for this session — rebuild the embeddings artifact.",
+                skipped,
+                len(docs),
+            )
 
     def add_document(self, doc: Document) -> None:
         self.documents.append(doc)

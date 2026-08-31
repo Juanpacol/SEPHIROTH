@@ -1,0 +1,55 @@
+{
+  "case_id": "cellulitis-empiric-therapy",
+  "answer": "For non-purulent cellulitis, empiric therapy should cover *streptococci* with agents such as **cephalexin** or **dicloxacillin** [IDSA, 2014]. For purulent cellulitis or abscess, coverage for **MRSA** is recommended, using combinations like **trimethoprim-sulfamethoxazole**, **doxycycline**, or **clindamycin**, along with incision and drainage of any abscess [IDSA, 2014]. \n\nThese recommendations are derived from the IDSA guideline on skin and soft tissue infections. Always confirm with a healthcare provider for individualized care. \n\n**Citations**:  \n[IDSA, 2014](https://academic.oup.com/cid/article/59/2/e10/2895845)",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "empiric antibiotic choice for non-purulent versus purulent cellulitis",
+        "top_k": 2
+      },
+      "result": {
+        "query": "empiric antibiotic choice for non-purulent versus purulent cellulitis",
+        "results": [
+          {
+            "id": "idsa-2014-cellulitis",
+            "content": "For non-purulent cellulitis, empiric therapy should cover streptococci with an agent such as cephalexin or dicloxacillin. Purulent cellulitis or abscess should be covered for MRSA with trimethoprim-sulfamethoxazole, doxycycline, or clindamycin, plus incision and drainage of any abscess.",
+            "source": "IDSA Skin and Soft Tissue Infection Guideline",
+            "citation": "Diagnosis and Management of Skin and Soft Tissue Infections, IDSA, 2014",
+            "url": "https://academic.oup.com/cid/article/59/2/e10/2895845",
+            "score": 0.0492,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "IDSA",
+              "year": 2014,
+              "title": "Diagnosis and Management of Skin and Soft Tissue Infections",
+              "url": "https://academic.oup.com/cid/article/59/2/e10/2895845"
+            }
+          },
+          {
+            "id": "aap-2013-otitis",
+            "content": "Amoxicillin is the first-line antibiotic for acute otitis media in children without recent beta-lactam exposure. Watchful waiting may be offered for children 6 months to 12 years with unilateral mild symptoms.",
+            "source": "AAP Clinical Practice Guideline on Acute Otitis Media",
+            "citation": "Diagnosis and Management of Acute Otitis Media, AAP, 2013",
+            "url": "https://publications.aap.org/pediatrics/article/131/3/e964/30912",
+            "score": 0.0161,
+            "metadata": {
+              "category": "pediatrics",
+              "organization": "AAP",
+              "year": 2013,
+              "title": "Diagnosis and Management of Acute Otitis Media",
+              "url": "https://publications.aap.org/pediatrics/article/131/3/e964/30912"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 32576,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2158,
+  "completion_tokens": 661,
+  "cost_usd": 0.0
+}

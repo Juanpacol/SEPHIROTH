@@ -1,0 +1,55 @@
+{
+  "case_id": "general-stroke-warning-signs",
+  "answer": "The warning signs of a stroke are best remembered using the **F.A.S.T.** acronym:  \n- **F**ace: Drooping on one side (ask the person to smile).  \n- **A**rm: Weakness or numbness in one arm (ask them to raise both arms).  \n- **S**peech: Slurred or strange speech (ask them to repeat a phrase).  \n- **T**ime: Call emergency services **immediately** if any of these signs occur, even if they resolve [CDC, 2023].  \n\n**What to do**:  \n1. **Call emergency services immediately** (e.g., 911 in the U.S.) and note the time symptoms started. Do not drive yourself to the hospital [CDC, 2023].  \n2. **Stay with the person** and ensure their airway is clear.  \n3. **Do not give food or drink** until medical staff confirm it\u2019s safe.  \n\nFor eligible patients with acute ischemic stroke, **intravenous alteplase** is recommended within **4.5 hours** of symptom onset, and **mechanical thrombectomy** may be used for large-vessel occlusions within 24 hours [AHA/ASA, 2021].  \n\nAlways seek professional medical evaluation for suspected stroke.  \n\nReferences:  \n- [CDC, 2023] Stroke Signs and Symptoms (F.A.S.T.)  \n- [AHA/ASA, 2021] Early Management of Acute Ischemic Stroke",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "top_k": 2,
+        "query": "stroke warning signs symptoms"
+      },
+      "result": {
+        "query": "stroke warning signs symptoms",
+        "results": [
+          {
+            "id": "cdc-stroke-warning-signs",
+            "content": "The F.A.S.T. warning signs of stroke are: Face drooping on one side, Arm weakness or drift when raised, Speech that is slurred or strange, and Time to call emergency services immediately if any of these signs appear, even if they resolve. Fast treatment significantly improves outcomes.",
+            "source": "CDC",
+            "citation": "Stroke Signs and Symptoms (F.A.S.T.), Centers for Disease Control and Prevention, 2023",
+            "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html",
+            "score": 0.0492,
+            "metadata": {
+              "category": "general_health",
+              "organization": "Centers for Disease Control and Prevention",
+              "year": 2023,
+              "title": "Stroke Signs and Symptoms (F.A.S.T.)",
+              "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html"
+            }
+          },
+          {
+            "id": "aha-asa-2021-stroke",
+            "content": "Intravenous alteplase is recommended within 4.5 hours of symptom onset for eligible patients with acute ischemic stroke. Mechanical thrombectomy is recommended for large-vessel occlusion within 24 hours in selected patients.",
+            "source": "AHA/ASA Acute Ischemic Stroke Guideline",
+            "citation": "Early Management of Acute Ischemic Stroke, AHA/ASA, 2021",
+            "url": "https://www.ahajournals.org/doi/10.1161/STR.0000000000000211",
+            "score": 0.0161,
+            "metadata": {
+              "category": "neurology",
+              "organization": "AHA/ASA",
+              "year": 2021,
+              "title": "Early Management of Acute Ischemic Stroke",
+              "url": "https://www.ahajournals.org/doi/10.1161/STR.0000000000000211"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 65048,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2308,
+  "completion_tokens": 1063,
+  "cost_usd": 0.0
+}

@@ -305,7 +305,7 @@ async def test_evidence_categories_lists_every_category_with_counts(client):
         body = res.json()
         assert len(body) > 1
         assert all({"slug", "label", "count"} <= set(c.keys()) for c in body)
-        assert sum(c["count"] for c in body) == 23  # len(SEED_GUIDELINES)
+        assert sum(c["count"] for c in body) == 37  # len(SEED_GUIDELINES)
         # Sorted by label, not slug — "Cancer Screening" before "Cardiovascular".
         labels = [c["label"] for c in body]
         assert labels == sorted(labels)

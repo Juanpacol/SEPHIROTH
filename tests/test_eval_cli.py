@@ -48,13 +48,49 @@ def test_run_full_uses_model_override(monkeypatch, tmp_path):
 
     async def fake_run_full_mode(client, **kwargs):
         return {
-            "run": {"model": getattr(client, "model", "fake-model")},
+            "run": {"model": getattr(client, "model", "fake-model"), "provider": "GeminiClient"},
             "retrieval": {},
             "citation": {},
             "faithfulness": {},
+            "performance": {},
         }
 
     monkeypatch.setattr(eval_run.runner, "run_full_mode", fake_run_full_mode)
 
-    exit_code = eval_run._run_full(record=False, skip_pubmed=True, model="custom-model:latest")
+    exit_code = eval_run._run_full(
+        record=False, skip_pubmed=True, provider="gemini", model="custom-model:latest"
+    )
     assert exit_code == 0
+    assert captured["model"] == "custom-model:latest"
+
+
+def test_run_full_builds_ollama_client_for_ollama_provider(monkeypatch):
+    """`--provider ollama` must build an OllamaClient, not GeminiClient —
+    this is the wiring `/eval` needs to compare providers on the same
+    golden set."""
+    from tests.conftest import FakeLLMClient
+
+    captured = {}
+
+    def fake_ollama_ctor(model, base_url, api_key):
+        captured["model"] = model
+        captured["base_url"] = base_url
+        captured["api_key"] = api_key
+        return FakeLLMClient(default_script=[("answer", "ok")])
+
+    monkeypatch.setattr("sephiroth.models.ollama.OllamaClient", fake_ollama_ctor)
+
+    async def fake_run_full_mode(client, **kwargs):
+        return {
+            "run": {"model": getattr(client, "model", "fake-model"), "provider": "OllamaClient"},
+            "retrieval": {},
+            "citation": {},
+            "faithfulness": {},
+            "performance": {},
+        }
+
+    monkeypatch.setattr(eval_run.runner, "run_full_mode", fake_run_full_mode)
+
+    exit_code = eval_run._run_full(record=False, skip_pubmed=True, provider="ollama", model="qwen2.5:14b")
+    assert exit_code == 0
+    assert captured["model"] == "qwen2.5:14b"

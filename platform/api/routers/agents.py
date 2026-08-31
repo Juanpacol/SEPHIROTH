@@ -13,11 +13,13 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.fast_path import try_fast_path
 from api.pdf_export import render_consultation_pdf
+from api.workflows import clinical_notify
 from auth.deps import get_current_user
 from core.config import settings
 from core.db import SessionLocal, get_session
-from data.schemas import AIEvaluation, Consultation, User
+from data.schemas import AIEvaluation, Consultation, Patient, User
 from sephiroth.context import recent_consultation_summaries
 from sephiroth.models import get_llm_client
 from sephiroth.runtime import run_consultation, stream_consultation
@@ -130,6 +132,20 @@ async def _persist(
         len(consultation.tool_calls),
         len((consultation.citation_report or {}).get("fabricated", [])),
     )
+
+    # Clinician-facing Slack signal — fires only on "partial"/"abstain",
+    # never a plain "answer" (see notify_consultation_needs_review's
+    # docstring). Best-effort: a dead/unset webhook must never affect the
+    # response, same posture as ops_notify's tick summary.
+    if abstention_status != "answer":
+        patient_name = None
+        if consultation.patient_id:
+            patient = await session.get(Patient, consultation.patient_id)
+            patient_name = patient.name if patient else None
+        await clinical_notify.notify_consultation_needs_review(
+            patient_name, request.query, abstention_status, consultation.risk_level
+        )
+
     return consultation
 
 
@@ -199,7 +215,53 @@ async def consult_stream(
                 request.patient_id, lookup_session
             )
 
+    # Fast path: pure data retrieval (RAG lookup, drug interaction check)
+    # needs no LLM synthesis at all — see api/fast_path.py's module
+    # docstring for why this is a safety improvement, not just a speed
+    # one. None means "doesn't apply here", falls through unchanged.
+    async with SessionLocal() as fp_session:
+        fast = await try_fast_path(request.query, request.patient_id, context, fp_session)
+
     async def event_stream():
+        if fast is not None:
+            abstention = {
+                "status": "answer",
+                "reason": None,
+                "confidence": 1.0,
+                "supported_claim_ratio": 1.0,
+                "message": "",
+            }
+            yield f"data: {json.dumps({'event': 'routing', 'agents': [fast['source']]})}\n\n"
+            yield (
+                f"data: {json.dumps({'event': 'agent_completed', 'agent': fast['source'], 'tool_calls': fast['tool_calls']}, default=str)}\n\n"
+            )
+            final_event = {
+                "event": "final",
+                "answer": fast["final_answer"],
+                "agents_involved": [fast["source"]],
+                "tool_calls": fast["tool_calls"],
+                "citation_report": fast["citation_report"],
+                "verification_report": {"claims": [], "contradictions": []},
+                "abstention": abstention,
+                "explanation": build_explanation([fast["source"]], fast["tool_calls"], fast["citation_report"]),
+                "trace": {},
+            }
+            yield f"data: {json.dumps(final_event, default=str)}\n\n"
+
+            final_state = {
+                "final_answer": fast["final_answer"],
+                "agent_outputs": {fast["source"]: ""},
+                "tool_calls": fast["tool_calls"],
+                "citation_report": fast["citation_report"],
+                "verification_report": {"claims": [], "contradictions": []},
+                "abstention": abstention,
+                "trace": {},
+            }
+            async with SessionLocal() as session:
+                consultation = await _persist(session, user, request, final_state)
+            yield f"data: {json.dumps({'event': 'persisted', 'id': consultation.id})}\n\n"
+            return
+
         final_state: Dict[str, Any] = {}
         try:
             async for event in stream_consultation(
@@ -262,8 +324,13 @@ async def agents_status(
         for name, key in _AGENT_KEYS.items():
             if key in (agents_list or []):
                 usage[name] += 1
-    # Coordinator synthesizes every consultation.
-    usage["Coordinator"] = consultation_count
+    # The coordinator synthesizes every consultation in multi-agent mode,
+    # and none at all in single-agent mode (the routed specialist answers
+    # directly) — so its count can't be derived from the consultation
+    # total. It is deliberately absent from `Consultation.agents`
+    # (RunState.coordinator_result, not agent_results), which is why the
+    # loop above never counts it either.
+    usage["Coordinator"] = 0 if settings.enable_single_agent_mode else consultation_count
 
     llm_ok = await get_llm_client().health()
     return {

@@ -11,6 +11,7 @@ from __future__ import annotations
 import gzip
 import json
 import sys
+import time
 
 from data.embeddings.cached import _cache_key
 from data.embeddings.corpus_hash import _golden_queries, compute_corpus_sha256
@@ -18,6 +19,14 @@ from data.embeddings.gemini import GeminiEmbeddingProvider
 from data.rag import SEED_GUIDELINES
 
 ARTIFACT_PATH = "data/embeddings/artifacts/seed_embeddings.json.gz"
+
+# The free tier's embed_content quota is per-minute (100 requests observed);
+# each `embed_query` call is one request, and the golden dataset's ~90
+# queries fired back-to-back exceed it well before the built-in per-call
+# retry (max 3 attempts, capped 10s backoff) can recover. A flat pace below
+# the limit is simpler and more reliable than deeper retry logic here — this
+# script only ever runs by hand, latency doesn't matter.
+_QUERY_PACE_SECONDS = 0.8
 
 
 def build(api_key: str, model: str = "gemini-embedding-001", dimension: int = 768) -> dict:
@@ -27,7 +36,10 @@ def build(api_key: str, model: str = "gemini-embedding-001", dimension: int = 76
     doc_vectors = provider.embed_documents(doc_texts)
 
     queries = _golden_queries()
-    query_vectors = [provider.embed_query(q) for q in queries]
+    query_vectors = []
+    for q in queries:
+        query_vectors.append(provider.embed_query(q))
+        time.sleep(_QUERY_PACE_SECONDS)
 
     vectors = {}
     for doc, vector in zip(SEED_GUIDELINES, doc_vectors):
