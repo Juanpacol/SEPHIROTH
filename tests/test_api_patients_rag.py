@@ -396,7 +396,9 @@ async def test_dashboard_stats_excludes_low_risk_patients(client, seeded_patient
 
 
 @pytest.mark.asyncio
-async def test_add_clinical_note_extracts_entities_and_timeline(client, seeded_patient, db_session, monkeypatch):
+async def test_add_clinical_note_extracts_entities_and_timeline(
+    client, seeded_patient, db_session, monkeypatch
+):
     import sephiroth.models.factory as factory_module
 
     monkeypatch.setattr(
