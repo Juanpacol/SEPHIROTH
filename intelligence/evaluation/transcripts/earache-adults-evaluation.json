@@ -1,0 +1,55 @@
+{
+  "case_id": "earache-adults-evaluation",
+  "answer": "For adults experiencing ear pain, the primary causes are typically acute otitis media, which can be identified by a red and bulging eardrum. Acute otitis media is treated with amoxicillin as first-line therapy, much like in pediatric cases. Another common cause of adult earache is referred pain from other conditions such as the jaw, teeth, or throat, or it could be due to otitis externa (swimmer's ear), which should be treated with topical antibiotic drops instead of oral antibiotics. \n\nFor more specific treatment advice related to your inquiry from reliable sources, consider consulting guidelines on chronic obstructive pulmonary disease (COPD) management from bodies like GINA if you need additional information regarding asthma. However, the provided clinical review from AAFP highlights common conditions and treatments for ear pain in adults.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "ear pain in adults treatment",
+        "top_k": 2
+      },
+      "result": {
+        "query": "ear pain in adults treatment",
+        "results": [
+          {
+            "id": "aafp-earache-adults",
+            "content": "In adults, an earache with a red, bulging eardrum suggests acute otitis media and is treated with amoxicillin as first-line therapy, similar to pediatric management. Ear pain with normal exam findings is more often referred pain from the jaw, teeth, or throat, or otitis externa (swimmer's ear), which is treated with topical antibiotic drops rather than oral antibiotics.",
+            "source": "AAFP Clinical Review",
+            "citation": "Diagnosis and Treatment of Otitis Media and Otitis Externa, American Academy of Family Physicians, 2013",
+            "url": "https://www.aafp.org/pubs/afp/issues/2013/1201/p770.html",
+            "score": 0.0492,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "American Academy of Family Physicians",
+              "year": 2013,
+              "title": "Diagnosis and Treatment of Otitis Media and Otitis Externa",
+              "url": "https://www.aafp.org/pubs/afp/issues/2013/1201/p770.html"
+            }
+          },
+          {
+            "id": "gina-2024-asthma",
+            "content": "For adults and adolescents with asthma, as-needed low-dose ICS-formoterol is preferred as reliever therapy over short-acting beta-agonist alone, even at the mildest step of treatment, to reduce exacerbation risk.",
+            "source": "Global Initiative for Asthma Report",
+            "citation": "Global Strategy for Asthma Management, GINA, 2024",
+            "url": "https://ginasthma.org/2026-gina-strategy-report/",
+            "score": 0.0161,
+            "metadata": {
+              "category": "pulmonology",
+              "organization": "GINA",
+              "year": 2024,
+              "title": "Global Strategy for Asthma Management",
+              "url": "https://ginasthma.org/2026-gina-strategy-report/"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 12151,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2215,
+  "completion_tokens": 202,
+  "cost_usd": 0.0
+}

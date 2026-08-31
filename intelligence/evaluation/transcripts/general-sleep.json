@@ -1,11 +1,11 @@
 {
   "case_id": "general-sleep",
-  "answer": "The National Sleep Foundation recommends that adults aged 18-64 get 7-9 hours of sleep per night, while those aged 65 and older should aim for 7-8 hours [National Sleep Foundation, 2023]. The Centers for Disease Control and Prevention (CDC) also cites 7-9 hours as the recommended range for most adults [CDC, 2022]. These guidelines are based on extensive research linking sufficient sleep to optimal physical and mental health. \n\nNote: These recommendations are general and may vary for individuals with specific medical conditions or lifestyle factors. Always consult a healthcare provider for personalized advice.",
+  "answer": "According to the guidelines from the National Sleep Foundation, adults are recommended to get 7-9 hours of sleep per night. Here's a brief citation for this information: [National Sleep Foundation, 2015].\n\nFor more detailed or specific guidance, additional research into individual health conditions and sleep needs might be necessary.",
   "tool_calls": [],
-  "latency_ms": 20774,
+  "latency_ms": 2374,
   "tool_call_count": 0,
   "rounds": 1,
-  "prompt_tokens": 685,
-  "completion_tokens": 362,
+  "prompt_tokens": 835,
+  "completion_tokens": 66,
   "cost_usd": 0.0
 }

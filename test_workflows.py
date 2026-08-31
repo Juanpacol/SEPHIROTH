@@ -9,14 +9,14 @@ from uuid import uuid4
 sys.path.insert(0, ".")
 sys.path.insert(0, "platform")
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
-from core.config import settings
-from data.schemas import Patient, Workflow, WorkflowStep
 import api.workflows.definitions  # noqa: F401 - registers step types
 from api.workflows.registry import STEP_TYPES
+from core.config import settings
+from data.schemas import Patient, Workflow, WorkflowStep
 
 
 async def create_test_workflows():
@@ -51,7 +51,7 @@ async def create_test_workflows():
             # Create workflow
             spec = STEP_TYPES.get("alert_refresh")
             if not spec:
-                print(f"  ✗ alert_refresh step type not found")
+                print("  ✗ alert_refresh step type not found")
                 continue
 
             workflow = Workflow(

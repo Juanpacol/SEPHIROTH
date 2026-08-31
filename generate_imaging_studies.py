@@ -13,12 +13,12 @@ from uuid import uuid4
 sys.path.insert(0, ".")
 sys.path.insert(0, "platform")
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from core.config import settings
-from data.schemas import TimelineEvent, ImagingStudy
+from data.schemas import ImagingStudy, TimelineEvent
 
 # (filename fragment, body_part, severity, is_new_finding)
 # Severity derived from the actual vision descriptions (all 8 are normal/

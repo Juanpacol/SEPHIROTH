@@ -131,7 +131,9 @@ def _format_blocks(fields: Dict[str, Any]) -> Tuple[str, List[Dict[str, Any]], s
         more = fields.get("failed_steps_more")
         if more:
             lines.append(f"…and {more} more")
-        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Failed steps:*\n" + "\n".join(lines)}})
+        blocks.append(
+            {"type": "section", "text": {"type": "mrkdwn", "text": "*Failed steps:*\n" + "\n".join(lines)}}
+        )
 
     fallback = f"{emoji} Workflow tick {tick_id}: claimed {claimed}, succeeded {succeeded}, failed {failed}"
     return fallback, blocks, color

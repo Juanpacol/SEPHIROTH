@@ -1,40 +1,11 @@
 {
   "case_id": "general-heart-rate-paraphrase",
-  "answer": "A resting pulse of 55 bpm falls within the **40-60 bpm range** described for well-conditioned athletes [MedlinePlus, 2023]. For most adults, however, a normal resting heart rate is **60-100 bpm**. While 55 may be normal for athletes or individuals with high cardiovascular fitness, it could indicate **bradycardia** (abnormally slow heart rate) in others, especially if accompanied by symptoms like dizziness, fatigue, or chest discomfort. Always consult a healthcare professional for personalized evaluation. \n\nSource: [MedlinePlus, 2023](https://medlineplus.gov/ency/article/003399.htm)",
-  "tool_calls": [
-    {
-      "name": "search_clinical_guidelines",
-      "arguments": {
-        "query": "normal resting heart rate ranges",
-        "top_k": 1
-      },
-      "result": {
-        "query": "normal resting heart rate ranges",
-        "results": [
-          {
-            "id": "medlineplus-heart-rate",
-            "content": "A normal resting heart rate for most adults is 60-100 beats per minute, measured after sitting quietly. Well-conditioned athletes may have a lower resting rate, sometimes 40-60 bpm. A rate consistently outside 60-100 at rest, especially with symptoms like dizziness or chest discomfort, warrants medical evaluation.",
-            "source": "MedlinePlus",
-            "citation": "Understanding Your Heart Rate, MedlinePlus (U.S. National Library of Medicine), 2023",
-            "url": "https://medlineplus.gov/ency/article/003399.htm",
-            "score": 0.0492,
-            "metadata": {
-              "category": "general_health",
-              "organization": "MedlinePlus (U.S. National Library of Medicine)",
-              "year": 2023,
-              "title": "Understanding Your Heart Rate",
-              "url": "https://medlineplus.gov/ency/article/003399.htm"
-            }
-          }
-        ],
-        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
-      }
-    }
-  ],
-  "latency_ms": 45479,
-  "tool_call_count": 1,
-  "rounds": 2,
-  "prompt_tokens": 2103,
-  "completion_tokens": 753,
+  "answer": "Based on clinical guidelines, a resting heart rate of 55 bpm is generally considered within the normal range. However, for individuals who are athletes or in good physical condition, a lower rate might be expected and not necessarily indicative of an issue. Consult with your healthcare provider if you have concerns about your heart rate or overall cardiovascular function.\n\n glove_",
+  "tool_calls": [],
+  "latency_ms": 2169,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 838,
+  "completion_tokens": 70,
   "cost_usd": 0.0
 }

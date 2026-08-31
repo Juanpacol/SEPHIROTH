@@ -1,0 +1,11 @@
+{
+  "case_id": "oos-recipe",
+  "answer": "I\u2019d be happy to help you find a great recipe, but it seems like your question might have been misinterpreted. It appears you are looking for a recipe rather than information related to healthcare or clinical guidelines. For your request, I recommend checking out popular food websites or apps which offer recipes. Here\u2019s a simple and tasty chocolate chip cookie recipe:\n\nMakes about 24 cookies.\n\n### Ingredients:\n- 3/4 cup unsalted butter (at room temperature), softened\n- 3/4 cup granulated sugar\n- 3/4 cup packed light-brown sugar\n- 1 large egg, at room temperature\n- 1 teaspoon vanilla extract\n- 2 teaspoons baking soda\n- Pinch of salt\n- 1 and 1/2 cups all-purpose flour\n- 1.5 cups semisweet chocolate chips\n\n### Instructions:\n1. Preheat the oven to 350\u00b0F (175\u00b0C).\n2. Line a cookie sheet with parchment paper.\n3. Combine butter, sugars, egg, and vanilla in a large mixing bowl using an electric mixer until well blended.\n4. Sift together flour and baking soda, and then stir them into the butter mixture, starting on low speed to incorporate the dry ingredients smoothly.\n5. Stir in chocolate chips.\n6. Drop dough by rounded tablespoons onto prepared sheet trays.\n7. Bake for 9-10 minutes or until edges are golden brown.\n8. Cool cookies on a wire rack before serving.\n\nEnjoy your cooking!",
+  "tool_calls": [],
+  "latency_ms": 9447,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 834,
+  "completion_tokens": 310,
+  "cost_usd": 0.0
+}

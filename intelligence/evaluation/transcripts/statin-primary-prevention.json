@@ -1,15 +1,15 @@
 {
   "case_id": "statin-primary-prevention",
-  "answer": "High-intensity statin therapy for primary prevention of cardiovascular disease is recommended for adults aged 40\u201375 years with LDL-C \u2265190 mg/dL or individuals with diabetes and additional risk factors [ACC/AHA, 2018]. This guidance targets primary prevention in select populations with elevated cholesterol or diabetes-related risk. \n\n**Key criteria from the guideline**:\n- LDL-C \u2265190 mg/dL without secondary causes [ACC/AHA, 2018].\n- Diabetic patients with additional risk factors (e.g., family history, smoking, hypertension) [ACC/AHA, 2018].\n\n**Note**: These recommendations are part of a broader risk-stratified approach and should be reviewed in context of individual patient risk profiles, including 10-year ASCVD risk scores, comorbidities, and treatment preferences. \n\nFor further details, refer to the full guideline: [ACC/AHA Cholesterol Management](https://www.ahajournals.org/doi/10.1161/CIR.0000000000000625). \n\nAlways confirm with a healthcare provider for personalized decision-making.",
+  "answer": "According to the clinical guidelines reviewed, high-intensity statin therapy should be recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults aged 40-75 years old with LDL-C levels \u2265190 mg/dL or those with diabetes mellitus who have additional risk factors. These recommendations are found in the ACC/AHA Multi-Society Cholesterol Guideline from 2018 [ACC/AHA, 2018]. No other specific population criteria for high-intensity statin therapy in primary prevention were provided by these guidelines.\n\nThe ACC/AHA Primary Prevention of Cardiovascular Disease Guideline does not explicitly mention a similar intensity recommendation for primary prevention using aspirin; there is no routine recommendation for aspirin for primary prevention, except under certain conditions specified by the clinician. [ACC/AHA, 2019]. \n\nGiven the information available from these guidelines, patients who qualify based on clinical criteria (atherosclerotic cardiovascular disease or specific patient characteristics such as high LDL-C levels and diabetes) and without other risk factors would be candidates for receiving high-intensity statin therapy in primary prevention. For aspirin usage, further risk-benefit discussions with clinicians are advised outside of the standard guidelines described.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "high-intensity statin therapy primary prevention cardiovascular disease",
-        "top_k": 1
+        "query": "high-intensity statins primary prevention cardiovascular disease",
+        "top_k": 2
       },
       "result": {
-        "query": "high-intensity statin therapy primary prevention cardiovascular disease",
+        "query": "high-intensity statins primary prevention cardiovascular disease",
         "results": [
           {
             "id": "acc-aha-2018-lipids",
@@ -25,16 +25,31 @@
               "title": "Management of Blood Cholesterol",
               "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000625"
             }
+          },
+          {
+            "id": "acc-aha-2019-primary-prevention",
+            "content": "Aspirin for primary prevention of cardiovascular disease is not routinely recommended due to bleeding risk, except in select high-risk adults 40-70 years after a risk-benefit discussion with their clinician.",
+            "source": "ACC/AHA Primary Prevention of Cardiovascular Disease Guideline",
+            "citation": "Primary Prevention of Cardiovascular Disease, ACC/AHA, 2019",
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000678",
+            "score": 0.0161,
+            "metadata": {
+              "category": "cardiovascular",
+              "organization": "ACC/AHA",
+              "year": 2019,
+              "title": "Primary Prevention of Cardiovascular Disease",
+              "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000678"
+            }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
   ],
-  "latency_ms": 39285,
+  "latency_ms": 15610,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 1996,
-  "completion_tokens": 851,
+  "prompt_tokens": 2238,
+  "completion_tokens": 297,
   "cost_usd": 0.0
 }

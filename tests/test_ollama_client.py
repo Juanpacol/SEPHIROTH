@@ -1,7 +1,10 @@
 """Tests for OllamaClient, mocking the HTTP transport with `httpx.MockTransport`
 — no real Ollama server needed. Mirrors test_groq_client.py since both clients
-implement the same OpenAI-compatible chat completions shape."""
+implement the same OpenAI-compatible chat completions shape (text/tools).
+Vision goes through Ollama's native `/api/chat` instead — see
+`OllamaClient._native_api_url`'s docstring for why."""
 
+import base64
 import json as json_mod
 
 import httpx
@@ -9,6 +12,13 @@ import pytest
 
 from sephiroth.models import LLMUnavailableError
 from sephiroth.models.ollama import OllamaClient
+
+# Smallest possible valid PNG (1x1 transparent pixel) — real image bytes are
+# required since `_downscale_for_vision` decodes them with PIL before any
+# HTTP call is made.
+_TINY_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
 
 
 async def _noop_sleep(_seconds):
@@ -264,18 +274,20 @@ async def test_describe_image_uses_configured_vision_model():
     captured = {}
 
     def handler(request):
+        assert request.url.path == "/api/chat"
         captured["body"] = json_mod.loads(request.content)
-        return httpx.Response(200, json=_openai_response(content="Bilateral infiltrates visible."))
+        return httpx.Response(200, json={"message": {"content": "Bilateral infiltrates visible."}})
 
     client = _make_client(handler, vision_model="qwen2.5vl:7b")
     assert client.supports_vision is True
 
     result = await client.describe_image(
-        image_bytes=b"fake-bytes", mime_type="image/png", prompt="describe this"
+        image_bytes=_TINY_PNG, mime_type="image/png", prompt="describe this"
     )
 
     assert result == "Bilateral infiltrates visible."
     assert captured["body"]["model"] == "qwen2.5vl:7b"
-    content = captured["body"]["messages"][0]["content"]
-    assert content[0] == {"type": "text", "text": "describe this"}
-    assert content[1]["image_url"]["url"].startswith("data:image/png;base64,")
+    assert captured["body"]["stream"] is False
+    message = captured["body"]["messages"][0]
+    assert message["content"] == "describe this"
+    assert isinstance(message["images"][0], str) and message["images"][0]

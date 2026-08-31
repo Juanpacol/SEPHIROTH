@@ -1,15 +1,15 @@
 {
   "case_id": "copd-exacerbation-management",
-  "answer": "Acute COPD exacerbations are treated with **short-acting bronchodilators** (e.g., beta-agonists or anticholinergics), a **short course of oral corticosteroids** (e.g., prednisone 40 mg daily for 5 days), and **antibiotics** if there is increased sputum purulence alongside increased dyspnea or sputum volume [GOLD, 2024]. Oxygen therapy is also critical to maintain SpO\u2082 \u2265 90% [GOLD, 2024]. \n\n**Note**: These recommendations are derived from clinical guidelines and require professional review for individual patient application.",
+  "answer": "For the treatment of an acute COPD exacerbation, short-acting bronchodilators are administered. Additionally, patients may receive a course of oral corticosteroids (prednisone 40mg for 5 days) and antibiotics if their sputum becomes more purulent, accompanied by increased dyspnea or increased sputum volume. This treatment guidance is from the GOLD COPD Report published in 2024 [GOLD, 2024].\n\nPlease ensure to review this with a healthcare provider for personalized care considerations.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "acute COPD exacerbation treatment",
-        "top_k": 1
+        "query": "Acute COPD Exacerbation treatment",
+        "top_k": 2
       },
       "result": {
-        "query": "acute COPD exacerbation treatment",
+        "query": "Acute COPD Exacerbation treatment",
         "results": [
           {
             "id": "gold-2024-copd-exacerbation",
@@ -17,12 +17,27 @@
             "source": "GOLD COPD Report",
             "citation": "Management of COPD Exacerbations, GOLD, 2024",
             "url": "https://goldcopd.org/2024-gold-report/",
-            "score": 0.0492,
+            "score": 0.0489,
             "metadata": {
               "category": "pulmonology",
               "organization": "GOLD",
               "year": 2024,
               "title": "Management of COPD Exacerbations",
+              "url": "https://goldcopd.org/2024-gold-report/"
+            }
+          },
+          {
+            "id": "gold-2024-copd",
+            "content": "For COPD patients with frequent exacerbations, LABA+LAMA combination therapy is preferred. Inhaled corticosteroids are added for patients with blood eosinophils >=300 cells/uL or continued exacerbations.",
+            "source": "GOLD COPD Report",
+            "citation": "COPD Diagnosis, Management and Prevention, GOLD, 2024",
+            "url": "https://goldcopd.org/2024-gold-report/",
+            "score": 0.0323,
+            "metadata": {
+              "category": "pulmonology",
+              "organization": "GOLD",
+              "year": 2024,
+              "title": "COPD Diagnosis, Management and Prevention",
               "url": "https://goldcopd.org/2024-gold-report/"
             }
           }
@@ -31,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 33090,
+  "latency_ms": 8029,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 1858,
-  "completion_tokens": 720,
+  "prompt_tokens": 2143,
+  "completion_tokens": 152,
   "cost_usd": 0.0
 }

@@ -1,15 +1,15 @@
 {
   "case_id": "gout-urate-lowering",
-  "answer": "The preferred first-line urate-lowering therapy for recurrent gout is **allopurinol**, titrated to achieve a serum urate level below **6 mg/dL** [ACR, 2020]. This recommendation is based on the American College of Rheumatology (ACR) guidelines, which emphasize allopurinol as the standard initial treatment for patients with recurrent gout flares, tophi, or radiographic evidence of joint damage. \n\n**Key details from the guideline**:  \n- Allopurinol is prioritized over other agents like febuxostat or probenecid for most patients [ACR, 2020].  \n- Dosing adjustments may be required based on renal function, as allopurinol is renally excreted.  \n\nThis guidance should be reviewed in conjunction with individual patient factors and local prescribing practices.  \n\nSource: *Management of Gout*, American College of Rheumatology, 2020 [ACR, 2020].",
+  "answer": "The preferred first-line urate-lowering therapy for recurrent gout, according to the ACR Guideline for Management of Gout (Management of Gout, ACOR, 2020) [ACR Guideline for Management of Gout, 2020], is allopurinol. This recommendation is made for patients with recurrent gout flares, tophi, or radiographic damage, and titrated to a serum urate target below 6 mg/dL.\n\nBased on this guideline, allopurinol should be used as the recommended first-line agent in treating recurrent gout. Please note that this recommendation must be reviewed by a professional for clinical context and patient-specific suitability.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "preferred first-line urate-lowering therapy for recurrent gout",
-        "top_k": 1
+        "query": "urate-lowering therapy gout",
+        "top_k": 2
       },
       "result": {
-        "query": "preferred first-line urate-lowering therapy for recurrent gout",
+        "query": "urate-lowering therapy gout",
         "results": [
           {
             "id": "acr-2020-gout",
@@ -31,10 +31,10 @@
       }
     }
   ],
-  "latency_ms": 33098,
+  "latency_ms": 8633,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 1941,
-  "completion_tokens": 723,
+  "prompt_tokens": 1942,
+  "completion_tokens": 183,
   "cost_usd": 0.0
 }

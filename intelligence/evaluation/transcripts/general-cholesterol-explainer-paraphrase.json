@@ -1,11 +1,11 @@
 {
   "case_id": "general-cholesterol-explainer-paraphrase",
-  "answer": "The \"bad\" cholesterol is low-density lipoprotein (LDL), and the \"good\" cholesterol is high-density lipoprotein (HDL). LDL contributes to plaque buildup in arteries, increasing cardiovascular risk, while HDL helps remove excess cholesterol from the bloodstream [American Heart Association, 2023]. \n\nFor further clarification, the National Cholesterol Education Program (NCEP) also identifies LDL as the primary target for lipid-lowering therapies due to its role in atherosclerosis [NCEP, 2020]. \n\nAlways consult a healthcare provider for personalized guidance.",
+  "answer": "To address your query about cholesterol numbers being categorized as 'bad' or 'good,' we need to understand that both Total Cholesterol and LDL (Low-Density Lipoprotein) are key components in assessing cardiovascular risk, but they classify differently.\n\nLDL cholesterol is generally considered the 'bad' type of cholesterol. High levels of LDL can lead to plaque buildup inside arteries, increasing the risk of heart disease. Therefore, managing LDL levels is crucial for preventing these conditions.\n\nTotal Cholesterol, on the other hand, includes both good and bad types of cholesterol. Elevated total cholesterol indicates potentially high levels of either HDL (often referred to as 'good') or LDL.\n\nHere\u2019s a straightforward explanation:\n\n- **LDL (\"Bad\"),** often just called \"bad cholesterol,\" should be below 100 mg/dL for optimal health.\n  \n- **HDL (\"Good\")**, typically above 60 mg/dL, is considered beneficial as it helps to clear bad cholesterol from arteries.\n\nIt's important to note that total cholesterol levels alone do not provide information about the ratios of good (HDL) and bad (LDL) cholesterol. \n\nWould you like more details or specific data based on a guideline or study?",
   "tool_calls": [],
-  "latency_ms": 14563,
+  "latency_ms": 8820,
   "tool_call_count": 0,
   "rounds": 1,
-  "prompt_tokens": 686,
-  "completion_tokens": 332,
+  "prompt_tokens": 836,
+  "completion_tokens": 248,
   "cost_usd": 0.0
 }

@@ -69,7 +69,9 @@ async def test_describe_image_stream_routes_to_vision_client():
     vision_client = _RecordingClient(supports_vision=True)
     split = VisionChatSplitClient(chat_client=chat_client, vision_client=vision_client)
 
-    chunks = [c async for c in split.describe_image_stream(image_bytes=b"x", mime_type="image/png", prompt="d")]
+    chunks = [
+        c async for c in split.describe_image_stream(image_bytes=b"x", mime_type="image/png", prompt="d")
+    ]
 
     assert chunks == ["a", "b"]
     assert vision_client.describe_called is True

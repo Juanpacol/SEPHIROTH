@@ -1,15 +1,14 @@
 {
   "case_id": "obesity-glp1-dm",
-  "answer": "GLP-1 receptor agonists (e.g., semaglutide, liraglutide) are explicitly recommended for **weight management in patients with type 2 diabetes and obesity**, in addition to lifestyle interventions, due to their combined glycemic and weight-beneficial effects [ADA, 2024]. This guidance is part of the American Diabetes Association\u2019s Standards of Care for obesity management in T2D. \n\nFor context, the ADA also emphasizes metformin as the preferred initial pharmacologic agent for T2D, but GLP-1 drugs are specifically highlighted for patients needing weight loss support [ADA, 2024]. Clinical use should consider individual patient factors, contraindications, and integration with lifestyle modifications. \n\nAlways consult a healthcare provider for personalized evaluation and management.",
+  "answer": "GLP-1 receptor agonists and dual GIP/GLP-1 agonists are recommended for weight management in patients with type 2 diabetes and obesity, given their combined glycemic and weight benefits. [ADA Standards of Care in Diabetes, American Diabetes Association, 2024]\n\nIt is also important to maintain an A1C goal of less than 7% without significant hypoglycemia. Metformin is preferred as the initial pharmacologic agent for these patients. [ADA Standards of Care in Diabetes, American Diabetes Association, 2024] While GLP-1 drugs are indicated for weight loss and glycemic control, they should be used concurrently with lifestyle modifications. Please consult a healthcare provider to determine if it's appropriate for your health condition.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "GLP-1 receptor agonists for weight loss in type 2 diabetes",
-        "top_k": 2
+        "query": "GLP-1 drugs weight loss type 2 diabetes"
       },
       "result": {
-        "query": "GLP-1 receptor agonists for weight loss in type 2 diabetes",
+        "query": "GLP-1 drugs weight loss type 2 diabetes",
         "results": [
           {
             "id": "ada-2024-obesity",
@@ -46,10 +45,10 @@
       }
     }
   ],
-  "latency_ms": 43380,
+  "latency_ms": 9994,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2376,
-  "completion_tokens": 953,
+  "prompt_tokens": 2173,
+  "completion_tokens": 193,
   "cost_usd": 0.0
 }

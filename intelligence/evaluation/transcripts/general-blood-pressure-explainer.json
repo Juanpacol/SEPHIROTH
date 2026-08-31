@@ -1,11 +1,54 @@
 {
   "case_id": "general-blood-pressure-explainer",
-  "answer": "Blood pressure is the force exerted by circulating blood against the walls of blood vessels, measured in millimeters of mercury (mmHg) as two numbers: systolic (during heartbeats) and diastolic (between heartbeats) [WHO, 2021]. \n\nA normal blood pressure reading is defined as **systolic <120 mmHg** and **diastolic <80 mmHg** [AHA, 2023]. Readings between 120-129 mmHg systolic and <80 mmHg diastolic are classified as \"elevated\" (Stage 1 hypertension), while \u2265130 mmHg systolic or \u226580 mmHg diastolic indicates Stage 2 hypertension [AHA, 2023]. \n\nThese thresholds are based on clinical guidelines that emphasize the risks of uncontrolled hypertension and its association with cardiovascular disease [WHO, 2021]. Individualized assessment by a healthcare provider is recommended for accurate diagnosis and management.",
-  "tool_calls": [],
-  "latency_ms": 23875,
-  "tool_call_count": 0,
-  "rounds": 1,
-  "prompt_tokens": 686,
-  "completion_tokens": 529,
+  "answer": "Blood pressure measures the force of circulating blood against artery walls, typically given as two numbers: systolic (pressure while the heart beats) over diastolic (pressure between beats). A normal adult reading is below 120/80 mmHg. [MedlinePlus, 2024] It's important to note that this value can vary based on individual health status and specific guidelines for different age groups. In diabetes management, the blood pressure target is recommended to be below 130/80 mmHg, with ACE inhibitors or ARBs being preferred first-line agents in cases of albuminuria. [ADA Standards of Care in Diabetes, 2024] Regular checks are crucial for managing high blood pressure even when individuals do not exhibit symptoms.\n\nTherefore, the specific threshold that needs professional review is below 130/80 mmHg for adults with diabetes and hypertension management, as per theADA guidelines. Other considerations include individual clinical context and recommended treatments such as ACE inhibitors or ARBs in cases of albuminuria. Please consult further medical advice for personalized management strategies.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "blood pressure definition and normal ranges for adults"
+      },
+      "result": {
+        "query": "blood pressure definition and normal ranges for adults",
+        "results": [
+          {
+            "id": "medlineplus-blood-pressure",
+            "content": "Blood pressure measures the force of blood against artery walls, given as two numbers: systolic (pressure while the heart beats) over diastolic (pressure between beats). A normal reading is below 120/80 mmHg. High blood pressure often has no symptoms, which is why regular checks matter even when feeling fine.",
+            "source": "MedlinePlus",
+            "citation": "Understanding Blood Pressure Readings, MedlinePlus (U.S. National Library of Medicine), 2024",
+            "url": "https://medlineplus.gov/highbloodpressure.html",
+            "score": 0.0492,
+            "metadata": {
+              "category": "general_health",
+              "organization": "MedlinePlus (U.S. National Library of Medicine)",
+              "year": 2024,
+              "title": "Understanding Blood Pressure Readings",
+              "url": "https://medlineplus.gov/highbloodpressure.html"
+            }
+          },
+          {
+            "id": "ada-2024-hypertension-dm",
+            "content": "A blood pressure target of <130/80 mmHg is recommended for most adults with diabetes and hypertension. ACE inhibitors or ARBs are preferred first-line agents, particularly in the presence of albuminuria.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Hypertension Management in Diabetes, American Diabetes Association, 2024",
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
+            "score": 0.0161,
+            "metadata": {
+              "category": "endocrinology",
+              "organization": "American Diabetes Association",
+              "year": 2024,
+              "title": "Hypertension Management in Diabetes",
+              "url": "https://diabetesjournals.org/care/issue/47/Supplement_1"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 21469,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2290,
+  "completion_tokens": 421,
   "cost_usd": 0.0
 }

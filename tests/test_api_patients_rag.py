@@ -305,7 +305,7 @@ async def test_evidence_categories_lists_every_category_with_counts(client):
         body = res.json()
         assert len(body) > 1
         assert all({"slug", "label", "count"} <= set(c.keys()) for c in body)
-        assert sum(c["count"] for c in body) == 37  # len(SEED_GUIDELINES)
+        assert sum(c["count"] for c in body) == 63  # len(SEED_GUIDELINES)
         # Sorted by label, not slug — "Cancer Screening" before "Cardiovascular".
         labels = [c["label"] for c in body]
         assert labels == sorted(labels)
@@ -396,7 +396,7 @@ async def test_dashboard_stats_excludes_low_risk_patients(client, seeded_patient
 
 
 @pytest.mark.asyncio
-async def test_add_clinical_note_extracts_entities_and_timeline(client, seeded_patient, monkeypatch):
+async def test_add_clinical_note_extracts_entities_and_timeline(client, seeded_patient, db_session, monkeypatch):
     import sephiroth.models.factory as factory_module
 
     monkeypatch.setattr(
@@ -419,8 +419,23 @@ async def test_add_clinical_note_extracts_entities_and_timeline(client, seeded_p
         assert res.status_code == 201
         body = res.json()
         assert body["entities_found"] >= 1
-        assert len(body["events_added"]) == 1
-        assert body["events_added"][0]["title"] == "Test diagnosis"
+        # Timeline-event extraction runs as a background task after the
+        # response is sent (see `_extract_events_background`'s docstring) —
+        # the note response itself never carries events.
+        assert body["events_added"] == []
+        assert body["processing"] is True
+
+        # The test reuses one `db_session` across the whole request lifecycle
+        # (see the `app` fixture's `SessionLocal` override) with
+        # `expire_on_commit=False`, so the `Patient` this session already
+        # loaded keeps a stale in-memory `.timeline` after the background
+        # task's commit. A real request gets a fresh session per call, so
+        # this expire only compensates for the shared test session.
+        db_session.expire_all()
+
+        detail = await client.get("/api/patients/P001", headers={"Authorization": f"Bearer {token}"})
+        titles = [e["title"] for e in detail.json()["timeline"]]
+        assert "Test diagnosis" in titles
 
 
 @pytest.mark.asyncio

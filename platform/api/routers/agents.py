@@ -232,9 +232,12 @@ async def consult_stream(
                 "message": "",
             }
             yield f"data: {json.dumps({'event': 'routing', 'agents': [fast['source']]})}\n\n"
-            yield (
-                f"data: {json.dumps({'event': 'agent_completed', 'agent': fast['source'], 'tool_calls': fast['tool_calls']}, default=str)}\n\n"
-            )
+            agent_completed_payload = {
+                "event": "agent_completed",
+                "agent": fast["source"],
+                "tool_calls": fast["tool_calls"],
+            }
+            yield f"data: {json.dumps(agent_completed_payload, default=str)}\n\n"
             final_event = {
                 "event": "final",
                 "answer": fast["final_answer"],
@@ -243,7 +246,9 @@ async def consult_stream(
                 "citation_report": fast["citation_report"],
                 "verification_report": {"claims": [], "contradictions": []},
                 "abstention": abstention,
-                "explanation": build_explanation([fast["source"]], fast["tool_calls"], fast["citation_report"]),
+                "explanation": build_explanation(
+                    [fast["source"]], fast["tool_calls"], fast["citation_report"]
+                ),
                 "trace": {},
             }
             yield f"data: {json.dumps(final_event, default=str)}\n\n"

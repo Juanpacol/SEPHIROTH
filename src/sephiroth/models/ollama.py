@@ -325,7 +325,10 @@ class OllamaClient:
             raise LLMUnavailableError(
                 "OllamaClient has no vision_model configured; use Gemini for image description."
             )
-        payload = {**self._vision_payload_native(image_bytes, mime_type, prompt, max_output_tokens), "stream": False}
+        payload = {
+            **self._vision_payload_native(image_bytes, mime_type, prompt, max_output_tokens),
+            "stream": False,
+        }
         try:
             response = await self._client.post(self._native_api_url("/api/chat"), json=payload)
         except httpx.HTTPError as exc:
@@ -352,9 +355,14 @@ class OllamaClient:
             raise LLMUnavailableError(
                 "OllamaClient has no vision_model configured; use Gemini for image description."
             )
-        payload = {**self._vision_payload_native(image_bytes, mime_type, prompt, max_output_tokens), "stream": True}
+        payload = {
+            **self._vision_payload_native(image_bytes, mime_type, prompt, max_output_tokens),
+            "stream": True,
+        }
         try:
-            async with self._client.stream("POST", self._native_api_url("/api/chat"), json=payload) as response:
+            async with self._client.stream(
+                "POST", self._native_api_url("/api/chat"), json=payload
+            ) as response:
                 if response.status_code >= 400:
                     body = await response.aread()
                     raise LLMUnavailableError(f"{response.status_code}: {body.decode(errors='replace')}")

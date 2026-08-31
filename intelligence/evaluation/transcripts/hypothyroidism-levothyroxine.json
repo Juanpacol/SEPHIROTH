@@ -1,15 +1,15 @@
 {
   "case_id": "hypothyroidism-levothyroxine",
-  "answer": "The first-line treatment for primary hypothyroidism is **levothyroxine sodium**, dosed to normalize thyroid-stimulating hormone (TSH) levels. The target TSH range is typically **0.4\u20134.0 mIU/L**, with adjustments based on patient age and comorbidities [ATA Guidelines for Hypothyroidism, 2014]. \n\nKey administration details include taking levothyroxine on an empty stomach and separating it from calcium or iron supplements by at least 4 hours to avoid reduced absorption [ATA Guidelines for Hypothyroidism, 2014]. \n\n**Note**: Individualized adjustments may be required for patients with cardiovascular disease, pregnancy, or other conditions. Always confirm dosing and targets with a healthcare provider.",
+  "answer": "The first-line treatment for primary hypothyroidism is levothyroxine, which should be dosed to normalize TSH levels (a typical target range being 0.4-4.0 mIU/L). The use of this drug requires taking it on an empty stomach and avoiding intake within at least 4 hours from calcium or iron supplements to ensure adequate absorption [ATA Guidelines for Hypothyroidism, American Thyroid Association, 2014].",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "first-line treatment for primary hypothyroidism TSH target",
-        "top_k": 1
+        "query": "primary hypothyroidism treatment",
+        "top_k": 2
       },
       "result": {
-        "query": "first-line treatment for primary hypothyroidism TSH target",
+        "query": "primary hypothyroidism treatment",
         "results": [
           {
             "id": "ata-2014-hypothyroidism",
@@ -31,10 +31,10 @@
       }
     }
   ],
-  "latency_ms": 55984,
+  "latency_ms": 7831,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2070,
-  "completion_tokens": 895,
+  "prompt_tokens": 1986,
+  "completion_tokens": 132,
   "cost_usd": 0.0
 }

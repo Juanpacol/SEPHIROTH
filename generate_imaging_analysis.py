@@ -12,11 +12,11 @@ import httpx
 sys.path.insert(0, ".")
 sys.path.insert(0, "platform")
 
-from core.config import settings
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
+from core.config import settings
 from data.schemas import Patient, TimelineEvent
 
 API_URL = "http://localhost:8000"
@@ -51,7 +51,7 @@ async def analyze_images():
     token = await login()
     if not token:
         return
-    print(f"  Authenticated\n")
+    print("  Authenticated\n")
 
     engine = create_async_engine(settings.database_url, echo=False)
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -67,7 +67,11 @@ async def analyze_images():
                 patient = patients[3 + i]  # offset past patients already imaged
                 image_path = f"{IMAGE_DIR}/{filename}"
 
-                print(f"[{i+1}/{len(IMAGES)}] {patient.name} - {filename} ({modality})...", end=" ", flush=True)
+                print(
+                    f"[{i + 1}/{len(IMAGES)}] {patient.name} - {filename} ({modality})...",
+                    end=" ",
+                    flush=True,
+                )
 
                 if i > 0:
                     await asyncio.sleep(8)  # avoid Gemini free-tier rate limit
@@ -118,6 +122,7 @@ async def main():
     except Exception as e:
         print(f"Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

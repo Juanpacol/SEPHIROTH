@@ -1,11 +1,55 @@
 {
   "case_id": "afib-anticoagulation-threshold",
-  "answer": "The CHA2DS2-VASc score threshold for initiating oral anticoagulation (OAC) in atrial fibrillation (AF) is **\u22652 points**. This recommendation is consistent across major guidelines:\n\n- **ACC/AHA 2023 Guidelines**: OAC is indicated for patients with a CHA2DS2-VASc score of 2 or higher, regardless of additional risk factors [ACC/AHA, 2023].  \n- **ESC 2020 Guidelines**: Anticoagulation is recommended for CHA2DS2-VASc scores \u22652, with individualized assessment for lower-risk patients [ESC, 2020].  \n\nFor scores of **1 point**, OAC may be considered in specific cases (e.g., left atrial diameter >48 mm, prior stroke/TIA, or other risk factors), but the default approach is to avoid anticoagulation unless additional criteria are met.  \n\n**Key source**: The decision threshold of \u22652 points is explicitly stated in both ACC/AHA and ESC guidelines.",
-  "tool_calls": [],
-  "latency_ms": 22234,
-  "tool_call_count": 0,
-  "rounds": 1,
-  "prompt_tokens": 699,
-  "completion_tokens": 509,
+  "answer": "According to the clinical guidelines from ACC/AHA/HRS, oral anticoagulation should be started in patients with atrial fibrillation and a CHA2DS2-VASc score of 2 or more in men or 3 or more in women. This recommendation is based on their guideline titled \"Anticoagulation in Atrial Fibrillation\" published in 2024, which can be accessed at [https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193).\n\nPlease note that this recommendation applies to anticoagulation in atrial fibrillation and not specifically for the CHA2DS2-VASc score as it pertains to preventing stroke, not thromboembolic disease like VTE. For more specific guidelines on Antithrombotic Therapy for VTE Disease published by ACCP in 2021, refer [here](https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext).",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "top_k": 2,
+        "query": "oral anticoagulation atrial fibrillation CHA2DS2-VASc"
+      },
+      "result": {
+        "query": "oral anticoagulation atrial fibrillation CHA2DS2-VASc",
+        "results": [
+          {
+            "id": "accp-2024-afib",
+            "content": "Oral anticoagulation is recommended for patients with atrial fibrillation and a CHA2DS2-VASc score of 2 or more in men or 3 or more in women. Direct oral anticoagulants are preferred over warfarin in most eligible patients.",
+            "source": "ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline",
+            "citation": "Anticoagulation in Atrial Fibrillation, ACC/AHA/HRS, 2024",
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193",
+            "score": 0.0492,
+            "metadata": {
+              "category": "cardiovascular",
+              "organization": "ACC/AHA/HRS",
+              "year": 2024,
+              "title": "Anticoagulation in Atrial Fibrillation",
+              "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193"
+            }
+          },
+          {
+            "id": "acc-aha-2023-vte",
+            "content": "For acute deep vein thrombosis or pulmonary embolism without cancer, direct oral anticoagulants are preferred over warfarin as first-line therapy. Anticoagulation duration is at least 3 months, extended indefinitely for unprovoked events with low bleeding risk.",
+            "source": "ACCP Antithrombotic Therapy for VTE Guideline",
+            "citation": "Antithrombotic Therapy for VTE Disease, ACCP, 2021",
+            "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext",
+            "score": 0.0161,
+            "metadata": {
+              "category": "cardiovascular",
+              "organization": "ACCP",
+              "year": 2021,
+              "title": "Antithrombotic Therapy for VTE Disease",
+              "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 16403,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2310,
+  "completion_tokens": 321,
   "cost_usd": 0.0
 }

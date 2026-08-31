@@ -14,9 +14,9 @@ sys.path.insert(0, ".")
 sys.path.insert(0, "platform")
 
 from openai import OpenAI
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select, delete
 
 from core.config import settings
 from data.schemas import Patient, TimelineEvent

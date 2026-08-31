@@ -115,19 +115,19 @@ See [ARCHITECTURE.md](ARCHITECTURE.md), [CLAUDE.md](CLAUDE.md), and [docs/](docs
 
 ## Evaluation
 
-The Evidence Agent's RAG pipeline is measured against a 27-question golden dataset (15 direct/"golden" clinical questions, 8 colloquial paraphrases, 4 adversarial questions with no supporting guideline at all) over a 23-document corpus of clinical guideline excerpts (ADA, USPSTF, KDIGO, ACC/AHA, GINA, IDSA, WHO, and more).
+The Evidence Agent's RAG pipeline is measured against an 88-question golden dataset (55 direct/"golden" clinical questions, 24 colloquial paraphrases, 9 adversarial questions — 5 out-of-scope, 4 with a plausible-but-wrong target to reject) over a 63-document corpus of clinical guideline excerpts (ADA, USPSTF, KDIGO, ACC/AHA, GINA, IDSA, WHO, MedlinePlus, and more).
 
 | Metric | Value | Threshold | What it measures |
 |---|---|---|---|
-| Recall@1 | **0.97** | 0.90 | Correct guideline is the top retrieval hit |
-| Recall@3 | **1.00** | 0.95 | Correct guideline is in the top 3 |
-| Recall@5 | **1.00** | 0.95 | Correct guideline is in the top 5 |
-| MRR | **1.00** | 0.93 | Mean reciprocal rank of the correct guideline |
-| Citation Precision | **0.64** | 0.60 | Fraction of citations in answers that are traceable to actual tool output (via [Citation Guard](src/sephiroth/verification/citation_guard.py)) |
-| Faithfulness (LLM judge) | **0.28** | 0.25 | Fraction of answer claims a judge model rates as supported by the retrieved evidence |
-| Faithfulness (heuristic proxy, informational) | 0.57 | — | Deterministic token-overlap stand-in; runs in CI, not gated |
+| Recall@1 | **0.93** | 0.90 | Correct guideline is the top retrieval hit |
+| Recall@3 | **0.97** | 0.95 | Correct guideline is in the top 3 |
+| Recall@5 | **0.97** | 0.95 | Correct guideline is in the top 5 |
+| MRR | **0.96** | 0.93 | Mean reciprocal rank of the correct guideline |
+| Citation Precision | **0.82** | 0.60 | Fraction of citations in answers that are traceable to actual tool output (via [Citation Guard](src/sephiroth/verification/citation_guard.py)) |
+| Faithfulness (LLM judge) | **0.53** | 0.25 | Fraction of answer claims a judge model rates as supported by the retrieved evidence |
+| Faithfulness (heuristic proxy, informational) | 0.42 | — | Deterministic token-overlap stand-in; runs in CI, not gated |
 
-Recall@1/@3/@5 and MRR are **live, verified numbers** from the hybrid retriever described below, run via `--mode ci` against the committed embeddings artifact (reproducible offline, no API key needed). Citation Precision and Faithfulness are still from the pre-Gemini baseline (see limitations) — regenerating them requires a live `--mode full --record` run, which needs enough Gemini API quota to complete an agent run per golden case.
+Recall@1/@3/@5 and MRR are **live, verified numbers** from the hybrid retriever described below, run via `--mode ci` against the committed embeddings artifact (reproducible offline, no API key needed). Citation Precision and Faithfulness come from a live `--mode full --record` run — currently generated with `qwen2.5:3b-instruct` via local Ollama (`--provider ollama`) as a stand-in for the production Gemini model, since the Gemini free tier's daily quota (20 requests/day on the current key) can't cover an 88-case agent run in one sitting. Regenerate against Gemini once quota allows: `--mode full --record --skip-pubmed` (defaults to `--provider gemini`).
 
 *(Full numbers, per-case breakdown, and run metadata: [`intelligence/evaluation/results/latest.json`](intelligence/evaluation/results/latest.json).)*
 

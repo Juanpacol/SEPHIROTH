@@ -39,7 +39,9 @@ class AuditReport:
     def as_dict(self) -> Dict[str, Any]:
         return {
             "trace_id": self.trace_id,
-            "findings": [{"severity": f.severity, "category": f.category, "message": f.message} for f in self.findings],
+            "findings": [
+                {"severity": f.severity, "category": f.category, "message": f.message} for f in self.findings
+            ],
             "tool_calls_by_agent": self.tool_calls_by_agent,
             "total_tool_calls": self.total_tool_calls,
             "redundant_call_count": self.redundant_call_count,
@@ -117,7 +119,9 @@ def _detect_unsupported_claims(trace: ExecutionTrace) -> List[Finding]:
     if not trace.verification or not trace.verification.claims:
         return []
     claims = trace.verification.claims
-    unsupported = [c for c in claims if c.status in (VerificationStatus.UNSUPPORTED, VerificationStatus.CONTRADICTED)]
+    unsupported = [
+        c for c in claims if c.status in (VerificationStatus.UNSUPPORTED, VerificationStatus.CONTRADICTED)
+    ]
     if unsupported:
         by_agent = defaultdict(list)
         for c in unsupported:
@@ -129,7 +133,7 @@ def _detect_unsupported_claims(trace: ExecutionTrace) -> List[Finding]:
                     severity="concern",
                     category="unsupported_claim",
                     message=f"{agent} produced {len(texts)} unsupported/contradicted claim(s) not "
-                    f"traceable to retrieved evidence — first: \"{texts[0]}\"",
+                    f'traceable to retrieved evidence — first: "{texts[0]}"',
                 )
             )
         return findings
@@ -159,7 +163,6 @@ def audit_trace(trace: ExecutionTrace) -> AuditReport:
     findings.extend(_detect_abstention(trace))
 
     tool_calls_by_agent: Dict[str, int] = Counter(c.agent for c in trace.tool_calls)
-    by_agent_tool_pairs = {(c.agent, c.tool) for c in trace.tool_calls}
     redundant = sum(
         1
         for (agent, tool) in {(c.agent, c.tool) for c in trace.tool_calls}

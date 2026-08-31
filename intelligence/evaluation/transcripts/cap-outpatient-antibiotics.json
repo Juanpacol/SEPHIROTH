@@ -1,15 +1,15 @@
 {
   "case_id": "cap-outpatient-antibiotics",
-  "answer": "For outpatient community-acquired pneumonia (CAP) in healthy adults, the **ATS/IDSA 2023 guideline** recommends:  \n- **Amoxicillin** or **doxycycline** as first-line oral antibiotics [ATS/IDSA, 2023].  \n\nThis guidance is specific to outpatient management and excludes inpatient regimens (e.g., beta-lactam plus macrolide combinations). The recommendation is grounded in evidence from the ATS/IDSA guidelines, which emphasize oral therapy for uncomplicated cases.  \n\n**Disclaimer**: This summary requires professional review and does not substitute for individualized clinical judgment.  \n\n**Citation**: Treatment of Community-Acquired Pneumonia, ATS/IDSA, 2023 [https://doi.org/10.1164/rccm.201908-1581ST].",
+  "answer": "For outpatient community-acquired pneumonia in healthy adults, amoxicillin or doxycycline is recommended according to the guidelines from ATS/IDSA (Treatment of Community-Acquired Pneumonia, 2023) [ATS/IDSA, 2023]. These antibiotics are suitable for uncomplicated cases and would not require further adjunctive therapy. Please verify with a healthcare provider as every patient's case may vary.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "top_k": 2,
-        "query": "antibiotics for outpatient community-acquired pneumonia in adults"
+        "query": "outpatient community-acquired pneumonia healthy adult antibiotic recommendation",
+        "top_k": 2
       },
       "result": {
-        "query": "antibiotics for outpatient community-acquired pneumonia in adults",
+        "query": "outpatient community-acquired pneumonia healthy adult antibiotic recommendation",
         "results": [
           {
             "id": "idsa-2023-cap",
@@ -25,31 +25,16 @@
               "title": "Treatment of Community-Acquired Pneumonia",
               "url": "https://doi.org/10.1164/rccm.201908-1581ST"
             }
-          },
-          {
-            "id": "ada-2024-hba1c",
-            "content": "An A1C goal for many nonpregnant adults with diabetes of <7% without significant hypoglycemia is appropriate. Metformin is the preferred initial pharmacologic agent for type 2 diabetes.",
-            "source": "ADA Standards of Care in Diabetes",
-            "citation": "Glycemic Targets & Pharmacologic Approaches, American Diabetes Association, 2024",
-            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
-            "score": 0.0161,
-            "metadata": {
-              "category": "endocrinology",
-              "organization": "American Diabetes Association",
-              "year": 2024,
-              "title": "Glycemic Targets & Pharmacologic Approaches",
-              "url": "https://diabetesjournals.org/care/issue/47/Supplement_1"
-            }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
   ],
-  "latency_ms": 45666,
+  "latency_ms": 7534,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2318,
-  "completion_tokens": 982,
+  "prompt_tokens": 1989,
+  "completion_tokens": 132,
   "cost_usd": 0.0
 }

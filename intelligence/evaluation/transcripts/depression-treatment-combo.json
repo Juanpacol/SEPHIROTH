@@ -1,15 +1,15 @@
 {
   "case_id": "depression-treatment-combo",
-  "answer": "For someone with fairly severe depression, the **best approach** involves a **combination of antidepressant medication and high-intensity psychological therapy** (e.g., cognitive behavioral therapy, interpersonal therapy). This combined approach is explicitly recommended over monotherapy for moderate to severe depression [NICE, 2022]. \n\n### Key Points:\n- **Medication**: Antidepressants (e.g., SSRIs, SNRIs) are typically first-line for severe depression [NICE, 2022].\n- **Therapy**: High-intensity psychotherapy (e.g., 16\u201320 sessions over 12 weeks) is recommended to address underlying cognitive or behavioral patterns [NICE, 2022].\n- **Professional Review**: This recommendation should be tailored to the individual\u2019s clinical context and monitored by a healthcare provider.\n\nFor further details, refer to the full guideline: [NICE Management of Depression in Adults](https://www.nice.org.uk/guidance/ng222). \n\n*Note: This answer synthesizes evidence from the retrieved guideline. Always confirm with a qualified clinician for personalized care.*",
+  "answer": "For someone with moderately to severely depressed, the best approach is often considered a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy. Evidence suggests this combination is more effective than either treatment alone [NICE Guideline on Depression in Adults, 2022]. \n\nGiven that no other relevant clinical guidelines were found for treating depression, it's important to note this recommendation is based on the provided guideline and does not account for individual patient differences or contraindications. Please consult a healthcare provider for personalized advice.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "best treatment approach for severe depression",
-        "top_k": 2
+        "top_k": 2,
+        "query": "best treatment for moderately to severely depressed patients"
       },
       "result": {
-        "query": "best treatment approach for severe depression",
+        "query": "best treatment for moderately to severely depressed patients",
         "results": [
           {
             "id": "nice-2022-depression",
@@ -17,7 +17,7 @@
             "source": "NICE Guideline on Depression in Adults",
             "citation": "Management of Depression in Adults, NICE, 2022",
             "url": "https://www.nice.org.uk/guidance/ng222",
-            "score": 0.0492,
+            "score": 0.0328,
             "metadata": {
               "category": "psychiatry",
               "organization": "NICE",
@@ -27,18 +27,18 @@
             }
           },
           {
-            "id": "acog-2020-preeclampsia",
-            "content": "Low-dose aspirin starting at 12-28 weeks of gestation is recommended for patients at high risk of preeclampsia. Magnesium sulfate is recommended for seizure prophylaxis in patients with severe features of preeclampsia.",
-            "source": "ACOG Practice Bulletin on Preeclampsia",
-            "citation": "Gestational Hypertension and Preeclampsia, ACOG, 2020",
-            "url": "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2020/06/gestational-hypertension-and-preeclampsia",
-            "score": 0.0161,
+            "id": "ahs-2021-migraine",
+            "content": "For acute migraine treatment, NSAIDs or triptans are first-line for most patients; combining a triptan with an NSAID is more effective than either alone. For patients with 4 or more migraine days per month, preventive therapy should be offered in addition to acute treatment.",
+            "source": "American Headache Society Consensus Statement",
+            "citation": "Acute Treatment of Migraine, American Headache Society, 2021",
+            "url": "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14153",
+            "score": 0.0164,
             "metadata": {
-              "category": "obstetrics",
-              "organization": "ACOG",
-              "year": 2020,
-              "title": "Gestational Hypertension and Preeclampsia",
-              "url": "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2020/06/gestational-hypertension-and-preeclampsia"
+              "category": "neurology",
+              "organization": "American Headache Society",
+              "year": 2021,
+              "title": "Acute Treatment of Migraine",
+              "url": "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14153"
             }
           }
         ],
@@ -46,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 38445,
+  "latency_ms": 8838,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2229,
-  "completion_tokens": 824,
+  "prompt_tokens": 2168,
+  "completion_tokens": 148,
   "cost_usd": 0.0
 }

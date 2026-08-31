@@ -1,15 +1,15 @@
 {
   "case_id": "sepsis-antibiotic-timing",
-  "answer": "For patients with septic shock, broad-spectrum antibiotics should be administered **within 1 hour of recognition** of sepsis or septic shock, per the *Surviving Sepsis Campaign Guidelines* [Surviving Sepsis Campaign, 2021]. This time-sensitive intervention is critical to reducing mortality. \n\n**Disclaimer:** This excerpt is for clinical review and decision-making; it does not constitute a diagnosis or treatment plan. Always confirm recommendations with local protocols and professional judgment. \n\n---  \n*Citation:* Management of Sepsis and Septic Shock, Surviving Sepsis Campaign, 2021. [https://www.sccm.org/SurvivingSepsisCampaign/Guidelines](https://www.sccm.org/SurvivingSepsisCampaign/Guidelines)",
+  "answer": "Based on the guidelines from the Surviving Sepsis Campaign, for patients with septic shock or sepsis, broad-spectrum antibiotics should be administered within 1 hour of recognition. Additionally, along with this, 30 mL/kg of intravenous crystalloid fluid is recommended for those experiencing hypotension or elevated lactate levels.\n\n[citation]\n[Surviving Sepsis Campaign Guidelines, 2021] [https://www.sccm.org/SurvivingSepsisCampaign/Guidelines]\n[/citation]",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "top_k": 1,
-        "query": "antibiotic administration timing in septic shock"
+        "query": "septic shock treatment antibiotics timing",
+        "top_k": 2
       },
       "result": {
-        "query": "antibiotic administration timing in septic shock",
+        "query": "septic shock treatment antibiotics timing",
         "results": [
           {
             "id": "sscm-2021-sepsis",
@@ -25,16 +25,31 @@
               "title": "Management of Sepsis and Septic Shock",
               "url": "https://www.sccm.org/SurvivingSepsisCampaign/Guidelines"
             }
+          },
+          {
+            "id": "idsa-2012-pharyngitis-centor",
+            "content": "The Centor criteria (fever, tonsillar exudate, tender anterior cervical adenopathy, absence of cough) estimate the likelihood of group A streptococcal pharyngitis; a score of 3-4 warrants rapid strep testing. Penicillin or amoxicillin is first-line treatment for confirmed strep throat; antibiotics are not indicated for a low Centor score.",
+            "source": "IDSA Clinical Practice Guideline",
+            "citation": "Diagnosis and Management of Group A Streptococcal Pharyngitis, IDSA, 2012",
+            "url": "https://academic.oup.com/cid/article/55/10/1279/300756",
+            "score": 0.0161,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "IDSA",
+              "year": 2012,
+              "title": "Diagnosis and Management of Group A Streptococcal Pharyngitis",
+              "url": "https://academic.oup.com/cid/article/55/10/1279/300756"
+            }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
   ],
-  "latency_ms": 33914,
+  "latency_ms": 9200,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 1984,
-  "completion_tokens": 736,
+  "prompt_tokens": 2227,
+  "completion_tokens": 146,
   "cost_usd": 0.0
 }

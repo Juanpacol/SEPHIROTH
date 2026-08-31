@@ -38,8 +38,7 @@ from intelligence.evaluation.imaging_eval import GOLDEN_PATH, _aggregate, _print
 _RESULTS_PATH = Path(__file__).parent / "results" / "imaging_loop_latest.json"
 
 NO_SPECULATION_SUFFIX = (
-    " If no abnormality is visible, state that explicitly and do not "
-    "speculate about possible findings."
+    " If no abnormality is visible, state that explicitly and do not speculate about possible findings."
 )
 
 
@@ -111,7 +110,9 @@ async def _run_candidate(client, golden: dict, candidate: Candidate) -> dict:
 
 async def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--target", type=float, default=0.9, help="Blended coherent_rate to stop at (default 0.9)")
+    parser.add_argument(
+        "--target", type=float, default=0.9, help="Blended coherent_rate to stop at (default 0.9)"
+    )
     parser.add_argument("--record", action="store_true", help="Write results/imaging_loop_latest.json")
     args = parser.parse_args()
 
@@ -122,8 +123,10 @@ async def main() -> int:
     client = get_llm_client()
     golden = json.loads(GOLDEN_PATH.read_text())
 
-    print(f"Running imaging self-improve loop, target coherent_rate >= {args.target:.2f}, "
-          f"{len(CANDIDATES)} candidate(s), {len(golden['cases'])} golden case(s) each.\n")
+    print(
+        f"Running imaging self-improve loop, target coherent_rate >= {args.target:.2f}, "
+        f"{len(CANDIDATES)} candidate(s), {len(golden['cases'])} golden case(s) each.\n"
+    )
 
     outcomes = []
     winner = None
@@ -142,7 +145,11 @@ async def main() -> int:
     print("| Candidate | coherent_rate | Status |")
     print("|---|---|---|")
     for o in outcomes:
-        status = "WINNER" if winner and o["name"] == winner.name else ("PASS" if o["coherent_rate"] >= args.target else "below target")
+        status = (
+            "WINNER"
+            if winner and o["name"] == winner.name
+            else ("PASS" if o["coherent_rate"] >= args.target else "below target")
+        )
         print(f"| {o['name']} | {o['coherent_rate']:.3f} | {status} |")
 
     if winner and winner.name != "baseline":
@@ -167,7 +174,14 @@ async def main() -> int:
                 {
                     "target": args.target,
                     "winner": winner.name if winner else None,
-                    "outcomes": [{"name": o["name"], "coherent_rate": o["coherent_rate"], "metrics": o["summary"]["metrics"]} for o in outcomes],
+                    "outcomes": [
+                        {
+                            "name": o["name"],
+                            "coherent_rate": o["coherent_rate"],
+                            "metrics": o["summary"]["metrics"],
+                        }
+                        for o in outcomes
+                    ],
                 },
                 indent=2,
             )

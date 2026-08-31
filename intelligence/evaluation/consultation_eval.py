@@ -38,11 +38,10 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import re
 import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List
 
 _HERE = Path(__file__).parent
 GOLDEN_PATH = _HERE / "consultation_golden.json"
@@ -174,8 +173,10 @@ async def main() -> int:
             print(f"No case named {args.case!r}")
             return 1
 
-    print(f"Running consultation coherence eval on {len(cases)} case(s) "
-          f"(each is a full multi-agent consultation — slow on local hardware)...\n")
+    print(
+        f"Running consultation coherence eval on {len(cases)} case(s) "
+        f"(each is a full multi-agent consultation — slow on local hardware)...\n"
+    )
 
     results = []
     for case in cases:
@@ -189,7 +190,9 @@ async def main() -> int:
 
     if args.record:
         RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        RESULTS_PATH.write_text(json.dumps({"summary": summary, "cases": [asdict(r) for r in results]}, indent=2))
+        RESULTS_PATH.write_text(
+            json.dumps({"summary": summary, "cases": [asdict(r) for r in results]}, indent=2)
+        )
         print(f"\nWrote {RESULTS_PATH}")
 
     return 0 if summary["passed"] else 1

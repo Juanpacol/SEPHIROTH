@@ -1,0 +1,55 @@
+{
+  "case_id": "low-back-pain-red-flags",
+  "answer": "Red flags that require urgent evaluation for low back pain include new bladder or bowel dysfunction, saddle anesthesia, progressive leg weakness (possible cauda equina syndrome), fever with back pain, or a history of cancer with new-onset back pain (possible metastasis). [NICE Guideline NG59, 2020] \n\nIf the patient exhibits any of these red flags, immediate medical evaluation should be considered. If no such signs are present but the patient is experiencing persistent low back pain despite initial conservative treatment, imaging may not be necessary unless one of the mentioned critical red flags is noted. [ACP Clinical Practice Guideline, 2017]\n\nPlease consult a healthcare provider for personalized assessment and management.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "red flags low back pain urgent evaluation",
+        "top_k": 2
+      },
+      "result": {
+        "query": "red flags low back pain urgent evaluation",
+        "results": [
+          {
+            "id": "nice-2020-back-pain-red-flags",
+            "content": "Red flags requiring urgent evaluation of low back pain include new bladder or bowel dysfunction, saddle anesthesia, progressive leg weakness (possible cauda equina syndrome), fever with back pain, or a history of cancer with new-onset back pain (possible metastasis).",
+            "source": "NICE Guideline NG59",
+            "citation": "Low Back Pain and Sciatica: Assessment, NICE, 2020",
+            "url": "https://www.nice.org.uk/guidance/ng59",
+            "score": 0.0492,
+            "metadata": {
+              "category": "musculoskeletal",
+              "organization": "NICE",
+              "year": 2020,
+              "title": "Low Back Pain and Sciatica: Assessment",
+              "url": "https://www.nice.org.uk/guidance/ng59"
+            }
+          },
+          {
+            "id": "acp-2017-low-back-pain",
+            "content": "For acute low back pain, most patients improve regardless of treatment; first-line care is nonpharmacologic \u2014 heat, massage, or gentle activity \u2014 and NSAIDs if medication is needed. Imaging is not recommended without red-flag findings such as trauma, unexplained weight loss, or neurologic deficit.",
+            "source": "ACP Clinical Practice Guideline",
+            "citation": "Noninvasive Treatments for Low Back Pain, American College of Physicians, 2017",
+            "url": "https://www.acpjournals.org/doi/10.7326/M16-2367",
+            "score": 0.0481,
+            "metadata": {
+              "category": "musculoskeletal",
+              "organization": "American College of Physicians",
+              "year": 2017,
+              "title": "Noninvasive Treatments for Low Back Pain",
+              "url": "https://www.acpjournals.org/doi/10.7326/M16-2367"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 12287,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2193,
+  "completion_tokens": 183,
+  "cost_usd": 0.0
+}

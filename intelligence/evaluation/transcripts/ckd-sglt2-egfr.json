@@ -1,15 +1,15 @@
 {
   "case_id": "ckd-sglt2-egfr",
-  "answer": "SGLT2 inhibitors are recommended for patients with type 2 diabetes and chronic kidney disease (CKD) under the following conditions:  \n\n1. **eGFR \u226520 mL/min/1.73m\u00b2** (per ADA 2024): SGLT2 inhibitors are recommended to reduce CKD progression and cardiovascular risk in patients with eGFR \u226520 mL/min/1.73m\u00b2 [ADA, 2024].  \n\n2. **Albuminuric CKD** (per KDIGO 2024): SGLT2 inhibitors are recommended alongside ACE inhibitors or ARBs for patients with albuminuric CKD (regardless of diabetes status), as they slow progression [KDIGO, 2024].  \n\n**Note**: ACE inhibitors or ARBs are often first-line for patients with albuminuria and hypertension, but SGLT2 inhibitors provide additional benefits for CKD progression in T2DM patients [ADA, 2024]. Always consult local guidelines and patient-specific factors for individualized care.",
+  "answer": "Based on the American Diabetes Association (ADA) guidelines, SGLT2 inhibitors are recommended for patients with type 2 diabetes and chronic kidney disease (CKD) when their estimated glomerular filtration rate (eGFR) is at least 20 mL/min/1.73m\u00b2. These recommendations aim to reduce the progression of CKD and cardiovascular risk.\n\nPlease note this recommendation applies to type 2 diabetic patients with CKD, regardless of whether they have albuminuria or hypertension. SGLT2 inhibitors are also part of the recommended class for slowing CKD progression in all stages when combined with ACE inhibitors (also known as angiotensin-converting enzyme inhibitors) or ARBs (angiotensin receptor blockers), especially in patients presenting with albuminuria and hypertension. \n\nFor more detailed information, you should consult the guidelines published by the American Diabetes Association [ADA Standard of Care in Diabetes, 2024].",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "SGLT2 inhibitor recommendations for chronic kidney disease in type 2 diabetes",
+        "query": "SGLT2 inhibitors chronic kidney disease type 2 diabetes",
         "top_k": 2
       },
       "result": {
-        "query": "SGLT2 inhibitor recommendations for chronic kidney disease in type 2 diabetes",
+        "query": "SGLT2 inhibitors chronic kidney disease type 2 diabetes",
         "results": [
           {
             "id": "ada-2024-ckd",
@@ -32,7 +32,7 @@
             "source": "KDIGO Clinical Practice Guideline for CKD",
             "citation": "Evaluation and Management of CKD, KDIGO, 2024",
             "url": "https://kdigo.org/guidelines/ckd-evaluation-and-management/",
-            "score": 0.0474,
+            "score": 0.0479,
             "metadata": {
               "category": "nephrology",
               "organization": "KDIGO",
@@ -46,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 45852,
+  "latency_ms": 12708,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2247,
-  "completion_tokens": 988,
+  "prompt_tokens": 2185,
+  "completion_tokens": 236,
   "cost_usd": 0.0
 }

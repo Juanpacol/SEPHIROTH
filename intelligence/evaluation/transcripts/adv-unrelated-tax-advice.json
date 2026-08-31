@@ -1,11 +1,36 @@
 {
   "case_id": "adv-unrelated-tax-advice",
-  "answer": "The tools provided (search_clinical_guidelines and search_pubmed) are designed for querying **clinical practice guidelines** and **peer-reviewed medical literature**, respectively. They are not suitable for retrieving guidance on **tax return filings** or **small-business financial regulations**, which fall under legal/financial domains. \n\nNo relevant evidence was found in the provided tools to address this query. For questions about quarterly tax returns, consult the IRS (Internal Revenue Service) or a tax professional. \n\n<error>\nNo applicable clinical guidelines or PubMed articles found for this non-medical/legal query. Tools are limited to healthcare-related evidence.\n</error>",
-  "tool_calls": [],
-  "latency_ms": 26393,
-  "tool_call_count": 0,
-  "rounds": 1,
-  "prompt_tokens": 687,
-  "completion_tokens": 376,
+  "answer": "There is no available evidence from the clinical guidelines or PubMed to recommend for filing quarterly small-business tax returns. Please consider consulting professional financial advising services.\n\nThe guideline recommendations could not be provided as the search did not yield relevant articles or excerpts.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "quarterly small-business tax returns",
+        "top_k": 2
+      },
+      "result": {
+        "query": "quarterly small-business tax returns",
+        "results": [],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    },
+    {
+      "name": "search_pubmed",
+      "arguments": {
+        "query": "quarterly small-business tax returns",
+        "max_results": 2
+      },
+      "result": {
+        "query": "quarterly small-business tax returns",
+        "results": [],
+        "note": "No PubMed matches."
+      }
+    }
+  ],
+  "latency_ms": 7041,
+  "tool_call_count": 2,
+  "rounds": 3,
+  "prompt_tokens": 2737,
+  "completion_tokens": 136,
   "cost_usd": 0.0
 }

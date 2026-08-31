@@ -1,15 +1,15 @@
 {
   "case_id": "hypothyroidism-levothyroxine-paraphrase",
-  "answer": "For hypothyroidism, **levothyroxine** is the first-line treatment [ATA, 2014]. The typical target TSH range is **0.4\u20134.0 mIU/L**, adjusted based on age and individual factors [ATA, 2014]. \n\n**Administration instructions**:\n- Take on an **empty stomach** (at least 30\u201360 minutes before breakfast) [ATA, 2014].\n- Avoid taking within **4 hours of calcium or iron supplements**, as these can reduce absorption [ATA, 2014].\n\n**Dosing** is individualized based on age, weight, and severity of hypothyroidism. Your healthcare provider will determine the starting dose and adjust it based on TSH levels and symptoms. Regular monitoring of TSH is required to ensure proper thyroid hormone replacement.\n\n\u26a0\ufe0f **Never stop or adjust dosage without medical supervision**, as abrupt changes can cause adverse effects like palpitations or bone loss [ATA, 2014]. \n\nFor personalized guidance, consult your healthcare provider.",
+  "answer": "You should take Levothyroxine, a medication prescribed for primary hypothyroidism. The typical dosage is adjusted to normalize your Thyroid Stimulating Hormone (TSH) levels, usually between 0.4-4.0 mIU/L, with adjustments depending on your age. It's recommended that you take this medication on an empty stomach and separate it from calcium or iron supplements by at least 4 hours to ensure better absorption.\n\nFor more detailed information, [refer to the American Thyroid Association's guidelines](https://www.thyroid.org/hypothyroidism/).",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "hypothyroidism treatment",
-        "top_k": 1
+        "query": "Levothyroxine Hypothyroidism treatment",
+        "top_k": 2
       },
       "result": {
-        "query": "hypothyroidism treatment",
+        "query": "Levothyroxine Hypothyroidism treatment",
         "results": [
           {
             "id": "ata-2014-hypothyroidism",
@@ -31,10 +31,10 @@
       }
     }
   ],
-  "latency_ms": 45109,
+  "latency_ms": 10279,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 1931,
-  "completion_tokens": 750,
+  "prompt_tokens": 2029,
+  "completion_tokens": 233,
   "cost_usd": 0.0
 }

@@ -1,0 +1,11 @@
+{
+  "case_id": "oos-tax-filing-spanish",
+  "answer": "Para hacer una declaraci\u00f3n de Impuestos a Cuenta de Renta (ITR) trimestral por parte de tu negocio, tienes que asegurarte de seguir las regulaciones fiscales espec\u00edficas para el pa\u00eds o estado en donde opera. Aqu\u00ed hay un resumen general:\n\n1. **Recaudaci\u00f3n Periodica**: Es importante recaudar tus ingresos durante los per\u00edodos correspondientes y mantener copias de seguridad de todas tus transacciones financieras.\n\n2. **C\u00e1lculo del Impuesto**: Despu\u00e9s de recular a tus ingresos, necesitas calcular el impuesto que debes pagar acorde al porcentaje establecido para tu rubro en tu pa\u00eds u estado (por ejemplo, 16% sobre los 230 mil euros anuales).\n\n3. **Gastos Deducibles**: Identifica y documenta todos los gastos deducibles relacionados con tu negocio para restar de la base imponible.\n\n4. **Reporte Financiero**: Generar informes financieros precisos que incluyan tus ingresos, gastos y dem\u00e1s datos necesarios al cumplimiento fiscal.\n\nPero es crucial mencionar que esta descripci\u00f3n generalizada no es una gu\u00eda legal profesional. Para declaraciones fiscales espec\u00edficas de tu pa\u00eds o estado, ser\u00eda mejor asesorarte con un abogado fiscal o contador experto en regulaciones fiscales locales y reglamentos tributarios.\n\nEs recomendable que consultes directamente con una organizaci\u00f3n del sector financiero local o un profesional tributar. Esta gu\u00eda podr\u00eda necesitar ser refrescada seg\u00fan las \u00faltimas actualizaciones legales o cambiadas de pol\u00edticas fiscales.\n\n[CGA]",
+  "tool_calls": [],
+  "latency_ms": 15568,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 839,
+  "completion_tokens": 351,
+  "cost_usd": 0.0
+}

@@ -1,15 +1,15 @@
 {
   "case_id": "asthma-reliever-therapy",
-  "answer": "For adults with asthma, **as-needed low-dose inhaled corticosteroid (ICS)-formoterol** is preferred as a reliever therapy over short-acting beta-agonist (SABA) alone, even at the mildest asthma step, to reduce exacerbation risk [GINA, 2024]. \n\nThis recommendation is based on evidence that combination therapy provides better control of airway inflammation and reduces the risk of acute exacerbations compared to SABA monotherapy. \n\n**Disclaimer:** This guidance is intended for professional review and should not be used for diagnosis or treatment planning without clinical evaluation. \n\n**Citation:** Global Strategy for Asthma Management, GINA, 2024. https://ginasthma.org/2026-gina-strategy-report/",
+  "answer": "The preferred reliever therapy for adults with asthma to reduce exacerbation risk is as-needed low-dose ICS-formoterol. According to the Global Strategy for Asthma Management (GINA, 2024), even at the mildest step of treatment, this combination is preferred over short-acting beta-agonists alone [citation]. \n\nNo other clinical guidelines were found relevant to answer your question directly; however, this therapy has been shown to reduce exacerbation risk in asthma patients. It's important to consult a healthcare professional for personalized recommendations.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "preferred reliever therapy for adults with asthma to reduce exacerbation risk",
-        "top_k": 1
+        "query": "adults with asthma reliever therapy exacerbation reduction",
+        "top_k": 2
       },
       "result": {
-        "query": "preferred reliever therapy for adults with asthma to reduce exacerbation risk",
+        "query": "adults with asthma reliever therapy exacerbation reduction",
         "results": [
           {
             "id": "gina-2024-asthma",
@@ -25,16 +25,31 @@
               "title": "Global Strategy for Asthma Management",
               "url": "https://ginasthma.org/2026-gina-strategy-report/"
             }
+          },
+          {
+            "id": "idsa-2023-cap",
+            "content": "For outpatient community-acquired pneumonia in healthy adults, amoxicillin or doxycycline is recommended. For inpatients, beta-lactam plus macrolide combination therapy is standard.",
+            "source": "ATS/IDSA Community-Acquired Pneumonia Guideline",
+            "citation": "Treatment of Community-Acquired Pneumonia, ATS/IDSA, 2023",
+            "url": "https://doi.org/10.1164/rccm.201908-1581ST",
+            "score": 0.0161,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "ATS/IDSA",
+              "year": 2023,
+              "title": "Treatment of Community-Acquired Pneumonia",
+              "url": "https://doi.org/10.1164/rccm.201908-1581ST"
+            }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
   ],
-  "latency_ms": 32370,
+  "latency_ms": 9704,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 1957,
-  "completion_tokens": 710,
+  "prompt_tokens": 2185,
+  "completion_tokens": 153,
   "cost_usd": 0.0
 }

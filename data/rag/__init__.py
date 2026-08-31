@@ -768,11 +768,23 @@ class RAGPipeline:
             self._index_documents([doc])
 
     def _retrieve_keyword(self, query_tokens: set) -> List[Dict[str, Any]]:
-        """Today's original scoring: weighted keyword overlap."""
+        """Today's original scoring: weighted keyword overlap.
+
+        Requires at least 2 distinct query tokens to match (when the query
+        has that many) — a single shared generic word (e.g. "small" between
+        "small-business tax returns" and "a small cut") produced a nonzero
+        score against an unrelated document once the corpus grew past ~40
+        documents, letting keyword noise alone surface an irrelevant result
+        through `_fuse` even when dense retrieval correctly found nothing.
+        """
+        min_distinct_matches = min(2, len(query_tokens))
         scored = []
         for doc in self.documents:
             doc_tokens = _tokenize(doc.content)
             if not doc_tokens:
+                continue
+            matched = query_tokens.intersection(doc_tokens)
+            if len(matched) < min_distinct_matches:
                 continue
             overlap = sum(1 for t in doc_tokens if t in query_tokens)
             score = overlap / len(doc_tokens) ** 0.5

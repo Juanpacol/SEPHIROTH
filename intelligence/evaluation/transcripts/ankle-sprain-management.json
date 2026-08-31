@@ -1,0 +1,55 @@
+{
+  "case_id": "ankle-sprain-management",
+  "answer": "For the management of acute ankle sprains, most cases are treated with the RICE protocol (rest, ice, compression, elevation) and early protected weight-bearing as tolerated. According to the Ottawa Ankle Rules, an injury needs an X-ray if there is bone tenderness at the malleolus tips or if the person cannot bear weight for four steps in either immediately after the injury or in the emergency department setting.\n\nFor when an ankle sprain necessitates an X-ray, you specifically need pain localized to the ankle area accompanied by bone tenderness over the ankle joint's bony prominences (the malleolus tips) and inability to bear weight on that injured foot for at least four steps. Additionally, this criterion must be met either immediately after injury or when seeking medical attention in an emergency department setting.\n\nPlease note: The guidelines suggest consulting a professional for proper clinical evaluation and do not diagnose conditions independently. [AAOS Clinical Guideline, 2021]",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "acute ankle sprain management",
+        "top_k": 2
+      },
+      "result": {
+        "query": "acute ankle sprain management",
+        "results": [
+          {
+            "id": "aaos-ankle-sprain",
+            "content": "Most ankle sprains are treated with the RICE protocol (rest, ice, compression, elevation) and early protected weight-bearing as tolerated. The Ottawa Ankle Rules identify which sprains need an X-ray: bone tenderness at the malleolus tips or inability to bear weight for four steps immediately and in the emergency department.",
+            "source": "AAOS Clinical Guideline",
+            "citation": "Management of Acute Ankle Sprains, American Academy of Orthopaedic Surgeons, 2021",
+            "url": "https://www.aaos.org/quality/quality-programs/lower-extremity-programs/ankle-sprains/",
+            "score": 0.0328,
+            "metadata": {
+              "category": "musculoskeletal",
+              "organization": "American Academy of Orthopaedic Surgeons",
+              "year": 2021,
+              "title": "Management of Acute Ankle Sprains",
+              "url": "https://www.aaos.org/quality/quality-programs/lower-extremity-programs/ankle-sprains/"
+            }
+          },
+          {
+            "id": "aafp-earache-adults",
+            "content": "In adults, an earache with a red, bulging eardrum suggests acute otitis media and is treated with amoxicillin as first-line therapy, similar to pediatric management. Ear pain with normal exam findings is more often referred pain from the jaw, teeth, or throat, or otitis externa (swimmer's ear), which is treated with topical antibiotic drops rather than oral antibiotics.",
+            "source": "AAFP Clinical Review",
+            "citation": "Diagnosis and Treatment of Otitis Media and Otitis Externa, American Academy of Family Physicians, 2013",
+            "url": "https://www.aafp.org/pubs/afp/issues/2013/1201/p770.html",
+            "score": 0.0164,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "American Academy of Family Physicians",
+              "year": 2013,
+              "title": "Diagnosis and Treatment of Otitis Media and Otitis Externa",
+              "url": "https://www.aafp.org/pubs/afp/issues/2013/1201/p770.html"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 14410,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2274,
+  "completion_tokens": 234,
+  "cost_usd": 0.0
+}

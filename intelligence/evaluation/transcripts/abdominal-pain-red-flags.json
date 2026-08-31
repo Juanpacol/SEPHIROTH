@@ -1,0 +1,55 @@
+{
+  "case_id": "abdominal-pain-red-flags",
+  "answer": "For abdominal pain requiring urgent evaluation, the guideline from the American College of Gastroenterology (ACG) suggests evaluating patients with severe or worsening pain, fever, rigid abdomen, vomiting blood or black stool, or right lower quadrant pain suspected to be appendicitis. \n\nThe NICE Guideline recommends an urgent examination for those with new bladder or bowel dysfunction, saddle anesthesia, progressive weakness affecting the legs (possible cauda equina syndrome), and fever paired with back pain, especially in older adults or those with a history of cancer where metastasis needs consideration.\n\nPlease consult these guidelines and consider additional factors if you are treating patients. [ACG Clinical Guideline, ACG, 2021] [NICE Guideline, NICE, 2020]",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "abdominal pain urgent evaluation",
+        "top_k": 2
+      },
+      "result": {
+        "query": "abdominal pain urgent evaluation",
+        "results": [
+          {
+            "id": "acg-2021-abdominal-pain-red-flags",
+            "content": "Most acute abdominal pain is benign and self-limited, but urgent evaluation is warranted for severe or worsening pain, pain with fever, rigid or board-like abdomen, pain with vomiting blood or black stool, or right lower quadrant pain with fever (possible appendicitis).",
+            "source": "ACG Clinical Guideline",
+            "citation": "Evaluation of Acute Abdominal Pain, American College of Gastroenterology, 2021",
+            "url": "https://gi.org/topics/abdominal-pain/",
+            "score": 0.0492,
+            "metadata": {
+              "category": "gastroenterology",
+              "organization": "American College of Gastroenterology",
+              "year": 2021,
+              "title": "Evaluation of Acute Abdominal Pain",
+              "url": "https://gi.org/topics/abdominal-pain/"
+            }
+          },
+          {
+            "id": "nice-2020-back-pain-red-flags",
+            "content": "Red flags requiring urgent evaluation of low back pain include new bladder or bowel dysfunction, saddle anesthesia, progressive leg weakness (possible cauda equina syndrome), fever with back pain, or a history of cancer with new-onset back pain (possible metastasis).",
+            "source": "NICE Guideline NG59",
+            "citation": "Low Back Pain and Sciatica: Assessment, NICE, 2020",
+            "url": "https://www.nice.org.uk/guidance/ng59",
+            "score": 0.0161,
+            "metadata": {
+              "category": "musculoskeletal",
+              "organization": "NICE",
+              "year": 2020,
+              "title": "Low Back Pain and Sciatica: Assessment",
+              "url": "https://www.nice.org.uk/guidance/ng59"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 10947,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2145,
+  "completion_tokens": 195,
+  "cost_usd": 0.0
+}

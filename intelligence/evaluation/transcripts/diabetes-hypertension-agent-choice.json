@@ -1,29 +1,44 @@
 {
   "case_id": "diabetes-hypertension-agent-choice",
-  "answer": "For a diabetic patient with hypertension and proteinuria (albuminuria), **ACE inhibitors or ARBs** are first-line BP medication classes, as they reduce proteinuria and protect kidney function [ADA, 2024]. This recommendation is specifically noted for patients with chronic kidney disease (CKD) and diabetes, where these agents mitigate CKD progression and cardiovascular risk. \n\nNo other class is explicitly prioritized in this context based on the retrieved guideline. Always confirm with a healthcare provider for individualized care.",
+  "answer": "For diabetic patients with high blood pressure and protein in the urine, the American Diabetes Association (ADA) guidelines recommend aiming for a systolic blood pressure target of less than 130 mmHg. The preferred first-line agents among the available options are ACE inhibitors or ARBs. This is particularly beneficial as they can help manage albuminuria.\n\n[ADA Standards of Care in Diabetes, American Diabetes Association, 2024] [MedlinePlus (U.S. National Library of Medicine), 2024]",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "BP medication class for diabetic patients with hypertension and proteinuria",
-        "top_k": 1
+        "top_k": 2,
+        "query": "diabetic patient with high blood pressure and protein in the urine BP medication class"
       },
       "result": {
-        "query": "BP medication class for diabetic patients with hypertension and proteinuria",
+        "query": "diabetic patient with high blood pressure and protein in the urine BP medication class",
         "results": [
           {
-            "id": "ada-2024-ckd",
-            "content": "In patients with type 2 diabetes and chronic kidney disease, an SGLT2 inhibitor is recommended for those with eGFR >=20 mL/min/1.73m2 to reduce CKD progression and cardiovascular risk. ACE inhibitors or ARBs are first-line for patients with albuminuria and hypertension.",
+            "id": "ada-2024-hypertension-dm",
+            "content": "A blood pressure target of <130/80 mmHg is recommended for most adults with diabetes and hypertension. ACE inhibitors or ARBs are preferred first-line agents, particularly in the presence of albuminuria.",
             "source": "ADA Standards of Care in Diabetes",
-            "citation": "Chronic Kidney Disease in Diabetes, American Diabetes Association, 2024",
+            "citation": "Hypertension Management in Diabetes, American Diabetes Association, 2024",
             "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
-            "score": 0.0487,
+            "score": 0.0482,
             "metadata": {
-              "category": "nephrology",
+              "category": "endocrinology",
               "organization": "American Diabetes Association",
               "year": 2024,
-              "title": "Chronic Kidney Disease in Diabetes",
+              "title": "Hypertension Management in Diabetes",
               "url": "https://diabetesjournals.org/care/issue/47/Supplement_1"
+            }
+          },
+          {
+            "id": "medlineplus-blood-pressure",
+            "content": "Blood pressure measures the force of blood against artery walls, given as two numbers: systolic (pressure while the heart beats) over diastolic (pressure between beats). A normal reading is below 120/80 mmHg. High blood pressure often has no symptoms, which is why regular checks matter even when feeling fine.",
+            "source": "MedlinePlus",
+            "citation": "Understanding Blood Pressure Readings, MedlinePlus (U.S. National Library of Medicine), 2024",
+            "url": "https://medlineplus.gov/highbloodpressure.html",
+            "score": 0.0164,
+            "metadata": {
+              "category": "general_health",
+              "organization": "MedlinePlus (U.S. National Library of Medicine)",
+              "year": 2024,
+              "title": "Understanding Blood Pressure Readings",
+              "url": "https://medlineplus.gov/highbloodpressure.html"
             }
           }
         ],
@@ -31,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 25355,
+  "latency_ms": 10197,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 1876,
-  "completion_tokens": 532,
+  "prompt_tokens": 2195,
+  "completion_tokens": 153,
   "cost_usd": 0.0
 }

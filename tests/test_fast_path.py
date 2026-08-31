@@ -32,7 +32,9 @@ def test_format_rag_answer_uses_citation_when_present():
 
 
 def test_format_rag_answer_falls_back_to_source_when_no_citation():
-    answer, citations = _format_rag_answer([{"content": "Do the thing.", "citation": "", "source": "Fallback Source"}])
+    answer, citations = _format_rag_answer(
+        [{"content": "Do the thing.", "citation": "", "source": "Fallback Source"}]
+    )
     assert citations == ["Fallback Source"]
 
 

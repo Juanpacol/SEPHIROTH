@@ -1,55 +1,11 @@
 {
   "case_id": "general-sleep-paraphrase",
-  "answer": "Insufficient sleep (less than 7 hours per night for adults) is associated with increased risks of obesity, diabetes, hypertension, cardiovascular disease, and depression [CDC, 2022]. These effects are attributed to disruptions in metabolic regulation, hormonal imbalances (e.g., leptin and ghrelin dysregulation), and chronic inflammation. Sleep deprivation also impairs cognitive function, immune response, and emotional regulation. For teens and children, inadequate sleep (less than 8-12 hours, respectively) further disrupts growth and development [CDC, 2022]. \n\nNote: These findings are derived from public health guidelines and should be reviewed by a healthcare provider for individualized context.",
-  "tool_calls": [
-    {
-      "name": "search_clinical_guidelines",
-      "arguments": {
-        "query": "health effects of sleep deprivation",
-        "top_k": 2
-      },
-      "result": {
-        "query": "health effects of sleep deprivation",
-        "results": [
-          {
-            "id": "cdc-sleep",
-            "content": "Most adults need at least 7 hours of sleep per night for optimal health. Consistently getting less than 7 hours is linked to higher risk of obesity, diabetes, high blood pressure, heart disease, and depression. Sleep needs are higher for teens (8-10 hours) and school-age children (9-12 hours).",
-            "source": "CDC",
-            "citation": "How Much Sleep Do I Need?, Centers for Disease Control and Prevention, 2022",
-            "url": "https://www.cdc.gov/sleep/about/index.html",
-            "score": 0.0492,
-            "metadata": {
-              "category": "general_health",
-              "organization": "Centers for Disease Control and Prevention",
-              "year": 2022,
-              "title": "How Much Sleep Do I Need?",
-              "url": "https://www.cdc.gov/sleep/about/index.html"
-            }
-          },
-          {
-            "id": "cdc-hydration",
-            "content": "There is no single daily water target that fits everyone \u2014 needs vary with body size, activity, climate, and health conditions. Thirst and pale-yellow urine are practical everyday indicators of adequate hydration; dark urine, dizziness, or infrequent urination can signal a need to drink more.",
-            "source": "CDC",
-            "citation": "Water and Healthier Drinks, Centers for Disease Control and Prevention, 2022",
-            "url": "https://www.cdc.gov/nutrition/data-statistics/plain-water-the-healthier-choice.html",
-            "score": 0.0161,
-            "metadata": {
-              "category": "general_health",
-              "organization": "Centers for Disease Control and Prevention",
-              "year": 2022,
-              "title": "Water and Healthier Drinks",
-              "url": "https://www.cdc.gov/nutrition/data-statistics/plain-water-the-healthier-choice.html"
-            }
-          }
-        ],
-        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
-      }
-    }
-  ],
-  "latency_ms": 51777,
-  "tool_call_count": 1,
-  "rounds": 2,
-  "prompt_tokens": 2120,
-  "completion_tokens": 889,
+  "answer": "Not getting enough sleep can affect various aspects of your health. It increases the risk of developing health conditions such as diabetes, cardiovascular disease, and obesity. Sleep deprivation also influences mood, causing irritability or even depression. Cognitive functions are impaired, leading to difficulties in concentration and memory. For comprehensive guidance, it is best to consult a healthcare professional who can provide personalized advice based on your specific needs. [CDC, 2021]",
+  "tool_calls": [],
+  "latency_ms": 3699,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 837,
+  "completion_tokens": 89,
   "cost_usd": 0.0
 }

@@ -1,0 +1,40 @@
+{
+  "case_id": "dizziness-bppv-treatment",
+  "answer": "The first-line treatment for benign paroxysmal positional vertigo (BPPV) is the Epley maneuver. This treatment typically resolves symptoms in most patients within one to two sessions [AAO-HNS Clinical Practice Guideline, 2017].",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "benign paroxysmal positional vertigo treatment",
+        "top_k": 2
+      },
+      "result": {
+        "query": "benign paroxysmal positional vertigo treatment",
+        "results": [
+          {
+            "id": "aao-hns-2017-dizziness",
+            "content": "Benign paroxysmal positional vertigo (BPPV) causes brief episodes of vertigo triggered by head position changes, typically lasting under a minute. The Epley maneuver is the recommended first-line treatment and resolves symptoms in most patients within one to two sessions.",
+            "source": "AAO-HNS Clinical Practice Guideline",
+            "citation": "Benign Paroxysmal Positional Vertigo, American Academy of Otolaryngology-Head and Neck Surgery, 2017",
+            "url": "https://journals.sagepub.com/doi/10.1177/0194599816689667",
+            "score": 0.0492,
+            "metadata": {
+              "category": "neurology",
+              "organization": "American Academy of Otolaryngology-Head and Neck Surgery",
+              "year": 2017,
+              "title": "Benign Paroxysmal Positional Vertigo",
+              "url": "https://journals.sagepub.com/doi/10.1177/0194599816689667"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 5931,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2036,
+  "completion_tokens": 95,
+  "cost_usd": 0.0
+}

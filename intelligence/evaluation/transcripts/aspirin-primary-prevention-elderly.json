@@ -1,15 +1,15 @@
 {
   "case_id": "aspirin-primary-prevention-elderly",
-  "answer": "The clinical guidelines do not recommend routine daily aspirin for primary prevention of cardiovascular disease in adults aged 65 years old, citing the bleeding risk relative to potential benefit [ACC/AHA, 2019]. The decision should be individualized through a risk-benefit discussion with a clinician, considering factors like overall cardiovascular risk, bleeding risk, and patient preferences. Aspirin may still be considered in select high-risk adults within this age range after such evaluation. \n\nNo evidence was found supporting routine aspirin use for primary prevention in healthy 65-year-olds.",
+  "answer": "Based on the clinical guidelines available, high-intensity statin therapy is recommended for primary prevention in adults aged 40-75 with LDL-C \u2265190 mg/dL or diabetic individuals with additional risk factors. There is no routine recommendation to take aspirin daily for preventing cardiovascular events in healthy individuals of age 65 and older, except after a careful discussion regarding bleeding risks.\n\nFor primary prevention of cardiovascular disease in adults 40-70 years old, aspirin may be considered based on individual benefits versus risks; however, this is not a routine recommendation. It is important to consult with a healthcare provider for personalized preventive care advice considering the patient's specific health profile and risk factors.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "aspirin primary prevention cardiovascular disease 65 year old",
-        "top_k": 3
+        "query": "aspirin for primary prevention of cardiovascular diseases in adults aged \u226560",
+        "top_k": 2
       },
       "result": {
-        "query": "aspirin primary prevention cardiovascular disease 65 year old",
+        "query": "aspirin for primary prevention of cardiovascular diseases in adults aged \u226560",
         "results": [
           {
             "id": "acc-aha-2019-primary-prevention",
@@ -24,21 +24,6 @@
               "year": 2019,
               "title": "Primary Prevention of Cardiovascular Disease",
               "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000678"
-            }
-          },
-          {
-            "id": "ada-2024-ckd",
-            "content": "In patients with type 2 diabetes and chronic kidney disease, an SGLT2 inhibitor is recommended for those with eGFR >=20 mL/min/1.73m2 to reduce CKD progression and cardiovascular risk. ACE inhibitors or ARBs are first-line for patients with albuminuria and hypertension.",
-            "source": "ADA Standards of Care in Diabetes",
-            "citation": "Chronic Kidney Disease in Diabetes, American Diabetes Association, 2024",
-            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
-            "score": 0.0159,
-            "metadata": {
-              "category": "nephrology",
-              "organization": "American Diabetes Association",
-              "year": 2024,
-              "title": "Chronic Kidney Disease in Diabetes",
-              "url": "https://diabetesjournals.org/care/issue/47/Supplement_1"
             }
           },
           {
@@ -61,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 36768,
+  "latency_ms": 11868,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2496,
-  "completion_tokens": 763,
+  "prompt_tokens": 2261,
+  "completion_tokens": 188,
   "cost_usd": 0.0
 }

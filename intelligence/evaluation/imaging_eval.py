@@ -119,7 +119,9 @@ async def _describe_and_classify(client, image_bytes: bytes, mime_type: str) -> 
     is actually configured (Gemini or Ollama), not a stand-in model."""
     from intelligence.mcp.vision_server import DESCRIPTION_PROMPT, detect_modality  # noqa: PLC0415
 
-    description = await client.describe_image(image_bytes=image_bytes, mime_type=mime_type, prompt=DESCRIPTION_PROMPT)
+    description = await client.describe_image(
+        image_bytes=image_bytes, mime_type=mime_type, prompt=DESCRIPTION_PROMPT
+    )
     modality = await detect_modality(image_bytes, mime_type)
     return description.strip(), modality
 
@@ -183,8 +185,10 @@ def _print_report(results: list[CaseResult], summary: dict) -> None:
     for r in results:
         flags = []
         if not r.run1.modality_correct or not r.run2.modality_correct:
-            flags.append(f"modality mismatch (got {r.run1.modality_guess}/{r.run2.modality_guess}, "
-                          f"expected {r.expected_modality})")
+            flags.append(
+                f"modality mismatch (got {r.run1.modality_guess}/{r.run2.modality_guess}, "
+                f"expected {r.expected_modality})"
+            )
         if not r.run1.hallucination_free:
             flags.append(f"run1 hallucinated: {r.run1.matched_forbidden}")
         if not r.run2.hallucination_free:
@@ -220,8 +224,10 @@ async def main() -> int:
     client = get_llm_client()
     golden = json.loads(GOLDEN_PATH.read_text())
 
-    print(f"Running imaging hallucination/consistency eval on {len(golden['cases'])} cases "
-          f"(2 calls each = {len(golden['cases']) * 2} API calls)...\n")
+    print(
+        f"Running imaging hallucination/consistency eval on {len(golden['cases'])} cases "
+        f"(2 calls each = {len(golden['cases']) * 2} API calls)...\n"
+    )
 
     results = []
     for case in golden["cases"]:

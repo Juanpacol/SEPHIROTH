@@ -10,11 +10,11 @@ from openai import OpenAI
 sys.path.insert(0, ".")
 sys.path.insert(0, "platform")
 
-from core.config import settings
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
+from core.config import settings
 from data.schemas import Patient
 
 API_URL = "http://localhost:8000"
@@ -37,9 +37,9 @@ async def login() -> str:
 def generate_note_content(openai_client: OpenAI, patient: dict) -> str:
     """Use OpenAI to write a realistic progress note."""
     prompt = f"""Write a brief, realistic clinical progress note (3-5 sentences) for:
-Patient: {patient['name']}, {patient['age']}y {patient['sex']}
-Conditions: {', '.join(patient['conditions'])}
-Medications: {', '.join(patient['medications'])}
+Patient: {patient["name"]}, {patient["age"]}y {patient["sex"]}
+Conditions: {", ".join(patient["conditions"])}
+Medications: {", ".join(patient["medications"])}
 
 Include vital signs, a brief assessment, and a plan. Write in clinical shorthand style
 (like a real doctor's note), mentioning at least one lab value or vital sign with a number.
@@ -95,7 +95,8 @@ async def generate_notes():
 
                     if response.status_code == 201:
                         data = response.json()
-                        print(f"✓ ({data.get('entities_found', 0)} entities, {len(data.get('events_added', []))} events)")
+                        n_events = len(data.get("events_added", []))
+                        print(f"✓ ({data.get('entities_found', 0)} entities, {n_events} events)")
                     else:
                         print(f"✗ ({response.status_code}: {response.text[:60]})")
 
@@ -112,6 +113,7 @@ async def main():
     except Exception as e:
         print(f"Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

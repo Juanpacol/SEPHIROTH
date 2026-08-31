@@ -1,55 +1,11 @@
 {
   "case_id": "acs-stemi-reperfusion-paraphrase",
-  "answer": "For a patient with ST-elevation myocardial infarction (STEMI), **primary percutaneous coronary intervention (PCI)** is preferred over fibrinolysis (clot-busting drugs) if it can be performed within **90 minutes of first medical contact** [ACC/AHA Acute Coronary Syndrome Guideline, 2025]. This is the standard of care for STEMI when PCI resources are available promptly. \n\nIf PCI is not available within this timeframe, fibrinolysis may be considered as an alternative [ACC/AHA Acute Coronary Syndrome Guideline, 2025]. Additionally, **dual antiplatelet therapy** (aspirin plus a P2Y12 inhibitor) is recommended regardless of the reperfusion strategy [ACC/AHA Acute Coronary Syndrome Guideline, 2025]. \n\nAlways confirm local capabilities and adhere to regional STEMI protocols.",
-  "tool_calls": [
-    {
-      "name": "search_clinical_guidelines",
-      "arguments": {
-        "query": "STEMI treatment angioplasty vs thrombolysis",
-        "top_k": 2
-      },
-      "result": {
-        "query": "STEMI treatment angioplasty vs thrombolysis",
-        "results": [
-          {
-            "id": "acc-aha-2025-acs",
-            "content": "For ST-elevation myocardial infarction (STEMI), primary percutaneous coronary intervention within 90 minutes of first medical contact is preferred over fibrinolysis. Dual antiplatelet therapy (aspirin plus a P2Y12 inhibitor) is recommended for all acute coronary syndrome patients regardless of reperfusion strategy.",
-            "source": "ACC/AHA Acute Coronary Syndrome Guideline",
-            "citation": "Management of Acute Coronary Syndromes, ACC/AHA, 2025",
-            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001168",
-            "score": 0.0487,
-            "metadata": {
-              "category": "cardiovascular",
-              "organization": "ACC/AHA",
-              "year": 2025,
-              "title": "Management of Acute Coronary Syndromes",
-              "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001168"
-            }
-          },
-          {
-            "id": "nice-2022-depression",
-            "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
-            "source": "NICE Guideline on Depression in Adults",
-            "citation": "Management of Depression in Adults, NICE, 2022",
-            "url": "https://www.nice.org.uk/guidance/ng222",
-            "score": 0.0164,
-            "metadata": {
-              "category": "psychiatry",
-              "organization": "NICE",
-              "year": 2022,
-              "title": "Management of Depression in Adults",
-              "url": "https://www.nice.org.uk/guidance/ng222"
-            }
-          }
-        ],
-        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
-      }
-    }
-  ],
-  "latency_ms": 35284,
-  "tool_call_count": 1,
-  "rounds": 2,
-  "prompt_tokens": 2127,
-  "completion_tokens": 669,
+  "answer": "",
+  "tool_calls": [],
+  "latency_ms": 1495,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 845,
+  "completion_tokens": 38,
   "cost_usd": 0.0
 }

@@ -1,15 +1,14 @@
 {
   "case_id": "dm-microvascular-screening",
-  "answer": "Adults with type 2 diabetes should undergo the following annual screening exams as per the American Diabetes Association (ADA) 2024 guidelines:  \n1. **Annual dilated eye exam** for retinopathy [ADA, 2024].  \n2. **Annual urine albumin-to-creatinine ratio** to screen for nephropathy [ADA, 2024].  \n3. **Annual comprehensive foot exam** with monofilament testing for peripheral neuropathy, starting at diagnosis [ADA, 2024].  \n\nThese recommendations are part of microvascular complication screening. For additional screenings (e.g., lipid profile, blood pressure, or HbA1c), refer to broader diabetes management guidelines. Always consult a healthcare provider for individualized care.  \n\n**Source**: Microvascular Complications Screening in Diabetes, American Diabetes Association, 2024 [ADA, 2024].",
+  "answer": "For adults with type 2 diabetes, the American Diabetes Association (ADA) recommends annual dilated eye exams to screen for diabetic retinopathy. Additionally, an annual comprehensive foot exam with monofilament testing should be conducted to check for peripheral neuropathy, starting from diagnosis. These screenings are part of their guidelines on microvascular complications in diabetes [ADA Standards of Care in Diabetes 2024].\n\nThere is also a recommendation regarding glycemic targets and pharmacologic approaches. For non-pregnant adults with type 2 diabetes who do not experience significant hypoglycemia, an A1C goal of less than 7% is proposed, with metformin as the initial pharmacological agent [ADA Standards of Care in Diabetes 2024].\n\nWhile these recommendations cover aspects of management and screening for diabetes, it's important to consult your healthcare provider for a comprehensive yearly check-up including any additional recommended screenings or treatments that may be specific to their condition.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "annual screening exams for type 2 diabetes",
-        "top_k": 2
+        "query": "adults with type 2 diabetes annual screening"
       },
       "result": {
-        "query": "annual screening exams for type 2 diabetes",
+        "query": "adults with type 2 diabetes annual screening",
         "results": [
           {
             "id": "ada-2024-microvascular-screening",
@@ -32,7 +31,7 @@
             "source": "ADA Standards of Care in Diabetes",
             "citation": "Glycemic Targets & Pharmacologic Approaches, American Diabetes Association, 2024",
             "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
-            "score": 0.0161,
+            "score": 0.0484,
             "metadata": {
               "category": "endocrinology",
               "organization": "American Diabetes Association",
@@ -46,10 +45,10 @@
       }
     }
   ],
-  "latency_ms": 35234,
+  "latency_ms": 11508,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2015,
-  "completion_tokens": 602,
+  "prompt_tokens": 2167,
+  "completion_tokens": 228,
   "cost_usd": 0.0
 }

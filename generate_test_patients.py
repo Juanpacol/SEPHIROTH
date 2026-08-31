@@ -5,10 +5,9 @@ import asyncio
 import json
 import sys
 import uuid
-from typing import Optional
 
 from openai import OpenAI
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 sys.path.insert(0, ".")

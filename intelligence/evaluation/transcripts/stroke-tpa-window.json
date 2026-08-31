@@ -1,15 +1,14 @@
 {
   "case_id": "stroke-tpa-window",
-  "answer": "The time window for administering intravenous alteplase in acute ischemic stroke is **within 4.5 hours of symptom onset** for eligible patients [AHA/ASA, 2021]. This recommendation is based on evidence that alteplase reduces infarct volume and improves outcomes when administered within this timeframe. \n\n**Key details**:  \n- Alteplase is contraindicated if the time since symptom onset exceeds 4.5 hours [AHA/ASA, 2021].  \n- Exceptional cases (e.g., large-vessel occlusions) may involve extended eligibility for other therapies like mechanical thrombectomy, but this does not alter the 4.5-hour cutoff for IV alteplase [AHA/ASA, 2021].  \n\nThis guidance is part of the *Early Management of Acute Ischemic Stroke* guideline. Always confirm eligibility via imaging (e.g., CT scan) and exclude contraindications before administration. \n\n**Source**: Early Management of Acute Ischemic Stroke, AHA/ASA, 2021 [https://www.ahajournals.org/doi/10.1161/STR.0000000000000211](https://www.ahajournals.org/doi/10.1161/STR.0000000000000211)",
+  "answer": "Intravenous alteplase, also known as tissue plasminogen activator (tPA), is recommended within 4.5 hours of symptom onset for eligible patients with acute ischemic stroke according to the AHA/ASA Acute Ischemic Stroke Guideline from 2021 [AHA/ASA Acute Ischemic Stroke Guideline, 2021]. This guideline provides evidence for the time window within which intravenous alteplase should be administered to patients experiencing acute ischemic stroke. It is important to note that patients who present with large vessel occlusion may also benefit from mechanical thrombectomy if treatment is initiated within a 24-hour window in selected cases. [AHA/ASA Acute Ischemic Stroke Guideline, 2021]",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "time window for intravenous alteplase in acute ischemic stroke",
-        "top_k": 1
+        "query": "acute ischemic stroke intravenous alteplase time window"
       },
       "result": {
-        "query": "time window for intravenous alteplase in acute ischemic stroke",
+        "query": "acute ischemic stroke intravenous alteplase time window",
         "results": [
           {
             "id": "aha-asa-2021-stroke",
@@ -25,16 +24,31 @@
               "title": "Early Management of Acute Ischemic Stroke",
               "url": "https://www.ahajournals.org/doi/10.1161/STR.0000000000000211"
             }
+          },
+          {
+            "id": "cdc-stroke-warning-signs",
+            "content": "The F.A.S.T. warning signs of stroke are: Face drooping on one side, Arm weakness or drift when raised, Speech that is slurred or strange, and Time to call emergency services immediately if any of these signs appear, even if they resolve. Fast treatment significantly improves outcomes.",
+            "source": "CDC",
+            "citation": "Stroke Signs and Symptoms (F.A.S.T.), Centers for Disease Control and Prevention, 2023",
+            "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html",
+            "score": 0.0161,
+            "metadata": {
+              "category": "general_health",
+              "organization": "Centers for Disease Control and Prevention",
+              "year": 2023,
+              "title": "Stroke Signs and Symptoms (F.A.S.T.)",
+              "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html"
+            }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
   ],
-  "latency_ms": 40189,
+  "latency_ms": 11142,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2037,
-  "completion_tokens": 880,
+  "prompt_tokens": 2221,
+  "completion_tokens": 199,
   "cost_usd": 0.0
 }

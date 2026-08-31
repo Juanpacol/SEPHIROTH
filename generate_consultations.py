@@ -3,20 +3,17 @@
 
 import asyncio
 import sys
-import json
-from datetime import datetime
 
 import httpx
-from openai import OpenAI
 
 sys.path.insert(0, ".")
 sys.path.insert(0, "platform")
 
-from core.config import settings
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
+from core.config import settings
 from data.schemas import Patient
 
 API_URL = "http://localhost:8000"
@@ -56,13 +53,23 @@ async def register_clinician() -> str:
 
 def generate_clinical_query(patient: dict) -> str:
     """Generate a realistic clinical query for the patient."""
+    conditions = ", ".join(patient["conditions"][:2])
+    medications = ", ".join(patient["medications"][:2])
+    lab_values = list(patient["lab_results"].values())
+    latest_lab = lab_values[0] if lab_values else "pending"
+    allergies = ", ".join(patient["allergies"]) if patient["allergies"] else "NKDA"
     queries = [
-        f"Patient {patient['name']}, {patient['age']}y, {patient['sex']}. Chief complaint: chest pain and dyspnea. Conditions: {', '.join(patient['conditions'][:2])}. Recent labs show elevated BNP. Risk assessment and recommendations?",
-        f"{patient['name']} ({patient['age']}) presents with fatigue and weight gain. PMH: {', '.join(patient['conditions'][:2])}. On medications: {', '.join(patient['medications'][:2])}. Differential diagnosis?",
-        f"Follow-up for {patient['name']}: monitoring {patient['conditions'][0]}. Labs today: {list(patient['lab_results'].values())[0] if patient['lab_results'] else 'pending'}. Adjust treatment plan?",
-        f"{patient['name']}, {patient['age']}y. Allergies: {', '.join(patient['allergies']) if patient['allergies'] else 'NKDA'}. New medication request: evaluate interactions and safety.",
+        f"Patient {patient['name']}, {patient['age']}y, {patient['sex']}. Chief complaint: chest pain and "
+        f"dyspnea. Conditions: {conditions}. Recent labs show elevated BNP. "
+        f"Risk assessment and recommendations?",
+        f"{patient['name']} ({patient['age']}) presents with fatigue and weight gain. PMH: {conditions}. "
+        f"On medications: {medications}. Differential diagnosis?",
+        f"Follow-up for {patient['name']}: monitoring {patient['conditions'][0]}. "
+        f"Labs today: {latest_lab}. Adjust treatment plan?",
+        f"{patient['name']}, {patient['age']}y. Allergies: {allergies}. "
+        f"New medication request: evaluate interactions and safety.",
     ]
-    return queries[hash(patient['id']) % len(queries)]
+    return queries[hash(patient["id"]) % len(queries)]
 
 
 async def generate_consultations():
@@ -131,6 +138,7 @@ async def main():
     except Exception as e:
         print(f"Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

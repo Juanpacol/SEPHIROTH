@@ -1,15 +1,15 @@
 {
   "case_id": "copd-laba-lama",
-  "answer": "For COPD patients with frequent exacerbations, **LABA+LAMA combination therapy** is preferred, as stated in the GOLD 2024 guidelines [COPD Diagnosis, Management and Prevention, GOLD, 2024]. Inhaled corticosteroids (ICS) may be added for patients with blood eosinophils \u2265300 cells/\u00b5L or those experiencing continued exacerbations. \n\nThis recommendation is specific to COPD management and does not apply to asthma, which is addressed in the GINA 2024 guidelines [Global Strategy for Asthma Management, GINA, 2024]. Always review these findings with a healthcare professional for individualized care.",
+  "answer": "For COPD patients with frequent exacerbations, the preferred inhaler therapy is LABA+LAMA combination therapy. Inhaled corticosteroids should be added if blood eosinophils are >=300 cells/uL or if continued exacerbations occur, as indicated in the GOLD COPD Report from the year 2024 [COPD Diagnosis, Management and Prevention, GOLD, 2024]. \n\nFor further guidance on asthma treatment, refer to the Global Initiative for Asthma (GINA) report, which recommends using a low-dose ICS-formoterol as a reliever therapy over short-acting beta-agonist alone, even at the mildest step of treatment [Global Strategy for Asthma Management, GINA, 2024]. However, this advice is related to asthma, not COPD.\n\nIt's important to consult with a healthcare provider for personalized recommendations.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "preferred inhaler therapy for COPD patients with frequent exacerbations",
+        "query": "COPD exacerbation treatment inhaler therapy",
         "top_k": 2
       },
       "result": {
-        "query": "preferred inhaler therapy for COPD patients with frequent exacerbations",
+        "query": "COPD exacerbation treatment inhaler therapy",
         "results": [
           {
             "id": "gold-2024-copd",
@@ -17,7 +17,7 @@
             "source": "GOLD COPD Report",
             "citation": "COPD Diagnosis, Management and Prevention, GOLD, 2024",
             "url": "https://goldcopd.org/2024-gold-report/",
-            "score": 0.0492,
+            "score": 0.0479,
             "metadata": {
               "category": "pulmonology",
               "organization": "GOLD",
@@ -32,7 +32,7 @@
             "source": "Global Initiative for Asthma Report",
             "citation": "Global Strategy for Asthma Management, GINA, 2024",
             "url": "https://ginasthma.org/2026-gina-strategy-report/",
-            "score": 0.0465,
+            "score": 0.0479,
             "metadata": {
               "category": "pulmonology",
               "organization": "GINA",
@@ -46,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 31973,
+  "latency_ms": 14168,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2127,
-  "completion_tokens": 693,
+  "prompt_tokens": 2144,
+  "completion_tokens": 227,
   "cost_usd": 0.0
 }

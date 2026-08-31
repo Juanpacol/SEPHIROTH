@@ -26,7 +26,9 @@ from .groq import GroqClient
 from .ollama import OllamaClient
 from .vision_split import VisionChatSplitClient
 
-_client: Optional[Union[GeminiClient, GroqClient, OllamaClient, FallbackLLMClient, VisionChatSplitClient]] = None
+_client: Optional[Union[GeminiClient, GroqClient, OllamaClient, FallbackLLMClient, VisionChatSplitClient]] = (
+    None
+)
 
 
 def get_llm_client() -> Any:

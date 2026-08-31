@@ -1,15 +1,15 @@
 {
   "case_id": "preeclampsia-aspirin-timing",
-  "answer": "High-risk pregnant patients with indicated risk factors for preeclampsia should consider low-dose aspirin (baby aspirin, typically 81 mg daily) starting at **12\u201328 weeks of gestation** [ACOG, 2020]. This recommendation is specifically for patients with a history of preeclampsia, chronic hypertension, or other high-risk features. The timing and duration should be individualized based on clinical risk assessment. \n\n**Professional review is required** to confirm appropriateness for each patient, as guidelines emphasize evaluation of personal and medical history. \n\nCitation: Gestational Hypertension and Preeclampsia, ACOG, 2020 [https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2020/06/gestational-hypertension-and-preeclampsia].",
+  "answer": "For high-risk pregnant patients, the use of baby aspirin (low-dose) starting at 12-28 weeks of gestation is recommended to reduce the risk of preeclampsia. This recommendation is provided in the ACOG Practice Bulletin on Preeclampsia [ACOG, 2020]. \n\nFor other indications such as primary prevention of cardiovascular disease, aspirin is not typically prescribed according to the ACC/AHA Primary Prevention of Cardiovascular Disease Guideline [ACC/AHA, 2019]. This guideline does not support routine use and recommends a personalized risk-benefit discussion with the clinician rather than aspirin initiation. \n\nPlease ensure to discuss these recommendations specifically tailored for you or your patient with their healthcare provider due to individual variances.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "low-dose aspirin in high-risk pregnancies for preeclampsia prevention",
-        "top_k": 1
+        "query": "high risk pregnancy aspirin",
+        "top_k": 2
       },
       "result": {
-        "query": "low-dose aspirin in high-risk pregnancies for preeclampsia prevention",
+        "query": "high risk pregnancy aspirin",
         "results": [
           {
             "id": "acog-2020-preeclampsia",
@@ -17,7 +17,7 @@
             "source": "ACOG Practice Bulletin on Preeclampsia",
             "citation": "Gestational Hypertension and Preeclampsia, ACOG, 2020",
             "url": "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2020/06/gestational-hypertension-and-preeclampsia",
-            "score": 0.0492,
+            "score": 0.0489,
             "metadata": {
               "category": "obstetrics",
               "organization": "ACOG",
@@ -25,16 +25,31 @@
               "title": "Gestational Hypertension and Preeclampsia",
               "url": "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2020/06/gestational-hypertension-and-preeclampsia"
             }
+          },
+          {
+            "id": "acc-aha-2019-primary-prevention",
+            "content": "Aspirin for primary prevention of cardiovascular disease is not routinely recommended due to bleeding risk, except in select high-risk adults 40-70 years after a risk-benefit discussion with their clinician.",
+            "source": "ACC/AHA Primary Prevention of Cardiovascular Disease Guideline",
+            "citation": "Primary Prevention of Cardiovascular Disease, ACC/AHA, 2019",
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000678",
+            "score": 0.0164,
+            "metadata": {
+              "category": "cardiovascular",
+              "organization": "ACC/AHA",
+              "year": 2019,
+              "title": "Primary Prevention of Cardiovascular Disease",
+              "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000678"
+            }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
   ],
-  "latency_ms": 43170,
+  "latency_ms": 11839,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2175,
-  "completion_tokens": 935,
+  "prompt_tokens": 2248,
+  "completion_tokens": 197,
   "cost_usd": 0.0
 }

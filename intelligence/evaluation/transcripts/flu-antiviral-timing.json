@@ -1,0 +1,40 @@
+{
+  "case_id": "flu-antiviral-timing",
+  "answer": "Antiviral treatment for influenza is most effective when started within 48 hours of symptom onset. It is prioritized for patients at high risk, including young children, pregnant patients, adults aged 65 and older, and those with chronic conditions [CDC, 2024]. Always consult professional medical advice regarding the timing of treatment based on patient-specific factors.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "antiviral treatment for influenza",
+        "top_k": 2
+      },
+      "result": {
+        "query": "antiviral treatment for influenza",
+        "results": [
+          {
+            "id": "cdc-flu-2024",
+            "content": "Influenza symptoms include fever, cough, sore throat, muscle aches, and fatigue with rapid onset. Antiviral treatment (e.g. oseltamivir) is most effective when started within 48 hours of symptom onset and is prioritized for patients at high risk of complications (young children, pregnant patients, adults 65 and older, and those with chronic conditions).",
+            "source": "CDC",
+            "citation": "Influenza: Symptoms and Treatment, Centers for Disease Control and Prevention, 2024",
+            "url": "https://www.cdc.gov/flu/treatment/index.html",
+            "score": 0.0492,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "Centers for Disease Control and Prevention",
+              "year": 2024,
+              "title": "Influenza: Symptoms and Treatment",
+              "url": "https://www.cdc.gov/flu/treatment/index.html"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 8015,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 1974,
+  "completion_tokens": 112,
+  "cost_usd": 0.0
+}

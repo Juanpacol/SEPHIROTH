@@ -1,15 +1,15 @@
 {
   "case_id": "afib-doac-vs-warfarin",
-  "answer": "For most patients with atrial fibrillation (AFib) requiring anticoagulation, **direct oral anticoagulants (DOACs)** are preferred over warfarin, according to current guidelines. Specifically:  \n\n- The **ACC/AHA/HRS 2024 guideline** recommends DOACs over warfarin for patients with AFib and a CHA\u2082DS\u2082-VASc score of \u22652 in men or \u22653 in women [ACC/AHA/HRS, 2024].  \n- DOACs are favored for their **fewer drug interactions**, **no need for routine coagulation monitoring**, and **lower risk of intracranial hemorrhage** compared to warfarin [ACC/AHA/HRS, 2024].  \n\nHowever, **individual patient factors** (e.g., renal function, bleeding risk, medication interactions) may influence this decision [ACC/AHA/HRS, 2024]. Always review clinical context and patient-specific risks before selecting therapy.  \n\n**Note:** These recommendations are derived from the provided guidelines and require professional review for individual patient application.",
+  "answer": "According to the guidelines reviewed, direct oral anticoagulants (DOACs) are preferred over warfarin in most patients with atrial fibrillation (AFib). This preference is explicitly stated as more suitable in \"most eligible\" patients. However, these recommendations are based on a CHA2DS2-VASc score which specifies patient eligibility for anticoagulation therapy. For patients who meet the specified criteria [Anticoagulation in Atrial Fibrillation (ACC/AHA/HRS), 2024], DOACs are strongly preferred over warfarin.\n\nIt's important to note that this preference holds true especially in most eligible patients, although not all AFib patients require anticoagulation. For different patient populations, the specific treatment recommendations can vary, so it is always best to consult guideline-based practices for personalized care [Anticoagulation with Direct Oral Anticoagulants (DOACs) in VTE Disease, ACCP, 2021]. \n\nAdditionally, DOACs are also preferred over warfarin as first-line therapy for acute deep vein thrombosis or pulmonary embolism without cancer. This recommendation is from another context which may not be directly comparable to the AFib treatment scenario but still provides relevant guidance [Antithrombotic Therapy for VTE Disease, ACCP, 2021]. \n\nPlease consult with your professional healthcare provider to determine the best course of treatment based on individual patient characteristics and medical history.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "atrial fibrillation anticoagulation DOAC warfarin comparative effectiveness",
-        "top_k": 3
+        "query": "DOAC warfarin anticoagulation atrial fibrillation",
+        "top_k": 2
       },
       "result": {
-        "query": "atrial fibrillation anticoagulation DOAC warfarin comparative effectiveness",
+        "query": "DOAC warfarin anticoagulation atrial fibrillation",
         "results": [
           {
             "id": "accp-2024-afib",
@@ -46,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 34016,
+  "latency_ms": 22656,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2164,
-  "completion_tokens": 740,
+  "prompt_tokens": 2292,
+  "completion_tokens": 350,
   "cost_usd": 0.0
 }

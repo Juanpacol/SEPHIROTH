@@ -1,0 +1,40 @@
+{
+  "case_id": "allergic-rhinitis-treatment",
+  "answer": "The most effective treatment for allergic rhinitis, according to the American Academy of Allergy, Asthma & Immunology guidelines from 2020, is an intranasal corticosteroid. This should be used as first-line therapy for moderate to severe or persistent symptoms; for mild and intermittent symptoms, a second-generation oral antihistamine can be used instead. It's also important to incorporate allergen avoidance as part of the management plan alongside medication use. \n\n[citation] [AAAAI/ACAAI Joint Practice Parameter, 2020][^1]\n\nFor more detailed information, you may refer to this guideline: \n[https://www.aaaai.org/allergist-resources/ask-the-expert/answers/2020/allergic-rhinitis]^2\n\n[^1]: [AAAAI/ACAAI Joint Practice Parameter](https://www.aaaai.org/allergist-resources/ask-the-expert/answers/2020/allergic-rhinitis)\n[^2]: [American Academy of Allergy, Asthma & Immunology](https://www.aaaai.org/)",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "allergic rhinitis treatment",
+        "top_k": 2
+      },
+      "result": {
+        "query": "allergic rhinitis treatment",
+        "results": [
+          {
+            "id": "aaaai-allergic-rhinitis",
+            "content": "For allergic rhinitis, an intranasal corticosteroid is the most effective single therapy and is recommended first-line for moderate to severe or persistent symptoms; a second-generation oral antihistamine is an alternative for mild, intermittent symptoms. Allergen avoidance is an adjunct to, not a substitute for, medication.",
+            "source": "AAAAI/ACAAI Joint Practice Parameter",
+            "citation": "Allergic Rhinitis: Diagnosis and Management, American Academy of Allergy, Asthma & Immunology, 2020",
+            "url": "https://www.aaaai.org/allergist-resources/ask-the-expert/answers/2020/allergic-rhinitis",
+            "score": 0.0492,
+            "metadata": {
+              "category": "allergy",
+              "organization": "American Academy of Allergy, Asthma & Immunology",
+              "year": 2020,
+              "title": "Allergic Rhinitis: Diagnosis and Management",
+              "url": "https://www.aaaai.org/allergist-resources/ask-the-expert/answers/2020/allergic-rhinitis"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 14147,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2010,
+  "completion_tokens": 271,
+  "cost_usd": 0.0
+}

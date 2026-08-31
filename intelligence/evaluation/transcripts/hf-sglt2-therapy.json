@@ -1,15 +1,15 @@
 {
   "case_id": "hf-sglt2-therapy",
-  "answer": "Guideline-directed medical therapy for heart failure with reduced ejection fraction (HFrEF) per the **AHA/ACC/HFSA 2022 Guideline** includes:  \n- **ARNI/ACEi/ARB** (angiotensin receptor-neprilysin inhibitors/angiotensin-converting enzyme inhibitors/angiotensin receptor blockers)  \n- **Beta-blockers**  \n- **Mineralocorticoid receptor antagonists** (MRAs)  \n- **SGLT2 inhibitors** (recommended regardless of diabetes status)  \n\nThese therapies are foundational for improving outcomes in HFrEF. Always review guidelines for individual patient adaptation [AHA/ACC/HFSA, 2022](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001063).",
+  "answer": "For heart failure with reduced ejection fraction (HFrEF), the guideline-directed medical therapy includes Angiotensin Receptor Neprilysin Inhibitor (ARNI)/Angiotensin-Converting Enzyme inhibitor (ACEi)/Angiotensin II Receptor Antagonist (ARB). Additionally, it is recommended to use SGLT2 inhibitors. These medications should be used at the lowest effective dose and for the shortest duration possible, avoiding them or using them with caution in individuals with kidney disease, heart failure, or a history of ulcers.\n\n[MedlinePlus (U.S. National Library of Medicine), 2023]",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "heart failure with reduced ejection fraction guideline-directed medical therapy",
-        "top_k": 1
+        "query": "heart failure with reduced ejection fraction",
+        "top_k": 2
       },
       "result": {
-        "query": "heart failure with reduced ejection fraction guideline-directed medical therapy",
+        "query": "heart failure with reduced ejection fraction",
         "results": [
           {
             "id": "aha-2022-hf",
@@ -25,16 +25,31 @@
               "title": "Management of Heart Failure",
               "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001063"
             }
+          },
+          {
+            "id": "medlineplus-nsaid-cautions",
+            "content": "NSAIDs (ibuprofen, naproxen) relieve pain, fever, and inflammation but carry a dose-dependent risk of stomach bleeding, kidney injury, and cardiovascular events with regular use. They should be used at the lowest effective dose for the shortest time needed, and avoided or used with caution in patients with kidney disease, heart failure, or a history of ulcers.",
+            "source": "MedlinePlus",
+            "citation": "NSAIDs: What You Need to Know, MedlinePlus (U.S. National Library of Medicine), 2023",
+            "url": "https://medlineplus.gov/druginfo/meds/a682159.html",
+            "score": 0.0161,
+            "metadata": {
+              "category": "general_health",
+              "organization": "MedlinePlus (U.S. National Library of Medicine)",
+              "year": 2023,
+              "title": "NSAIDs: What You Need to Know",
+              "url": "https://medlineplus.gov/druginfo/meds/a682159.html"
+            }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
   ],
-  "latency_ms": 38250,
+  "latency_ms": 15987,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2088,
-  "completion_tokens": 840,
+  "prompt_tokens": 2258,
+  "completion_tokens": 174,
   "cost_usd": 0.0
 }

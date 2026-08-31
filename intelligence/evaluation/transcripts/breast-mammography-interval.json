@@ -1,15 +1,15 @@
 {
   "case_id": "breast-mammography-interval",
-  "answer": "The USPSTF recommends **biennial screening mammography** for women aged **40 to 74 years** [USPSTF, 2024]. This guidance is based on the balance of benefits and harms of screening in this population. For women aged 75 and older, the evidence is insufficient to determine the balance of benefits and harms [USPSTF, 2024]. \n\nThis recommendation is part of the *Screening for Breast Cancer* guideline, available at [USPSTF website](https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/breast-cancer-screening). \n\nAlways consult a healthcare provider to individualize screening plans based on personal risk factors and clinical context.",
+  "answer": "Based on the clinical guidelines provided, there is no specific recommendation from the US Preventive Services Task Force (USPSTF) regarding how often women aged 40 to 74 should get a screening mammogram. The USPSTF does not currently recommend annual mammograms for this age group but emphasizes biennial screening for women within this age range [USPSTF Breast Cancer Screening Recommendation, 2024]. \n\nFor other aspects of colorectal cancer screening, the USPSTF recommends starting at age 45 with options including colonoscopy every 10 years, annual fecal immunochemical test (FIT), or stool DNA testing every 1-3 years [USPSTF Colorectal Cancer Screening Recommendation, 2021].\n\nSince there isn\u2019t a specific guideline for breast cancer screening in this age group, it\u2019s important to consult the latest clinical guidelines from organizations such as the American Cancer Society (ACS) for more tailored recommendations. Always discuss your individual risk factors and preferences with your healthcare provider.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "screening mammogram frequency women 40-74",
-        "top_k": 5
+        "top_k": 2,
+        "query": "annual mammography women 40-74 years old"
       },
       "result": {
-        "query": "screening mammogram frequency women 40-74",
+        "query": "annual mammography women 40-74 years old",
         "results": [
           {
             "id": "uspstf-2024-breast",
@@ -24,51 +24,6 @@
               "year": 2024,
               "title": "Screening for Breast Cancer",
               "url": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/breast-cancer-screening"
-            }
-          },
-          {
-            "id": "idsa-2019-uti",
-            "content": "Nitrofurantoin for 5 days or trimethoprim-sulfamethoxazole for 3 days are first-line agents for uncomplicated cystitis in women. Fluoroquinolones are reserved for cases where first-line agents are not suitable.",
-            "source": "IDSA Uncomplicated UTI Guideline",
-            "citation": "Treatment of Uncomplicated Cystitis, IDSA, 2019",
-            "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/",
-            "score": 0.0159,
-            "metadata": {
-              "category": "infectious_disease",
-              "organization": "IDSA",
-              "year": 2019,
-              "title": "Treatment of Uncomplicated Cystitis",
-              "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/"
-            }
-          },
-          {
-            "id": "accp-2024-afib",
-            "content": "Oral anticoagulation is recommended for patients with atrial fibrillation and a CHA2DS2-VASc score of 2 or more in men or 3 or more in women. Direct oral anticoagulants are preferred over warfarin in most eligible patients.",
-            "source": "ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline",
-            "citation": "Anticoagulation in Atrial Fibrillation, ACC/AHA/HRS, 2024",
-            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193",
-            "score": 0.0156,
-            "metadata": {
-              "category": "cardiovascular",
-              "organization": "ACC/AHA/HRS",
-              "year": 2024,
-              "title": "Anticoagulation in Atrial Fibrillation",
-              "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193"
-            }
-          },
-          {
-            "id": "acc-aha-2018-lipids",
-            "content": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C >=190 mg/dL or diabetes with additional risk factors.",
-            "source": "ACC/AHA Multi-Society Cholesterol Guideline",
-            "citation": "Management of Blood Cholesterol, ACC/AHA, 2018",
-            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000625",
-            "score": 0.0154,
-            "metadata": {
-              "category": "cardiovascular",
-              "organization": "ACC/AHA",
-              "year": 2018,
-              "title": "Management of Blood Cholesterol",
-              "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000625"
             }
           },
           {
@@ -91,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 31745,
+  "latency_ms": 13112,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2881,
-  "completion_tokens": 629,
+  "prompt_tokens": 2212,
+  "completion_tokens": 257,
   "cost_usd": 0.0
 }

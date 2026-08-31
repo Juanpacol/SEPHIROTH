@@ -1,0 +1,55 @@
+{
+  "case_id": "insomnia-sleep-hygiene",
+  "answer": "For occasional insomnia, sleep hygiene measures are recommended: maintaining a consistent sleep and wake schedule, avoiding caffeine in the afternoon, limiting screen exposure before bed, and ensuring your bedroom is cool, dark, and quiet. Persistent insomnia over several weeks may require further evaluation with cognitive behavioral therapy for insomnia (CBTI), which should be used first-line compared to sleep medication as an approach for chronic cases [CDC, 2022]. For a different condition not addressed here but related to thyroid function where a relevant treatment is mentioned: Levothyroxine is the first-line treatment for primary hypothyroidism, with dosing aimed at normalizing Thyroid Stimulating Hormone (TSH) levels [ATA Guidelines, 2014].\n\nIt's important to note that these guidelines and recommendations are not diagnostics or replacements for professional medical advice. Professional review should be sought before starting any new treatment.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "insomnia treatment primary care",
+        "top_k": 2
+      },
+      "result": {
+        "query": "insomnia treatment primary care",
+        "results": [
+          {
+            "id": "cdc-2022-sleep-hygiene",
+            "content": "For occasional insomnia, sleep hygiene measures help most: a consistent sleep and wake time, avoiding caffeine in the afternoon, limiting screens before bed, and keeping the bedroom cool, dark, and quiet. Insomnia most nights for more than a few weeks warrants evaluation \u2014 cognitive behavioral therapy for insomnia (CBT-I) is first-line over sleep medication for chronic insomnia.",
+            "source": "CDC",
+            "citation": "Tips for Better Sleep, Centers for Disease Control and Prevention, 2022",
+            "url": "https://www.cdc.gov/sleep/about/sleep-hygiene-tips.html",
+            "score": 0.0328,
+            "metadata": {
+              "category": "psychiatry",
+              "organization": "Centers for Disease Control and Prevention",
+              "year": 2022,
+              "title": "Tips for Better Sleep",
+              "url": "https://www.cdc.gov/sleep/about/sleep-hygiene-tips.html"
+            }
+          },
+          {
+            "id": "ata-2014-hypothyroidism",
+            "content": "Levothyroxine is the first-line treatment for primary hypothyroidism, dosed to normalize TSH (typical target 0.4-4.0 mIU/L, adjusted for age). Levothyroxine should be taken on an empty stomach, separated from calcium or iron supplements by at least 4 hours to avoid reduced absorption.",
+            "source": "ATA Guidelines for Hypothyroidism",
+            "citation": "Guidelines for the Treatment of Hypothyroidism, American Thyroid Association, 2014",
+            "url": "https://www.thyroid.org/hypothyroidism/",
+            "score": 0.0164,
+            "metadata": {
+              "category": "endocrinology",
+              "organization": "American Thyroid Association",
+              "year": 2014,
+              "title": "Guidelines for the Treatment of Hypothyroidism",
+              "url": "https://www.thyroid.org/hypothyroidism/"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 15468,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2188,
+  "completion_tokens": 217,
+  "cost_usd": 0.0
+}

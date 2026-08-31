@@ -1,15 +1,15 @@
 {
   "case_id": "general-a1c-explainer-paraphrase",
-  "answer": "The A1C test measures average blood glucose levels over 2\u20133 months. According to MedlinePlus [2024], **normal A1C** is **below 5.7%**, while **prediabetes** is defined as **5.7\u20136.4%**. This range indicates impaired glucose regulation, increasing diabetes risk. A1C thresholds are standardized across clinical guidelines [ADA, 2024]. \n\nKey distinction: Normal A1C (<5.7%) shows no glucose abnormalities, whereas prediabetes (5.7\u20136.4%) signals early metabolic dysfunction. Always confirm with healthcare providers for individualized interpretation. \n\n**Citations**:  \n- MedlinePlus: \"The A1C Test and Diabetes\" (2024) [MedlinePlus, 2024]  \n- ADA: Standards of Medical Care in Diabetes (2024) [ADA, 2024]",
+  "answer": "According to the clinical guidelines from MedlinePlus (U.S. National Library of Medicine, 2024), an A1C level below 5.7% is considered normal, between 5.7-6.4% indicates prediabetes, and 6.5% or higher indicates diabetes. Unlike a daily finger-stick blood glucose test that shows blood sugar at a particular moment in time, the A1C test reflects your average blood sugar level over the past few months. Therefore, for individuals transitioning from a normal A1C to prediabetes, a significant increase is observed, often correlating with a gradual elevation above 5.7% over time. It's important to note that this threshold needs clinical review before any definitive diagnosis. [MedlinePlus (U.S. National Library of Medicine), 2024]",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "A1C levels prediabetes",
-        "top_k": 1
+        "query": "A1C normal range prediabetes",
+        "top_k": 2
       },
       "result": {
-        "query": "A1C levels prediabetes",
+        "query": "A1C normal range prediabetes",
         "results": [
           {
             "id": "medlineplus-a1c",
@@ -31,10 +31,10 @@
       }
     }
   ],
-  "latency_ms": 34257,
+  "latency_ms": 11836,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 1942,
-  "completion_tokens": 722,
+  "prompt_tokens": 1979,
+  "completion_tokens": 237,
   "cost_usd": 0.0
 }

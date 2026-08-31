@@ -50,7 +50,8 @@
         "unsupported_high_risk_claim",
         "tool_failure",
         "model_uncertainty",
-        "policy_restriction"
+        "policy_restriction",
+        "out_of_scope"
       ],
       "title": "AbstentionReason",
       "type": "string"

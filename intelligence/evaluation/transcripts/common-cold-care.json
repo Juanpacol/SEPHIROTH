@@ -1,0 +1,40 @@
+{
+  "case_id": "common-cold-care",
+  "answer": "The treatment for a common cold is primarily supportive care including rest, fluids, and over-the-counter medications such as analgesics and decongestants. Antibiotics are not effective against the viruses that cause colds. It is recommended to seek medical attention if symptoms persist beyond 10 days or worsen after initial improvements [CDC, 2023].",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "top_k": 2,
+        "query": "treatment of common cold"
+      },
+      "result": {
+        "query": "treatment of common cold",
+        "results": [
+          {
+            "id": "cdc-2023-common-cold",
+            "content": "The common cold is a self-limited viral illness lasting 7-10 days; antibiotics do not help and are not recommended. Supportive care \u2014 rest, fluids, and over-the-counter symptom relief (analgesics, decongestants) \u2014 is the standard of care. See a clinician if symptoms last beyond 10 days or worsen after initial improvement.",
+            "source": "CDC",
+            "citation": "Common Cold: Symptoms and Care, Centers for Disease Control and Prevention, 2023",
+            "url": "https://www.cdc.gov/antibiotic-use/colds.html",
+            "score": 0.0492,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "Centers for Disease Control and Prevention",
+              "year": 2023,
+              "title": "Common Cold: Symptoms and Care",
+              "url": "https://www.cdc.gov/antibiotic-use/colds.html"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 6727,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 1976,
+  "completion_tokens": 110,
+  "cost_usd": 0.0
+}

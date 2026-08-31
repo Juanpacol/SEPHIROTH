@@ -38,7 +38,6 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
@@ -57,6 +56,7 @@ _KNOWN_DRUG_NAMES = frozenset(name for pair in INTERACTIONS for name in pair)
 def _extract_named_medications(query: str) -> List[str]:
     text = query.lower()
     return [name for name in _KNOWN_DRUG_NAMES if re.search(rf"\b{re.escape(name)}\b", text)]
+
 
 _DRUG_INTERACTION_RE = re.compile(
     r"\b(interact|interaction|combine|combination|safe together|contraindicat)", re.I
@@ -137,7 +137,13 @@ async def try_fast_path(
             return {
                 "source": "drug-safety",
                 "final_answer": answer,
-                "tool_calls": [{"name": "check_drug_interactions", "arguments": {"medications": medications}, "result": result}],
+                "tool_calls": [
+                    {
+                        "name": "check_drug_interactions",
+                        "arguments": {"medications": medications},
+                        "result": result,
+                    }
+                ],
                 "citation_report": {"verified": [], "fabricated": []},
             }
 
@@ -163,7 +169,13 @@ async def try_fast_path(
                 return {
                     "source": "evidence",
                     "final_answer": answer,
-                    "tool_calls": [{"name": "search_clinical_guidelines", "arguments": {"query": query}, "result": result}],
+                    "tool_calls": [
+                        {
+                            "name": "search_clinical_guidelines",
+                            "arguments": {"query": query},
+                            "result": result,
+                        }
+                    ],
                     "citation_report": {"verified": citations, "fabricated": []},
                 }
 

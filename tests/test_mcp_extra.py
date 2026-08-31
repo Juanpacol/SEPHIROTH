@@ -125,7 +125,7 @@ async def test_describe_medical_image_happy_path(monkeypatch, tmp_path):
     img_path.write_bytes(b"fake png bytes")
 
     class _FakeClient:
-        async def describe_image(self, image_bytes, mime_type, prompt):
+        async def describe_image(self, image_bytes, mime_type, prompt, max_output_tokens=512):
             assert mime_type == "image/png"
             return "Chest X-ray, no acute findings."
 
@@ -146,7 +146,7 @@ async def test_describe_medical_image_llm_unavailable(monkeypatch, tmp_path):
     img_path.write_bytes(b"fake jpg bytes")
 
     class _FakeClient:
-        async def describe_image(self, image_bytes, mime_type, prompt):
+        async def describe_image(self, image_bytes, mime_type, prompt, max_output_tokens=512):
             raise LLMUnavailableError("no key")
 
     monkeypatch.setattr(vision_server, "get_llm_client", lambda: _FakeClient())

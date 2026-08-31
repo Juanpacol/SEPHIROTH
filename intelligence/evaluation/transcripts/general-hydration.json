@@ -1,40 +1,11 @@
 {
   "case_id": "general-hydration",
-  "answer": "The CDC states there is no universal daily water intake target, as needs vary with factors like body size, activity level, climate, and health conditions [CDC, 2022]. Practical indicators of adequate hydration include thirst and pale-yellow urine, while dark urine, dizziness, or infrequent urination may signal a need to increase fluid intake. \n\nThis recommendation is for professional review and not a diagnosis.",
-  "tool_calls": [
-    {
-      "name": "search_clinical_guidelines",
-      "arguments": {
-        "query": "daily water intake recommendations",
-        "top_k": 1
-      },
-      "result": {
-        "query": "daily water intake recommendations",
-        "results": [
-          {
-            "id": "cdc-hydration",
-            "content": "There is no single daily water target that fits everyone \u2014 needs vary with body size, activity, climate, and health conditions. Thirst and pale-yellow urine are practical everyday indicators of adequate hydration; dark urine, dizziness, or infrequent urination can signal a need to drink more.",
-            "source": "CDC",
-            "citation": "Water and Healthier Drinks, Centers for Disease Control and Prevention, 2022",
-            "url": "https://www.cdc.gov/nutrition/data-statistics/plain-water-the-healthier-choice.html",
-            "score": 0.0492,
-            "metadata": {
-              "category": "general_health",
-              "organization": "Centers for Disease Control and Prevention",
-              "year": 2022,
-              "title": "Water and Healthier Drinks",
-              "url": "https://www.cdc.gov/nutrition/data-statistics/plain-water-the-healthier-choice.html"
-            }
-          }
-        ],
-        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
-      }
-    }
-  ],
-  "latency_ms": 21670,
-  "tool_call_count": 1,
-  "rounds": 2,
-  "prompt_tokens": 1816,
-  "completion_tokens": 453,
+  "answer": "To determine the appropriate amount of water intake per day, it's best to consider individual needs based on factors such as activity level, climate, and health status. There isn't a one-size-fits-all answer for daily hydration requirements; however, general guidelines suggest drinking about 2L (about 8 glasses) of fluids per day. This figure includes water from all beverages and foods, but the number may vary depending on specific circumstances.\n\nFor more tailored advice or to address any particular health conditions, consulting with a healthcare provider is recommended.",
+  "tool_calls": [],
+  "latency_ms": 4008,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 834,
+  "completion_tokens": 109,
   "cost_usd": 0.0
 }
