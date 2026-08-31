@@ -19,7 +19,7 @@ echo ""
 
 # Make request to tick endpoint
 curl -X POST http://localhost:8000/internal/tick \
-    -H "X-Internal-Token: test-token-12345-workflow-engine-test" \
+    -H "X-Internal-Token: $INTERNAL_TICK_TOKEN" \
     -H "Content-Type: application/json" \
     -s | jq .
 

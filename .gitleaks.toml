@@ -1,0 +1,13 @@
+[extend]
+useDefault = true
+
+# Known false positives — a fake/placeholder value gitleaks' generic
+# high-entropy rules flag anyway. Reviewed by hand; not a real credential.
+[allowlist]
+description = "Reviewed false positives"
+paths = [
+  # Personal local dev script: hardcodes an obviously-fake test token
+  # ("test-token-12345-workflow-engine-test") for manually curling the
+  # internal /tick endpoint — never a real secret.
+  '''test_tick_request\.sh''',
+]
