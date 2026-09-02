@@ -11,3 +11,12 @@ paths = [
   # internal /tick endpoint — never a real secret.
   '''test_tick_request\.sh''',
 ]
+# i18n data files use object fields like `labelKey`/`qKey`/`evidenceKey`
+# holding dotted dictionary-key strings (e.g. "marketing.faq.q1") — the
+# "Key"-suffixed field name plus a dotted lowercase string trips the
+# generic-api-key rule's entropy heuristic. Reviewed by hand; these are
+# translation-dictionary lookups, never credentials.
+regexTarget = "line"
+regexes = [
+  '''[a-zA-Z]+Key: "[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9]*)+"''',
+]

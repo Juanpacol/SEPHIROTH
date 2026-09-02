@@ -142,7 +142,12 @@ def render_result_share_pdf(share: Any, patient_name: str) -> bytes:
     meta = Table(
         [
             ["Paciente", patient_name or "—", "Tipo", type_label],
-            ["Fecha del resultado", event.date.isoformat(), "Compartido el", share.shared_at.strftime("%Y-%m-%d")],
+            [
+                "Fecha del resultado",
+                event.date.isoformat(),
+                "Compartido el",
+                share.shared_at.strftime("%Y-%m-%d"),
+            ],
         ],
         colWidths=[35 * mm, 55 * mm, 30 * mm, 54 * mm],
     )

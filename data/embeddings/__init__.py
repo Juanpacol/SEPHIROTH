@@ -42,7 +42,9 @@ def get_embedding_provider() -> Optional[CachedEmbeddingProvider]:
 
         inner = OllamaEmbeddingProvider(base_url=settings.ollama_base_url)
     elif settings.gemini_api_key:
-        inner = GeminiEmbeddingProvider(api_key=settings.gemini_api_key, model=settings.gemini_embedding_model)
+        inner = GeminiEmbeddingProvider(
+            api_key=settings.gemini_api_key, model=settings.gemini_embedding_model
+        )
     else:
         inner = None
     return CachedEmbeddingProvider(inner=inner)
