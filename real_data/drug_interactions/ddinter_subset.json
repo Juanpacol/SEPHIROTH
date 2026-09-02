@@ -3,1544 +3,1544 @@
     "drug_a": "allopurinol",
     "drug_b": "warfarin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "amiodarone",
     "drug_b": "apixaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "amiodarone",
     "drug_b": "clarithromycin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "amiodarone",
     "drug_b": "rivaroxaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "amlodipine",
     "drug_b": "apixaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "amlodipine",
     "drug_b": "clarithromycin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "amlodipine",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "amlodipine",
     "drug_b": "prednisone",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "amlodipine",
     "drug_b": "simvastatin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "atenolol",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "atenolol",
     "drug_b": "levothyroxine",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "atenolol",
     "drug_b": "prednisone",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "atorvastatin",
     "drug_b": "clarithromycin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "celecoxib",
     "drug_b": "apixaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "celecoxib",
     "drug_b": "clopidogrel",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "celecoxib",
     "drug_b": "enoxaparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "celecoxib",
     "drug_b": "heparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "celecoxib",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "celecoxib",
     "drug_b": "prednisone",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "celecoxib",
     "drug_b": "rivaroxaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "celecoxib",
     "drug_b": "warfarin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "citalopram",
     "drug_b": "apixaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "citalopram",
     "drug_b": "clarithromycin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "citalopram",
     "drug_b": "clopidogrel",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "citalopram",
     "drug_b": "enoxaparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "citalopram",
     "drug_b": "esomeprazole",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "citalopram",
     "drug_b": "heparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "citalopram",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "citalopram",
     "drug_b": "omeprazole",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "citalopram",
     "drug_b": "rivaroxaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "citalopram",
     "drug_b": "warfarin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clarithromycin",
     "drug_b": "apixaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clarithromycin",
     "drug_b": "rivaroxaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clopidogrel",
     "drug_b": "amiodarone",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clopidogrel",
     "drug_b": "apixaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clopidogrel",
     "drug_b": "atorvastatin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clopidogrel",
     "drug_b": "clarithromycin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clopidogrel",
     "drug_b": "enoxaparin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clopidogrel",
     "drug_b": "escitalopram",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clopidogrel",
     "drug_b": "heparin",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clopidogrel",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clopidogrel",
     "drug_b": "naproxen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clopidogrel",
     "drug_b": "rivaroxaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "clopidogrel",
     "drug_b": "sertraline",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "diclofenac",
     "drug_b": "apixaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "diclofenac",
     "drug_b": "clopidogrel",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "diclofenac",
     "drug_b": "enoxaparin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "diclofenac",
     "drug_b": "heparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "diclofenac",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "diclofenac",
     "drug_b": "prednisone",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "diclofenac",
     "drug_b": "rivaroxaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "diclofenac",
     "drug_b": "warfarin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "digoxin",
     "drug_b": "clarithromycin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "digoxin",
     "drug_b": "esomeprazole",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "digoxin",
     "drug_b": "heparin",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "digoxin",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "digoxin",
     "drug_b": "levothyroxine",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "digoxin",
     "drug_b": "prednisone",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "enalapril",
     "drug_b": "enoxaparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "enalapril",
     "drug_b": "heparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "enalapril",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "enalapril",
     "drug_b": "prednisone",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "enoxaparin",
     "drug_b": "apixaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "enoxaparin",
     "drug_b": "rivaroxaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "escitalopram",
     "drug_b": "apixaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "escitalopram",
     "drug_b": "clarithromycin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "escitalopram",
     "drug_b": "enoxaparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "escitalopram",
     "drug_b": "rivaroxaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "esomeprazole",
     "drug_b": "atorvastatin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "esomeprazole",
     "drug_b": "clarithromycin",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "esomeprazole",
     "drug_b": "clopidogrel",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "esomeprazole",
     "drug_b": "escitalopram",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "esomeprazole",
     "drug_b": "hydrochlorothiazide",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "esomeprazole",
     "drug_b": "naproxen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "fluoxetine",
     "drug_b": "apixaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "fluoxetine",
     "drug_b": "clarithromycin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "fluoxetine",
     "drug_b": "clopidogrel",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "fluoxetine",
     "drug_b": "enoxaparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "fluoxetine",
     "drug_b": "heparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "fluoxetine",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "fluoxetine",
     "drug_b": "rivaroxaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "fluoxetine",
     "drug_b": "warfarin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "furosemide",
     "drug_b": "esomeprazole",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "furosemide",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "heparin",
     "drug_b": "apixaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "heparin",
     "drug_b": "enoxaparin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "heparin",
     "drug_b": "escitalopram",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "heparin",
     "drug_b": "rivaroxaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "hydrochlorothiazide",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "ibuprofen",
     "drug_b": "apixaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "ibuprofen",
     "drug_b": "carvedilol",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "ibuprofen",
     "drug_b": "enoxaparin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "ibuprofen",
     "drug_b": "escitalopram",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "ibuprofen",
     "drug_b": "heparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "ibuprofen",
     "drug_b": "rivaroxaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "ibuprofen",
     "drug_b": "sertraline",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "levothyroxine",
     "drug_b": "amiodarone",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "levothyroxine",
     "drug_b": "carvedilol",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "levothyroxine",
     "drug_b": "esomeprazole",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "levothyroxine",
     "drug_b": "fluoxetine",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "levothyroxine",
     "drug_b": "simvastatin",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "levothyroxine",
     "drug_b": "warfarin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "lisinopril",
     "drug_b": "enoxaparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "lisinopril",
     "drug_b": "heparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "lisinopril",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "losartan",
     "drug_b": "enoxaparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "losartan",
     "drug_b": "heparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "losartan",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "celecoxib",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "clarithromycin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "diclofenac",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "digoxin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "enalapril",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "furosemide",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "hydrochlorothiazide",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "levothyroxine",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "lisinopril",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "naproxen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "prednisone",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "spironolactone",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metformin",
     "drug_b": "warfarin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metoprolol",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metoprolol",
     "drug_b": "levothyroxine",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "metoprolol",
     "drug_b": "prednisone",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "naproxen",
     "drug_b": "apixaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "naproxen",
     "drug_b": "enoxaparin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "naproxen",
     "drug_b": "heparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "naproxen",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "naproxen",
     "drug_b": "rivaroxaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "omeprazole",
     "drug_b": "atorvastatin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "omeprazole",
     "drug_b": "clarithromycin",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "omeprazole",
     "drug_b": "clopidogrel",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "omeprazole",
     "drug_b": "digoxin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "omeprazole",
     "drug_b": "escitalopram",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "omeprazole",
     "drug_b": "furosemide",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "omeprazole",
     "drug_b": "hydrochlorothiazide",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "omeprazole",
     "drug_b": "levothyroxine",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "omeprazole",
     "drug_b": "naproxen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "omeprazole",
     "drug_b": "simvastatin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "omeprazole",
     "drug_b": "warfarin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "pantoprazole",
     "drug_b": "atorvastatin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "pantoprazole",
     "drug_b": "clopidogrel",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "pantoprazole",
     "drug_b": "digoxin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "pantoprazole",
     "drug_b": "furosemide",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "pantoprazole",
     "drug_b": "hydrochlorothiazide",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "pantoprazole",
     "drug_b": "levothyroxine",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "pantoprazole",
     "drug_b": "naproxen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "pantoprazole",
     "drug_b": "simvastatin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "pantoprazole",
     "drug_b": "warfarin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "prednisone",
     "drug_b": "carvedilol",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "prednisone",
     "drug_b": "clarithromycin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "prednisone",
     "drug_b": "furosemide",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "prednisone",
     "drug_b": "hydrochlorothiazide",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "prednisone",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "prednisone",
     "drug_b": "lisinopril",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "prednisone",
     "drug_b": "losartan",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "prednisone",
     "drug_b": "naproxen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "prednisone",
     "drug_b": "warfarin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "rivaroxaban",
     "drug_b": "apixaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "sertraline",
     "drug_b": "apixaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "sertraline",
     "drug_b": "clarithromycin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "sertraline",
     "drug_b": "enoxaparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "sertraline",
     "drug_b": "heparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "sertraline",
     "drug_b": "rivaroxaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "simvastatin",
     "drug_b": "amiodarone",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "simvastatin",
     "drug_b": "atorvastatin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "simvastatin",
     "drug_b": "esomeprazole",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "simvastatin",
     "drug_b": "warfarin",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "spironolactone",
     "drug_b": "apixaban",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "spironolactone",
     "drug_b": "enoxaparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "spironolactone",
     "drug_b": "heparin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "spironolactone",
     "drug_b": "ibuprofen",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "spironolactone",
     "drug_b": "prednisone",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "spironolactone",
     "drug_b": "warfarin",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "tamsulosin",
     "drug_b": "clarithromycin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "tramadol",
     "drug_b": "clarithromycin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "tramadol",
     "drug_b": "clopidogrel",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "tramadol",
     "drug_b": "warfarin",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "amiodarone",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "apixaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "atorvastatin",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "clarithromycin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "clopidogrel",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "enoxaparin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "escitalopram",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "esomeprazole",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "heparin",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "hydrochlorothiazide",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "naproxen",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "rivaroxaban",
     "severity": "major",
-    "effect": "Potentially serious interaction — increased risk of significant adverse effects (per DDInter 2.0 severity classification).",
-    "recommendation": "Avoid this combination when possible; if co-administration is necessary, monitor the patient closely and consider alternative agents.",
+    "effect": "Serious interaction \u2014 taking these together can cause real harm.",
+    "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "sertraline",
     "severity": "moderate",
-    "effect": "Interaction of moderate clinical significance (per DDInter 2.0 severity classification) — may require dose adjustment or additional monitoring.",
-    "recommendation": "Use with caution; monitor for signs of the interaction and adjust therapy as clinically indicated.",
+    "effect": "Moderate interaction \u2014 may need a dose change or extra monitoring.",
+    "recommendation": "Use together with caution \u2014 watch for signs of the interaction and adjust treatment as needed.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   },
   {
     "drug_a": "warfarin",
     "drug_b": "tamsulosin",
     "severity": "minor",
-    "effect": "Interaction of limited clinical significance in most patients (per DDInter 2.0 severity classification).",
-    "recommendation": "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur.",
+    "effect": "Minor interaction \u2014 usually not a problem for most patients.",
+    "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     "source": "DDInter 2.0 (https://ddinter2.scbdd.com)"
   }
 ]

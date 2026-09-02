@@ -41,7 +41,9 @@ const pendingAction = {
   id: "PA1",
   workflow_step_id: null,
   patient_id: "P001",
+  patient_name: "Jane Doe",
   action_type: "followup_day3",
+  instructions: null,
   status: "pending" as const,
   draft_text: "Hi, checking in on you.",
   draft_source: "llm" as const,
@@ -69,15 +71,18 @@ describe("ApprovalsPage", () => {
   it("shows the empty state when there is nothing pending", async () => {
     vi.mocked(api.listPendingActions).mockResolvedValue([]);
     renderPage();
-    await waitFor(() => expect(screen.getByText("Nothing here.")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Nothing is waiting for your approval right now.")).toBeInTheDocument()
+    );
   });
 
-  it("lists a pending action and approves it", async () => {
+  it("lists a pending action (by patient name) and approves it", async () => {
     vi.mocked(api.listPendingActions).mockResolvedValue([pendingAction]);
     vi.mocked(api.approvePendingAction).mockResolvedValue({ ...pendingAction, status: "approved" });
     renderPage();
 
-    await waitFor(() => expect(screen.getAllByText(/followup day3/i).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getAllByText("Jane Doe").length).toBeGreaterThan(0));
+    expect(screen.getAllByText(/day 3 follow-up/i).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByText("Approve"));
 
     await waitFor(() =>

@@ -13,15 +13,25 @@ import { Play, Pause } from "lucide-react";
 import AgentBadge from "@/components/agent-badge";
 import {
   WALKTHROUGH_STAGES,
-  SAMPLE_QUESTION,
+  SAMPLE_QUESTION_KEY,
   SAMPLE_SPECIALISTS,
-  SAMPLE_DRAFT,
-  SAMPLE_GUARDED,
+  SAMPLE_DRAFT_KEY,
+  SAMPLE_GUARDED_KEY,
   SAMPLE_CLAIMS,
   CLAIM_LEGEND,
 } from "@/lib/landing-content";
+import { useLanguage } from "@/lib/language";
+
+const ROUTING_TAG_KEYS = [
+  "marketing.agentName.evidence",
+  "marketing.agentName.laboratory",
+  "marketing.agentName.radiology",
+  "marketing.agentName.drugSafety",
+] as const;
+const ROUTED_TAG_KEYS = new Set(["marketing.agentName.evidence", "marketing.agentName.laboratory"]);
 
 export default function ConsultationWalkthrough() {
+  const { t } = useLanguage();
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -47,7 +57,7 @@ export default function ConsultationWalkthrough() {
       <div className="mb-4 flex items-center justify-between gap-3">
         <div
           role="tablist"
-          aria-label="Consultation stages"
+          aria-label={t("marketing.walkthrough.stagesLabel")}
           className="flex flex-wrap items-center gap-1.5"
         >
           {WALKTHROUGH_STAGES.map((s, i) => (
@@ -60,17 +70,17 @@ export default function ConsultationWalkthrough() {
                 i === index ? "bg-primary text-white" : "bg-primary-soft text-primary hover:brightness-95"
               }`}
             >
-              {s.label}
+              {t(s.labelKey)}
             </button>
           ))}
         </div>
         <button
           onClick={() => setPlaying((p) => !p)}
-          aria-label={playing ? "Pause" : "Run it"}
+          aria-label={playing ? t("marketing.walkthrough.pause") : t("marketing.walkthrough.runIt")}
           className="btn-secondary py-1.5 text-xs"
         >
           {playing ? <Pause size={13} /> : <Play size={13} />}
-          {playing ? "Pause" : "Run it"}
+          {playing ? t("marketing.walkthrough.pause") : t("marketing.walkthrough.runIt")}
         </button>
       </div>
 
@@ -82,23 +92,20 @@ export default function ConsultationWalkthrough() {
       >
         {stage.render === "routing" && (
           <div>
-            <p className="mb-4 text-sm text-muted">A clinician asks:</p>
-            <p className="card border border-line/70 text-sm font-medium">{SAMPLE_QUESTION}</p>
-            <p className="mt-4 text-sm text-muted">
-              The router tags this question and selects the specialists it needs — not every
-              consultation runs all four.
-            </p>
+            <p className="mb-4 text-sm text-muted">{t("marketing.walkthrough.clinicianAsks")}</p>
+            <p className="card border border-line/70 text-sm font-medium">{t(SAMPLE_QUESTION_KEY)}</p>
+            <p className="mt-4 text-sm text-muted">{t("marketing.walkthrough.routerExplainer")}</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {["Evidence", "Laboratory", "Radiology", "Drug Safety"].map((name) => (
+              {ROUTING_TAG_KEYS.map((nameKey) => (
                 <span
-                  key={name}
+                  key={nameKey}
                   className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                    ["Evidence", "Laboratory"].includes(name)
+                    ROUTED_TAG_KEYS.has(nameKey)
                       ? "bg-primary text-white"
                       : "bg-surface text-muted line-through"
                   }`}
                 >
-                  {name}
+                  {t(nameKey)}
                 </span>
               ))}
             </div>
@@ -107,13 +114,13 @@ export default function ConsultationWalkthrough() {
 
         {stage.render === "specialists" && (
           <div className="space-y-3">
-            <p className="mb-2 text-sm text-muted">Each selected specialist runs independently:</p>
+            <p className="mb-2 text-sm text-muted">{t("marketing.walkthrough.specialistsRunIndependently")}</p>
             {SAMPLE_SPECIALISTS.map((s) => (
-              <div key={s.name} className="card border border-line/70">
+              <div key={s.nameKey} className="card border border-line/70">
                 <div className="mb-1 flex items-center gap-2">
-                  <AgentBadge name={s.name} />
+                  <AgentBadge name={t(s.nameKey)} />
                 </div>
-                <p className="text-sm">{s.finding}</p>
+                <p className="text-sm">{t(s.findingKey)}</p>
               </div>
             ))}
           </div>
@@ -121,55 +128,50 @@ export default function ConsultationWalkthrough() {
 
         {stage.render === "synthesize" && (
           <div>
-            <p className="mb-2 text-sm text-muted">The Coordinator merges the specialists' findings:</p>
+            <p className="mb-2 text-sm text-muted">{t("marketing.walkthrough.coordinatorMerges")}</p>
             <div className="card border border-primary/30 ai-ring">
               <div className="mb-2">
-                <AgentBadge name="Coordinator (draft)" />
+                <AgentBadge name={t("marketing.walkthrough.coordinatorDraft")} />
               </div>
-              <p className="text-sm">{SAMPLE_DRAFT}</p>
+              <p className="text-sm">{t(SAMPLE_DRAFT_KEY)}</p>
             </div>
           </div>
         )}
 
         {stage.render === "guard" && (
           <div>
-            <p className="mb-2 text-sm text-muted">
-              Citation Guard checks every bracketed citation against what the tools actually
-              returned:
-            </p>
+            <p className="mb-2 text-sm text-muted">{t("marketing.walkthrough.guardExplainer")}</p>
             <div className="card border border-line/70">
               <p className="text-sm">
-                Target A1C is &lt;7% [ADA Standards of Care, 2024]{" "}
+                {t("marketing.walkthrough.guardTextPre")}{" "}
                 <span className="text-danger line-through opacity-60">
-                  [UpToDate Diabetes Review, 2023]
+                  {t("marketing.walkthrough.guardStrikethrough")}
                 </span>{" "}
-                → <span className="font-semibold text-danger">[unverified — removed]</span>. Current
-                value (8.1%) is above goal.
+                → <span className="font-semibold text-danger">{t("marketing.walkthrough.unverifiedRemoved")}</span>
+                {t("marketing.walkthrough.guardTextPost")}
               </p>
             </div>
             <p className="mt-2 text-xs text-muted">
-              Result: <span className="font-mono">{SAMPLE_GUARDED}</span>
+              {t("marketing.walkthrough.guardResultLabel")} <span className="font-mono">{t(SAMPLE_GUARDED_KEY)}</span>
             </p>
           </div>
         )}
 
         {stage.render === "verify" && (
           <div>
-            <p className="mb-2 text-sm text-muted">
-              Every remaining claim is classified into one of 5 states before the answer ships:
-            </p>
+            <p className="mb-2 text-sm text-muted">{t("marketing.walkthrough.verifyExplainer")}</p>
             <div className="mb-3 flex flex-wrap gap-3 text-xs">
               {CLAIM_LEGEND.map((l) => (
                 <span key={l.state} className={`font-semibold ${l.color}`}>
-                  ● {l.label}
+                  ● {t(l.labelKey)}
                 </span>
               ))}
             </div>
             <div className="space-y-2">
               {SAMPLE_CLAIMS.map((c) => (
-                <div key={c.text} className="card border border-line/70 py-2.5">
-                  <p className="text-sm">{c.text}</p>
-                  <p className="mt-1 text-xs text-muted">{c.action}</p>
+                <div key={c.textKey} className="card border border-line/70 py-2.5">
+                  <p className="text-sm">{t(c.textKey)}</p>
+                  <p className="mt-1 text-xs text-muted">{t(c.actionKey)}</p>
                 </div>
               ))}
             </div>

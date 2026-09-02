@@ -52,12 +52,19 @@ def _assert_real_reviewer(clinician: User) -> None:
         raise HTTPException(status_code=403, detail="Only a real clinician account may review this action")
 
 
-def _action_out(action: PendingAction) -> Dict[str, Any]:
+def _action_out(action: PendingAction, patient_name: Optional[str] = None) -> Dict[str, Any]:
+    # `proposed_payload["instructions"]` is the clinician's own note from
+    # when they started the follow-up plan (`instructions` on `FollowupPlan`,
+    # see `patient_followup.py::enroll_plan`) -- the one piece of context
+    # that says *why* this specific check-in exists, not just that it does.
+    payload = action.proposed_payload or {}
     return {
         "id": action.id,
         "workflow_step_id": action.workflow_step_id,
         "patient_id": action.patient_id,
+        "patient_name": patient_name,
         "action_type": action.action_type,
+        "instructions": payload.get("instructions") or None,
         "status": action.status,
         "draft_text": action.draft_text,
         "draft_source": action.draft_source,
@@ -71,6 +78,15 @@ def _action_out(action: PendingAction) -> Dict[str, Any]:
         "reject_reason": action.reject_reason,
         "created_at": action.created_at.isoformat(),
     }
+
+
+async def _patient_names(session: AsyncSession, patient_ids: List[str]) -> Dict[str, str]:
+    if not patient_ids:
+        return {}
+    rows = (
+        await session.execute(select(Patient.id, Patient.name).where(Patient.id.in_(set(patient_ids))))
+    ).all()
+    return dict(rows)  # type: ignore[arg-type]
 
 
 async def _expire_if_due(session: AsyncSession, action: PendingAction, now: datetime) -> None:
@@ -114,7 +130,8 @@ async def list_pending_actions(
     if status_filter is not None:
         stmt = stmt.where(PendingAction.status == status_filter)
     actions = (await session.scalars(stmt)).all()
-    return [_action_out(a) for a in actions]
+    names = await _patient_names(session, [a.patient_id for a in actions])
+    return [_action_out(a, names.get(a.patient_id)) for a in actions]
 
 
 @router.get("/count")
@@ -170,10 +187,11 @@ async def draft_pending_action(
         raise HTTPException(status_code=409, detail="This action does not use an LLM-generated draft")
     if action.status != "pending":
         raise HTTPException(status_code=409, detail=f"Action is already {action.status}")
-    if action.draft_text:
-        return _action_out(action)
-
     patient = await session.get(Patient, action.patient_id)
+    patient_name = patient.name if patient else None
+    if action.draft_text:
+        return _action_out(action, patient_name)
+
     first_name = patient.name.split(" ")[0] if patient and patient.name else "there"
     facts = {k: v for k, v in action.proposed_payload.items() if k != "followup_plan_id"}
 
@@ -201,7 +219,7 @@ async def draft_pending_action(
     action.draft_text = draft
     action.draft_model = settings.gemini_model
     await session.commit()
-    return _action_out(action)
+    return _action_out(action, patient_name)
 
 
 @router.post("/{action_id}/approve")

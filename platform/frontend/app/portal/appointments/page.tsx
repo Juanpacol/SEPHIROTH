@@ -4,10 +4,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import StatusPill from "@/components/status-pill";
+import { useLanguage } from "@/lib/language";
 
 export default function PortalAppointmentsPage() {
   const queryClient = useQueryClient();
   const showToast = useToast();
+  const { t } = useLanguage();
   const { data: appointments, isLoading } = useQuery({
     queryKey: ["portal", "appointments"],
     queryFn: () => api.listAppointments(),
@@ -17,9 +19,9 @@ export default function PortalAppointmentsPage() {
     try {
       await api.cancelAppointment(id, "Cancelled by patient");
       await queryClient.invalidateQueries({ queryKey: ["portal", "appointments"] });
-      showToast("Appointment cancelled.");
+      showToast(t("portal.appointments.cancelled"));
     } catch (err) {
-      showToast(err instanceof ApiError ? err.message : "Could not cancel this appointment.", "error");
+      showToast(err instanceof ApiError ? err.message : t("portal.appointments.error.cancel"), "error");
     }
   };
 
@@ -27,19 +29,19 @@ export default function PortalAppointmentsPage() {
     try {
       await api.confirmAppointment(id);
       await queryClient.invalidateQueries({ queryKey: ["portal", "appointments"] });
-      showToast("Appointment confirmed.");
+      showToast(t("portal.appointments.confirmed"));
     } catch (err) {
-      showToast(err instanceof ApiError ? err.message : "Could not confirm this appointment.", "error");
+      showToast(err instanceof ApiError ? err.message : t("portal.appointments.error.confirm"), "error");
     }
   };
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-bold">Appointments</h1>
+      <h1 className="text-lg font-bold">{t("portal.appointments.title")}</h1>
 
-      {isLoading && <p className="text-sm text-muted">Loading…</p>}
+      {isLoading && <p className="text-sm text-muted">{t("portal.appointments.loading")}</p>}
       {!isLoading && (appointments ?? []).length === 0 && (
-        <p className="text-sm text-muted">You have no appointments yet.</p>
+        <p className="text-sm text-muted">{t("portal.appointments.empty")}</p>
       )}
 
       <div className="space-y-3">
@@ -59,7 +61,7 @@ export default function PortalAppointmentsPage() {
                   })}
                 </div>
                 <div className="text-xs text-muted">
-                  {a.mode === "telehealth" ? "Telehealth" : "In person"}
+                  {a.mode === "telehealth" ? t("portal.appointments.telehealth") : t("portal.appointments.inPerson")}
                   {a.reason ? ` · ${a.reason}` : ""}
                 </div>
               </div>
@@ -70,7 +72,7 @@ export default function PortalAppointmentsPage() {
                     onClick={() => confirm(a.id)}
                     className="text-xs font-semibold text-primary hover:underline"
                   >
-                    Confirm
+                    {t("portal.appointments.confirm")}
                   </button>
                 )}
                 {a.status === "booked" && (
@@ -78,7 +80,7 @@ export default function PortalAppointmentsPage() {
                     onClick={() => cancel(a.id)}
                     className="text-xs font-semibold text-danger hover:underline"
                   >
-                    Cancel
+                    {t("portal.appointments.cancel")}
                   </button>
                 )}
               </div>

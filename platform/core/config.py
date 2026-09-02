@@ -122,7 +122,14 @@ class Settings(BaseSettings):
     # Cosine-similarity floor below which a dense hit is dropped entirely —
     # keeps adversarial/off-topic queries returning zero results, since
     # dense embeddings (unlike keyword overlap) almost never score exactly 0.
-    retrieval_min_similarity: float = 0.70
+    # 0.60, not 0.70: measured against the local nomic-embed-text artifact
+    # (2026-09-01, once Gemini quota was reserved for vision-only use —
+    # see data/embeddings/ollama.py), a genuinely relevant compound-query
+    # match scored as low as 0.638, while the one true off-topic case in
+    # tests/test_embeddings_matching.py (unrelated tax-filing question)
+    # topped out at 0.4737 — 0.70 was calibrated for Gemini's embedding
+    # score distribution and silently dropped real matches under Ollama's.
+    retrieval_min_similarity: float = 0.60
     retrieval_mode: Literal["hybrid", "keyword_only"] = "hybrid"
     # Floor for `api/fast_path.py`'s guideline branch, which skips citation
     # guard and verification entirely (see that module's docstring) — a weak

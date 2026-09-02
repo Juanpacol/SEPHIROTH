@@ -110,3 +110,83 @@ def render_consultation_pdf(consultation: Any, explanation: Dict[str, Any]) -> b
 
     doc.build(story)
     return buffer.getvalue()
+
+
+def render_result_share_pdf(share: Any, patient_name: str) -> bytes:
+    """Render a `ResultShare` (a lab/imaging result a clinician shared with
+    a patient) to PDF bytes, for the patient portal's download button.
+    Patient-facing, so — unlike `render_consultation_pdf` above, which is a
+    clinician tool — this one is written in Spanish, matching the portal
+    UI it's downloaded from."""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=18 * mm,
+        rightMargin=18 * mm,
+        topMargin=16 * mm,
+        bottomMargin=16 * mm,
+        title="Resultado médico — SEPHIROTH",
+    )
+
+    styles = getSampleStyleSheet()
+    h1 = ParagraphStyle("h1", parent=styles["Heading1"], textColor=INK, fontSize=16)
+    h2 = ParagraphStyle("h2", parent=styles["Heading2"], textColor=PRIMARY, fontSize=11.5)
+    body = ParagraphStyle("body", parent=styles["BodyText"], textColor=INK, fontSize=9.5, leading=13)
+    small = ParagraphStyle("small", parent=body, textColor=MUTED, fontSize=8)
+
+    event = share.event
+    story = [Paragraph("SEPHIROTH — Resultado médico", h1)]
+
+    type_label = "Imagen" if event.type == "imaging" else "Laboratorio"
+    meta = Table(
+        [
+            ["Paciente", patient_name or "—", "Tipo", type_label],
+            ["Fecha del resultado", event.date.isoformat(), "Compartido el", share.shared_at.strftime("%Y-%m-%d")],
+        ],
+        colWidths=[35 * mm, 55 * mm, 30 * mm, 54 * mm],
+    )
+    meta.setStyle(
+        TableStyle(
+            [
+                ("FONTSIZE", (0, 0), (-1, -1), 8.5),
+                ("TEXTCOLOR", (0, 0), (0, -1), MUTED),
+                ("TEXTCOLOR", (2, 0), (2, -1), MUTED),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("LINEBELOW", (0, -1), (-1, -1), 0.5, colors.HexColor("#D8D8D8")),
+            ]
+        )
+    )
+    story += [meta, Spacer(1, 6 * mm)]
+
+    story += [Paragraph(event.title, h2)]
+
+    if share.message:
+        story += [
+            Paragraph("Mensaje de tu médico", h2),
+            _para(share.message, body),
+            Spacer(1, 3 * mm),
+        ]
+
+    story += [Paragraph("Detalle", h2), _para(event.detail, body), Spacer(1, 3 * mm)]
+
+    if event.ai_generated:
+        story.append(
+            _para(
+                "Este resumen fue redactado por un agente de IA y revisado por tu médico "
+                "antes de compartirlo contigo.",
+                small,
+            )
+        )
+        story.append(Spacer(1, 3 * mm))
+
+    story.append(
+        _para(
+            "Apoyo a la decisión clínica únicamente — no es un diagnóstico. Consulta siempre "
+            "a tu médico antes de actuar sobre esta información.",
+            small,
+        )
+    )
+
+    doc.build(story)
+    return buffer.getvalue()

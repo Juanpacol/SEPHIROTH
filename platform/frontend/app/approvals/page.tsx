@@ -11,6 +11,20 @@ import StatusPill from "@/components/status-pill";
 
 const STATUS_FILTERS = ["pending", "approved", "rejected", "expired"] as const;
 
+// The only source of a PendingAction today is a day-3/7/30 follow-up
+// check-in (`patient_followup.py::enroll_plan`) — this pulls the day
+// number back out of "followup_day7" so it can be shown as a real
+// sentence instead of the raw snake_case type. Falls back to a generic
+// humanized form for anything else (keeps this from silently breaking
+// if a new action type is added later).
+const FOLLOWUP_CHECK_RE = /^followup_day(\d+)$/;
+
+function actionTypeLabel(actionType: string, t: (key: string) => string): string {
+  const match = actionType.match(FOLLOWUP_CHECK_RE);
+  if (match) return t("approvals.type.followupCheck").replace("{day}", match[1]);
+  return actionType.replace(/_/g, " ");
+}
+
 function ActionDetail({ action, onDone }: { action: PendingAction; onDone: () => void }) {
   const { t } = useLanguage();
   const showToast = useToast();
@@ -22,6 +36,7 @@ function ActionDetail({ action, onDone }: { action: PendingAction; onDone: () =>
   // AI-generated prose, and edited text is clinician-authored (CLAUDE.md
   // decision #4) -- leaving the marker on would misattribute it.
   const edited = text !== action.draft_text;
+  const who = action.patient_name ?? t("approvals.unknownPatient");
 
   const draft = useMutation({
     mutationFn: () => api.draftPendingAction(action.id),
@@ -61,8 +76,8 @@ function ActionDetail({ action, onDone }: { action: PendingAction; onDone: () =>
     <div className="card space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-bold">{action.action_type.replace(/_/g, " ")}</h2>
-          <p className="text-xs text-muted">Patient {action.patient_id}</p>
+          <h2 className="font-bold">{who}</h2>
+          <p className="text-xs text-muted">{actionTypeLabel(action.action_type, t)}</p>
         </div>
         <div className="flex items-center gap-2">
           {!edited && action.draft_source === "llm" && <AgentBadge name={action.draft_model ?? "AI draft"} />}
@@ -70,12 +85,22 @@ function ActionDetail({ action, onDone }: { action: PendingAction; onDone: () =>
         </div>
       </div>
 
+      {isPending && (
+        <p className="rounded-xl bg-primary-soft px-3 py-2 text-xs text-ink/80">
+          {t("approvals.whatIsThis")
+            .replace("{patient}", who)
+            .replace("{type}", actionTypeLabel(action.action_type, t).toLowerCase())}
+          {action.instructions && (
+            <>
+              {" "}
+              {t("approvals.watchingFor").replace("{instructions}", action.instructions)}
+            </>
+          )}
+        </p>
+      )}
+
       {isPending && action.draft_source === "llm" && !action.draft_text && (
-        <button
-          onClick={() => draft.mutate()}
-          disabled={draft.isPending}
-          className="btn-primary"
-        >
+        <button onClick={() => draft.mutate()} disabled={draft.isPending} className="btn-primary">
           {draft.isPending ? t("approvals.drafting") : t("approvals.generateDraft")}
         </button>
       )}
@@ -171,11 +196,11 @@ export default function ApprovalsPage() {
               setStatus(f);
               setSelectedId(null);
             }}
-            className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
               status === f ? "bg-primary text-white" : "bg-primary-soft text-primary"
             }`}
           >
-            {f}
+            {t(`approvals.status.${f}`)}
           </button>
         ))}
       </div>
@@ -183,7 +208,9 @@ export default function ApprovalsPage() {
       <div className="grid gap-4 md:grid-cols-[280px_1fr]">
         <div className="space-y-2">
           {isLoading && <p className="text-sm text-muted">{t("approvals.loading")}</p>}
-          {actions?.length === 0 && <p className="card text-sm text-muted">{t("approvals.empty")}</p>}
+          {actions?.length === 0 && (
+            <p className="card text-sm text-muted">{t(`approvals.empty.${status}`)}</p>
+          )}
           {actions?.map((a) => (
             <button
               key={a.id}
@@ -192,8 +219,8 @@ export default function ApprovalsPage() {
                 selected?.id === a.id ? "ring-2 ring-primary" : ""
               }`}
             >
-              <p className="text-sm font-semibold capitalize">{a.action_type.replace(/_/g, " ")}</p>
-              <p className="text-xs text-muted">Patient {a.patient_id}</p>
+              <p className="text-sm font-semibold">{a.patient_name ?? t("approvals.unknownPatient")}</p>
+              <p className="text-xs text-muted">{actionTypeLabel(a.action_type, t)}</p>
             </button>
           ))}
         </div>

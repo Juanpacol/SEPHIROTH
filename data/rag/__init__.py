@@ -30,6 +30,15 @@ RRF_K = 60
 # `_fuse()`.
 KEYWORD_WEIGHT = 1.0
 DENSE_WEIGHT = 2.0
+# `_fuse` used to truncate straight to `top_k`, leaving `mmr_rerank` in
+# `_finalize` nothing to actually diversify against — with an already-top_k
+# list, MMR can only reorder, never pull in a relevant doc RRF ranked 6th.
+# Widening the fused candidate pool before that final cut lets MMR trade off
+# relevance vs. redundancy over real alternatives. See
+# tests/test_embeddings_matching.py::test_compound_query_surfaces_all_relevant_documents,
+# a 3-topic query where the 2nd and 3rd relevant docs were ranked outside a
+# bare top-5 RRF cut.
+MMR_CANDIDATE_POOL_MULTIPLIER = 3
 
 STOPWORDS = {
     "the",
@@ -707,6 +716,241 @@ SEED_GUIDELINES: List[Document] = [
             "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html",
         },
     ),
+    # --- Coverage top-up: bring every category to >= 3 sources -----------
+    # (2026-09-01 audit) 8 categories had only 1-2 documents. These add
+    # real, distinct-topic guidelines within each so no category degrades
+    # to a single source. See CLAUDE.md's evidence-library note.
+    Document(
+        id="aha-2020-cpr",
+        content=(
+            "For adult cardiac arrest, high-quality CPR with chest "
+            "compressions at a rate of 100-120/min and a depth of at least "
+            "2 inches (5 cm) is prioritized, with early defibrillation for "
+            "shockable rhythms. Epinephrine 1 mg IV/IO every 3-5 minutes is "
+            "recommended for non-shockable rhythms."
+        ),
+        source="American Heart Association Guidelines for CPR and ECC",
+        metadata={
+            "category": "critical_care",
+            "organization": "American Heart Association",
+            "year": 2020,
+            "title": "Adult Basic and Advanced Cardiac Life Support",
+            "url": "https://cpr.heart.org/en/resuscitation-science/cpr-and-ecc-guidelines",
+        },
+    ),
+    Document(
+        id="cdc-2023-dka",
+        content=(
+            "Diabetic ketoacidosis presents with hyperglycemia, ketosis, and "
+            "metabolic acidosis, and requires urgent treatment with IV "
+            "fluids, insulin, and potassium replacement. Untreated DKA can "
+            "progress to coma or death within hours."
+        ),
+        source="CDC",
+        metadata={
+            "category": "critical_care",
+            "organization": "Centers for Disease Control and Prevention",
+            "year": 2023,
+            "title": "Diabetic Ketoacidosis",
+            "url": "https://www.cdc.gov/diabetes/diabetes-complications/diabetic-ketoacidosis.html",
+        },
+    ),
+    Document(
+        id="acr-2021-rheumatoid-arthritis",
+        content=(
+            "Methotrexate is the preferred first-line disease-modifying "
+            "antirheumatic drug (DMARD) for rheumatoid arthritis. A "
+            "treat-to-target strategy aiming for low disease activity or "
+            "remission, with DMARD escalation if targets are not met within "
+            "3 months, is recommended."
+        ),
+        source="ACR Guideline for the Treatment of Rheumatoid Arthritis",
+        metadata={
+            "category": "rheumatology",
+            "organization": "ACR",
+            "year": 2021,
+            "title": "Treatment of Rheumatoid Arthritis",
+            "url": "https://rheumatology.org/practice-guidelines",
+        },
+    ),
+    Document(
+        id="oarsi-2019-osteoarthritis",
+        content=(
+            "Exercise and weight management are core first-line treatments "
+            "for osteoarthritis. Topical NSAIDs are preferred over oral "
+            "NSAIDs for knee osteoarthritis when feasible, and an "
+            "intra-articular corticosteroid injection may be considered for "
+            "short-term flare relief."
+        ),
+        source="OARSI Guidelines for the Management of Osteoarthritis",
+        metadata={
+            "category": "rheumatology",
+            "organization": "OARSI",
+            "year": 2019,
+            "title": "Management of Knee, Hip, and Polyarticular Osteoarthritis",
+            "url": "https://oarsi.org/education/oarsi-guidelines",
+        },
+    ),
+    Document(
+        id="cdc-gestational-diabetes",
+        content=(
+            "Gestational diabetes is typically screened for between 24 and "
+            "28 weeks of pregnancy with a glucose challenge test. Management "
+            "includes blood glucose monitoring, medical nutrition therapy, "
+            "and insulin if glucose targets are not met with lifestyle "
+            "changes alone."
+        ),
+        source="CDC",
+        metadata={
+            "category": "obstetrics",
+            "organization": "Centers for Disease Control and Prevention",
+            "year": 2023,
+            "title": "Gestational Diabetes",
+            "url": "https://www.cdc.gov/diabetes/gestational-diabetes/index.html",
+        },
+    ),
+    Document(
+        id="acog-nausea-vomiting-pregnancy",
+        content=(
+            "Nausea and vomiting of pregnancy is treated first-line with "
+            "vitamin B6 (pyridoxine), with or without doxylamine. Severe or "
+            "persistent vomiting with weight loss or dehydration "
+            "(hyperemesis gravidarum) requires evaluation and may need IV "
+            "fluids or antiemetic medication."
+        ),
+        source="ACOG Patient FAQ on Nausea and Vomiting of Pregnancy",
+        metadata={
+            "category": "obstetrics",
+            "organization": "ACOG",
+            "year": 2023,
+            "title": "Morning Sickness: Nausea and Vomiting of Pregnancy",
+            "url": "https://www.acog.org/womens-health/faqs/morning-sickness-nausea-and-vomiting-of-pregnancy",
+        },
+    ),
+    Document(
+        id="aaaai-anaphylaxis",
+        content=(
+            "Intramuscular epinephrine in the anterolateral thigh is the "
+            "first-line treatment for anaphylaxis and should not be delayed. "
+            "Antihistamines and corticosteroids are adjunctive only and do "
+            "not replace epinephrine as the immediate emergency treatment."
+        ),
+        source="AAAAI Anaphylaxis Practice Parameter Update",
+        metadata={
+            "category": "allergy",
+            "organization": "American Academy of Allergy, Asthma & Immunology",
+            "year": 2020,
+            "title": "Anaphylaxis",
+            "url": "https://www.aaaai.org/conditions-treatments/library/allergy-library/anaphylaxis",
+        },
+    ),
+    Document(
+        id="niaid-food-allergy",
+        content=(
+            "Strict avoidance of the identified food allergen remains the "
+            "primary management strategy for food allergy, since no cure "
+            "exists. Patients at risk of severe reaction should carry an "
+            "epinephrine auto-injector and have a written emergency action "
+            "plan."
+        ),
+        source="NIAID Guidelines for the Diagnosis and Management of Food Allergy",
+        metadata={
+            "category": "allergy",
+            "organization": "National Institute of Allergy and Infectious Diseases",
+            "year": 2020,
+            "title": "Food Allergy",
+            "url": "https://www.niaid.nih.gov/diseases-conditions/food-allergy",
+        },
+    ),
+    Document(
+        id="nei-dry-eye",
+        content=(
+            "Dry eye disease is managed first-line with artificial tears and "
+            "environmental modification (reducing screen time, using "
+            "humidifiers). Prescription anti-inflammatory drops or punctal "
+            "plugs are considered for moderate to severe cases unresponsive "
+            "to lubrication alone."
+        ),
+        source="National Eye Institute Patient Guide: Dry Eye",
+        metadata={
+            "category": "ophthalmology",
+            "organization": "National Eye Institute",
+            "year": 2022,
+            "title": "Dry Eye",
+            "url": "https://www.nei.nih.gov/learn-about-eye-health/eye-conditions-and-diseases/dry-eye",
+        },
+    ),
+    Document(
+        id="nei-diabetic-retinopathy",
+        content=(
+            "Annual dilated eye exams are recommended for all patients with "
+            "diabetes to screen for diabetic retinopathy, since early stages "
+            "are often asymptomatic. Anti-VEGF injections are first-line "
+            "treatment for diabetic macular edema and proliferative "
+            "disease."
+        ),
+        source="National Eye Institute Patient Guide: Diabetic Retinopathy",
+        metadata={
+            "category": "ophthalmology",
+            "organization": "National Eye Institute",
+            "year": 2022,
+            "title": "Diabetic Retinopathy",
+            "url": "https://www.nei.nih.gov/learn-about-eye-health/eye-conditions-and-diseases/diabetic-retinopathy",
+        },
+    ),
+    Document(
+        id="uspstf-2018-cervical",
+        content=(
+            "The USPSTF recommends cervical cancer screening every 3 years "
+            "with cytology alone for women aged 21-29, and for women aged "
+            "30-65, every 5 years with high-risk HPV testing (alone or with "
+            "cytology) or every 3 years with cytology alone."
+        ),
+        source="USPSTF Cervical Cancer Screening Recommendation",
+        metadata={
+            "category": "screening",
+            "organization": "USPSTF",
+            "year": 2018,
+            "title": "Screening for Cervical Cancer",
+            "url": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/cervical-cancer-screening",
+        },
+    ),
+    Document(
+        id="aap-2014-bronchiolitis",
+        content=(
+            "Bronchiolitis in infants is primarily a clinical diagnosis and "
+            "is managed supportively with fluids and nasal suctioning; "
+            "bronchodilators, corticosteroids, and antibiotics are not "
+            "routinely recommended. Chest X-rays and viral testing are not "
+            "needed for typical, uncomplicated cases."
+        ),
+        source="AAP Clinical Practice Guideline on Bronchiolitis",
+        metadata={
+            "category": "pediatrics",
+            "organization": "American Academy of Pediatrics",
+            "year": 2014,
+            "title": "Bronchiolitis",
+            "url": "https://www.healthychildren.org/English/health-issues/conditions/chest-lungs/Pages/Bronchiolitis.aspx",
+        },
+    ),
+    Document(
+        id="aad-2016-acne",
+        content=(
+            "Topical retinoids are first-line therapy for most acne, often "
+            "combined with benzoyl peroxide to reduce antibiotic resistance. "
+            "Oral antibiotics are reserved for moderate to severe "
+            "inflammatory acne and should be limited to short courses "
+            "combined with topical therapy."
+        ),
+        source="AAD Guidelines of Care for the Management of Acne Vulgaris",
+        metadata={
+            "category": "dermatology",
+            "organization": "American Academy of Dermatology",
+            "year": 2016,
+            "title": "Acne Vulgaris",
+            "url": "https://www.aad.org/public/diseases/acne",
+        },
+    ),
 ] + PRIMARY_CARE_GUIDELINES
 
 
@@ -730,7 +974,7 @@ class RAGPipeline:
         seed: bool = True,
         embedding_provider: Optional[EmbeddingProvider] = None,
         vector_store: Optional[VectorStore] = None,
-        min_similarity: float = 0.70,
+        min_similarity: float = 0.60,
     ):
         self.documents: List[Document] = list(SEED_GUIDELINES) if seed else []
         self._embedding_provider = embedding_provider
@@ -805,7 +1049,7 @@ class RAGPipeline:
         ]
 
     def _fuse(
-        self, keyword_hits: List[Dict[str, Any]], dense_hits: List[Any], top_k: int
+        self, keyword_hits: List[Dict[str, Any]], dense_hits: List[Any], candidate_pool_size: int
     ) -> List[Dict[str, Any]]:
         """Reciprocal Rank Fusion, weighted toward the dense signal.
 
@@ -820,6 +1064,10 @@ class RAGPipeline:
         near-exact RRF tie, outrank a real embedding-model win. Dense gets
         2x weight so it can only be overridden by a *clear* keyword
         signal, not by noise or a coin-flip tie.
+
+        Returns `candidate_pool_size` results, not the caller's final
+        `top_k` — see `MMR_CANDIDATE_POOL_MULTIPLIER`; the caller's
+        `_finalize`/`mmr_rerank` does the actual top_k cut.
         """
         by_id = {doc.id: doc for doc in self.documents}
         rrf_scores: Dict[str, float] = {}
@@ -830,7 +1078,7 @@ class RAGPipeline:
 
         ordered_ids = sorted(rrf_scores.keys(), key=lambda doc_id: rrf_scores[doc_id], reverse=True)
         results = []
-        for doc_id in ordered_ids[:top_k]:
+        for doc_id in ordered_ids[:candidate_pool_size]:
             doc = by_id.get(doc_id)
             if doc is None:
                 continue
@@ -866,8 +1114,12 @@ class RAGPipeline:
         except EmbeddingUnavailable:
             return self._finalize(keyword_hits, top_k)  # full fallback — never raises to the caller
 
-        dense_hits = self._vector_store.search(query_vector, top_k=top_k * 2, min_score=self._min_similarity)
-        return self._finalize(self._fuse(keyword_hits, dense_hits, top_k), top_k)
+        candidate_pool_size = top_k * MMR_CANDIDATE_POOL_MULTIPLIER
+        dense_hits = self._vector_store.search(
+            query_vector, top_k=candidate_pool_size, min_score=self._min_similarity
+        )
+        fused = self._fuse(keyword_hits, dense_hits, candidate_pool_size)
+        return self._finalize(fused, top_k)
 
     def _finalize(self, hits: List[Dict[str, Any]], top_k: int) -> List[Dict[str, Any]]:
         from core.config import settings

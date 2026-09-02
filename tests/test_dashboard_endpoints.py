@@ -1,9 +1,10 @@
 """Coverage for the dashboard endpoints beyond /stats and /automation
 (each already tested in test_api_agenda_today.py and
 test_dashboard_automation.py): /evolution, /alerts, /medications, /labs,
-/imaging, /ai, /evidence, /pending, /performance, /bootstrap."""
+/imaging, /ai, /evidence, /pending, /performance, /action-items, /bootstrap."""
 
 from datetime import date, datetime, timedelta, timezone
+from uuid import uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -14,10 +15,15 @@ from data.schemas import (
     AIEvaluation,
     Alert,
     Consultation,
+    FollowupPlan,
     ImagingStudy,
     LabResult,
     MedicationOrder,
     Patient,
+    PendingAction,
+    User,
+    Workflow,
+    WorkflowStep,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -404,11 +410,146 @@ async def test_dashboard_performance_sensitivity_and_specificity(client, db_sess
     assert body["auc"] is None
 
 
-async def test_dashboard_bootstrap_combines_stats_agenda_alerts(client):
+async def test_dashboard_action_items_covers_every_category_sorted_by_severity(client, db_session):
+    juan = Patient(
+        id="PAI1",
+        name="Juan Pérez",
+        age=68,
+        sex="M",
+        medical_record_number="PT-PAI1",
+        medications=["warfarin", "aspirin"],
+        status="active",
+    )
+    maria = Patient(id="PAI2", name="María López", age=54, sex="F", medical_record_number="PT-PAI2")
+    carlos = Patient(id="PAI3", name="Carlos Ruiz", age=45, sex="M", medical_record_number="PT-PAI3")
+    db_session.add_all([juan, maria, carlos])
+    await db_session.commit()
+
+    db_session.add(
+        Alert(
+            id=str(uuid4()),
+            patient_id=juan.id,
+            category="clinical",
+            severity="critical",
+            status="active",
+            title="Posible sepsis",
+            source="risk_engine",
+        )
+    )
+    db_session.add_all(
+        [
+            LabResult(
+                patient_id=maria.id,
+                test_name="potassium",
+                value=6.8,
+                unit="mmol/L",
+                is_critical=True,
+                is_abnormal=True,
+                taken_at=datetime(2026, 1, 1),
+            ),
+            ImagingStudy(
+                id=str(uuid4()),
+                patient_id=maria.id,
+                modality="mri",
+                body_part="knee",
+                study_date=date.today(),
+                status="analyzed",
+                severity="review",
+            ),
+        ]
+    )
+    clinician = User(
+        id=str(uuid4()),
+        email=f"{uuid4().hex[:8]}@example.org",
+        name="Dr. Demo",
+        hashed_password="x",
+        role="clinician",
+    )
+    db_session.add(clinician)
+    await db_session.commit()
+
+    plan = FollowupPlan(
+        id=str(uuid4()), patient_id=carlos.id, created_by_user_id=clinician.id, instructions=""
+    )
+    db_session.add(plan)
+    await db_session.commit()
+    workflow = Workflow(
+        id=str(uuid4()),
+        definition_key="patient_followup",
+        patient_id=carlos.id,
+        followup_plan_id=plan.id,
+        status="active",
+    )
+    db_session.add(workflow)
+    await db_session.commit()
+    overdue = datetime.now() - timedelta(days=2)
+    db_session.add(
+        WorkflowStep(
+            id=str(uuid4()),
+            workflow_id=workflow.id,
+            step_key="day7",
+            step_type="followup_check_due",
+            status="pending",
+            due_at=overdue,
+            run_after=overdue,
+            max_lateness_seconds=172800,
+        )
+    )
+    db_session.add(
+        PendingAction(
+            id=str(uuid4()),
+            patient_id=carlos.id,
+            action_type="followup_day7",
+            status="pending",
+            draft_text="",
+            draft_source="template",
+        )
+    )
+    db_session.add(
+        Consultation(
+            id=str(uuid4()),
+            user_id=clinician.id,
+            patient_id=juan.id,
+            query="Should we escalate this patient's care?",
+            answer="a",
+            risk_level="high",
+            acted_on=None,
+        )
+    )
+    await db_session.commit()
+
+    headers = await _clinician(client)
+    res = await client.get("/api/dashboard/action-items", headers=headers)
+    assert res.status_code == 200
+    body = res.json()
+    categories = {item["category"] for item in body["items"]}
+    assert categories == {"alert", "lab", "interaction", "imaging", "followup", "approval", "decision"}
+    assert body["total_count"] == len(body["items"])
+    # Sorted worst-first regardless of category.
+    ranks = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    severities = [ranks[item["severity"]] for item in body["items"]]
+    assert severities == sorted(severities)
+
+    alert_item = next(item for item in body["items"] if item["category"] == "alert")
+    assert alert_item["patient_name"] == "Juan Pérez"
+    lab_item = next(item for item in body["items"] if item["category"] == "lab")
+    assert lab_item["patient_name"] == "María López"
+    assert lab_item["test_name"] == "potassium"
+    interaction_item = next(item for item in body["items"] if item["category"] == "interaction")
+    assert interaction_item["patient_name"] == "Juan Pérez"
+    followup_item = next(item for item in body["items"] if item["category"] == "followup")
+    assert followup_item["patient_name"] == "Carlos Ruiz"
+    assert followup_item["days_late"] == 2
+    decision_item = next(item for item in body["items"] if item["category"] == "decision")
+    assert decision_item["consultation_id"]  # needed by the frontend to PATCH acted_on
+
+
+async def test_dashboard_bootstrap_combines_stats_agenda_action_items(client):
     headers = await _clinician(client)
     res = await client.get("/api/dashboard/bootstrap", headers=headers)
     assert res.status_code == 200
     body = res.json()
     assert "stats" in body
     assert "agenda" in body
-    assert "alerts" in body
+    assert "action_items" in body
+    assert body["action_items"] == {"items": [], "total_count": 0}

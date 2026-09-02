@@ -1009,6 +1009,149 @@
       "expects_abstention": true,
       "expected_citation_substrings": [],
       "must_not_cite": []
+    },
+    {
+      "id": "cpr-compression-rate",
+      "category": "golden",
+      "query": "What compression rate and depth should I use during adult CPR?",
+      "relevant_doc_ids": [
+        "aha-2020-cpr"
+      ],
+      "expected_citation_substrings": [
+        "American Heart Association Guidelines for CPR and ECC"
+      ]
+    },
+    {
+      "id": "dka-treatment",
+      "category": "golden",
+      "query": "How is diabetic ketoacidosis treated?",
+      "relevant_doc_ids": [
+        "cdc-2023-dka"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ]
+    },
+    {
+      "id": "ra-first-line-dmard",
+      "category": "golden",
+      "query": "What is the first-line DMARD for rheumatoid arthritis?",
+      "relevant_doc_ids": [
+        "acr-2021-rheumatoid-arthritis"
+      ],
+      "expected_citation_substrings": [
+        "ACR Guideline for the Treatment of Rheumatoid Arthritis"
+      ]
+    },
+    {
+      "id": "knee-oa-first-line",
+      "category": "golden",
+      "query": "What are first-line treatments for knee osteoarthritis?",
+      "relevant_doc_ids": [
+        "oarsi-2019-osteoarthritis"
+      ],
+      "expected_citation_substrings": [
+        "OARSI Guidelines for the Management of Osteoarthritis"
+      ]
+    },
+    {
+      "id": "gdm-screening-timing",
+      "category": "golden",
+      "query": "When is gestational diabetes screened for during pregnancy?",
+      "relevant_doc_ids": [
+        "cdc-gestational-diabetes"
+      ],
+      "expected_citation_substrings": [
+        "CDC"
+      ]
+    },
+    {
+      "id": "nvp-first-line-treatment",
+      "category": "golden",
+      "query": "What is the first-line treatment for nausea and vomiting during pregnancy?",
+      "relevant_doc_ids": [
+        "acog-nausea-vomiting-pregnancy"
+      ],
+      "expected_citation_substrings": [
+        "ACOG Patient FAQ on Nausea and Vomiting of Pregnancy"
+      ]
+    },
+    {
+      "id": "anaphylaxis-first-line",
+      "category": "golden",
+      "query": "What is the first-line treatment for anaphylaxis?",
+      "relevant_doc_ids": [
+        "aaaai-anaphylaxis"
+      ],
+      "expected_citation_substrings": [
+        "AAAAI Anaphylaxis Practice Parameter Update"
+      ]
+    },
+    {
+      "id": "food-allergy-management",
+      "category": "golden",
+      "query": "How is food allergy managed long-term?",
+      "relevant_doc_ids": [
+        "niaid-food-allergy"
+      ],
+      "expected_citation_substrings": [
+        "NIAID Guidelines for the Diagnosis and Management of Food Allergy"
+      ]
+    },
+    {
+      "id": "dry-eye-first-line",
+      "category": "golden",
+      "query": "What is the first-line treatment for dry eye?",
+      "relevant_doc_ids": [
+        "nei-dry-eye"
+      ],
+      "expected_citation_substrings": [
+        "National Eye Institute Patient Guide: Dry Eye"
+      ]
+    },
+    {
+      "id": "diabetic-retinopathy-screening",
+      "category": "golden",
+      "query": "How often should diabetic patients get a dilated eye exam for retinopathy?",
+      "relevant_doc_ids": [
+        "nei-diabetic-retinopathy"
+      ],
+      "expected_citation_substrings": [
+        "National Eye Institute Patient Guide: Diabetic Retinopathy"
+      ]
+    },
+    {
+      "id": "cervical-cancer-screening-interval",
+      "category": "golden",
+      "query": "How often should cervical cancer screening be done for average-risk women?",
+      "relevant_doc_ids": [
+        "uspstf-2018-cervical"
+      ],
+      "expected_citation_substrings": [
+        "USPSTF Cervical Cancer Screening Recommendation"
+      ]
+    },
+    {
+      "id": "bronchiolitis-management",
+      "category": "golden",
+      "query": "How should bronchiolitis in infants be managed?",
+      "relevant_doc_ids": [
+        "aap-2014-bronchiolitis"
+      ],
+      "expected_citation_substrings": [
+        "AAP Clinical Practice Guideline on Bronchiolitis"
+      ]
+    },
+    {
+      "id": "acne-first-line-therapy",
+      "category": "golden",
+      "query": "What is the first-line therapy for acne vulgaris?",
+      "relevant_doc_ids": [
+        "aad-2016-acne"
+      ],
+      "expected_citation_substrings": [
+        "AAD Guidelines of Care for the Management of Acne Vulgaris"
+      ]
     }
   ]
 }

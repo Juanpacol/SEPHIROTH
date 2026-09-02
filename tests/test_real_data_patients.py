@@ -94,6 +94,20 @@ def test_generic_drug_name_skips_leading_duration_token():
     assert _generic_drug_name(description) == "metformin"
 
 
+def test_parse_patients_without_as_of_anchors_age_to_patients_own_latest_record(tmp_path):
+    """Regression test: age must be computed against Synthea's own
+    in-universe "today" (the latest date across that patient's records),
+    never the real wall clock — using `datetime.now()` here made every
+    patient's age drift upward by however many real years had passed
+    since the dataset was imported, eventually producing implausible ages
+    (observed: 103-112) on top of whatever Synthea already intended."""
+    fixture_dir = _make_fixture(tmp_path)
+    patients = parse_patients(fixture_dir)  # no as_of -- exercises the real default
+    p1 = next(p for p in patients if p.id == "p1")
+    # p1's latest recorded date across conditions/medications is 2015-06-01.
+    assert p1.age == _compute_age("1970-05-15", datetime.date(2015, 6, 1))
+
+
 def test_parse_patients_maps_basic_fields(tmp_path):
     fixture_dir = _make_fixture(tmp_path)
     patients = parse_patients(fixture_dir, as_of=datetime.date(2026, 1, 1))

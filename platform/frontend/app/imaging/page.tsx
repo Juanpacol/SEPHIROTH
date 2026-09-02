@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpenCheck, Bot, CalendarPlus, Clock, Eye, Loader2 } from "lucide-react";
 import { api, type RecentImagingAnalysis } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
@@ -10,8 +10,6 @@ import AgentBadge from "@/components/agent-badge";
 import ImageDropzone from "@/components/image-dropzone";
 import { OPEN_COPILOT_EVENT } from "@/components/copilot/copilot-widget";
 import { useToast } from "@/components/ui/toast";
-
-const modalities = ["xray", "ct", "mri", "ultrasound", "pathology"];
 
 const PREVIEW_TIMEOUT_MS = 15000;
 
@@ -83,9 +81,8 @@ function AuthenticatedPreview({ path, alt }: { path: string; alt: string }) {
 export default function ImagingPage() {
   const { t } = useLanguage();
   const showToast = useToast();
+  const queryClient = useQueryClient();
   const [imagePath, setImagePath] = useState("");
-  const [modality, setModality] = useState("xray");
-  const [modalityAuto, setModalityAuto] = useState(false);
   const [target, setTarget] = useState("");
   const [patientId, setPatientId] = useState("");
 
@@ -105,32 +102,24 @@ export default function ImagingPage() {
   const evidence = useMutation({ mutationFn: (q: string) => api.searchEvidence(q) });
 
   const addToTimeline = useMutation({
-    mutationFn: () =>
-      api.addTimelineEvent(patientId, {
+    mutationFn: () => {
+      const modelTag = describeModel ? `[model:${describeModel}] ` : "";
+      return api.addTimelineEvent(patientId, {
         type: "imaging",
-        title: `${modality.toUpperCase()} vision description${target ? ` — ${target}` : ""}`,
-        detail: describeText,
-      }),
+        title: `Vision description${target ? ` — ${target}` : ""}`,
+        detail: `[image_path:${imagePath}] ${modelTag}${describeText}`,
+      });
+    },
     onSuccess: () => {
       setAddedToTimeline(true);
       showToast(t("imaging.toast.addedToTimeline"));
+      queryClient.invalidateQueries({ queryKey: ["imaging-recent"] });
     },
     onError: () => showToast(t("imaging.error.addToTimeline"), "error"),
   });
 
-  const onUploaded = async (path: string) => {
+  const onUploaded = (path: string) => {
     setImagePath(path);
-    setModalityAuto(false);
-    if (!path) return;
-    try {
-      const { modality: guess } = await api.detectModality(path);
-      if (guess && guess !== "unknown") {
-        setModality(guess);
-        setModalityAuto(true);
-      }
-    } catch {
-      // Best-effort only — the clinician can always pick the modality by hand.
-    }
   };
 
   /** Loads a past analysis's image back into the workspace above so the
@@ -144,11 +133,6 @@ export default function ImagingPage() {
     setExpandedAnalysis(null);
     setImagePath(a.image_path);
     setPatientId(a.patient_id);
-    const guess = a.title.split(" ")[0].toLowerCase();
-    if (modalities.includes(guess)) {
-      setModality(guess);
-      setModalityAuto(false);
-    }
     setDescribeText("");
     setDescribeError(null);
     setDescribeModel(null);
@@ -219,7 +203,6 @@ export default function ImagingPage() {
       new CustomEvent(OPEN_COPILOT_EVENT, {
         detail: {
           prefill: t("imaging.askPrefill")
-            .replace("{modality}", modality)
             .replace("{description}", describeText)
             .replace("{focus}", focus),
         },
@@ -254,36 +237,12 @@ export default function ImagingPage() {
             </select>
           </div>
           <div className="flex-1">
-            <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold">
-              {t("imaging.modality")}
-              {modalityAuto && (
-                <span className="rounded-full bg-primary-soft px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                  {t("imaging.autoDetected")}
-                </span>
-              )}
-            </label>
-            <select
-              value={modality}
-              onChange={(e) => {
-                setModality(e.target.value);
-                setModalityAuto(false);
-              }}
-              className="w-full rounded-xl border border-line/70 bg-card px-3 py-2.5 text-sm"
-            >
-              {modalities.map((m) => (
-                <option key={m} value={m}>
-                  {m.toUpperCase()}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex-1">
             <label className="mb-1 block text-sm font-semibold">{t("imaging.targetOptional")}</label>
             <input
               value={target}
               onChange={(e) => setTarget(e.target.value)}
               placeholder={t("imaging.targetPlaceholder")}
-              className="w-full rounded-xl border border-line/70 px-3 py-2.5 text-sm outline-none focus:border-primary"
+              className="w-full rounded-xl border border-line/70 bg-card px-3 py-2.5 text-sm outline-none focus:border-primary"
             />
           </div>
         </div>

@@ -3,12 +3,15 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import FollowupCard from "@/components/patients/followup-card";
 import { api } from "@/lib/api";
+import { LanguageProvider } from "@/lib/language";
 
 function renderCard() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <FollowupCard patientId="P001" />
+      <LanguageProvider>
+        <FollowupCard patientId="P001" />
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

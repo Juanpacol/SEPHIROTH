@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
+import { parseInteractionLabel } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 import StatusPill from "@/components/status-pill";
 import AgentBadge from "@/components/agent-badge";
@@ -60,13 +61,13 @@ function MedicationsCard({ patientId, medications }: { patientId: string; medica
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={t("patientDetail.medications.namePlaceholder")}
-          className="flex-1 rounded-lg border border-line/70 px-2.5 py-2 text-sm outline-none focus:border-primary"
+          className="input flex-1 rounded-lg py-2"
         />
         <input
           value={dosage}
           onChange={(e) => setDosage(e.target.value)}
           placeholder={t("patientDetail.medications.dosagePlaceholder")}
-          className="w-32 rounded-lg border border-line/70 px-2.5 py-2 text-sm outline-none focus:border-primary"
+          className="input w-32 rounded-lg py-2"
         />
         <button
           onClick={() => addMedication.mutate()}
@@ -207,7 +208,7 @@ function AddNoteCard({ patientId }: { patientId: string }) {
         onChange={(e) => setContent(e.target.value)}
         rows={4}
         placeholder={t("patientDetail.notes.placeholder")}
-        className="w-full resize-y rounded-xl border border-line/70 p-3 text-sm outline-none focus:border-primary"
+        className="input resize-y rounded-xl p-3"
       />
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="min-w-0 flex-1 truncate text-xs text-muted">{status}</span>
@@ -311,7 +312,7 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
 
           {/* Intelligent Timeline — the differentiating feature */}
           <div className="card">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-1 flex items-center justify-between">
               <h2 className="font-bold">{t("patientDetail.timeline.title")}</h2>
               <div className="flex items-center gap-2">
                 <button onClick={() => setShareOpen(true)} className="btn-secondary py-1.5 text-xs">
@@ -320,6 +321,7 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
                 <AgentBadge name={t("patientDetail.timeline.aiOrganized")} />
               </div>
             </div>
+            <p className="mb-4 text-xs text-muted">{t("patientDetail.timeline.subtitle")}</p>
             <ol className="relative ml-3 space-y-5 border-l-2 border-line/60 pl-6">
               {patient.timeline.map((event, i) => {
                 const Icon = eventIcons[event.type] ?? CalendarDays;
@@ -351,28 +353,36 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
                 <StatusPill label={patient.risk_level ?? "low"} />
               </div>
               <ul className="space-y-2.5">
-                {patient.risk_flags.map((flag, i) => (
-                  <li
-                    key={i}
-                    title={flag.detail}
-                    className="flex items-start gap-2 rounded-lg p-1.5 text-sm transition-colors hover:bg-surface"
-                  >
-                    <span className="relative mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
-                      {flag.severity === "high" && (
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger/40" />
-                      )}
-                      <AlertTriangle
-                        size={15}
-                        aria-hidden
-                        className={`relative ${flag.severity === "high" ? "text-danger" : "text-warning"}`}
-                      />
-                    </span>
-                    <div>
-                      <div className="font-semibold">{flag.label}</div>
-                      <div className="text-xs text-muted">{flag.detail}</div>
-                    </div>
-                  </li>
-                ))}
+                {patient.risk_flags.map((flag, i) => {
+                  // A drug-interaction flag's label is the formal
+                  // "Interaction: X + Y" audit-log form — shown here as
+                  // just "X + Y" since the surrounding card already says
+                  // this is a risk flag.
+                  const interaction = parseInteractionLabel(flag.label);
+                  const label = interaction ? `${interaction.drugA} + ${interaction.drugB}` : flag.label;
+                  return (
+                    <li
+                      key={i}
+                      title={flag.detail}
+                      className="flex items-start gap-2 rounded-lg p-1.5 text-sm transition-colors hover:bg-surface"
+                    >
+                      <span className="relative mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
+                        {flag.severity === "high" && (
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger/40" />
+                        )}
+                        <AlertTriangle
+                          size={15}
+                          aria-hidden
+                          className={`relative ${flag.severity === "high" ? "text-danger" : "text-warning"}`}
+                        />
+                      </span>
+                      <div>
+                        <div className="font-semibold">{label}</div>
+                        <div className="text-xs text-muted">{flag.detail}</div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
               <p className="mt-3 text-xs text-muted">{t("patientDetail.riskFlags.disclaimer")}</p>
             </div>
@@ -381,11 +391,16 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
           <InteractionCheckerCard medications={patient.medications} />
 
           <div className="card">
-            <h2 className="mb-3 font-bold">{t("patientDetail.labResults.title")}</h2>
+            <h2 className="mb-1 font-bold">{t("patientDetail.labResults.title")}</h2>
+            <p className="mb-3 text-xs text-muted">{t("patientDetail.labResults.subtitle")}</p>
             <ul className="space-y-2 text-sm">
               {Object.entries(patient.lab_results).map(([key, value]) => (
-                <li key={key} className="flex justify-between">
-                  <span className="uppercase text-muted">{key}</span>
+                <li key={key} className="flex justify-between gap-3">
+                  <span className="text-muted">
+                    {t(`patientDetail.labResults.key.${key}`) === `patientDetail.labResults.key.${key}`
+                      ? key.toUpperCase()
+                      : t(`patientDetail.labResults.key.${key}`)}
+                  </span>
                   <span className="font-semibold">{value}</span>
                 </li>
               ))}

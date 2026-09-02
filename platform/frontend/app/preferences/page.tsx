@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { useLanguage } from "@/lib/language";
 
 // This clinic is single-tenant (CLAUDE.md decision #7 -- no per-clinician
 // scoping); automation_memory.py's own docstring confirms `scope="clinic"`
@@ -10,6 +11,7 @@ import { api } from "@/lib/api";
 const CLINIC_SCOPE_ID = "default";
 
 function useMemoryField(key: string, defaultValue: string) {
+  const { t } = useLanguage();
   const [value, setValue] = useState(defaultValue);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -33,7 +35,7 @@ function useMemoryField(key: string, defaultValue: string) {
       await api.writeAutomationMemory("clinic", CLINIC_SCOPE_ID, key, parsed);
       setSaved(true);
     } catch {
-      setError("Could not save — check the value and try again.");
+      setError(t("preferences.error.saveFailed"));
     } finally {
       setBusy(false);
     }
@@ -43,6 +45,7 @@ function useMemoryField(key: string, defaultValue: string) {
 }
 
 export default function PreferencesPage() {
+  const { t } = useLanguage();
   const leadHours = useMemoryField("reminder_lead_hours", "24");
   const [quietStartValue, setQuietStartValue] = useState("22:00");
   const [quietEndValue, setQuietEndValue] = useState("07:00");
@@ -80,7 +83,7 @@ export default function PreferencesPage() {
       });
       setQuietSaved(true);
     } catch {
-      setQuietError("Could not save — use HH:MM (00-23:00-59).");
+      setQuietError(t("preferences.quietHours.error.saveFailed"));
     } finally {
       setQuietBusy(false);
     }
@@ -89,17 +92,14 @@ export default function PreferencesPage() {
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <div>
-        <h1 className="text-xl font-extrabold">Automation preferences</h1>
-        <p className="text-sm text-muted">
-          Configure how appointment reminders and follow-ups behave. Nothing here changes what gets
-          sent — only when.
-        </p>
+        <h1 className="text-xl font-extrabold">{t("preferences.title")}</h1>
+        <p className="text-sm text-muted">{t("preferences.subtitle")}</p>
       </div>
 
       <form onSubmit={saveLeadHours} className="card space-y-4">
-        <h2 className="font-bold">Reminder lead time</h2>
+        <h2 className="font-bold">{t("preferences.leadTime.title")}</h2>
         <div>
-          <label className="mb-1 block text-sm font-semibold">Hours before an appointment</label>
+          <label className="mb-1 block text-sm font-semibold">{t("preferences.leadTime.label")}</label>
           <input
             type="number"
             min={1}
@@ -110,18 +110,18 @@ export default function PreferencesPage() {
           />
         </div>
         {leadHours.error && <p className="text-sm text-danger">{leadHours.error}</p>}
-        {leadHours.saved && <p className="text-sm text-success">Saved.</p>}
+        {leadHours.saved && <p className="text-sm text-success">{t("preferences.saved")}</p>}
         <button type="submit" disabled={leadHours.busy} className="btn-primary">
-          {leadHours.busy ? "Saving…" : "Save"}
+          {leadHours.busy ? t("preferences.saving") : t("preferences.save")}
         </button>
       </form>
 
       <form onSubmit={saveQuietHours} className="card space-y-4">
-        <h2 className="font-bold">Quiet hours</h2>
-        <p className="text-sm text-muted">No reminder is sent inside this local-time window.</p>
+        <h2 className="font-bold">{t("preferences.quietHours.title")}</h2>
+        <p className="text-sm text-muted">{t("preferences.quietHours.subtitle")}</p>
         <div className="flex gap-3">
           <div className="flex-1">
-            <label className="mb-1 block text-sm font-semibold">Start</label>
+            <label className="mb-1 block text-sm font-semibold">{t("preferences.quietHours.start")}</label>
             <input
               type="time"
               value={quietStartValue}
@@ -130,7 +130,7 @@ export default function PreferencesPage() {
             />
           </div>
           <div className="flex-1">
-            <label className="mb-1 block text-sm font-semibold">End</label>
+            <label className="mb-1 block text-sm font-semibold">{t("preferences.quietHours.end")}</label>
             <input
               type="time"
               value={quietEndValue}
@@ -140,9 +140,9 @@ export default function PreferencesPage() {
           </div>
         </div>
         {quietError && <p className="text-sm text-danger">{quietError}</p>}
-        {quietSaved && <p className="text-sm text-success">Saved.</p>}
+        {quietSaved && <p className="text-sm text-success">{t("preferences.saved")}</p>}
         <button type="submit" disabled={quietBusy} className="btn-primary">
-          {quietBusy ? "Saving…" : "Save"}
+          {quietBusy ? t("preferences.saving") : t("preferences.save")}
         </button>
       </form>
     </div>

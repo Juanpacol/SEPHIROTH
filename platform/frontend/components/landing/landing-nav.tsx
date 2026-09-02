@@ -5,15 +5,17 @@ import { useEffect, useState } from "react";
 import WingMark from "@/components/brand/wing-mark";
 import ThemeToggle from "@/components/theme-toggle";
 import { ShimmerButton } from "@/components/magicui/shimmer-button";
+import { useLanguage } from "@/lib/language";
 
 const LINKS = [
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#safeguards", label: "Safeguards" },
-  { href: "#agents", label: "Agents" },
-  { href: "#faq", label: "FAQ" },
+  { href: "#how-it-works", labelKey: "marketing.nav.howItWorks" },
+  { href: "#safeguards", labelKey: "marketing.nav.safeguards" },
+  { href: "#agents", labelKey: "marketing.nav.agents" },
+  { href: "#faq", labelKey: "marketing.nav.faq" },
 ];
 
 export default function LandingNav() {
+  const { t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function LandingNav() {
         <nav className="hidden items-center gap-6 text-sm font-medium text-muted md:flex">
           {LINKS.map((link) => (
             <a key={link.href} href={link.href} className="link-underline">
-              {link.label}
+              {t(link.labelKey)}
             </a>
           ))}
         </nav>
@@ -46,7 +48,7 @@ export default function LandingNav() {
         <div className="flex items-center gap-3">
           <ThemeToggle />
           <ShimmerButton href="/login" className="!px-4 !py-2 !text-sm">
-            Open the app
+            {t("marketing.openApp")}
           </ShimmerButton>
         </div>
       </div>

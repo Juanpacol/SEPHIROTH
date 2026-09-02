@@ -103,35 +103,25 @@ HAND_CURATED_PAIRS = {
     frozenset(["digoxin", "furosemide"]),
 }
 
+#: DDInter's bulk download gives only a MAJOR/MODERATE/MINOR severity tier,
+#: no free-text description per pair — these are the plain-language stand-in
+#: (a clinician skimming a chart needs "what to do", not a citation of the
+#: classification scheme that produced the tier). Kept short and direct on
+#: purpose, matching the hand-curated pairs' own tone above.
 TIER_TEXT = {
     "major": {
-        "effect": (
-            "Potentially serious interaction — increased risk of significant adverse "
-            "effects (per DDInter 2.0 severity classification)."
-        ),
-        "recommendation": (
-            "Avoid this combination when possible; if co-administration is necessary, "
-            "monitor the patient closely and consider alternative agents."
-        ),
+        "effect": "Serious interaction — taking these together can cause real harm.",
+        "recommendation": "Avoid this combination if possible; if it's needed, watch the patient closely.",
     },
     "moderate": {
-        "effect": (
-            "Interaction of moderate clinical significance (per DDInter 2.0 severity "
-            "classification) — may require dose adjustment or additional monitoring."
-        ),
+        "effect": "Moderate interaction — may need a dose change or extra monitoring.",
         "recommendation": (
-            "Use with caution; monitor for signs of the interaction and adjust therapy "
-            "as clinically indicated."
+            "Use together with caution — watch for signs of the interaction and adjust treatment as needed."
         ),
     },
     "minor": {
-        "effect": (
-            "Interaction of limited clinical significance in most patients (per DDInter "
-            "2.0 severity classification)."
-        ),
-        "recommendation": (
-            "Generally safe to combine; remain aware of the potential interaction if unusual symptoms occur."
-        ),
+        "effect": "Minor interaction — usually not a problem for most patients.",
+        "recommendation": "Generally safe to combine; keep an eye out for any unusual symptoms.",
     },
 }
 

@@ -22,17 +22,27 @@ __all__ = [
 
 def get_embedding_provider() -> Optional[CachedEmbeddingProvider]:
     """Build the default embedding provider from settings: cache-first,
-    live Gemini fallback if an API key is configured. Returns None only if
+    live fallback on a cache miss. Returns None only if
     `enable_rag_embeddings` is off — callers should treat that the same as
-    `EmbeddingUnavailable` (fall back to keyword-only retrieval)."""
+    `EmbeddingUnavailable` (fall back to keyword-only retrieval).
+
+    The live (cache-miss) provider must always match whichever model
+    produced the committed artifact — vectors from two different embedding
+    models are not comparable, mixing them silently corrupts similarity
+    scores. `llm_provider="ollama"` (local dev, no Gemini quota) routes
+    here too, via `OllamaEmbeddingProvider`, so a fresh query at runtime
+    stays in the same vector space as an Ollama-built artifact."""
     from core.config import settings  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
 
     if not getattr(settings, "enable_rag_embeddings", True):
         return None
 
-    inner = (
-        GeminiEmbeddingProvider(api_key=settings.gemini_api_key, model=settings.gemini_embedding_model)
-        if settings.gemini_api_key
-        else None
-    )
+    if settings.llm_provider == "ollama":
+        from .ollama import OllamaEmbeddingProvider  # noqa: PLC0415 — avoid a hard httpx dep at import time
+
+        inner = OllamaEmbeddingProvider(base_url=settings.ollama_base_url)
+    elif settings.gemini_api_key:
+        inner = GeminiEmbeddingProvider(api_key=settings.gemini_api_key, model=settings.gemini_embedding_model)
+    else:
+        inner = None
     return CachedEmbeddingProvider(inner=inner)

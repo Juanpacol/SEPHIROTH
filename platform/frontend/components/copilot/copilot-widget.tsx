@@ -10,6 +10,7 @@ import { X } from "lucide-react";
 import { useUser } from "@/lib/auth";
 import CopilotPanel from "@/components/copilot/copilot-panel";
 import WingMark from "@/components/brand/wing-mark";
+import { useLanguage } from "@/lib/language";
 
 /** Custom-event name other pages (e.g. `/imaging`'s "Ask SEPHIROTH" button)
  * dispatch to open this widget with a pre-filled question — a plain
@@ -19,6 +20,7 @@ export const OPEN_COPILOT_EVENT = "open-copilot";
 
 export default function CopilotWidget() {
   const user = useUser();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [prefill, setPrefill] = useState("");
   // Bumped on every external open request so `<CopilotPanel key={...}>`
@@ -45,7 +47,7 @@ export default function CopilotWidget() {
     <>
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label={open ? "Close Copilot Chat" : "Open Copilot Chat"}
+        aria-label={open ? t("copilot.widget.closeChat") : t("copilot.widget.openChat")}
         aria-expanded={open}
         className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-card-lg transition-all duration-200 ease-ios hover:-translate-y-0.5 hover:bg-primary-dark active:scale-95"
       >
@@ -55,7 +57,7 @@ export default function CopilotWidget() {
       {open && (
         <div
           role="dialog"
-          aria-label="Copilot Chat"
+          aria-label={t("copilot.widget.title")}
           className="fixed bottom-24 right-6 z-40 flex h-[min(680px,calc(100vh-140px))] w-[min(420px,calc(100vw-3rem))] flex-col overflow-hidden rounded-squircle border border-line/60 bg-surface shadow-card-lg"
         >
           <div className="flex items-center justify-between border-b border-line/60 bg-card px-4 py-3">
@@ -67,13 +69,13 @@ export default function CopilotWidget() {
                 <WingMark size={16} className="text-white" />
               </span>
               <div>
-                <h2 className="text-sm font-bold">Copilot Chat</h2>
-                <p className="text-xs text-muted">Every citation verified against tool output.</p>
+                <h2 className="text-sm font-bold">{t("copilot.widget.title")}</h2>
+                <p className="text-xs text-muted">{t("copilot.widget.subtitle")}</p>
               </div>
             </div>
             <button
               onClick={() => setOpen(false)}
-              aria-label="Close"
+              aria-label={t("common.close")}
               className="rounded-full p-1.5 text-muted hover:bg-surface hover:text-primary"
             >
               <X size={16} />

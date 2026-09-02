@@ -5,9 +5,9 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme, type Theme } from "@/lib/theme";
 import { useLanguage } from "@/lib/language";
 
-const OPTIONS: { value: Theme; icon: typeof Sun; label: string }[] = [
-  { value: "light", icon: Sun, label: "Light" },
-  { value: "dark", icon: Moon, label: "Dark" },
+const OPTIONS: { value: Theme; icon: typeof Sun; labelKey: "common.light" | "common.dark" }[] = [
+  { value: "light", icon: Sun, labelKey: "common.light" },
+  { value: "dark", icon: Moon, labelKey: "common.dark" },
 ];
 
 /** Circle-reveal transition, adapted from magicui's `AnimatedThemeToggler`
@@ -58,7 +58,7 @@ function useThemeRevealTransition() {
 export default function ThemeToggle({ className = "" }: { className?: string }) {
   const [theme, setTheme] = useTheme();
   const reveal = useThemeRevealTransition();
-  const { lang, setLang } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
 
   const resolvesDark = (value: Theme) =>
     value === "dark" || (value === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
@@ -71,12 +71,12 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
 
   return (
     <div className={`inline-flex items-center gap-0.5 rounded-full bg-primary-soft p-1 ${className}`}>
-      {OPTIONS.map(({ value, icon: Icon, label }) => (
+      {OPTIONS.map(({ value, icon: Icon, labelKey }) => (
         <button
           key={value}
           onClick={(e) => select(e, value)}
-          aria-label={label}
-          title={label}
+          aria-label={t(labelKey)}
+          title={t(labelKey)}
           className={`rounded-full p-1.5 transition-colors ${
             theme === value ? "bg-card text-primary shadow-sm" : "text-muted hover:text-primary"
           }`}
@@ -86,7 +86,7 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
       ))}
       <button
         onClick={() => setLang(lang === "en" ? "es" : "en")}
-        aria-label="Toggle language"
+        aria-label={t("common.toggleLanguage")}
         title={lang === "en" ? "English" : "Español"}
         className="rounded-full px-1.5 py-1.5 text-[11px] font-bold text-muted transition-colors hover:text-primary"
       >

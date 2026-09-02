@@ -52,14 +52,18 @@ interface Exchange {
  * product being broken rather than as it being careful. The last one routes
  * to the drug-safety agent rather than evidence, so the set exercises both
  * answering paths. */
+/** The query text sent to the backend/RAG corpus always stays the English
+ * original (`query`) regardless of UI language — the corpus match described
+ * above was verified against these exact English strings. `labelKey` is
+ * only what the button displays. */
 const SUGGESTED_QUESTIONS = [
-  "What blood pressure reading is considered high?",
-  "What are the warning signs of a stroke?",
-  "What is the A1C target for adults with type 2 diabetes?",
-  "When should anticoagulation be started in atrial fibrillation?",
-  "Which empiric antibiotics for outpatient community-acquired pneumonia?",
-  "Which patients with type 2 diabetes and CKD should get an SGLT2 inhibitor?",
-  "Do warfarin and ibuprofen interact?",
+  { query: "What blood pressure reading is considered high?", labelKey: "copilot.suggested.bloodPressure" },
+  { query: "What are the warning signs of a stroke?", labelKey: "copilot.suggested.strokeWarningSigns" },
+  { query: "What is the A1C target for adults with type 2 diabetes?", labelKey: "copilot.suggested.a1cTarget" },
+  { query: "When should anticoagulation be started in atrial fibrillation?", labelKey: "copilot.suggested.anticoagulation" },
+  { query: "Which empiric antibiotics for outpatient community-acquired pneumonia?", labelKey: "copilot.suggested.antibiotics" },
+  { query: "Which patients with type 2 diabetes and CKD should get an SGLT2 inhibitor?", labelKey: "copilot.suggested.sglt2" },
+  { query: "Do warfarin and ibuprofen interact?", labelKey: "copilot.suggested.warfarinIbuprofen" },
 ];
 
 /** Token-overlap match — mirrors the >=0.5 overlap threshold Citation Guard
@@ -103,15 +107,15 @@ interface PdfPreview {
   sections: string[];
 }
 
-function reportSections(exchange: Exchange): string[] {
+function reportSectionKeys(exchange: Exchange): string[] {
   const citationCount =
     (exchange.citations?.verified?.length ?? 0) + (exchange.citations?.fabricated?.length ?? 0);
   return [
-    "Clinical question & AI response",
-    exchange.agents?.length ? "Agents involved" : null,
-    citationCount > 0 ? "Citation Guard" : null,
-    exchange.explanation?.steps.length ? "Reasoning trace" : null,
-    "Disclaimer",
+    "copilot.report.clinicalQaAndResponse",
+    exchange.agents?.length ? "copilot.report.agentsInvolved" : null,
+    citationCount > 0 ? "copilot.citationGuard" : null,
+    exchange.explanation?.steps.length ? "copilot.report.reasoningTrace" : null,
+    "copilot.report.disclaimer",
   ].filter((s): s is string => Boolean(s));
 }
 
@@ -143,7 +147,7 @@ function PdfPreviewModal({
           </div>
           <button
             onClick={onClose}
-            aria-label="Close preview"
+            aria-label={t("copilot.closePreview")}
             className="rounded-full p-1.5 text-muted hover:bg-surface"
           >
             <X size={16} />
@@ -151,7 +155,7 @@ function PdfPreviewModal({
         </div>
 
         <div className="flex-1 overflow-hidden bg-surface">
-          <iframe src={preview.url} title="PDF preview" className="h-[50vh] w-full" />
+          <iframe src={preview.url} title={t("copilot.pdfPreview")} className="h-[50vh] w-full" />
         </div>
 
         <div className="border-t border-line/60 p-4">
@@ -161,7 +165,7 @@ function PdfPreviewModal({
           <ul className="mb-4 space-y-1">
             {preview.sections.map((section) => (
               <li key={section} className="flex items-center gap-1.5 text-sm">
-                <CheckCircle2 size={13} className="text-success" /> {section}
+                <CheckCircle2 size={13} className="text-success" /> {t(section)}
               </li>
             ))}
           </ul>
@@ -270,7 +274,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
         exchangeId: exchange.id,
         url: URL.createObjectURL(blob),
         size: blob.size,
-        sections: reportSections(exchange),
+        sections: reportSectionKeys(exchange),
       });
     } finally {
       setPreviewLoadingId(null);
@@ -389,12 +393,12 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
             <div className="flex flex-wrap gap-1.5">
               {SUGGESTED_QUESTIONS.map((q) => (
                 <button
-                  key={q}
-                  onClick={() => submit(q)}
+                  key={q.query}
+                  onClick={() => submit(q.query)}
                   disabled={streaming}
                   className="rounded-full border border-line/70 bg-card px-3 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-primary hover:text-primary disabled:opacity-40"
                 >
-                  {q}
+                  {t(q.labelKey)}
                 </button>
               ))}
             </div>
@@ -444,8 +448,8 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                       <button
                         onClick={() => openPdfPreview(exchange)}
                         disabled={previewLoadingId === exchange.id}
-                        aria-label="Preview and export this consultation as PDF"
-                        title="Export as PDF"
+                        aria-label={t("copilot.previewExportPdf")}
+                        title={t("copilot.exportPdf")}
                         className="ml-auto rounded-full p-1.5 text-muted hover:bg-surface hover:text-primary disabled:opacity-40"
                       >
                         {previewLoadingId === exchange.id ? (
@@ -513,7 +517,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                 ? "bg-primary-soft text-primary"
                 : "bg-surface text-muted"
             } disabled:cursor-not-allowed`}
-            aria-label="Send"
+            aria-label={t("copilot.send")}
           >
             {streaming ? (
               <Loader2 size={15} className="animate-spin" />

@@ -517,19 +517,233 @@ async def _dashboard_automation(session: AsyncSession) -> Dict[str, Any]:
     }
 
 
-@router.get("/bootstrap", summary="Combined first-paint payload: stats + today's agenda + alerts")
+_ACTION_ITEM_LIMIT_PER_CATEGORY = 8
+
+#: One rank per category so the list sorts worst-first regardless of which
+#: category a critical item happens to belong to -- a doctor scanning
+#: top-to-bottom hits the most urgent thing first no matter its source.
+_SEVERITY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+
+
+@router.get(
+    "/action-items",
+    summary="What a clinician needs to act on today, across every category, ranked by urgency",
+)
+async def dashboard_action_items(session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
+    """Replaces the old evolution/alerts/medication/labs/imaging/followup
+    tabs' raw counts with one flat, patient-named, action-first list -- a
+    clinician skimming this once should be able to say "I need to do X for
+    Y" without opening ten separate tabs to find out what X and Y are. Every
+    item is real, already-persisted data (same tables the old tabs read);
+    this endpoint only re-shapes it into "who, what, how urgent" instead of
+    "how many"."""
+    return await _cached("action_items", lambda: _dashboard_action_items(session))
+
+
+async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    names: Dict[str, str] = dict(
+        (await session.execute(select(Patient.id, Patient.name))).all()  # type: ignore[arg-type]
+    )
+    items: List[Dict[str, Any]] = []
+
+    def _name(patient_id: Any) -> Any:
+        return names.get(patient_id)
+
+    # 1) Active critical/high alerts.
+    alerts = (
+        await session.scalars(
+            select(Alert)
+            .where(Alert.status == "active", Alert.severity.in_(("critical", "high")))
+            .order_by(Alert.created_at.desc())
+            .limit(_ACTION_ITEM_LIMIT_PER_CATEGORY)
+        )
+    ).all()
+    for a in alerts:
+        items.append(
+            {
+                "category": "alert",
+                "severity": a.severity,
+                "patient_id": a.patient_id,
+                "patient_name": _name(a.patient_id),
+                "title": a.title,
+                "detail": a.detail or None,
+            }
+        )
+
+    # 2) Patients clinically deteriorating (2+ readings per test, latest worse than previous).
+    deteriorating, _detail = await _evolution_deteriorating(session)
+    for entry in deteriorating[:_ACTION_ITEM_LIMIT_PER_CATEGORY]:
+        items.append(
+            {
+                "category": "deteriorating",
+                "severity": "high",
+                "patient_id": entry["id"],
+                "patient_name": entry["name"],
+            }
+        )
+
+    # 3) Critical lab results (the single most recent per patient/test).
+    lab_results = (await session.scalars(select(LabResult).order_by(LabResult.taken_at))).all()
+    latest_per_test: Dict[tuple, LabResult] = {}
+    for r in lab_results:
+        latest_per_test[(r.patient_id, r.test_name)] = r
+    critical_labs = [r for r in latest_per_test.values() if r.is_critical]
+    critical_labs.sort(key=lambda r: r.taken_at, reverse=True)
+    for r in critical_labs[:_ACTION_ITEM_LIMIT_PER_CATEGORY]:
+        items.append(
+            {
+                "category": "lab",
+                "severity": "critical",
+                "patient_id": r.patient_id,
+                "patient_name": _name(r.patient_id),
+                "test_name": r.test_name,
+                "value": r.value,
+                "unit": r.unit,
+            }
+        )
+
+    # 4) Drug interactions -- deterministic lookup, same table `/medications` counts from.
+    patients = (await session.scalars(select(Patient).where(Patient.status == "active"))).all()
+    interaction_items = 0
+    for p in patients:
+        if interaction_items >= _ACTION_ITEM_LIMIT_PER_CATEGORY:
+            break
+        if len(p.medications) < 2:
+            continue
+        for hit in find_interactions(p.medications):
+            if interaction_items >= _ACTION_ITEM_LIMIT_PER_CATEGORY:
+                break
+            drug_a, drug_b = hit["pair"]
+            items.append(
+                {
+                    "category": "interaction",
+                    "severity": "high" if hit.get("severity") == "major" else "medium",
+                    "patient_id": p.id,
+                    "patient_name": p.name,
+                    "drug_a": drug_a,
+                    "drug_b": drug_b,
+                }
+            )
+            interaction_items += 1
+
+    # 5) Imaging studies flagged critical or needing review.
+    studies = (
+        await session.scalars(
+            select(ImagingStudy)
+            .where(ImagingStudy.severity.in_(("critical", "review")))
+            .order_by(ImagingStudy.severity.desc(), ImagingStudy.study_date.desc())
+            .limit(_ACTION_ITEM_LIMIT_PER_CATEGORY)
+        )
+    ).all()
+    for s in studies:
+        items.append(
+            {
+                "category": "imaging",
+                "severity": "critical" if s.severity == "critical" else "medium",
+                "patient_id": s.patient_id,
+                "patient_name": _name(s.patient_id),
+                "modality": s.modality,
+                "body_part": s.body_part,
+            }
+        )
+
+    # 6) Follow-up checks (day 3/7/30) past their due date, not yet sent.
+    overdue_rows = (
+        await session.execute(
+            select(WorkflowStep, Workflow)
+            .join(Workflow, WorkflowStep.workflow_id == Workflow.id)
+            .where(
+                WorkflowStep.step_type == "followup_check_due",
+                WorkflowStep.status == "pending",
+                WorkflowStep.due_at < now,
+                Workflow.followup_plan_id.isnot(None),
+            )
+            .order_by(WorkflowStep.due_at)
+            .limit(_ACTION_ITEM_LIMIT_PER_CATEGORY)
+        )
+    ).all()
+    for step, workflow in overdue_rows:
+        items.append(
+            {
+                "category": "followup",
+                "severity": "medium",
+                "patient_id": workflow.patient_id,
+                "patient_name": _name(workflow.patient_id),
+                "check_key": step.step_key,
+                "days_late": max((now - step.due_at).days, 0),
+            }
+        )
+
+    # 7) Draft patient-facing messages awaiting clinician approval.
+    pending_actions = (
+        await session.scalars(
+            select(PendingAction)
+            .where(PendingAction.status == "pending")
+            .order_by(PendingAction.created_at)
+            .limit(_ACTION_ITEM_LIMIT_PER_CATEGORY)
+        )
+    ).all()
+    for pa in pending_actions:
+        items.append(
+            {
+                "category": "approval",
+                "severity": "medium",
+                "patient_id": pa.patient_id,
+                "patient_name": _name(pa.patient_id),
+                "action_type": pa.action_type,
+            }
+        )
+
+    # 8) High-risk consultations the clinician hasn't acted on yet. Column-
+    # only select -- `Consultation` also carries `answer`/`tool_calls`/
+    # `citation_report`/`verification_report`/`trace` (see `/ai`'s own
+    # comment on why `select(Consultation)` is avoided here).
+    consultations = (
+        await session.execute(
+            select(Consultation.id, Consultation.patient_id, Consultation.query)
+            .where(Consultation.acted_on.is_(None), Consultation.risk_level == "high")
+            .order_by(Consultation.id.desc())
+            .limit(_ACTION_ITEM_LIMIT_PER_CATEGORY)
+        )
+    ).all()
+    for c in consultations:
+        preview = c.query if len(c.query) <= 140 else c.query[:137] + "…"
+        items.append(
+            {
+                "category": "decision",
+                "severity": "high",
+                "consultation_id": c.id,
+                "patient_id": c.patient_id,
+                "patient_name": _name(c.patient_id) if c.patient_id else None,
+                "query_preview": preview,
+            }
+        )
+
+    items.sort(key=lambda item: _SEVERITY_RANK.get(item["severity"], len(_SEVERITY_RANK)))
+    return {"items": items, "total_count": len(items)}
+
+
+async def _evolution_deteriorating(session: AsyncSession) -> tuple[List[Dict[str, Any]], None]:
+    """Shared with `/evolution` -- the deterioration sweep itself never
+    changed, only what the caller does with the result."""
+    evolution = await _dashboard_evolution(session)
+    return evolution["deteriorating"], None
+
+
+@router.get("/bootstrap", summary="Combined first-paint payload: stats + today's agenda + action items")
 async def dashboard_bootstrap(
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
-    """Collapses the 3 requests `DashboardPage` fires on first paint
-    (`dashboardStats`, `agendaToday`, and the default-active "alerts" tab)
-    into one browser<->backend round trip. The 3 queries still run
-    sequentially (a single `AsyncSession` isn't safe for concurrent use),
-    but that's one HTTP round trip instead of 3 — the actual cost being cut."""
+    """Collapses the requests `DashboardPage` fires on first paint
+    (`dashboardStats`, `agendaToday`, `dashboardActionItems`) into one
+    browser<->backend round trip. The queries still run sequentially (a
+    single `AsyncSession` isn't safe for concurrent use), but that's one
+    HTTP round trip instead of many — the actual cost being cut."""
     from api.routers.scheduling import agenda_today  # noqa: PLC0415 — avoid a router import cycle
 
     stats = await _cached("stats", lambda: _dashboard_stats(session))
     agenda = await agenda_today(clinician=clinician, session=session)
-    alerts = await _dashboard_alerts(session)
-    return {"stats": stats, "agenda": agenda, "alerts": alerts}
+    action_items = await _cached("action_items", lambda: _dashboard_action_items(session))
+    return {"stats": stats, "agenda": agenda, "action_items": action_items}

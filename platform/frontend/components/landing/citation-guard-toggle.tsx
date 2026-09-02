@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "@/lib/language";
 
 export default function CitationGuardToggle() {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<"raw" | "guarded">("raw");
 
   return (
     <div className="card">
       <div
         role="radiogroup"
-        aria-label="Raw model output vs after Citation Guard"
+        aria-label={t("marketing.citationToggle.groupLabel")}
         className="mb-4 inline-flex items-center gap-0.5 rounded-full bg-primary-soft p-1"
       >
         {(["raw", "guarded"] as const).map((value) => (
@@ -22,26 +24,26 @@ export default function CitationGuardToggle() {
               mode === value ? "bg-card text-primary shadow-sm" : "text-muted hover:text-primary"
             }`}
           >
-            {value === "raw" ? "Raw model output" : "After Citation Guard"}
+            {value === "raw" ? t("marketing.citationToggle.raw") : t("marketing.citationToggle.guarded")}
           </button>
         ))}
       </div>
 
       {mode === "raw" ? (
         <p className="text-sm" hidden={mode !== "raw"}>
-          Target A1C is &lt;7% [ADA Standards of Care, 2024]{" "}
-          <span className="rounded bg-danger/10 px-1 text-danger">[UpToDate Diabetes Review, 2023]</span>.
-          Current value (8.1%) is above goal.
+          {t("marketing.walkthrough.guardTextPre")}{" "}
+          <span className="rounded bg-danger/10 px-1 text-danger">
+            {t("marketing.walkthrough.guardStrikethrough")}
+          </span>
+          {t("marketing.walkthrough.guardTextPost")}
         </p>
       ) : (
         <div hidden={mode !== "guarded"}>
           <p className="text-sm">
-            Target A1C is &lt;7% [ADA Standards of Care, 2024] [unverified — removed]. Current value
-            (8.1%) is above goal.
+            {t("marketing.walkthrough.guardTextPre")} {t("marketing.walkthrough.unverifiedRemoved")}
+            {t("marketing.walkthrough.guardTextPost")}
           </p>
-          <p className="mt-2 text-xs text-muted">
-            1 citation removed — no matching source in the retrieved set.
-          </p>
+          <p className="mt-2 text-xs text-muted">{t("marketing.citationToggle.removedNote")}</p>
         </div>
       )}
     </div>

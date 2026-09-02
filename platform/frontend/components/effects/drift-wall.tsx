@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import "./drift-wall.css";
+import { useLanguage } from "@/lib/language";
 
 export interface DriftWallItem {
   image: string;
@@ -72,6 +73,7 @@ export default function DriftWall({
   overlayColor = "#060010",
   className = "",
 }: DriftWallProps) {
+  const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const planeRef = useRef<HTMLDivElement>(null);
   const trackRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -273,7 +275,7 @@ export default function DriftWall({
       );
     }
     return (
-      <div key={id} tabIndex={0} role="button" aria-label={item.title ?? "tile"} {...commonProps}>
+      <div key={id} tabIndex={0} role="button" aria-label={item.title ?? t("marketing.driftWall.tile")} {...commonProps}>
         {inner}
       </div>
     );
@@ -292,7 +294,7 @@ export default function DriftWall({
       }}
       onPointerLeave={handlePointerLeaveWall}
       role="group"
-      aria-label="Drifting wall of product screenshots"
+      aria-label={t("marketing.driftWall.ariaLabel")}
     >
       <div ref={planeRef} className="drift-wall__plane">
         {columnItems.map((col, c) => {

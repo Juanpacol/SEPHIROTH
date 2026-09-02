@@ -30,6 +30,36 @@ export interface DashboardStats {
   avg_priority_score: number;
 }
 
+/** One line of "what a clinician needs to do today" — replaces the old
+ * evolution/alerts/medication/labs/imaging/followup tabs' raw counts.
+ * Fields beyond `category`/`severity`/`patient_*` are category-specific
+ * (only the ones relevant to that item's `category` are populated). */
+export interface DashboardActionItem {
+  category: "alert" | "deteriorating" | "lab" | "interaction" | "imaging" | "followup" | "approval" | "decision";
+  severity: "critical" | "high" | "medium" | "low";
+  patient_id: string | null;
+  patient_name: string | null;
+  title?: string;
+  detail?: string | null;
+  test_name?: string;
+  value?: number;
+  unit?: string;
+  drug_a?: string;
+  drug_b?: string;
+  modality?: string;
+  body_part?: string;
+  check_key?: string;
+  days_late?: number;
+  action_type?: string;
+  query_preview?: string;
+  consultation_id?: string;
+}
+
+export interface DashboardActionItems {
+  items: DashboardActionItem[];
+  total_count: number;
+}
+
 export interface DashboardEvolution {
   deteriorating: { id: string; name: string }[];
   improving: { id: string; name: string }[];
@@ -234,12 +264,6 @@ export interface HistoryItem extends ConsultResponse {
   acted_at: string | null;
   outcome: "improved" | "not_improved" | "unclear" | null;
   outcome_at: string | null;
-}
-
-export interface RecommendationStats {
-  total: number;
-  acted_on: number;
-  improved: number;
 }
 
 export interface DrugInteraction {
@@ -451,7 +475,9 @@ export interface PendingAction {
   id: string;
   workflow_step_id: string | null;
   patient_id: string;
+  patient_name: string | null;
   action_type: string;
+  instructions: string | null;
   status: "pending" | "approved" | "rejected" | "expired";
   draft_text: string;
   draft_source: "template" | "llm";
@@ -575,7 +601,10 @@ export const api = {
     post<AuthResponse>("/api/auth/login", body),
   dashboardStats: () => get<DashboardStats>("/api/dashboard/stats"),
   dashboardBootstrap: () =>
-    get<{ stats: DashboardStats; agenda: TodayAgenda; alerts: DashboardAlerts }>("/api/dashboard/bootstrap"),
+    get<{ stats: DashboardStats; agenda: TodayAgenda; action_items: DashboardActionItems }>(
+      "/api/dashboard/bootstrap"
+    ),
+  dashboardActionItems: () => get<DashboardActionItems>("/api/dashboard/action-items"),
   dashboardEvolution: () => get<DashboardEvolution>("/api/dashboard/evolution"),
   dashboardAlerts: () => get<DashboardAlerts>("/api/dashboard/alerts"),
   dashboardMedications: () => get<DashboardMedications>("/api/dashboard/medications"),
@@ -589,12 +618,8 @@ export const api = {
   agentsStatus: () => get<AgentsStatus>("/api/agents/status"),
   patients: (sort?: "risk") => get<PatientSummary[]>(`/api/patients${sort ? `?sort=${sort}` : ""}`),
   patient: (id: string) => get<Patient>(`/api/patients/${id}`),
-  history: () => get<HistoryItem[]>("/api/agents/history"),
-  recommendationStats: () => get<RecommendationStats>("/api/agents/recommendations/stats"),
   markActedOn: (id: string, acted_on: boolean) =>
     patch<HistoryItem>(`/api/agents/history/${id}`, { acted_on }),
-  markOutcome: (id: string, outcome: "improved" | "not_improved" | "unclear") =>
-    patch<HistoryItem>(`/api/agents/history/${id}`, { outcome }),
   checkDrugInteractions: (medications: string[]) =>
     post<DrugCheckResult>("/api/medical/drugs/check", { medications }),
   consult: (body: { query: string; patient_id?: string; context?: Record<string, unknown> }) =>
@@ -699,6 +724,7 @@ export const api = {
   // trigger the download client-side instead (same pattern as
   // `exportConsultation`).
   downloadAttachment: (attachmentId: string) => getBlob(`/api/results/attachments/${attachmentId}/download`),
+  downloadSharePdf: (shareId: string) => getBlob(`/api/results/shares/${shareId}/pdf`),
 
   // --- Portal ---------------------------------------------------------------
   portalMe: () => get<PortalMe>("/api/portal/me"),

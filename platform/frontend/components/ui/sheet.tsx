@@ -8,6 +8,7 @@
 
 import { useEffect } from "react";
 import { X } from "lucide-react";
+import { useLanguage } from "@/lib/language";
 
 export default function Sheet({
   open,
@@ -20,6 +21,8 @@ export default function Sheet({
   title: string;
   children: React.ReactNode;
 }) {
+  const { t } = useLanguage();
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -39,7 +42,7 @@ export default function Sheet({
           <h2 className="text-base font-bold">{title}</h2>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("common.close")}
             className="rounded-full p-1.5 text-muted hover:bg-primary-soft"
           >
             <X size={18} />

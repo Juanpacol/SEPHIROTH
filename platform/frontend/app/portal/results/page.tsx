@@ -5,8 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { FileText, Paperclip } from "lucide-react";
 import { api } from "@/lib/api";
 import AgentBadge from "@/components/agent-badge";
+import { useLanguage } from "@/lib/language";
 
 export default function PortalResultsPage() {
+  const { t } = useLanguage();
   const { data: shares, isLoading } = useQuery({
     queryKey: ["portal", "shares"],
     queryFn: () => api.listShares(),
@@ -14,11 +16,11 @@ export default function PortalResultsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-bold">My Results</h1>
+      <h1 className="text-lg font-bold">{t("portal.results.title")}</h1>
 
-      {isLoading && <p className="text-sm text-muted">Loading…</p>}
+      {isLoading && <p className="text-sm text-muted">{t("portal.results.loading")}</p>}
       {!isLoading && (shares ?? []).length === 0 && (
-        <p className="text-sm text-muted">No results have been shared with you yet.</p>
+        <p className="text-sm text-muted">{t("portal.results.empty")}</p>
       )}
 
       <div className="space-y-3">
@@ -34,9 +36,9 @@ export default function PortalResultsPage() {
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   {share.event.title}
                   {!share.viewed_at && (
-                    <span className="h-2 w-2 rounded-full bg-primary" aria-label="Unread" />
+                    <span className="h-2 w-2 rounded-full bg-primary" aria-label={t("portal.results.unread")} />
                   )}
-                  {share.event.ai_generated && <AgentBadge name="AI-drafted" />}
+                  {share.event.ai_generated && <AgentBadge name={t("portal.results.aiDrafted")} />}
                 </div>
                 <div className="text-xs text-muted">{share.event.date}</div>
               </div>
