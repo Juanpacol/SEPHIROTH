@@ -1,0 +1,29 @@
+# Local-only overrides for THIS machine. Docker Compose merges this on top of
+# docker-compose.yml automatically; delete it to get the plain stack back.
+#
+# Two things differ here from the committed compose file:
+#
+# 1. Port. `teyva-backend` already publishes host 8000, so the API is exposed
+#    on 8010 instead (the container still listens on 8000).
+# 2. LLM provider. The committed file wires Gemini only, whose free tier is
+#    exhausted on this key. `split` keeps vision on Gemini and sends chat to
+#    the local Ollama, which is itself a container (`teyva-ollama-1`
+#    publishing 11434) — so from inside this container it is reachable via
+#    host.docker.internal, not localhost.
+services:
+  api:
+    # !override, not a plain list: Compose *appends* list fields when merging,
+    # so without it the base file's "8000:8000" survives and still collides.
+    ports: !override
+      - "8010:8000"
+    environment:
+      LLM_PROVIDER: split
+      OLLAMA_BASE_URL: http://host.docker.internal:11434/v1
+      OLLAMA_MODEL: qwen2.5:3b-instruct
+      OLLAMA_MAX_OUTPUT_TOKENS: "600"
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-}
+    extra_hosts:
+      # Docker Desktop provides this automatically, but naming it explicitly
+      # keeps the file honest about the dependency.
+      - "host.docker.internal:host-gateway"

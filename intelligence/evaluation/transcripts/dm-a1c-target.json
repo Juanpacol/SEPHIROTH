@@ -1,79 +1,55 @@
 {
   "case_id": "dm-a1c-target",
-  "answer": "For most nonpregnant adults with type 2 diabetes, an A1C goal of <7% without significant hypoglycemia is appropriate. This recommendation is in line with the guidelines provided by the American Diabetes Association (ADA) [Glycemic Targets & Pharmacologic Approaches, 2024].",
+  "answer": "Based on the guidelines from the American Diabetes Association (ADA Standards of Care in Diabetes, 2024), an A1C goal of less than 7% is appropriate for most nonpregnant adults with type 2 diabetes without significant hypoglycemia. Metformin is recommended as the initial pharmacologic agent for this population [ADA, 2024].",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "A1C goal for nonpregnant adults with type 2 diabetes",
-        "top_k": "5"
+        "query": "A1C goal type 2 diabetes",
+        "top_k": 2
       },
       "result": {
-        "query": "A1C goal for nonpregnant adults with type 2 diabetes",
+        "query": "A1C goal type 2 diabetes",
         "results": [
           {
             "id": "ada-2024-hba1c",
             "content": "An A1C goal for many nonpregnant adults with diabetes of <7% without significant hypoglycemia is appropriate. Metformin is the preferred initial pharmacologic agent for type 2 diabetes.",
             "source": "ADA Standards of Care in Diabetes",
             "citation": "Glycemic Targets & Pharmacologic Approaches, American Diabetes Association, 2024",
-            "score": 1.8353,
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
+            "score": 0.0492,
             "metadata": {
+              "category": "endocrinology",
               "organization": "American Diabetes Association",
               "year": 2024,
-              "title": "Glycemic Targets & Pharmacologic Approaches"
+              "title": "Glycemic Targets & Pharmacologic Approaches",
+              "url": "https://diabetesjournals.org/care/issue/47/Supplement_1"
             }
           },
           {
-            "id": "ada-2024-obesity",
-            "content": "GLP-1 receptor agonists and dual GIP/GLP-1 agonists are recommended for weight management in patients with type 2 diabetes and obesity, in addition to lifestyle intervention, given their combined glycemic and weight benefits.",
-            "source": "ADA Standards of Care in Diabetes",
-            "citation": "Obesity Management in Type 2 Diabetes, American Diabetes Association, 2024",
-            "score": 0.5883,
+            "id": "medlineplus-a1c",
+            "content": "The A1C (or HbA1c) test shows average blood sugar levels over the past 2-3 months. An A1C below 5.7% is normal, 5.7-6.4% indicates prediabetes, and 6.5% or higher indicates diabetes. Unlike a daily finger-stick, A1C reflects a longer-term trend rather than a single moment.",
+            "source": "MedlinePlus",
+            "citation": "The A1C Test and Diabetes, MedlinePlus (U.S. National Library of Medicine), 2024",
+            "url": "https://medlineplus.gov/a1c.html",
+            "score": 0.0484,
             "metadata": {
-              "organization": "American Diabetes Association",
+              "category": "general_health",
+              "organization": "MedlinePlus (U.S. National Library of Medicine)",
               "year": 2024,
-              "title": "Obesity Management in Type 2 Diabetes"
-            }
-          },
-          {
-            "id": "ada-2024-ckd",
-            "content": "In patients with type 2 diabetes and chronic kidney disease, an SGLT2 inhibitor is recommended for those with eGFR >=20 mL/min/1.73m2 to reduce CKD progression and cardiovascular risk. ACE inhibitors or ARBs are first-line for patients with albuminuria and hypertension.",
-            "source": "ADA Standards of Care in Diabetes",
-            "citation": "Chronic Kidney Disease in Diabetes, American Diabetes Association, 2024",
-            "score": 0.5477,
-            "metadata": {
-              "organization": "American Diabetes Association",
-              "year": 2024,
-              "title": "Chronic Kidney Disease in Diabetes"
-            }
-          },
-          {
-            "id": "ada-2024-hypertension-dm",
-            "content": "A blood pressure target of <130/80 mmHg is recommended for most adults with diabetes and hypertension. ACE inhibitors or ARBs are preferred first-line agents, particularly in the presence of albuminuria.",
-            "source": "ADA Standards of Care in Diabetes",
-            "citation": "Hypertension Management in Diabetes, American Diabetes Association, 2024",
-            "score": 0.4364,
-            "metadata": {
-              "organization": "American Diabetes Association",
-              "year": 2024,
-              "title": "Hypertension Management in Diabetes"
-            }
-          },
-          {
-            "id": "acc-aha-2018-lipids",
-            "content": "High-intensity statin therapy is recommended for patients with clinical atherosclerotic cardiovascular disease and for primary prevention in adults 40-75 years with LDL-C >=190 mg/dL or diabetes with additional risk factors.",
-            "source": "ACC/AHA Multi-Society Cholesterol Guideline",
-            "citation": "Management of Blood Cholesterol, ACC/AHA, 2018",
-            "score": 0.4,
-            "metadata": {
-              "organization": "ACC/AHA",
-              "year": 2018,
-              "title": "Management of Blood Cholesterol"
+              "title": "The A1C Test and Diabetes",
+              "url": "https://medlineplus.gov/a1c.html"
             }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
-  ]
+  ],
+  "latency_ms": 25325,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2199,
+  "completion_tokens": 117,
+  "cost_usd": 0.0
 }

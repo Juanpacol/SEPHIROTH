@@ -6,23 +6,26 @@
  * `window.matchMedia` and uses `ResizeObserver` at mount. */
 
 import dynamic from "next/dynamic";
+import { useLanguage } from "@/lib/language";
 
 const DriftWall = dynamic(() => import("@/components/effects/drift-wall"), { ssr: false });
 
 const SCREENSHOTS = [
-  { image: "/landing/dashboard.jpg", title: "Dashboard overview" },
-  { image: "/landing/copilot-working.jpg", title: "Copilot Chat, mid-consultation" },
-  { image: "/landing/evidence-results.jpg", title: "Evidence Library, cited results" },
-  { image: "/landing/imaging-vision.jpg", title: "Imaging Analysis, live vision description" },
-  { image: "/landing/patients.jpg", title: "Patient list with risk flags" },
-  { image: "/landing/agents.jpg", title: "Agents Activity" },
+  { image: "/landing/dashboard.jpg", titleKey: "marketing.productWall.screenshot.dashboard" },
+  { image: "/landing/copilot-working.jpg", titleKey: "marketing.productWall.screenshot.copilot" },
+  { image: "/landing/evidence-results.jpg", titleKey: "marketing.productWall.screenshot.evidence" },
+  { image: "/landing/imaging-vision.jpg", titleKey: "marketing.productWall.screenshot.imaging" },
+  { image: "/landing/patients.jpg", titleKey: "marketing.productWall.screenshot.patients" },
+  { image: "/landing/agents.jpg", titleKey: "marketing.productWall.screenshot.agents" },
 ];
 
 export default function ProductWall() {
+  const { t } = useLanguage();
+  const screenshots = SCREENSHOTS.map((s) => ({ image: s.image, title: t(s.titleKey) }));
   return (
     <div className="h-[420px] w-full overflow-hidden rounded-squircle border border-line/60 bg-ink md:h-[520px]">
       <DriftWall
-        items={SCREENSHOTS}
+        items={screenshots}
         columns={5}
         tileWidth={190}
         tileHeight={126}

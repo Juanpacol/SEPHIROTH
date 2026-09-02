@@ -130,6 +130,7 @@ class AbstentionReason(StrEnum):
     TOOL_FAILURE = "tool_failure"
     MODEL_UNCERTAINTY = "model_uncertainty"
     POLICY_RESTRICTION = "policy_restriction"
+    OUT_OF_SCOPE = "out_of_scope"
 
 
 class ResponseStatus(StrEnum):

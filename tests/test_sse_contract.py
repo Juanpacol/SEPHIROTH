@@ -44,6 +44,7 @@ from httpx import ASGITransport, AsyncClient
 import sephiroth.models.factory as factory_module
 from api.routers import agents as agents_router_module
 from auth import router as auth_router_module
+from core.config import settings
 from core.db import get_session
 from sephiroth.runtime import stream_consultation
 from tests.conftest import FakeLLMClient
@@ -73,9 +74,22 @@ SCRIPTS = {
 # --------------------------------------------------------------------------
 
 
-async def _workflow_events(context: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
+async def _workflow_events(
+    context: Dict[str, Any] | None = None, *, single_agent: bool = True
+) -> List[Dict[str, Any]]:
+    """`single_agent` selects the execution mode under test. The frozen
+    event contract is identical in both — what differs is how many
+    `agent_completed` events appear and which specialists produce them.
+    Tests asserting a *specific* specialist's identity (the
+    underscore/hyphen convention) need the multi-agent fan-out, since
+    single-agent mode routes on the question's own wording."""
     client = FakeLLMClient(scripts=SCRIPTS, default_script=[("answer", "specialist output")])
-    return [e async for e in stream_consultation(client, "first-line therapy?", context=context)]
+    original = settings.enable_single_agent_mode
+    settings.enable_single_agent_mode = single_agent
+    try:
+        return [e async for e in stream_consultation(client, "first-line therapy?", context=context)]
+    finally:
+        settings.enable_single_agent_mode = original
 
 
 async def test_event_order_is_routing_then_completions_then_final():
@@ -93,7 +107,7 @@ async def test_routing_agents_use_underscore_node_names():
     """`routing` carries *node* names. The frontend maps them with
     `.replace("_", "-")` to match the agent chips, so the underscore form is
     load-bearing."""
-    events = await _workflow_events({"medications": ["warfarin", "aspirin"]})
+    events = await _workflow_events({"medications": ["warfarin", "aspirin"]}, single_agent=False)
     routing = events[0]
 
     assert set(routing.keys()) == {"event", "agents"}
@@ -107,7 +121,7 @@ async def test_agent_completed_shape_and_hyphenated_identity():
     """`agent_completed.agent` is the *display* name (hyphenated), which is the
     opposite convention to `routing`. Both are relied on by the frontend's
     dual match: `p.name === event.agent || p.name.replace("-","_") === event.agent`."""
-    events = await _workflow_events({"medications": ["warfarin"]})
+    events = await _workflow_events({"medications": ["warfarin"]}, single_agent=False)
     completed = [e for e in events if e["event"] == "agent_completed"]
 
     assert completed, "at least one agent_completed expected"
@@ -120,6 +134,24 @@ async def test_agent_completed_shape_and_hyphenated_identity():
     names = {e["agent"] for e in completed}
     assert "drug-safety" in names, "display name must be hyphenated here"
     assert "drug_safety" not in names
+
+
+async def test_single_agent_mode_emits_exactly_one_agent_completed():
+    """Single-agent mode changes *how many* specialists run, never the
+    event shapes. `routing` still carries a list (of one), and exactly one
+    `agent_completed` precedes `final` — the frontend's parsing is
+    unchanged because it already loops over however many arrive."""
+    events = await _workflow_events({"medications": ["warfarin"]}, single_agent=True)
+
+    routing = events[0]
+    assert routing["event"] == "routing"
+    assert isinstance(routing["agents"], list)
+    assert len(routing["agents"]) == 1, "single-agent mode routes to exactly one specialist"
+
+    completed = [e for e in events if e["event"] == "agent_completed"]
+    assert len(completed) == 1
+    assert set(completed[0].keys()) == {"event", "agent", "summary", "tool_calls"}
+    assert events[-1]["event"] == "final"
 
 
 async def test_agent_completed_tool_calls_omit_result():

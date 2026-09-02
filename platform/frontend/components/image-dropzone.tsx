@@ -4,13 +4,14 @@
  * `/imaging`. Shows an instant client-side preview via `URL.createObjectURL`
  * the moment a file is dropped/picked — before the upload round trip even
  * finishes — then uploads it and reports back the server path
- * `analyzeImage`/`describeImage` still expect (see `api.uploadImage`). */
+ * `describeImage` still expects (see `api.uploadImage`). */
 
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { FileImage, Loader2, UploadCloud, X } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
+import { useLanguage } from "@/lib/language";
 
 const ACCEPTED = ".png,.jpg,.jpeg,.gif,.webp,.bmp";
 
@@ -20,6 +21,7 @@ export default function ImageDropzone({
   onUploaded: (path: string) => void;
 }) {
   const showToast = useToast();
+  const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export default function ImageDropzone({
     mutationFn: (file: File) => api.uploadImage(file),
     onSuccess: (res) => onUploaded(res.path),
     onError: (err) => {
-      showToast(err instanceof ApiError ? err.message : "Could not upload the image.", "error");
+      showToast(err instanceof ApiError ? err.message : t("imageDropzone.error.uploadFailed"), "error");
       clear();
     },
   });
@@ -69,19 +71,19 @@ export default function ImageDropzone({
       <div className="relative h-full min-h-[220px] w-full">
         <img
           src={previewUrl}
-          alt="Selected medical image"
+          alt={t("imageDropzone.alt")}
           className="max-h-[420px] w-full rounded-lg object-contain"
         />
         <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 rounded-b-lg bg-ink/70 px-3 py-2 text-xs text-white">
           <span className="min-w-0 flex-1 truncate">{fileName}</span>
           {upload.isPending && (
             <span className="flex items-center gap-1 shrink-0">
-              <Loader2 size={13} className="animate-spin" /> Uploading…
+              <Loader2 size={13} className="animate-spin" /> {t("imageDropzone.uploading")}
             </span>
           )}
           <button
             onClick={clear}
-            aria-label="Remove image"
+            aria-label={t("imageDropzone.remove")}
             className="shrink-0 rounded-full p-1 hover:bg-white/20"
           >
             <X size={14} />
@@ -121,9 +123,9 @@ export default function ImageDropzone({
         onChange={(e) => handleFile(e.target.files?.[0])}
       />
       {dragOver ? <FileImage size={28} className="text-primary" /> : <UploadCloud size={28} className="text-muted" />}
-      <p className="text-sm font-medium">Drag & drop an image here</p>
-      <p className="text-xs text-muted">or click to browse — from your Downloads or anywhere else</p>
-      <p className="text-xs text-muted">PNG, JPG, GIF, WEBP, or BMP</p>
+      <p className="text-sm font-medium">{t("imageDropzone.dragDrop")}</p>
+      <p className="text-xs text-muted">{t("imageDropzone.browseHint")}</p>
+      <p className="text-xs text-muted">{t("imageDropzone.formats")}</p>
     </div>
   );
 }

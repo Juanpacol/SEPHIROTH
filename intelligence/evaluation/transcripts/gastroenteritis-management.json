@@ -1,0 +1,55 @@
+{
+  "case_id": "gastroenteritis-management",
+  "answer": "For managing acute vomiting and diarrhea at home, the priority is preventing dehydration. Oral rehydration solution or clear fluids should be used in small frequent sips to prevent dehydration [CDC, 2022]. A normal diet as tolerated aids recovery from acute gastroenteritis, and seeking care for symptoms persisting more than a few days, blood in stool, high fever, or signs of dehydration is recommended.\n\nNote: The second guideline found does not directly address the management of acute vomiting and diarrhea. It pertains to antithrombotic therapy for VTE disease which appears irrelevant to your query.\n\nBased on the guidelines provided by CDC [CDC, 2022], a balanced approach is necessary involving rehydration and dietary guidance tailored specific to recovery needs. If symptoms persist or worsen beyond expected recovery period, medical consultation should be sought. \n\nFor further detailed insights not covered in these materials, consulting with healthcare professionals remains essential.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "acute vomiting and diarrhea management at home",
+        "top_k": 2
+      },
+      "result": {
+        "query": "acute vomiting and diarrhea management at home",
+        "results": [
+          {
+            "id": "cdc-gastroenteritis",
+            "content": "Acute gastroenteritis (vomiting and/or diarrhea) is usually viral and self-limited within a few days. The priority is preventing dehydration with oral rehydration solution or clear fluids in small frequent sips; the BRAT diet is no longer specifically recommended \u2014 a normal diet as tolerated aids recovery. Seek care for blood in stool, high fever, signs of dehydration, or symptoms lasting more than a few days.",
+            "source": "CDC",
+            "citation": "Managing Acute Gastroenteritis, Centers for Disease Control and Prevention, 2022",
+            "url": "https://www.cdc.gov/norovirus/about/treatment.html",
+            "score": 0.0492,
+            "metadata": {
+              "category": "gastroenterology",
+              "organization": "Centers for Disease Control and Prevention",
+              "year": 2022,
+              "title": "Managing Acute Gastroenteritis",
+              "url": "https://www.cdc.gov/norovirus/about/treatment.html"
+            }
+          },
+          {
+            "id": "acc-aha-2023-vte",
+            "content": "For acute deep vein thrombosis or pulmonary embolism without cancer, direct oral anticoagulants are preferred over warfarin as first-line therapy. Anticoagulation duration is at least 3 months, extended indefinitely for unprovoked events with low bleeding risk.",
+            "source": "ACCP Antithrombotic Therapy for VTE Guideline",
+            "citation": "Antithrombotic Therapy for VTE Disease, ACCP, 2021",
+            "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext",
+            "score": 0.0161,
+            "metadata": {
+              "category": "cardiovascular",
+              "organization": "ACCP",
+              "year": 2021,
+              "title": "Antithrombotic Therapy for VTE Disease",
+              "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 12742,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2226,
+  "completion_tokens": 227,
+  "cost_usd": 0.0
+}

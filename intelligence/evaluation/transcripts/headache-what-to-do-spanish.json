@@ -1,0 +1,11 @@
+{
+  "case_id": "headache-what-to-do-spanish",
+  "answer": "Para responder sobre c\u00f3mo manejar un dolor de cabeza espec\u00edfico, necesitar\u00eda m\u00e1s informaci\u00f3n sobre el tipo de dolor que experimentas (esencial, migra\u00f1a con o sin visi\u00f3n perif\u00e9rica, etc.), si existe evidencia de una causa patol\u00f3gica y otros aspectos importantes. Sin embargo, aqu\u00ed hay algunos puntos generales basados en los tratamientos recomendados:\n\nPara migra\u00f1as, podr\u00edas considerar el uso del Ibruprofeno como medicamento no receta. Pero aseg\u00farate que no tengas antecedentes de posibles efectos secundarios. En casos persistentes, lo mejor es consultar a un m\u00e9dico para una evaluaci\u00f3n y tratamiento adecuado.\n\nPara dolor residual o cr\u00f3nico de cabeza, podr\u00eda ser \u00fatil considerar terapias complementarias como la acupuntura o la hipnosis. Tambi\u00e9n hay evidencias sobre el efecto de la elecci\u00f3n de un m\u00e9todo hol\u00edstico de manejo del dolor que no utiliza medicamentos como una buena opci\u00f3n para algunos individuos.\n\nPor favor consulta a un profesional de la salud antes de empezar cualquier tratamiento.",
+  "tool_calls": [],
+  "latency_ms": 8258,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 832,
+  "completion_tokens": 225,
+  "cost_usd": 0.0
+}

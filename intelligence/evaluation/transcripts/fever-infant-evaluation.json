@@ -1,0 +1,40 @@
+{
+  "case_id": "fever-infant-evaluation",
+  "answer": "For infants younger than 3 months, any fever that reaches or exceeds 38\u00b0C (100.4\u00b0F) requires prompt medical evaluation regardless of the infant's overall behavior [AAP Clinical Report, 2011]. For older infants and children who are still feeding and behaving normally despite a fever, it is not always necessary to seek immediate medical assessment, but if the child expresses discomfort, medical intervention may be needed. [AAP Clinical Report, 2011]",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "top_k": 2,
+        "query": "fever in infants"
+      },
+      "result": {
+        "query": "fever in infants",
+        "results": [
+          {
+            "id": "aap-2011-fever-children",
+            "content": "In infants younger than 3 months, any fever (rectal temperature \u2265100.4\u00b0F/38\u00b0C) requires prompt medical evaluation regardless of how well the infant appears. For older infants and children who are feeding and behaving normally, fever itself is not dangerous and does not require treatment unless the child is uncomfortable.",
+            "source": "AAP Clinical Report",
+            "citation": "Fever and Antipyretic Use in Children, American Academy of Pediatrics, 2011",
+            "url": "https://publications.aap.org/pediatrics/article/127/3/580/65199",
+            "score": 0.0492,
+            "metadata": {
+              "category": "pediatrics",
+              "organization": "American Academy of Pediatrics",
+              "year": 2011,
+              "title": "Fever and Antipyretic Use in Children",
+              "url": "https://publications.aap.org/pediatrics/article/127/3/580/65199"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 9984,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2002,
+  "completion_tokens": 134,
+  "cost_usd": 0.0
+}

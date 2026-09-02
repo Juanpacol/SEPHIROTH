@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CalendarClock, ChevronRight } from "lucide-react";
 import { useUser } from "@/lib/auth";
+import { useLanguage } from "@/lib/language";
 import NotificationBell from "@/components/notification-bell";
 import ThemeToggle from "@/components/theme-toggle";
 
@@ -11,6 +12,7 @@ export default function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
   const user = useUser();
+  const { t } = useLanguage();
   const crumbs = pathname.split("/").filter(Boolean);
 
   // Aceternity "resizable navbar" behavior: the bar tightens and gains a
@@ -47,7 +49,7 @@ export default function Topbar() {
           <button
             onClick={() => router.push("/schedule")}
             className="rounded-full p-2 text-muted hover:bg-primary-soft"
-            aria-label="Schedule"
+            aria-label={t("nav.schedule")}
           >
             <CalendarClock size={18} />
           </button>

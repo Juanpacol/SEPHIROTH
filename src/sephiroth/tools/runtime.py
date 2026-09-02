@@ -82,17 +82,19 @@ class ToolRuntime:
         return [s for s in self._schemas if s["function"]["name"] in allowed]
 
     def system_prompt_summary(self, allowed: Optional[List[str]] = None) -> str:
-        """Natural-language tool catalog for inclusion in a system prompt."""
-        lines = ["You have access to the following clinical tools:"]
-        for schema in self.llm_tools(allowed):
-            fn = schema["function"]
-            first_sentence = fn["description"].split(".")[0].strip()
-            lines.append(f"- {fn['name']}: {first_sentence}.")
-        lines.append(
-            "Call a tool whenever it can ground your answer in data or evidence. "
-            "Never invent citations — only cite what a tool returned."
+        """Compact tool-catalog reminder for inclusion in a system prompt.
+
+        Full name+parameter descriptions already reach the model via the
+        `tools` field on the chat request (every provider here supports
+        native tool-calling) — repeating per-tool descriptions in prose here
+        would just duplicate that payload token-for-token. Only the tool
+        names plus the citation-safety reminder earn their place twice."""
+        names = ", ".join(schema["function"]["name"] for schema in self.llm_tools(allowed))
+        return (
+            f"Available tools: {names}. Call a tool whenever it can ground your "
+            "answer in data or evidence. Never invent citations — only cite "
+            "what a tool returned."
         )
-        return "\n".join(lines)
 
     def scoped_executor(self, allowed: Optional[List[str]]) -> Callable[[str, Dict[str, Any]], Any]:
         """A tool executor bound to a whitelist.

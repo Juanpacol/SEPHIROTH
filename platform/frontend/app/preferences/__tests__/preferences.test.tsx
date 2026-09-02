@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PreferencesPage from "@/app/preferences/page";
 import { api } from "@/lib/api";
+import { LanguageProvider } from "@/lib/language";
 
 vi.mock("@/lib/api", () => ({
   api: {
@@ -9,6 +10,14 @@ vi.mock("@/lib/api", () => ({
     writeAutomationMemory: vi.fn(),
   },
 }));
+
+function renderPage() {
+  return render(
+    <LanguageProvider>
+      <PreferencesPage />
+    </LanguageProvider>
+  );
+}
 
 describe("PreferencesPage", () => {
   beforeEach(() => {
@@ -25,7 +34,7 @@ describe("PreferencesPage", () => {
   afterEach(() => vi.clearAllMocks());
 
   it("renders both preference forms with their defaults", async () => {
-    render(<PreferencesPage />);
+    renderPage();
     await waitFor(() => expect(screen.getByText("Reminder lead time")).toBeInTheDocument());
     expect(screen.getByText("Quiet hours")).toBeInTheDocument();
     expect(screen.getByDisplayValue("24")).toBeInTheDocument();
@@ -38,7 +47,7 @@ describe("PreferencesPage", () => {
       key: "reminder_lead_hours",
       value: 48,
     });
-    render(<PreferencesPage />);
+    renderPage();
 
     await waitFor(() => expect(screen.getByDisplayValue("24")).toBeInTheDocument());
     fireEvent.change(screen.getByDisplayValue("24"), { target: { value: "48" } });

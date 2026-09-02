@@ -238,16 +238,26 @@ async def test_recommendation_stats_requires_auth(client):
 
 
 @pytest.mark.asyncio
-async def test_recent_consultations_reach_only_the_coordinator(db_session, monkeypatch):
+async def test_recent_consultations_reach_only_the_answering_agent(db_session, monkeypatch):
     """SPEC-005 F-034/F-035: a patient with a prior consultation gets a
     `recent_consultations` digest injected into `context` by the router —
-    it must reach the coordinator (whose `context_fields` is `[]`, i.e.
-    everything) but NOT the evidence specialist (whose `context_fields` is
-    `["conditions"]`, per src/sephiroth/runtime/registry.py).
+    it must reach the agent that writes the final answer, but NOT the
+    other specialists (whose `context_fields` are narrow, per
+    src/sephiroth/runtime/registry.py).
+
+    Exercised here in multi-agent mode, where the answering agent is the
+    coordinator (`context_fields=[]`, i.e. everything) and the evidence
+    specialist must not see the digest. In single-agent mode the answering
+    specialist receives it instead — `context_for_agent(..., answering=True)`
+    — otherwise per-patient memory would silently vanish; that path is
+    covered by tests/test_context_views.py.
 
     Verifies AC-005-05 (docs/specs/SPEC-005-context-engine.md)."""
     import sephiroth.models.factory as factory_module
+    from core.config import settings
     from data.schemas import Patient
+
+    monkeypatch.setattr(settings, "enable_single_agent_mode", False)
 
     fake_client = FakeLLMClient(
         scripts={

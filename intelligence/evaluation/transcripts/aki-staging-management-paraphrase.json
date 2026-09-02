@@ -1,0 +1,11 @@
+{
+  "case_id": "aki-staging-management-paraphrase",
+  "answer": "To accurately assess the severity of your patient\u2019s sudden drop in kidney function, we need to consider specific clinical thresholds related to serum creatinine levels. In clinical practice, especially when dealing with acute kidney injury (AKI), a serum creatinine level over 132 \u00b5mol/L is generally considered indicative of severe AKI and requires prompt medical attention.\n\n**Cite:** [National Kidney Foundation/KDOQI, 2012] \n\nFor treatment, this often involves immediate hydration to correct volume status and prevent further kidney damage. Renal vasodilator therapy might be considered in selected cases with significant hypotension and no evidence of end-organ dysfunction.\n\n**Cite:** [National Kidney Foundation/KDOQI, 2012] \n\nPlease provide more specific clinical context or lab results so we can ensure that this guidance is applicable to your particular case.",
+  "tool_calls": [],
+  "latency_ms": 5969,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 844,
+  "completion_tokens": 182,
+  "cost_usd": 0.0
+}

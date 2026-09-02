@@ -1,55 +1,55 @@
 {
   "case_id": "hf-sglt2-therapy",
-  "answer": "For heart failure with reduced ejection fraction (HFrEF), guideline-directed medical therapy includes:\n\n* ARNI/ACEi/ARB\n* Beta-blockers\n* Mineralocorticoid receptor antagonists\n* SGLT2 inhibitors\n\nSGLT2 inhibitors are recommended regardless of diabetes status. [1]\n\nReferences:\n[1] Management of Heart Failure, AHA/ACC/HFSA, 2022",
+  "answer": "For heart failure with reduced ejection fraction (HFrEF), the guideline-directed medical therapy includes Angiotensin Receptor Neprilysin Inhibitor (ARNI)/Angiotensin-Converting Enzyme inhibitor (ACEi)/Angiotensin II Receptor Antagonist (ARB). Additionally, it is recommended to use SGLT2 inhibitors. These medications should be used at the lowest effective dose and for the shortest duration possible, avoiding them or using them with caution in individuals with kidney disease, heart failure, or a history of ulcers.\n\n[MedlinePlus (U.S. National Library of Medicine), 2023]",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "heart failure with reduced ejection fraction treatment guidelines",
-        "top_k": "5"
+        "query": "heart failure with reduced ejection fraction",
+        "top_k": 2
       },
       "result": {
-        "query": "heart failure with reduced ejection fraction treatment guidelines",
+        "query": "heart failure with reduced ejection fraction",
         "results": [
           {
             "id": "aha-2022-hf",
             "content": "In patients with heart failure with reduced ejection fraction (HFrEF), guideline-directed medical therapy includes ARNI/ACEi/ARB, beta-blockers, mineralocorticoid receptor antagonists, and SGLT2 inhibitors. SGLT2 inhibitors are recommended regardless of diabetes status.",
             "source": "AHA/ACC/HFSA Heart Failure Guideline",
             "citation": "Management of Heart Failure, AHA/ACC/HFSA, 2022",
-            "score": 0.9449,
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001063",
+            "score": 0.0492,
             "metadata": {
+              "category": "cardiovascular",
               "organization": "AHA/ACC/HFSA",
               "year": 2022,
-              "title": "Management of Heart Failure"
+              "title": "Management of Heart Failure",
+              "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001063"
             }
           },
           {
-            "id": "nice-2022-depression",
-            "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
-            "source": "NICE Guideline on Depression in Adults",
-            "citation": "Management of Depression in Adults, NICE, 2022",
-            "score": 0.2236,
+            "id": "medlineplus-nsaid-cautions",
+            "content": "NSAIDs (ibuprofen, naproxen) relieve pain, fever, and inflammation but carry a dose-dependent risk of stomach bleeding, kidney injury, and cardiovascular events with regular use. They should be used at the lowest effective dose for the shortest time needed, and avoided or used with caution in patients with kidney disease, heart failure, or a history of ulcers.",
+            "source": "MedlinePlus",
+            "citation": "NSAIDs: What You Need to Know, MedlinePlus (U.S. National Library of Medicine), 2023",
+            "url": "https://medlineplus.gov/druginfo/meds/a682159.html",
+            "score": 0.0161,
             "metadata": {
-              "organization": "NICE",
-              "year": 2022,
-              "title": "Management of Depression in Adults"
-            }
-          },
-          {
-            "id": "gina-2024-asthma",
-            "content": "For adults and adolescents with asthma, as-needed low-dose ICS-formoterol is preferred as reliever therapy over short-acting beta-agonist alone, even at the mildest step of treatment, to reduce exacerbation risk.",
-            "source": "Global Initiative for Asthma Report",
-            "citation": "Global Strategy for Asthma Management, GINA, 2024",
-            "score": 0.1925,
-            "metadata": {
-              "organization": "GINA",
-              "year": 2024,
-              "title": "Global Strategy for Asthma Management"
+              "category": "general_health",
+              "organization": "MedlinePlus (U.S. National Library of Medicine)",
+              "year": 2023,
+              "title": "NSAIDs: What You Need to Know",
+              "url": "https://medlineplus.gov/druginfo/meds/a682159.html"
             }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
-  ]
+  ],
+  "latency_ms": 15987,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2258,
+  "completion_tokens": 174,
+  "cost_usd": 0.0
 }

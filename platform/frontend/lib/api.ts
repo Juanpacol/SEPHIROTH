@@ -30,6 +30,36 @@ export interface DashboardStats {
   avg_priority_score: number;
 }
 
+/** One line of "what a clinician needs to do today" — replaces the old
+ * evolution/alerts/medication/labs/imaging/followup tabs' raw counts.
+ * Fields beyond `category`/`severity`/`patient_*` are category-specific
+ * (only the ones relevant to that item's `category` are populated). */
+export interface DashboardActionItem {
+  category: "alert" | "deteriorating" | "lab" | "interaction" | "imaging" | "followup" | "approval" | "decision";
+  severity: "critical" | "high" | "medium" | "low";
+  patient_id: string | null;
+  patient_name: string | null;
+  title?: string;
+  detail?: string | null;
+  test_name?: string;
+  value?: number;
+  unit?: string;
+  drug_a?: string;
+  drug_b?: string;
+  modality?: string;
+  body_part?: string;
+  check_key?: string;
+  days_late?: number;
+  action_type?: string;
+  query_preview?: string;
+  consultation_id?: string;
+}
+
+export interface DashboardActionItems {
+  items: DashboardActionItem[];
+  total_count: number;
+}
+
 export interface DashboardEvolution {
   deteriorating: { id: string; name: string }[];
   improving: { id: string; name: string }[];
@@ -171,6 +201,18 @@ export interface TimelineEvent {
   ai_generated?: boolean;
 }
 
+export interface RecentImagingAnalysis {
+  id: number;
+  patient_id: string;
+  patient_name: string;
+  title: string;
+  date: string;
+  image_path: string | null;
+  model: string | null;
+  description: string;
+  ai_generated: boolean;
+}
+
 export interface Patient extends PatientSummary {
   medications: string[];
   allergies: string[];
@@ -222,12 +264,6 @@ export interface HistoryItem extends ConsultResponse {
   acted_at: string | null;
   outcome: "improved" | "not_improved" | "unclear" | null;
   outcome_at: string | null;
-}
-
-export interface RecommendationStats {
-  total: number;
-  acted_on: number;
-  improved: number;
 }
 
 export interface DrugInteraction {
@@ -325,7 +361,14 @@ export interface Appointment {
 
 export interface AppNotification {
   id: string;
-  type: "appointment_booked" | "result_shared" | "waitlist_match";
+  type:
+    | "appointment_booked"
+    | "appointment_reminder"
+    | "result_shared"
+    | "waitlist_match"
+    | "medication_prescribed"
+    | "followup_message"
+    | "alert_escalated";
   message: string;
   related_appointment_id?: string | null;
   read_at: string | null;
@@ -432,7 +475,9 @@ export interface PendingAction {
   id: string;
   workflow_step_id: string | null;
   patient_id: string;
+  patient_name: string | null;
   action_type: string;
+  instructions: string | null;
   status: "pending" | "approved" | "rejected" | "expired";
   draft_text: string;
   draft_source: "template" | "llm";
@@ -556,7 +601,10 @@ export const api = {
     post<AuthResponse>("/api/auth/login", body),
   dashboardStats: () => get<DashboardStats>("/api/dashboard/stats"),
   dashboardBootstrap: () =>
-    get<{ stats: DashboardStats; agenda: TodayAgenda; alerts: DashboardAlerts }>("/api/dashboard/bootstrap"),
+    get<{ stats: DashboardStats; agenda: TodayAgenda; action_items: DashboardActionItems }>(
+      "/api/dashboard/bootstrap"
+    ),
+  dashboardActionItems: () => get<DashboardActionItems>("/api/dashboard/action-items"),
   dashboardEvolution: () => get<DashboardEvolution>("/api/dashboard/evolution"),
   dashboardAlerts: () => get<DashboardAlerts>("/api/dashboard/alerts"),
   dashboardMedications: () => get<DashboardMedications>("/api/dashboard/medications"),
@@ -570,26 +618,25 @@ export const api = {
   agentsStatus: () => get<AgentsStatus>("/api/agents/status"),
   patients: (sort?: "risk") => get<PatientSummary[]>(`/api/patients${sort ? `?sort=${sort}` : ""}`),
   patient: (id: string) => get<Patient>(`/api/patients/${id}`),
-  history: () => get<HistoryItem[]>("/api/agents/history"),
-  recommendationStats: () => get<RecommendationStats>("/api/agents/recommendations/stats"),
   markActedOn: (id: string, acted_on: boolean) =>
     patch<HistoryItem>(`/api/agents/history/${id}`, { acted_on }),
-  markOutcome: (id: string, outcome: "improved" | "not_improved" | "unclear") =>
-    patch<HistoryItem>(`/api/agents/history/${id}`, { outcome }),
   checkDrugInteractions: (medications: string[]) =>
     post<DrugCheckResult>("/api/medical/drugs/check", { medications }),
   consult: (body: { query: string; patient_id?: string; context?: Record<string, unknown> }) =>
     post<ConsultResponse>("/api/agents/consult", body),
-  analyzeImage: (body: { image_path: string; modality: string; target?: string }) =>
-    post<Record<string, unknown>>("/api/medical/imaging/analyze", body),
   describeImage: (body: { image_path: string; clinical_focus?: string }) =>
     post<DescribeImageResponse>("/api/medical/imaging/describe", body),
   imagePreviewUrl: (path: string) =>
     `/api/medical/imaging/preview?path=${encodeURIComponent(path)}`,
+  imagePreviewBlob: (path: string) => getBlob(`/api/medical/imaging/preview?path=${encodeURIComponent(path)}`),
   detectModality: (imagePath: string) =>
     post<{ modality: string }>("/api/medical/imaging/detect-modality", { image_path: imagePath }),
+  recentImagingAnalyses: (limit = 12) =>
+    get<RecentImagingAnalysis[]>(`/api/medical/imaging/recent?limit=${limit}`),
   addTimelineEvent: (patientId: string, body: { type: string; title: string; detail?: string }) =>
     post<TimelineEvent>(`/api/patients/${patientId}/timeline`, body),
+  addMedication: (patientId: string, body: { name: string; dosage?: string }) =>
+    post<{ medications: string[] }>(`/api/patients/${patientId}/medications`, body),
   uploadImage: (file: File) => {
     const form = new FormData();
     form.append("file", file);
@@ -599,7 +646,7 @@ export const api = {
     const form = new FormData();
     form.append("file", file);
     if (noteDate) form.append("note_date", noteDate);
-    return postForm<{ events_added: unknown[]; source_file: string }>(
+    return postForm<{ events_added: unknown[]; source_file: string; processing?: boolean }>(
       `/api/patients/${patientId}/notes/upload`,
       form
     );
@@ -677,6 +724,7 @@ export const api = {
   // trigger the download client-side instead (same pattern as
   // `exportConsultation`).
   downloadAttachment: (attachmentId: string) => getBlob(`/api/results/attachments/${attachmentId}/download`),
+  downloadSharePdf: (shareId: string) => getBlob(`/api/results/shares/${shareId}/pdf`),
 
   // --- Portal ---------------------------------------------------------------
   portalMe: () => get<PortalMe>("/api/portal/me"),

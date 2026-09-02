@@ -1,0 +1,55 @@
+{
+  "case_id": "headache-red-flags",
+  "answer": "Seek urgent care for the following headache symptoms, as they could indicate a serious condition:\n\n- The most severe headache of your life with sudden onset\n- A head injury causing a headache and stiffness in the neck  \n- A headache associated with fever or confusion\n- Symptoms including weakness, vision problems, or difficulty speaking\n\nThese signs are concerning and should be evaluated promptly by medical professionals. For less acute symptoms like mild headaches not fitting these criteria, consider consultation if they worsen suddenly or persist without improvement. Always consult a healthcare provider when uncertain about proper care for your specific situation. [CDC-Headache Red Flags, 2023]",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "headache severe symptoms",
+        "top_k": 2
+      },
+      "result": {
+        "query": "headache severe symptoms",
+        "results": [
+          {
+            "id": "cdc-headache-red-flags",
+            "content": "Most headaches are not dangerous, but seek urgent care for a headache that is the 'worst of your life' and sudden in onset, a headache with fever and stiff neck, a headache after a head injury, or a headache with confusion, weakness, vision changes, or trouble speaking \u2014 these can signal a medical emergency.",
+            "source": "MedlinePlus",
+            "citation": "Headache Warning Signs, MedlinePlus (U.S. National Library of Medicine), 2023",
+            "url": "https://medlineplus.gov/headache.html",
+            "score": 0.0328,
+            "metadata": {
+              "category": "neurology",
+              "organization": "MedlinePlus (U.S. National Library of Medicine)",
+              "year": 2023,
+              "title": "Headache Warning Signs",
+              "url": "https://medlineplus.gov/headache.html"
+            }
+          },
+          {
+            "id": "medlineplus-when-to-see-doctor",
+            "content": "For most minor symptoms \u2014 a mild cold, a headache, a small cut, occasional heartburn \u2014 self-care and over-the-counter remedies are appropriate. See a clinician promptly for chest pain, difficulty breathing, sudden severe pain, high fever, confusion, or any symptom that is severe, sudden, or progressively worsening.",
+            "source": "MedlinePlus",
+            "citation": "When to See a Doctor, MedlinePlus (U.S. National Library of Medicine), 2023",
+            "url": "https://medlineplus.gov/ency/patientinstructions/000605.htm",
+            "score": 0.0164,
+            "metadata": {
+              "category": "general_health",
+              "organization": "MedlinePlus (U.S. National Library of Medicine)",
+              "year": 2023,
+              "title": "When to See a Doctor",
+              "url": "https://medlineplus.gov/ency/patientinstructions/000605.htm"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 11311,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2183,
+  "completion_tokens": 164,
+  "cost_usd": 0.0
+}

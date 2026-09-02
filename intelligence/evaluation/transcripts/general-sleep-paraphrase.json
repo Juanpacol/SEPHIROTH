@@ -1,0 +1,11 @@
+{
+  "case_id": "general-sleep-paraphrase",
+  "answer": "Not getting enough sleep can affect various aspects of your health. It increases the risk of developing health conditions such as diabetes, cardiovascular disease, and obesity. Sleep deprivation also influences mood, causing irritability or even depression. Cognitive functions are impaired, leading to difficulties in concentration and memory. For comprehensive guidance, it is best to consult a healthcare professional who can provide personalized advice based on your specific needs. [CDC, 2021]",
+  "tool_calls": [],
+  "latency_ms": 3699,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 837,
+  "completion_tokens": 89,
+  "cost_usd": 0.0
+}

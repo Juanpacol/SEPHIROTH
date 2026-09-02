@@ -1,0 +1,55 @@
+{
+  "case_id": "gerd-first-line-treatment",
+  "answer": "For gastroesophageal reflux disease (GERD), the first-line treatment recommended by the American College of Gastroenterology guidelines from 2022 is a proton pump inhibitor taken once daily before breakfast. This therapy is suitable for individuals with moderate to severe symptoms, alongside lifestyle changes such as weight loss and avoiding large meals late in the day.\n\nIf lifestyle modifications do not sufficiently manage symptoms, endoscopy may be warranted due to alarm features that require further evaluation. Trimethoprim-sulfamethoxazole or nitrofurantoin are considered first-line agents for treating uncomplicated cystitis in women as per Infectious Diseases Society of America guidelines from 2019; however, fluoroquinolones are not recommended as a primary treatment option due to the lack of suitability indicated. The above details should be reviewed and may change based on an individual's specific condition or contraindications.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "GERD first line treatment",
+        "top_k": 2
+      },
+      "result": {
+        "query": "GERD first line treatment",
+        "results": [
+          {
+            "id": "acg-2022-gerd",
+            "content": "For gastroesophageal reflux disease (GERD), a proton pump inhibitor once daily before breakfast is first-line treatment for moderate to severe symptoms; lifestyle measures (weight loss, avoiding late meals, elevating the head of the bed) are adjuncts. Alarm features \u2014 dysphagia, weight loss, GI bleeding \u2014 warrant endoscopy rather than empiric treatment.",
+            "source": "ACG Clinical Guideline",
+            "citation": "Diagnosis and Management of GERD, American College of Gastroenterology, 2022",
+            "url": "https://journals.lww.com/ajg/fulltext/2022/01000/acg_clinical_guideline_for_the_diagnosis_and.14.aspx",
+            "score": 0.0489,
+            "metadata": {
+              "category": "gastroenterology",
+              "organization": "American College of Gastroenterology",
+              "year": 2022,
+              "title": "Diagnosis and Management of GERD",
+              "url": "https://journals.lww.com/ajg/fulltext/2022/01000/acg_clinical_guideline_for_the_diagnosis_and.14.aspx"
+            }
+          },
+          {
+            "id": "idsa-2019-uti",
+            "content": "Nitrofurantoin for 5 days or trimethoprim-sulfamethoxazole for 3 days are first-line agents for uncomplicated cystitis in women. Fluoroquinolones are reserved for cases where first-line agents are not suitable.",
+            "source": "IDSA Uncomplicated UTI Guideline",
+            "citation": "Treatment of Uncomplicated Cystitis, IDSA, 2019",
+            "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/",
+            "score": 0.0164,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "IDSA",
+              "year": 2019,
+              "title": "Treatment of Uncomplicated Cystitis",
+              "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 11979,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2253,
+  "completion_tokens": 221,
+  "cost_usd": 0.0
+}

@@ -11,12 +11,16 @@ see `retrieve()`.
 
 from __future__ import annotations
 
+import logging
 import re
-from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from data.embeddings.base import EmbeddingProvider, EmbeddingUnavailable
+from data.rag.corpus_primary_care import PRIMARY_CARE_GUIDELINES
+from data.rag.document import Document
 from data.vectors import InMemoryVectorStore, VectorStore
+
+logger = logging.getLogger(__name__)
 
 RRF_K = 60
 # Dense embeddings are the more semantically precise signal when available;
@@ -26,6 +30,15 @@ RRF_K = 60
 # `_fuse()`.
 KEYWORD_WEIGHT = 1.0
 DENSE_WEIGHT = 2.0
+# `_fuse` used to truncate straight to `top_k`, leaving `mmr_rerank` in
+# `_finalize` nothing to actually diversify against — with an already-top_k
+# list, MMR can only reorder, never pull in a relevant doc RRF ranked 6th.
+# Widening the fused candidate pool before that final cut lets MMR trade off
+# relevance vs. redundancy over real alternatives. See
+# tests/test_embeddings_matching.py::test_compound_query_surfaces_all_relevant_documents,
+# a 3-topic query where the 2nd and 3rd relevant docs were ranked outside a
+# bare top-5 RRF cut.
+MMR_CANDIDATE_POOL_MULTIPLIER = 3
 
 STOPWORDS = {
     "the",
@@ -49,24 +62,6 @@ STOPWORDS = {
     "be",
     "my",
 }
-
-
-@dataclass
-class Document:
-    """Medical document with mandatory citation metadata."""
-
-    id: str
-    content: str
-    source: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-    @property
-    def citation(self) -> str:
-        org = self.metadata.get("organization", "")
-        year = self.metadata.get("year", "")
-        title = self.metadata.get("title", self.source)
-        parts = [p for p in [title, org, str(year) if year else ""] if p]
-        return ", ".join(parts)
 
 
 # Seed corpus: short excerpts from public clinical guidelines. Extend by
@@ -457,7 +452,506 @@ SEED_GUIDELINES: List[Document] = [
             "url": "https://www.nice.org.uk/guidance/ng222",
         },
     ),
-]
+    # --- Strengthening existing categories (cardiovascular, endocrinology,
+    # infectious_disease, pulmonology, nephrology, rheumatology,
+    # psychiatry) with adjacent, frequently-asked topics those categories
+    # didn't cover yet. ---
+    Document(
+        id="acc-aha-2025-acs",
+        content=(
+            "For ST-elevation myocardial infarction (STEMI), primary "
+            "percutaneous coronary intervention within 90 minutes of first "
+            "medical contact is preferred over fibrinolysis. Dual antiplatelet "
+            "therapy (aspirin plus a P2Y12 inhibitor) is recommended for all "
+            "acute coronary syndrome patients regardless of reperfusion strategy."
+        ),
+        source="ACC/AHA Acute Coronary Syndrome Guideline",
+        metadata={
+            "category": "cardiovascular",
+            "organization": "ACC/AHA",
+            "year": 2025,
+            "title": "Management of Acute Coronary Syndromes",
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001168",
+        },
+    ),
+    Document(
+        id="acc-aha-2023-vte",
+        content=(
+            "For acute deep vein thrombosis or pulmonary embolism without "
+            "cancer, direct oral anticoagulants are preferred over warfarin as "
+            "first-line therapy. Anticoagulation duration is at least 3 months, "
+            "extended indefinitely for unprovoked events with low bleeding risk."
+        ),
+        source="ACCP Antithrombotic Therapy for VTE Guideline",
+        metadata={
+            "category": "cardiovascular",
+            "organization": "ACCP",
+            "year": 2021,
+            "title": "Antithrombotic Therapy for VTE Disease",
+            "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext",
+        },
+    ),
+    Document(
+        id="ata-2014-hypothyroidism",
+        content=(
+            "Levothyroxine is the first-line treatment for primary "
+            "hypothyroidism, dosed to normalize TSH (typical target 0.4-4.0 "
+            "mIU/L, adjusted for age). Levothyroxine should be taken on an "
+            "empty stomach, separated from calcium or iron supplements by at "
+            "least 4 hours to avoid reduced absorption."
+        ),
+        source="ATA Guidelines for Hypothyroidism",
+        metadata={
+            "category": "endocrinology",
+            "organization": "American Thyroid Association",
+            "year": 2014,
+            "title": "Guidelines for the Treatment of Hypothyroidism",
+            "url": "https://www.thyroid.org/hypothyroidism/",
+        },
+    ),
+    Document(
+        id="ada-2024-microvascular-screening",
+        content=(
+            "Adults with type 2 diabetes should have an annual dilated eye "
+            "exam for retinopathy, an annual urine albumin-to-creatinine ratio "
+            "for nephropathy, and an annual comprehensive foot exam with "
+            "monofilament testing for peripheral neuropathy, starting at "
+            "diagnosis."
+        ),
+        source="ADA Standards of Care in Diabetes",
+        metadata={
+            "category": "endocrinology",
+            "organization": "American Diabetes Association",
+            "year": 2024,
+            "title": "Microvascular Complications Screening in Diabetes",
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
+        },
+    ),
+    Document(
+        id="idsa-2014-cellulitis",
+        content=(
+            "For non-purulent cellulitis, empiric therapy should cover "
+            "streptococci with an agent such as cephalexin or dicloxacillin. "
+            "Purulent cellulitis or abscess should be covered for MRSA with "
+            "trimethoprim-sulfamethoxazole, doxycycline, or clindamycin, plus "
+            "incision and drainage of any abscess."
+        ),
+        source="IDSA Skin and Soft Tissue Infection Guideline",
+        metadata={
+            "category": "infectious_disease",
+            "organization": "IDSA",
+            "year": 2014,
+            "title": "Diagnosis and Management of Skin and Soft Tissue Infections",
+            "url": "https://academic.oup.com/cid/article/59/2/e10/2895845",
+        },
+    ),
+    Document(
+        id="gold-2024-copd-exacerbation",
+        content=(
+            "Acute COPD exacerbations are treated with short-acting "
+            "bronchodilators, a short course of oral corticosteroids "
+            "(prednisone 40mg for 5 days), and antibiotics if increased "
+            "sputum purulence is present alongside increased dyspnea or "
+            "sputum volume."
+        ),
+        source="GOLD COPD Report",
+        metadata={
+            "category": "pulmonology",
+            "organization": "GOLD",
+            "year": 2024,
+            "title": "Management of COPD Exacerbations",
+            "url": "https://goldcopd.org/2024-gold-report/",
+        },
+    ),
+    Document(
+        id="kdigo-2012-aki",
+        content=(
+            "Acute kidney injury is staged by the rise in serum creatinine or "
+            "decline in urine output: Stage 1 is a 1.5-1.9x creatinine rise or "
+            "<0.5 mL/kg/h urine output for 6-12h. Management is supportive — "
+            "optimize volume status, avoid nephrotoxins, and adjust "
+            "renally-cleared drug doses; dialysis is reserved for refractory "
+            "fluid overload, hyperkalemia, or acidosis."
+        ),
+        source="KDIGO Clinical Practice Guideline for Acute Kidney Injury",
+        metadata={
+            "category": "nephrology",
+            "organization": "KDIGO",
+            "year": 2012,
+            "title": "Diagnosis and Management of Acute Kidney Injury",
+            "url": "https://kdigo.org/guidelines/acute-kidney-injury/",
+        },
+    ),
+    # --- General health knowledge: patient-education-level explanations,
+    # not treatment guidance — a distinct category (`general_health`) from
+    # the clinician-facing guideline excerpts above, sourced from public
+    # patient-education bodies (MedlinePlus, CDC, WHO, AHA patient
+    # materials). Serves both a clinician wanting a plain-language check
+    # and the patient portal, which has had no knowledge source at all
+    # until now. ---
+    Document(
+        id="medlineplus-blood-pressure",
+        content=(
+            "Blood pressure measures the force of blood against artery walls, "
+            "given as two numbers: systolic (pressure while the heart beats) "
+            "over diastolic (pressure between beats). A normal reading is "
+            "below 120/80 mmHg. High blood pressure often has no symptoms, "
+            "which is why regular checks matter even when feeling fine."
+        ),
+        source="MedlinePlus",
+        metadata={
+            "category": "general_health",
+            "organization": "MedlinePlus (U.S. National Library of Medicine)",
+            "year": 2024,
+            "title": "Understanding Blood Pressure Readings",
+            "url": "https://medlineplus.gov/highbloodpressure.html",
+        },
+    ),
+    Document(
+        id="medlineplus-a1c",
+        content=(
+            "The A1C (or HbA1c) test shows average blood sugar levels over "
+            "the past 2-3 months. An A1C below 5.7% is normal, 5.7-6.4% "
+            "indicates prediabetes, and 6.5% or higher indicates diabetes. "
+            "Unlike a daily finger-stick, A1C reflects a longer-term trend "
+            "rather than a single moment."
+        ),
+        source="MedlinePlus",
+        metadata={
+            "category": "general_health",
+            "organization": "MedlinePlus (U.S. National Library of Medicine)",
+            "year": 2024,
+            "title": "The A1C Test and Diabetes",
+            "url": "https://medlineplus.gov/a1c.html",
+        },
+    ),
+    Document(
+        id="medlineplus-cholesterol",
+        content=(
+            "Cholesterol travels in the blood in two main forms: LDL ('bad' "
+            "cholesterol), which builds up in artery walls, and HDL ('good' "
+            "cholesterol), which helps remove it. A cholesterol panel also "
+            "reports triglycerides, another blood fat linked to heart disease "
+            "risk when elevated."
+        ),
+        source="MedlinePlus",
+        metadata={
+            "category": "general_health",
+            "organization": "MedlinePlus (U.S. National Library of Medicine)",
+            "year": 2024,
+            "title": "Cholesterol Levels: What They Mean",
+            "url": "https://medlineplus.gov/cholesterollevelswhattheymean.html",
+        },
+    ),
+    Document(
+        id="cdc-hydration",
+        content=(
+            "There is no single daily water target that fits everyone — needs "
+            "vary with body size, activity, climate, and health conditions. "
+            "Thirst and pale-yellow urine are practical everyday indicators of "
+            "adequate hydration; dark urine, dizziness, or infrequent "
+            "urination can signal a need to drink more."
+        ),
+        source="CDC",
+        metadata={
+            "category": "general_health",
+            "organization": "Centers for Disease Control and Prevention",
+            "year": 2022,
+            "title": "Water and Healthier Drinks",
+            "url": "https://www.cdc.gov/nutrition/data-statistics/plain-water-the-healthier-choice.html",
+        },
+    ),
+    Document(
+        id="medlineplus-heart-rate",
+        content=(
+            "A normal resting heart rate for most adults is 60-100 beats per "
+            "minute, measured after sitting quietly. Well-conditioned "
+            "athletes may have a lower resting rate, sometimes 40-60 bpm. A "
+            "rate consistently outside 60-100 at rest, especially with "
+            "symptoms like dizziness or chest discomfort, warrants medical "
+            "evaluation."
+        ),
+        source="MedlinePlus",
+        metadata={
+            "category": "general_health",
+            "organization": "MedlinePlus (U.S. National Library of Medicine)",
+            "year": 2023,
+            "title": "Understanding Your Heart Rate",
+            "url": "https://medlineplus.gov/ency/article/003399.htm",
+        },
+    ),
+    Document(
+        id="cdc-sleep",
+        content=(
+            "Most adults need at least 7 hours of sleep per night for optimal "
+            "health. Consistently getting less than 7 hours is linked to "
+            "higher risk of obesity, diabetes, high blood pressure, heart "
+            "disease, and depression. Sleep needs are higher for teens "
+            "(8-10 hours) and school-age children (9-12 hours)."
+        ),
+        source="CDC",
+        metadata={
+            "category": "general_health",
+            "organization": "Centers for Disease Control and Prevention",
+            "year": 2022,
+            "title": "How Much Sleep Do I Need?",
+            "url": "https://www.cdc.gov/sleep/about/index.html",
+        },
+    ),
+    Document(
+        id="cdc-stroke-warning-signs",
+        content=(
+            "The F.A.S.T. warning signs of stroke are: Face drooping on one "
+            "side, Arm weakness or drift when raised, Speech that is slurred "
+            "or strange, and Time to call emergency services immediately if "
+            "any of these signs appear, even if they resolve. Fast treatment "
+            "significantly improves outcomes."
+        ),
+        source="CDC",
+        metadata={
+            "category": "general_health",
+            "organization": "Centers for Disease Control and Prevention",
+            "year": 2023,
+            "title": "Stroke Signs and Symptoms (F.A.S.T.)",
+            "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html",
+        },
+    ),
+    # --- Coverage top-up: bring every category to >= 3 sources -----------
+    # (2026-09-01 audit) 8 categories had only 1-2 documents. These add
+    # real, distinct-topic guidelines within each so no category degrades
+    # to a single source. See CLAUDE.md's evidence-library note.
+    Document(
+        id="aha-2020-cpr",
+        content=(
+            "For adult cardiac arrest, high-quality CPR with chest "
+            "compressions at a rate of 100-120/min and a depth of at least "
+            "2 inches (5 cm) is prioritized, with early defibrillation for "
+            "shockable rhythms. Epinephrine 1 mg IV/IO every 3-5 minutes is "
+            "recommended for non-shockable rhythms."
+        ),
+        source="American Heart Association Guidelines for CPR and ECC",
+        metadata={
+            "category": "critical_care",
+            "organization": "American Heart Association",
+            "year": 2020,
+            "title": "Adult Basic and Advanced Cardiac Life Support",
+            "url": "https://cpr.heart.org/en/resuscitation-science/cpr-and-ecc-guidelines",
+        },
+    ),
+    Document(
+        id="cdc-2023-dka",
+        content=(
+            "Diabetic ketoacidosis presents with hyperglycemia, ketosis, and "
+            "metabolic acidosis, and requires urgent treatment with IV "
+            "fluids, insulin, and potassium replacement. Untreated DKA can "
+            "progress to coma or death within hours."
+        ),
+        source="CDC",
+        metadata={
+            "category": "critical_care",
+            "organization": "Centers for Disease Control and Prevention",
+            "year": 2023,
+            "title": "Diabetic Ketoacidosis",
+            "url": "https://www.cdc.gov/diabetes/diabetes-complications/diabetic-ketoacidosis.html",
+        },
+    ),
+    Document(
+        id="acr-2021-rheumatoid-arthritis",
+        content=(
+            "Methotrexate is the preferred first-line disease-modifying "
+            "antirheumatic drug (DMARD) for rheumatoid arthritis. A "
+            "treat-to-target strategy aiming for low disease activity or "
+            "remission, with DMARD escalation if targets are not met within "
+            "3 months, is recommended."
+        ),
+        source="ACR Guideline for the Treatment of Rheumatoid Arthritis",
+        metadata={
+            "category": "rheumatology",
+            "organization": "ACR",
+            "year": 2021,
+            "title": "Treatment of Rheumatoid Arthritis",
+            "url": "https://rheumatology.org/practice-guidelines",
+        },
+    ),
+    Document(
+        id="oarsi-2019-osteoarthritis",
+        content=(
+            "Exercise and weight management are core first-line treatments "
+            "for osteoarthritis. Topical NSAIDs are preferred over oral "
+            "NSAIDs for knee osteoarthritis when feasible, and an "
+            "intra-articular corticosteroid injection may be considered for "
+            "short-term flare relief."
+        ),
+        source="OARSI Guidelines for the Management of Osteoarthritis",
+        metadata={
+            "category": "rheumatology",
+            "organization": "OARSI",
+            "year": 2019,
+            "title": "Management of Knee, Hip, and Polyarticular Osteoarthritis",
+            "url": "https://oarsi.org/education/oarsi-guidelines",
+        },
+    ),
+    Document(
+        id="cdc-gestational-diabetes",
+        content=(
+            "Gestational diabetes is typically screened for between 24 and "
+            "28 weeks of pregnancy with a glucose challenge test. Management "
+            "includes blood glucose monitoring, medical nutrition therapy, "
+            "and insulin if glucose targets are not met with lifestyle "
+            "changes alone."
+        ),
+        source="CDC",
+        metadata={
+            "category": "obstetrics",
+            "organization": "Centers for Disease Control and Prevention",
+            "year": 2023,
+            "title": "Gestational Diabetes",
+            "url": "https://www.cdc.gov/diabetes/gestational-diabetes/index.html",
+        },
+    ),
+    Document(
+        id="acog-nausea-vomiting-pregnancy",
+        content=(
+            "Nausea and vomiting of pregnancy is treated first-line with "
+            "vitamin B6 (pyridoxine), with or without doxylamine. Severe or "
+            "persistent vomiting with weight loss or dehydration "
+            "(hyperemesis gravidarum) requires evaluation and may need IV "
+            "fluids or antiemetic medication."
+        ),
+        source="ACOG Patient FAQ on Nausea and Vomiting of Pregnancy",
+        metadata={
+            "category": "obstetrics",
+            "organization": "ACOG",
+            "year": 2023,
+            "title": "Morning Sickness: Nausea and Vomiting of Pregnancy",
+            "url": "https://www.acog.org/womens-health/faqs/morning-sickness-nausea-and-vomiting-of-pregnancy",
+        },
+    ),
+    Document(
+        id="aaaai-anaphylaxis",
+        content=(
+            "Intramuscular epinephrine in the anterolateral thigh is the "
+            "first-line treatment for anaphylaxis and should not be delayed. "
+            "Antihistamines and corticosteroids are adjunctive only and do "
+            "not replace epinephrine as the immediate emergency treatment."
+        ),
+        source="AAAAI Anaphylaxis Practice Parameter Update",
+        metadata={
+            "category": "allergy",
+            "organization": "American Academy of Allergy, Asthma & Immunology",
+            "year": 2020,
+            "title": "Anaphylaxis",
+            "url": "https://www.aaaai.org/conditions-treatments/library/allergy-library/anaphylaxis",
+        },
+    ),
+    Document(
+        id="niaid-food-allergy",
+        content=(
+            "Strict avoidance of the identified food allergen remains the "
+            "primary management strategy for food allergy, since no cure "
+            "exists. Patients at risk of severe reaction should carry an "
+            "epinephrine auto-injector and have a written emergency action "
+            "plan."
+        ),
+        source="NIAID Guidelines for the Diagnosis and Management of Food Allergy",
+        metadata={
+            "category": "allergy",
+            "organization": "National Institute of Allergy and Infectious Diseases",
+            "year": 2020,
+            "title": "Food Allergy",
+            "url": "https://www.niaid.nih.gov/diseases-conditions/food-allergy",
+        },
+    ),
+    Document(
+        id="nei-dry-eye",
+        content=(
+            "Dry eye disease is managed first-line with artificial tears and "
+            "environmental modification (reducing screen time, using "
+            "humidifiers). Prescription anti-inflammatory drops or punctal "
+            "plugs are considered for moderate to severe cases unresponsive "
+            "to lubrication alone."
+        ),
+        source="National Eye Institute Patient Guide: Dry Eye",
+        metadata={
+            "category": "ophthalmology",
+            "organization": "National Eye Institute",
+            "year": 2022,
+            "title": "Dry Eye",
+            "url": "https://www.nei.nih.gov/learn-about-eye-health/eye-conditions-and-diseases/dry-eye",
+        },
+    ),
+    Document(
+        id="nei-diabetic-retinopathy",
+        content=(
+            "Annual dilated eye exams are recommended for all patients with "
+            "diabetes to screen for diabetic retinopathy, since early stages "
+            "are often asymptomatic. Anti-VEGF injections are first-line "
+            "treatment for diabetic macular edema and proliferative "
+            "disease."
+        ),
+        source="National Eye Institute Patient Guide: Diabetic Retinopathy",
+        metadata={
+            "category": "ophthalmology",
+            "organization": "National Eye Institute",
+            "year": 2022,
+            "title": "Diabetic Retinopathy",
+            "url": "https://www.nei.nih.gov/learn-about-eye-health/eye-conditions-and-diseases/diabetic-retinopathy",
+        },
+    ),
+    Document(
+        id="uspstf-2018-cervical",
+        content=(
+            "The USPSTF recommends cervical cancer screening every 3 years "
+            "with cytology alone for women aged 21-29, and for women aged "
+            "30-65, every 5 years with high-risk HPV testing (alone or with "
+            "cytology) or every 3 years with cytology alone."
+        ),
+        source="USPSTF Cervical Cancer Screening Recommendation",
+        metadata={
+            "category": "screening",
+            "organization": "USPSTF",
+            "year": 2018,
+            "title": "Screening for Cervical Cancer",
+            "url": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/cervical-cancer-screening",
+        },
+    ),
+    Document(
+        id="aap-2014-bronchiolitis",
+        content=(
+            "Bronchiolitis in infants is primarily a clinical diagnosis and "
+            "is managed supportively with fluids and nasal suctioning; "
+            "bronchodilators, corticosteroids, and antibiotics are not "
+            "routinely recommended. Chest X-rays and viral testing are not "
+            "needed for typical, uncomplicated cases."
+        ),
+        source="AAP Clinical Practice Guideline on Bronchiolitis",
+        metadata={
+            "category": "pediatrics",
+            "organization": "American Academy of Pediatrics",
+            "year": 2014,
+            "title": "Bronchiolitis",
+            "url": "https://www.healthychildren.org/English/health-issues/conditions/chest-lungs/Pages/Bronchiolitis.aspx",
+        },
+    ),
+    Document(
+        id="aad-2016-acne",
+        content=(
+            "Topical retinoids are first-line therapy for most acne, often "
+            "combined with benzoyl peroxide to reduce antibiotic resistance. "
+            "Oral antibiotics are reserved for moderate to severe "
+            "inflammatory acne and should be limited to short courses "
+            "combined with topical therapy."
+        ),
+        source="AAD Guidelines of Care for the Management of Acne Vulgaris",
+        metadata={
+            "category": "dermatology",
+            "organization": "American Academy of Dermatology",
+            "year": 2016,
+            "title": "Acne Vulgaris",
+            "url": "https://www.aad.org/public/diseases/acne",
+        },
+    ),
+] + PRIMARY_CARE_GUIDELINES
 
 
 def _tokenize(text: str) -> List[str]:
@@ -480,7 +974,7 @@ class RAGPipeline:
         seed: bool = True,
         embedding_provider: Optional[EmbeddingProvider] = None,
         vector_store: Optional[VectorStore] = None,
-        min_similarity: float = 0.70,
+        min_similarity: float = 0.60,
     ):
         self.documents: List[Document] = list(SEED_GUIDELINES) if seed else []
         self._embedding_provider = embedding_provider
@@ -490,12 +984,27 @@ class RAGPipeline:
             self._index_documents(self.documents)
 
     def _index_documents(self, docs: List[Document]) -> None:
-        try:
-            vectors = self._embedding_provider.embed_documents([d.content for d in docs])
-        except EmbeddingUnavailable:
-            return  # stay keyword-only for this session; never raises to callers
-        for doc, vector in zip(docs, vectors):
+        """Index documents one at a time so a single cache miss (a doc added
+        without rebuilding the embeddings artifact) degrades only that one
+        document to keyword-only, instead of silently emptying the entire
+        vector store — the whole-corpus batch call used to raise on the
+        first miss and `_index_documents` swallowed it with a bare `return`,
+        leaving every other document unindexed too."""
+        skipped = 0
+        for doc in docs:
+            try:
+                vector = self._embedding_provider.embed_documents([doc.content])[0]
+            except EmbeddingUnavailable:
+                skipped += 1
+                continue
             self._vector_store.upsert(doc.id, vector, {})
+        if skipped:
+            logger.warning(
+                "RAGPipeline: %d/%d document(s) have no cached embedding and were "
+                "left keyword-only for this session — rebuild the embeddings artifact.",
+                skipped,
+                len(docs),
+            )
 
     def add_document(self, doc: Document) -> None:
         self.documents.append(doc)
@@ -503,11 +1012,23 @@ class RAGPipeline:
             self._index_documents([doc])
 
     def _retrieve_keyword(self, query_tokens: set) -> List[Dict[str, Any]]:
-        """Today's original scoring: weighted keyword overlap."""
+        """Today's original scoring: weighted keyword overlap.
+
+        Requires at least 2 distinct query tokens to match (when the query
+        has that many) — a single shared generic word (e.g. "small" between
+        "small-business tax returns" and "a small cut") produced a nonzero
+        score against an unrelated document once the corpus grew past ~40
+        documents, letting keyword noise alone surface an irrelevant result
+        through `_fuse` even when dense retrieval correctly found nothing.
+        """
+        min_distinct_matches = min(2, len(query_tokens))
         scored = []
         for doc in self.documents:
             doc_tokens = _tokenize(doc.content)
             if not doc_tokens:
+                continue
+            matched = query_tokens.intersection(doc_tokens)
+            if len(matched) < min_distinct_matches:
                 continue
             overlap = sum(1 for t in doc_tokens if t in query_tokens)
             score = overlap / len(doc_tokens) ** 0.5
@@ -528,7 +1049,7 @@ class RAGPipeline:
         ]
 
     def _fuse(
-        self, keyword_hits: List[Dict[str, Any]], dense_hits: List[Any], top_k: int
+        self, keyword_hits: List[Dict[str, Any]], dense_hits: List[Any], candidate_pool_size: int
     ) -> List[Dict[str, Any]]:
         """Reciprocal Rank Fusion, weighted toward the dense signal.
 
@@ -543,6 +1064,10 @@ class RAGPipeline:
         near-exact RRF tie, outrank a real embedding-model win. Dense gets
         2x weight so it can only be overridden by a *clear* keyword
         signal, not by noise or a coin-flip tie.
+
+        Returns `candidate_pool_size` results, not the caller's final
+        `top_k` — see `MMR_CANDIDATE_POOL_MULTIPLIER`; the caller's
+        `_finalize`/`mmr_rerank` does the actual top_k cut.
         """
         by_id = {doc.id: doc for doc in self.documents}
         rrf_scores: Dict[str, float] = {}
@@ -553,7 +1078,7 @@ class RAGPipeline:
 
         ordered_ids = sorted(rrf_scores.keys(), key=lambda doc_id: rrf_scores[doc_id], reverse=True)
         results = []
-        for doc_id in ordered_ids[:top_k]:
+        for doc_id in ordered_ids[:candidate_pool_size]:
             doc = by_id.get(doc_id)
             if doc is None:
                 continue
@@ -589,8 +1114,12 @@ class RAGPipeline:
         except EmbeddingUnavailable:
             return self._finalize(keyword_hits, top_k)  # full fallback — never raises to the caller
 
-        dense_hits = self._vector_store.search(query_vector, top_k=top_k * 2, min_score=self._min_similarity)
-        return self._finalize(self._fuse(keyword_hits, dense_hits, top_k), top_k)
+        candidate_pool_size = top_k * MMR_CANDIDATE_POOL_MULTIPLIER
+        dense_hits = self._vector_store.search(
+            query_vector, top_k=candidate_pool_size, min_score=self._min_similarity
+        )
+        fused = self._fuse(keyword_hits, dense_hits, candidate_pool_size)
+        return self._finalize(fused, top_k)
 
     def _finalize(self, hits: List[Dict[str, Any]], top_k: int) -> List[Dict[str, Any]]:
         from core.config import settings

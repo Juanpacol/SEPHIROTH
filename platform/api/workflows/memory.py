@@ -50,6 +50,14 @@ def _validate_contact_preference(value: Any) -> None:
         raise InvalidMemoryKey("contact_preference must be 'in_app' -- the only channel that exists")
 
 
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _validate_last_digest_sent_date(value: Any) -> None:
+    if not isinstance(value, str) or not _DATE_RE.match(value):
+        raise InvalidMemoryKey("last_digest_sent_date must be an ISO date string 'YYYY-MM-DD'")
+
+
 #: key -> (one-line description, value validator). A hand-reviewed literal
 #: dict, not a JSON Schema -- same "literal dict, not a generality" call as
 #: TOOL_CAPABILITIES. Every key's *value* is validated, not just its name:
@@ -66,6 +74,10 @@ _KEY_SPECS: Dict[str, tuple] = {
     "contact_preference": (
         "'in_app' -- the only channel that exists (Phase 8); reserved for 'email'/'sms'",
         _validate_contact_preference,
+    ),
+    "last_digest_sent_date": (
+        "'YYYY-MM-DD' -- last calendar date the clinical Slack daily digest was sent (scope='clinic')",
+        _validate_last_digest_sent_date,
     ),
 }
 

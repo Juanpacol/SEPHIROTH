@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.db import get_session
 
+from ..workflows.daily_digest import maybe_send_daily_digest
 from ..workflows.engine import TickSummary, run_tick
 from ..workflows.ops_notify import get_ops_notifier
 
@@ -40,9 +41,11 @@ def _check_tick_token(x_internal_token: str | None) -> None:
 
 def _ops_notify_fields(summary: TickSummary) -> dict:
     """Builds the Slack payload from a `TickSummary` -- counters plus, on a
-    tick with failures, enough to look the step up (`workflow_id`/
-    `step_id`), never `patient_id`. Keys are the allow-listed subset
-    `ops_notify._format_text` will accept; anything else would raise."""
+    tick with failures, enough to look each one up (`workflow_id`/
+    `step_id`/`step_type`), never `patient_id`. `failed_steps` stays a
+    structured list (not flattened into comma-joined strings) so
+    `ops_notify._format_text` can render one bullet per step instead of
+    three parallel, hard-to-align columns."""
     fields: dict = {
         "tick_id": summary.tick_id,
         "claimed": summary.claimed,
@@ -54,13 +57,10 @@ def _ops_notify_fields(summary: TickSummary) -> dict:
     }
     if summary.failed_steps:
         shown = summary.failed_steps[:_MAX_NAMED_FAILURES]
-        step_ids = ",".join(s["step_id"] for s in shown)
+        fields["failed_steps"] = shown
         extra = len(summary.failed_steps) - len(shown)
         if extra > 0:
-            step_ids += f",+{extra} more"
-        fields["step_id"] = step_ids
-        fields["workflow_id"] = ",".join(s["workflow_id"] for s in shown)
-        fields["step_type"] = ",".join(s["step_type"] for s in shown)
+            fields["failed_steps_more"] = extra
     return fields
 
 
@@ -80,6 +80,10 @@ async def tick(
     # "still alive, did nothing" message every time would drown real signal.
     if summary.succeeded or summary.failed:
         await get_ops_notifier().notify(_ops_notify_fields(summary))
+    # Independent of the ops summary above -- this is the clinician-facing
+    # channel (clinical_notify.py), checked/sent at most once per calendar
+    # day regardless of whether this particular tick claimed any steps.
+    await maybe_send_daily_digest(session)
     return summary.to_dict()
 
 

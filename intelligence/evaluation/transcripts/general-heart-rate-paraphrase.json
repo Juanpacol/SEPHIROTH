@@ -1,0 +1,11 @@
+{
+  "case_id": "general-heart-rate-paraphrase",
+  "answer": "Based on clinical guidelines, a resting heart rate of 55 bpm is generally considered within the normal range. However, for individuals who are athletes or in good physical condition, a lower rate might be expected and not necessarily indicative of an issue. Consult with your healthcare provider if you have concerns about your heart rate or overall cardiovascular function.\n\n glove_",
+  "tool_calls": [],
+  "latency_ms": 2169,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 838,
+  "completion_tokens": 70,
+  "cost_usd": 0.0
+}

@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ClaimInvitePage from "@/app/portal/claim/page";
 import { clearAuth, storeAuth, type AuthUser } from "@/lib/auth";
+import { LanguageProvider } from "@/lib/language";
 
 const replace = vi.fn();
 const push = vi.fn();
@@ -11,6 +12,14 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace, push }),
   useSearchParams: () => mockSearch,
 }));
+
+function renderPage() {
+  return render(
+    <LanguageProvider>
+      <ClaimInvitePage />
+    </LanguageProvider>
+  );
+}
 
 const PATIENT: AuthUser = {
   id: "u1",
@@ -36,7 +45,7 @@ describe("ClaimInvitePage", () => {
     storeAuth("tok", PATIENT);
     mockSearch = new URLSearchParams({ code: "3.some-secret" });
 
-    render(<ClaimInvitePage />);
+    renderPage();
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/portal"));
     expect(screen.queryByText("Set up your portal account")).not.toBeInTheDocument();
@@ -46,7 +55,7 @@ describe("ClaimInvitePage", () => {
     clearAuth();
     mockSearch = new URLSearchParams();
 
-    render(<ClaimInvitePage />);
+    renderPage();
 
     await waitFor(() => expect(screen.getByText("This invite link is incomplete")).toBeInTheDocument());
     expect(screen.queryByLabelText(/claim code/i)).not.toBeInTheDocument();
@@ -57,7 +66,7 @@ describe("ClaimInvitePage", () => {
     clearAuth();
     mockSearch = new URLSearchParams({ code: "3.some-secret" });
 
-    render(<ClaimInvitePage />);
+    renderPage();
 
     await waitFor(() => expect(screen.getByText("Set up your portal account")).toBeInTheDocument());
     expect(screen.queryByText(/claim code/i)).not.toBeInTheDocument();

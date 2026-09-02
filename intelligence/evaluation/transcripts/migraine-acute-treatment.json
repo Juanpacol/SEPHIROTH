@@ -1,0 +1,55 @@
+{
+  "case_id": "migraine-acute-treatment",
+  "answer": "The first-line acute treatment for migraine recommended by the American Headache Society Consensus Statement, published in 2021 [American Headache Society, 2021], suggests that NSAIDs or triptans are generally effective. When these medications do not work, patients might consider combining a triptan with an NSAID, which is found to be more potent than either medication alone. For patients experiencing at least four migraines per month, preventive therapy should complement acute treatment [American Headache Society Consensus Statement, 2021]. Preventive treatments can help reduce the frequency and severity of migraine attacks over time.\n\nUnfortunately, there seems to be no directly relevant clinical guidelines on treating acute low back pain available from these results. For that condition, the American College of Physicians recommends nonpharmacologic first-line treatment options, such as heat therapy or gentle exercise, in conjunction with NSAIDs if medication is necessary [American College of Physicians, 2017] \u2014 imagery should not be used without red-flag symptoms, such as trauma, weight loss for which there are no findings and neurologic deficits.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "acute treatment migraine",
+        "top_k": 2
+      },
+      "result": {
+        "query": "acute treatment migraine",
+        "results": [
+          {
+            "id": "ahs-2021-migraine",
+            "content": "For acute migraine treatment, NSAIDs or triptans are first-line for most patients; combining a triptan with an NSAID is more effective than either alone. For patients with 4 or more migraine days per month, preventive therapy should be offered in addition to acute treatment.",
+            "source": "American Headache Society Consensus Statement",
+            "citation": "Acute Treatment of Migraine, American Headache Society, 2021",
+            "url": "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14153",
+            "score": 0.0492,
+            "metadata": {
+              "category": "neurology",
+              "organization": "American Headache Society",
+              "year": 2021,
+              "title": "Acute Treatment of Migraine",
+              "url": "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14153"
+            }
+          },
+          {
+            "id": "acp-2017-low-back-pain",
+            "content": "For acute low back pain, most patients improve regardless of treatment; first-line care is nonpharmacologic \u2014 heat, massage, or gentle activity \u2014 and NSAIDs if medication is needed. Imaging is not recommended without red-flag findings such as trauma, unexplained weight loss, or neurologic deficit.",
+            "source": "ACP Clinical Practice Guideline",
+            "citation": "Noninvasive Treatments for Low Back Pain, American College of Physicians, 2017",
+            "url": "https://www.acpjournals.org/doi/10.7326/M16-2367",
+            "score": 0.0161,
+            "metadata": {
+              "category": "musculoskeletal",
+              "organization": "American College of Physicians",
+              "year": 2017,
+              "title": "Noninvasive Treatments for Low Back Pain",
+              "url": "https://www.acpjournals.org/doi/10.7326/M16-2367"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 13465,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2214,
+  "completion_tokens": 261,
+  "cost_usd": 0.0
+}

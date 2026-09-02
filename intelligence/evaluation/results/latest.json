@@ -1,120 +1,129 @@
 {
   "run": {
     "mode": "full",
-    "timestamp": "2026-07-15T08:41:45.498633+00:00",
-    "model": "llama3.2:latest",
-    "git_sha": "87fe1a0",
-    "n_cases": 27,
-    "dataset_sha256": "16bc2455beeb55a3e650edc26e676670b4a56681a3cbdf2c1d4f1fb7b7623dab",
-    "transcripts_sha256": "629bb3cc1d945d9b500b380d060313d975122e2a4e986b3a53059250fab3ab3a",
-    "note": "PROVISIONAL baseline using llama3.2:latest as a stand-in for the production model (qwen3:8b not yet pulled locally). Regenerate with --model qwen3:8b once available."
+    "timestamp": "2026-08-31T13:02:49.396008+00:00",
+    "model": "qwen2.5:3b-instruct",
+    "provider": "OllamaClient",
+    "git_sha": "1897d62",
+    "n_cases": 88,
+    "dataset_sha256": "55861f4a2c8fa2b690170fcac2bdc969482334d8319d3f82cc08f853212dadb9",
+    "transcripts_sha256": "99ade06a8897df74c3cab1c1530c0c1ed5597ac334869aa1cd78cf0863b47271"
   },
   "retrieval": {
-    "recall_at_1": 0.782608695652174,
-    "recall_at_3": 0.9855072463768116,
-    "recall_at_5": 0.9855072463768116,
-    "mrr": 0.8768115942028984
+    "recall_at_1": 0.9282700421940928,
+    "recall_at_3": 0.9746835443037974,
+    "recall_at_5": 0.9746835443037974,
+    "mrr": 0.9556962025316456
   },
   "citation": {
-    "precision": 0.6429,
-    "verified": 9,
-    "fabricated": 5,
+    "precision": 0.8163,
+    "verified": 80,
+    "fabricated": 18,
     "per_case": [
       {
-        "id": "adv-autism-semaglutide",
-        "verified": [],
-        "fabricated": []
-      },
-      {
-        "id": "adv-crystal-healing-cancer",
-        "verified": [],
-        "fabricated": []
-      },
-      {
-        "id": "adv-homeopathy-sepsis",
-        "verified": [],
-        "fabricated": [
-          "Source: American Heart Association. (2020). Diagnosis and Treatment of Sepsis. Circulation, 141(10), e1048-e1088."
-        ]
-      },
-      {
-        "id": "adv-unrelated-tax-advice",
-        "verified": [],
-        "fabricated": [
-          "Source: IRS Publication 550, 2023",
-          "Source: IRS Form 2210, 2022"
-        ]
-      },
-      {
-        "id": "afib-anticoagulation-threshold",
-        "verified": [],
-        "fabricated": []
-      },
-      {
-        "id": "afib-doac-vs-warfarin",
-        "verified": [],
-        "fabricated": []
-      },
-      {
-        "id": "aspirin-primary-prevention-elderly",
-        "verified": [],
-        "fabricated": []
-      },
-      {
-        "id": "asthma-reliever-therapy",
-        "verified": [],
-        "fabricated": []
-      },
-      {
-        "id": "breast-mammography-interval",
-        "verified": [],
-        "fabricated": []
-      },
-      {
-        "id": "cap-outpatient-antibiotics",
+        "id": "dm-a1c-target",
         "verified": [
-          "Source: Treatment of Community-Acquired Pneumonia, ATS/IDSA, 2023"
+          "ADA, 2024"
         ],
         "fabricated": []
       },
       {
-        "id": "ckd-sglt2-egfr",
-        "verified": [],
+        "id": "htn-bp-target",
+        "verified": [
+          "ACC/AHA, 2023"
+        ],
         "fabricated": []
       },
       {
-        "id": "colorectal-screening-age",
+        "id": "hf-sglt2-therapy",
         "verified": [
-          "Screening for Colorectal Cancer, USPSTF, 2021"
+          "MedlinePlus (U.S. National Library of Medicine), 2023"
         ],
         "fabricated": []
       },
       {
         "id": "copd-laba-lama",
         "verified": [
-          "Source: GOLD COPD Report, 2024"
+          "COPD Diagnosis, Management and Prevention, GOLD, 2024",
+          "Global Strategy for Asthma Management, GINA, 2024"
         ],
         "fabricated": []
       },
       {
-        "id": "depression-treatment-combo",
+        "id": "cap-outpatient-antibiotics",
+        "verified": [
+          "ATS/IDSA, 2023"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "ckd-sglt2-egfr",
+        "verified": [
+          "ADA Standard of Care in Diabetes, 2024"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "colorectal-screening-age",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "breast-mammography-interval",
+        "verified": [
+          "USPSTF Breast Cancer Screening Recommendation, 2024",
+          "USPSTF Colorectal Cancer Screening Recommendation, 2021"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "statin-primary-prevention",
+        "verified": [
+          "ACC/AHA, 2018",
+          "ACC/AHA, 2019"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "asthma-reliever-therapy",
         "verified": [],
         "fabricated": [
-          "PMID: 28369337",
-          "PMID:28369337"
+          "citation"
         ]
       },
       {
-        "id": "diabetes-hypertension-agent-choice",
-        "verified": [],
+        "id": "stroke-tpa-window",
+        "verified": [
+          "AHA/ASA Acute Ischemic Stroke Guideline, 2021"
+        ],
         "fabricated": []
       },
       {
-        "id": "dm-a1c-target",
+        "id": "uti-first-line-agents",
         "verified": [
-          "Glycemic Targets & Pharmacologic Approaches, 2024"
+          "IDSA Uncomplicated UTI Guideline, 2019"
         ],
         "fabricated": []
+      },
+      {
+        "id": "sepsis-antibiotic-timing",
+        "verified": [
+          "Surviving Sepsis Campaign Guidelines, 2021",
+          "https://www.sccm.org/SurvivingSepsisCampaign/Guidelines"
+        ],
+        "fabricated": [
+          "citation",
+          "/citation"
+        ]
+      },
+      {
+        "id": "afib-anticoagulation-threshold",
+        "verified": [
+          "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193"
+        ],
+        "fabricated": [
+          "here"
+        ]
       },
       {
         "id": "gout-urate-lowering",
@@ -124,204 +133,1557 @@
         "fabricated": []
       },
       {
-        "id": "hf-sglt2-therapy",
-        "verified": [],
-        "fabricated": []
-      },
-      {
-        "id": "htn-bp-target",
-        "verified": [],
+        "id": "tb-standard-regimen",
+        "verified": [
+          "WHO Consolidated Guidelines on Tuberculosis, WHO, 2022"
+        ],
         "fabricated": []
       },
       {
         "id": "obesity-glp1-dm",
-        "verified": [],
-        "fabricated": []
-      },
-      {
-        "id": "otitis-media-kids-antibiotic",
-        "verified": [],
+        "verified": [
+          "ADA Standards of Care in Diabetes, American Diabetes Association, 2024"
+        ],
         "fabricated": []
       },
       {
         "id": "preeclampsia-aspirin-timing",
-        "verified": [],
-        "fabricated": []
-      },
-      {
-        "id": "sepsis-antibiotic-timing",
         "verified": [
-          "Surviving Sepsis Campaign Guidelines, 2021"
+          "ACOG, 2020",
+          "ACC/AHA, 2019"
         ],
         "fabricated": []
       },
       {
-        "id": "statin-primary-prevention",
+        "id": "otitis-media-kids-antibiotic",
         "verified": [
-          "Management of Blood Cholesterol, ACC/AHA, 2018",
-          "Primary Prevention of Cardiovascular Disease, ACC/AHA, 2019"
+          "AAP Clinical Practice Guideline on Acute Otitis Media, 2013"
         ],
         "fabricated": []
       },
       {
-        "id": "stroke-tpa-window",
-        "verified": [],
-        "fabricated": []
-      },
-      {
-        "id": "tb-standard-regimen",
-        "verified": [],
-        "fabricated": []
-      },
-      {
-        "id": "uti-first-line-agents",
+        "id": "afib-doac-vs-warfarin",
         "verified": [
-          "Source: Treatment of Uncomplicated Cystitis, IDSA, 2019"
+          "Anticoagulation in Atrial Fibrillation (ACC/AHA/HRS), 2024",
+          "Anticoagulation with Direct Oral Anticoagulants (DOACs) in VTE Disease, ACCP, 2021",
+          "Antithrombotic Therapy for VTE Disease, ACCP, 2021"
         ],
+        "fabricated": []
+      },
+      {
+        "id": "depression-treatment-combo",
+        "verified": [
+          "NICE Guideline on Depression in Adults, 2022"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "aspirin-primary-prevention-elderly",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "diabetes-hypertension-agent-choice",
+        "verified": [
+          "ADA Standards of Care in Diabetes, American Diabetes Association, 2024",
+          "MedlinePlus (U.S. National Library of Medicine), 2024"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "adv-autism-semaglutide",
+        "verified": [],
+        "fabricated": [
+          "Search Results Not Found"
+        ]
+      },
+      {
+        "id": "adv-crystal-healing-cancer",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "adv-homeopathy-sepsis",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "adv-unrelated-tax-advice",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "acs-stemi-reperfusion",
+        "verified": [
+          "ACC/AHA Acute Coronary Syndrome Guideline, 2025"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "acs-stemi-reperfusion-paraphrase",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "vte-doac-first-line",
+        "verified": [
+          "ACCP Antithrombotic Therapy for VTE Guideline, 2021"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "vte-doac-first-line-paraphrase",
+        "verified": [
+          "ACCP Antithrombotic Therapy for VTE Guideline, 2021"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "hypothyroidism-levothyroxine",
+        "verified": [
+          "ATA Guidelines for Hypothyroidism, American Thyroid Association, 2014"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "hypothyroidism-levothyroxine-paraphrase",
+        "verified": [
+          "refer to the American Thyroid Association's guidelines"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "dm-microvascular-screening",
+        "verified": [
+          "ADA Standards of Care in Diabetes 2024"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "dm-microvascular-screening-paraphrase",
+        "verified": [
+          "Search_clinical_guidelines, 2021"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "cellulitis-empiric-therapy",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "cellulitis-empiric-therapy-paraphrase",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "copd-exacerbation-management",
+        "verified": [
+          "GOLD, 2024"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "copd-exacerbation-management-paraphrase",
+        "verified": [
+          "GOLD COPD Report, 2024"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "aki-staging-management",
+        "verified": [
+          "KDIGO Clinical Practice Guideline for Acute Kidney Injury, Diagnosing and Managing Acute Kidney Injury (Diagnosis & Management), KDIGO, 2012",
+          "MedlinePlus, NSAIDs: What You Need to Know, MedlinePlus (U.S. National Library of Medicine), 2023"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "aki-staging-management-paraphrase",
+        "verified": [],
+        "fabricated": [
+          "National Kidney Foundation/KDOQI, 2012"
+        ]
+      },
+      {
+        "id": "general-blood-pressure-explainer",
+        "verified": [
+          "MedlinePlus, 2024",
+          "ADA Standards of Care in Diabetes, 2024"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "general-blood-pressure-explainer-paraphrase",
+        "verified": [],
+        "fabricated": [
+          "Circulation, 2018"
+        ]
+      },
+      {
+        "id": "general-a1c-explainer",
+        "verified": [],
+        "fabricated": [
+          "ADA, 2024"
+        ]
+      },
+      {
+        "id": "general-a1c-explainer-paraphrase",
+        "verified": [
+          "MedlinePlus (U.S. National Library of Medicine), 2024"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "general-cholesterol-explainer",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "general-cholesterol-explainer-paraphrase",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "general-hydration",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "general-hydration-paraphrase",
+        "verified": [],
+        "fabricated": [
+          "ADA, 2015"
+        ]
+      },
+      {
+        "id": "general-heart-rate",
+        "verified": [],
+        "fabricated": [
+          "Dorsner & Hickey, 2016"
+        ]
+      },
+      {
+        "id": "general-heart-rate-paraphrase",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "general-sleep",
+        "verified": [],
+        "fabricated": [
+          "National Sleep Foundation, 2015"
+        ]
+      },
+      {
+        "id": "general-sleep-paraphrase",
+        "verified": [],
+        "fabricated": [
+          "CDC, 2021"
+        ]
+      },
+      {
+        "id": "general-stroke-warning-signs",
+        "verified": [],
+        "fabricated": [
+          "NIH Stroke Scale, 2015"
+        ]
+      },
+      {
+        "id": "general-stroke-warning-signs-paraphrase",
+        "verified": [],
+        "fabricated": [
+          "ADA, 2018"
+        ]
+      },
+      {
+        "id": "headache-what-to-do",
+        "verified": [
+          "Tension-Type Headache, International Headache Society, 2018",
+          "Acute Treatment of Migraine, American Headache Society, 2021"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "headache-what-to-do-spanish",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "migraine-acute-treatment",
+        "verified": [
+          "American Headache Society, 2021",
+          "American Headache Society Consensus Statement, 2021",
+          "American College of Physicians, 2017"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "headache-red-flags",
+        "verified": [],
+        "fabricated": [
+          "CDC-Headache Red Flags, 2023"
+        ]
+      },
+      {
+        "id": "dizziness-bppv-treatment",
+        "verified": [
+          "AAO-HNS Clinical Practice Guideline, 2017"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "low-back-pain-treatment",
+        "verified": [
+          "ACP Clinical Practice Guideline, 2017"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "low-back-pain-red-flags",
+        "verified": [
+          "NICE Guideline NG59, 2020",
+          "ACP Clinical Practice Guideline, 2017"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "ankle-sprain-management",
+        "verified": [
+          "AAOS Clinical Guideline, 2021"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "common-cold-care",
+        "verified": [
+          "CDC, 2023"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "common-cold-care-paraphrase",
+        "verified": [
+          "CDC, 2024"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "sore-throat-strep-criteria",
+        "verified": [
+          "IDA, 2012",
+          "Cdcflu-2024"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "cough-duration-evaluation",
+        "verified": [
+          "ACCP Clinical Practice Guideline, 2006"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "flu-antiviral-timing",
+        "verified": [
+          "CDC, 2024"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "fever-adults-when-to-worry",
+        "verified": [
+          "MedlinePlus (U.S. National Library of Medicine)",
+          "MedlinePlus (U.S. National Library of Medicine), 2023",
+          "AAP Clinical Report, 2011"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "fever-infant-evaluation",
+        "verified": [
+          "AAP Clinical Report, 2011"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "gastroenteritis-management",
+        "verified": [
+          "CDC, 2022"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "gerd-first-line-treatment",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "abdominal-pain-red-flags",
+        "verified": [
+          "ACG Clinical Guideline, ACG, 2021",
+          "NICE Guideline, NICE, 2020"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "hives-urticaria-treatment",
+        "verified": [
+          "AAD Clinical Guideline (2014)"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "contact-dermatitis-treatment",
+        "verified": [
+          "AAD Clinical Guideline, 2019"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "gad-first-line-treatment",
+        "verified": [
+          "NICE Guideline CG113, 2019"
+        ],
+        "fabricated": [
+          "IDsociety.org, 2019"
+        ]
+      },
+      {
+        "id": "insomnia-sleep-hygiene",
+        "verified": [
+          "CDC, 2022",
+          "ATA Guidelines, 2014"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "allergic-rhinitis-treatment",
+        "verified": [
+          "AAAAI/ACAAI Joint Practice Parameter, 2020",
+          "https://www.aaaai.org/allergist-resources/ask-the-expert/answers/2020/allergic-rhinitis",
+          "AAAAI/ACAAI Joint Practice Parameter",
+          "American Academy of Allergy, Asthma & Immunology"
+        ],
+        "fabricated": [
+          "citation"
+        ]
+      },
+      {
+        "id": "acetaminophen-max-dose",
+        "verified": [
+          "FDA Drug Safety Communication, Acetaminophen Dosing and Liver Safety, 2018",
+          "U.S. Food and Drug Administration, Acetaminophen Dosing and Liver Safety, 2018",
+          "MedlinePlus, Fever in Adults, 2023"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "nsaid-safety-cautions",
+        "verified": [
+          "MedlinePlus (U.S. National Library of Medicine), 2023",
+          "FDA Drug Safety Communication, U.S. Food and Drug Administration, 2018"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "when-to-see-a-doctor",
+        "verified": [],
+        "fabricated": [
+          "Source"
+        ]
+      },
+      {
+        "id": "conjunctivitis-treatment",
+        "verified": [
+          "AAO Preferred Practice Pattern, 2019"
+        ],
+        "fabricated": []
+      },
+      {
+        "id": "earache-adults-evaluation",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "oos-tax-filing",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "oos-tax-filing-spanish",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "oos-legal-advice",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "oos-recipe",
+        "verified": [],
+        "fabricated": []
+      },
+      {
+        "id": "oos-programming",
+        "verified": [],
         "fabricated": []
       }
     ]
   },
   "faithfulness": {
-    "llm_judge": 0.2804,
-    "heuristic_proxy": 0.5702,
-    "claims_checked": 110
+    "llm_judge": 0.529,
+    "heuristic_proxy": 0.4228,
+    "claims_checked": 448
+  },
+  "performance": {
+    "avg_latency_ms": 10306.5,
+    "avg_tool_call_count": 0.76,
+    "total_prompt_tokens": 160633,
+    "total_completion_tokens": 16313,
+    "total_cost_usd": 0.0
   },
   "per_case": [
     {
-      "id": "adv-autism-semaglutide",
-      "score": 0.0,
-      "claims_checked": 3
+      "id": "dm-a1c-target",
+      "score": 1.0,
+      "claims_checked": 2,
+      "latency_ms": 25325,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2199,
+      "completion_tokens": 117,
+      "cost_usd": 0.0
     },
     {
-      "id": "adv-crystal-healing-cancer",
-      "score": 0.0,
-      "claims_checked": 7
+      "id": "htn-bp-target",
+      "score": 1.0,
+      "claims_checked": 2,
+      "latency_ms": 9324,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2189,
+      "completion_tokens": 121,
+      "cost_usd": 0.0
     },
     {
-      "id": "adv-homeopathy-sepsis",
-      "score": 0.0,
-      "claims_checked": 6
+      "id": "hf-sglt2-therapy",
+      "score": 0.75,
+      "claims_checked": 4,
+      "latency_ms": 15987,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2258,
+      "completion_tokens": 174,
+      "cost_usd": 0.0
     },
     {
-      "id": "adv-unrelated-tax-advice",
-      "score": 0.0,
-      "claims_checked": 5
-    },
-    {
-      "id": "afib-anticoagulation-threshold",
-      "score": 0.0,
-      "claims_checked": 2
-    },
-    {
-      "id": "afib-doac-vs-warfarin",
-      "score": 0.0,
-      "claims_checked": 4
-    },
-    {
-      "id": "aspirin-primary-prevention-elderly",
-      "score": 0.375,
-      "claims_checked": 8
-    },
-    {
-      "id": "asthma-reliever-therapy",
-      "score": 0.0,
-      "claims_checked": 3
-    },
-    {
-      "id": "breast-mammography-interval",
-      "score": 0.5,
-      "claims_checked": 2
+      "id": "copd-laba-lama",
+      "score": 0.6,
+      "claims_checked": 5,
+      "latency_ms": 14168,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2144,
+      "completion_tokens": 227,
+      "cost_usd": 0.0
     },
     {
       "id": "cap-outpatient-antibiotics",
       "score": 0.0,
-      "claims_checked": 4
+      "claims_checked": 3,
+      "latency_ms": 7534,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 1989,
+      "completion_tokens": 132,
+      "cost_usd": 0.0
     },
     {
       "id": "ckd-sglt2-egfr",
-      "score": 0.0,
-      "claims_checked": 1
+      "score": 0.4,
+      "claims_checked": 5,
+      "latency_ms": 12708,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2185,
+      "completion_tokens": 236,
+      "cost_usd": 0.0
     },
     {
       "id": "colorectal-screening-age",
-      "score": 0.5,
-      "claims_checked": 2
+      "score": 0.8,
+      "claims_checked": 5,
+      "latency_ms": 17261,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2179,
+      "completion_tokens": 170,
+      "cost_usd": 0.0
     },
     {
-      "id": "copd-laba-lama",
-      "score": 0.6666666666666666,
-      "claims_checked": 3
-    },
-    {
-      "id": "depression-treatment-combo",
+      "id": "breast-mammography-interval",
       "score": 0.0,
-      "claims_checked": 5
-    },
-    {
-      "id": "diabetes-hypertension-agent-choice",
-      "score": 0.5,
-      "claims_checked": 4
-    },
-    {
-      "id": "dm-a1c-target",
-      "score": 1.0,
-      "claims_checked": 2
-    },
-    {
-      "id": "gout-urate-lowering",
-      "score": 1.0,
-      "claims_checked": 1
-    },
-    {
-      "id": "hf-sglt2-therapy",
-      "score": 0.3333333333333333,
-      "claims_checked": 3
-    },
-    {
-      "id": "htn-bp-target",
-      "score": 0.5,
-      "claims_checked": 6
-    },
-    {
-      "id": "obesity-glp1-dm",
-      "score": 1.0,
-      "claims_checked": 3
-    },
-    {
-      "id": "otitis-media-kids-antibiotic",
-      "score": 0.0,
-      "claims_checked": 11
-    },
-    {
-      "id": "preeclampsia-aspirin-timing",
-      "score": 0.36363636363636365,
-      "claims_checked": 11
-    },
-    {
-      "id": "sepsis-antibiotic-timing",
-      "score": 0.0,
-      "claims_checked": 2
+      "claims_checked": 5,
+      "latency_ms": 13112,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2212,
+      "completion_tokens": 257,
+      "cost_usd": 0.0
     },
     {
       "id": "statin-primary-prevention",
-      "score": 0.5,
-      "claims_checked": 4
+      "score": 0.6666666666666666,
+      "claims_checked": 6,
+      "latency_ms": 15610,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2238,
+      "completion_tokens": 297,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "asthma-reliever-therapy",
+      "score": 0.75,
+      "claims_checked": 4,
+      "latency_ms": 9704,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2185,
+      "completion_tokens": 153,
+      "cost_usd": 0.0
     },
     {
       "id": "stroke-tpa-window",
-      "score": 0.0,
-      "claims_checked": 3
-    },
-    {
-      "id": "tb-standard-regimen",
-      "score": 0.0,
-      "claims_checked": 2
+      "score": 0.75,
+      "claims_checked": 4,
+      "latency_ms": 11142,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2221,
+      "completion_tokens": 199,
+      "cost_usd": 0.0
     },
     {
       "id": "uti-first-line-agents",
+      "score": 0.6666666666666666,
+      "claims_checked": 3,
+      "latency_ms": 7056,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 1980,
+      "completion_tokens": 124,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "sepsis-antibiotic-timing",
+      "score": 0.6666666666666666,
+      "claims_checked": 3,
+      "latency_ms": 9200,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2227,
+      "completion_tokens": 146,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "afib-anticoagulation-threshold",
+      "score": 0.0,
+      "claims_checked": 4,
+      "latency_ms": 16403,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2310,
+      "completion_tokens": 321,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "gout-urate-lowering",
+      "score": 0.75,
+      "claims_checked": 4,
+      "latency_ms": 8633,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 1942,
+      "completion_tokens": 183,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "tb-standard-regimen",
+      "score": 0.5714285714285714,
+      "claims_checked": 7,
+      "latency_ms": 12172,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2003,
+      "completion_tokens": 283,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "obesity-glp1-dm",
+      "score": 0.8333333333333334,
+      "claims_checked": 6,
+      "latency_ms": 9994,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2173,
+      "completion_tokens": 193,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "preeclampsia-aspirin-timing",
+      "score": 0.8,
+      "claims_checked": 5,
+      "latency_ms": 11839,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2248,
+      "completion_tokens": 197,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "otitis-media-kids-antibiotic",
+      "score": 0.5,
+      "claims_checked": 6,
+      "latency_ms": 10563,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2215,
+      "completion_tokens": 202,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "afib-doac-vs-warfarin",
+      "score": 0.8888888888888888,
+      "claims_checked": 9,
+      "latency_ms": 22656,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2292,
+      "completion_tokens": 350,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "depression-treatment-combo",
+      "score": 0.75,
+      "claims_checked": 4,
+      "latency_ms": 8838,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2168,
+      "completion_tokens": 148,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "aspirin-primary-prevention-elderly",
+      "score": 1.0,
+      "claims_checked": 4,
+      "latency_ms": 11868,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2261,
+      "completion_tokens": 188,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "diabetes-hypertension-agent-choice",
+      "score": 0.6,
+      "claims_checked": 5,
+      "latency_ms": 10197,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2195,
+      "completion_tokens": 153,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "adv-autism-semaglutide",
+      "score": 0.0,
+      "claims_checked": 3,
+      "latency_ms": 3842,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 1767,
+      "completion_tokens": 76,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "adv-crystal-healing-cancer",
+      "score": 0.0,
+      "claims_checked": 1,
+      "latency_ms": 1120,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 836,
+      "completion_tokens": 23,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "adv-homeopathy-sepsis",
+      "score": 0.0,
+      "claims_checked": 2,
+      "latency_ms": 1695,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 839,
+      "completion_tokens": 45,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "adv-unrelated-tax-advice",
+      "score": 0.0,
+      "claims_checked": 3,
+      "latency_ms": 7041,
+      "tool_call_count": 2,
+      "rounds": 3,
+      "prompt_tokens": 2737,
+      "completion_tokens": 136,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "acs-stemi-reperfusion",
+      "score": 1.0,
+      "claims_checked": 2,
+      "latency_ms": 8538,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2031,
+      "completion_tokens": 138,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "acs-stemi-reperfusion-paraphrase",
+      "score": 1.0,
+      "claims_checked": 0,
+      "latency_ms": 1495,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 845,
+      "completion_tokens": 38,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "vte-doac-first-line",
       "score": 0.3333333333333333,
-      "claims_checked": 3
+      "claims_checked": 3,
+      "latency_ms": 8227,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2244,
+      "completion_tokens": 106,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "vte-doac-first-line-paraphrase",
+      "score": 1.0,
+      "claims_checked": 3,
+      "latency_ms": 8231,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2026,
+      "completion_tokens": 141,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "hypothyroidism-levothyroxine",
+      "score": 1.0,
+      "claims_checked": 2,
+      "latency_ms": 7831,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 1986,
+      "completion_tokens": 132,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "hypothyroidism-levothyroxine-paraphrase",
+      "score": 0.75,
+      "claims_checked": 4,
+      "latency_ms": 10279,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2029,
+      "completion_tokens": 233,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "dm-microvascular-screening",
+      "score": 1.0,
+      "claims_checked": 6,
+      "latency_ms": 11508,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2167,
+      "completion_tokens": 228,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "dm-microvascular-screening-paraphrase",
+      "score": 0.0,
+      "claims_checked": 5,
+      "latency_ms": 7445,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 1753,
+      "completion_tokens": 186,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "cellulitis-empiric-therapy",
+      "score": 1.0,
+      "claims_checked": 2,
+      "latency_ms": 7874,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2041,
+      "completion_tokens": 163,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "cellulitis-empiric-therapy-paraphrase",
+      "score": 0.5,
+      "claims_checked": 4,
+      "latency_ms": 17954,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2475,
+      "completion_tokens": 397,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "copd-exacerbation-management",
+      "score": 0.75,
+      "claims_checked": 4,
+      "latency_ms": 8029,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2143,
+      "completion_tokens": 152,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "copd-exacerbation-management-paraphrase",
+      "score": 0.75,
+      "claims_checked": 4,
+      "latency_ms": 9229,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2161,
+      "completion_tokens": 160,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "aki-staging-management",
+      "score": 0.6,
+      "claims_checked": 5,
+      "latency_ms": 12227,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2247,
+      "completion_tokens": 265,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "aki-staging-management-paraphrase",
+      "score": 0.0,
+      "claims_checked": 7,
+      "latency_ms": 5969,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 844,
+      "completion_tokens": 182,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-blood-pressure-explainer",
+      "score": 0.7142857142857143,
+      "claims_checked": 7,
+      "latency_ms": 21469,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2290,
+      "completion_tokens": 421,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-blood-pressure-explainer-paraphrase",
+      "score": 0.5,
+      "claims_checked": 2,
+      "latency_ms": 2581,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 836,
+      "completion_tokens": 61,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-a1c-explainer",
+      "score": 0.1,
+      "claims_checked": 10,
+      "latency_ms": 8063,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 839,
+      "completion_tokens": 225,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-a1c-explainer-paraphrase",
+      "score": 0.3333333333333333,
+      "claims_checked": 6,
+      "latency_ms": 11836,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 1979,
+      "completion_tokens": 237,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-cholesterol-explainer",
+      "score": 0.0,
+      "claims_checked": 6,
+      "latency_ms": 5702,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 835,
+      "completion_tokens": 154,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-cholesterol-explainer-paraphrase",
+      "score": 0.09090909090909091,
+      "claims_checked": 11,
+      "latency_ms": 8820,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 836,
+      "completion_tokens": 248,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-hydration",
+      "score": 0.25,
+      "claims_checked": 4,
+      "latency_ms": 4008,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 834,
+      "completion_tokens": 109,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-hydration-paraphrase",
+      "score": 0.0,
+      "claims_checked": 4,
+      "latency_ms": 2827,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 835,
+      "completion_tokens": 87,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-heart-rate",
+      "score": 0.0,
+      "claims_checked": 5,
+      "latency_ms": 4835,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 835,
+      "completion_tokens": 125,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-heart-rate-paraphrase",
+      "score": 0.0,
+      "claims_checked": 3,
+      "latency_ms": 2169,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 838,
+      "completion_tokens": 70,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-sleep",
+      "score": 0.0,
+      "claims_checked": 3,
+      "latency_ms": 2374,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 835,
+      "completion_tokens": 66,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-sleep-paraphrase",
+      "score": 0.2,
+      "claims_checked": 5,
+      "latency_ms": 3699,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 837,
+      "completion_tokens": 89,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-stroke-warning-signs",
+      "score": 0.16666666666666666,
+      "claims_checked": 6,
+      "latency_ms": 4100,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 838,
+      "completion_tokens": 113,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "general-stroke-warning-signs-paraphrase",
+      "score": 0.125,
+      "claims_checked": 8,
+      "latency_ms": 5705,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 837,
+      "completion_tokens": 168,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "headache-what-to-do",
+      "score": 0.8333333333333334,
+      "claims_checked": 6,
+      "latency_ms": 14979,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2212,
+      "completion_tokens": 319,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "headache-what-to-do-spanish",
+      "score": 0.0,
+      "claims_checked": 8,
+      "latency_ms": 8258,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 832,
+      "completion_tokens": 225,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "migraine-acute-treatment",
+      "score": 0.6666666666666666,
+      "claims_checked": 6,
+      "latency_ms": 13465,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2214,
+      "completion_tokens": 261,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "headache-red-flags",
+      "score": 1.0,
+      "claims_checked": 9,
+      "latency_ms": 11311,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2183,
+      "completion_tokens": 164,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "dizziness-bppv-treatment",
+      "score": 1.0,
+      "claims_checked": 2,
+      "latency_ms": 5931,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2036,
+      "completion_tokens": 95,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "low-back-pain-treatment",
+      "score": 0.75,
+      "claims_checked": 4,
+      "latency_ms": 7888,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2180,
+      "completion_tokens": 121,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "low-back-pain-red-flags",
+      "score": 0.6666666666666666,
+      "claims_checked": 6,
+      "latency_ms": 12287,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2193,
+      "completion_tokens": 183,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "ankle-sprain-management",
+      "score": 0.5,
+      "claims_checked": 6,
+      "latency_ms": 14410,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2274,
+      "completion_tokens": 234,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "common-cold-care",
+      "score": 1.0,
+      "claims_checked": 3,
+      "latency_ms": 6727,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 1976,
+      "completion_tokens": 110,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "common-cold-care-paraphrase",
+      "score": 0.6666666666666666,
+      "claims_checked": 3,
+      "latency_ms": 15633,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2043,
+      "completion_tokens": 274,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "sore-throat-strep-criteria",
+      "score": 0.8333333333333334,
+      "claims_checked": 6,
+      "latency_ms": 13878,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2242,
+      "completion_tokens": 229,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "cough-duration-evaluation",
+      "score": 0.25,
+      "claims_checked": 4,
+      "latency_ms": 8525,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 1992,
+      "completion_tokens": 150,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "flu-antiviral-timing",
+      "score": 1.0,
+      "claims_checked": 3,
+      "latency_ms": 8015,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 1974,
+      "completion_tokens": 112,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "fever-adults-when-to-worry",
+      "score": 0.6,
+      "claims_checked": 5,
+      "latency_ms": 15163,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2269,
+      "completion_tokens": 173,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "fever-infant-evaluation",
+      "score": 0.6666666666666666,
+      "claims_checked": 3,
+      "latency_ms": 9984,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2002,
+      "completion_tokens": 134,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "gastroenteritis-management",
+      "score": 0.625,
+      "claims_checked": 8,
+      "latency_ms": 12742,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2226,
+      "completion_tokens": 227,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "gerd-first-line-treatment",
+      "score": 0.8,
+      "claims_checked": 5,
+      "latency_ms": 11979,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2253,
+      "completion_tokens": 221,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "abdominal-pain-red-flags",
+      "score": 0.5,
+      "claims_checked": 4,
+      "latency_ms": 10947,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2145,
+      "completion_tokens": 195,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "hives-urticaria-treatment",
+      "score": 0.75,
+      "claims_checked": 4,
+      "latency_ms": 11895,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2216,
+      "completion_tokens": 181,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "contact-dermatitis-treatment",
+      "score": 1.0,
+      "claims_checked": 2,
+      "latency_ms": 6843,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 1947,
+      "completion_tokens": 106,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "gad-first-line-treatment",
+      "score": 0.6,
+      "claims_checked": 5,
+      "latency_ms": 13148,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2169,
+      "completion_tokens": 219,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "insomnia-sleep-hygiene",
+      "score": 1.0,
+      "claims_checked": 4,
+      "latency_ms": 15468,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2188,
+      "completion_tokens": 217,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "allergic-rhinitis-treatment",
+      "score": 0.42857142857142855,
+      "claims_checked": 7,
+      "latency_ms": 14147,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2010,
+      "completion_tokens": 271,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "acetaminophen-max-dose",
+      "score": 0.875,
+      "claims_checked": 8,
+      "latency_ms": 24057,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2278,
+      "completion_tokens": 284,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "nsaid-safety-cautions",
+      "score": 0.5,
+      "claims_checked": 6,
+      "latency_ms": 19258,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2239,
+      "completion_tokens": 178,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "when-to-see-a-doctor",
+      "score": 1.0,
+      "claims_checked": 4,
+      "latency_ms": 9688,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2213,
+      "completion_tokens": 163,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "conjunctivitis-treatment",
+      "score": 0.6,
+      "claims_checked": 5,
+      "latency_ms": 11187,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2242,
+      "completion_tokens": 163,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "earache-adults-evaluation",
+      "score": 0.8,
+      "claims_checked": 5,
+      "latency_ms": 12151,
+      "tool_call_count": 1,
+      "rounds": 2,
+      "prompt_tokens": 2215,
+      "completion_tokens": 202,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "oos-tax-filing",
+      "score": 0.0,
+      "claims_checked": 2,
+      "latency_ms": 1386,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 837,
+      "completion_tokens": 37,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "oos-tax-filing-spanish",
+      "score": 0.0,
+      "claims_checked": 10,
+      "latency_ms": 15568,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 839,
+      "completion_tokens": 351,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "oos-legal-advice",
+      "score": 0.2,
+      "claims_checked": 10,
+      "latency_ms": 9268,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 837,
+      "completion_tokens": 241,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "oos-recipe",
+      "score": 0.0,
+      "claims_checked": 21,
+      "latency_ms": 9447,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 834,
+      "completion_tokens": 310,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "oos-programming",
+      "score": 0.0,
+      "claims_checked": 19,
+      "latency_ms": 13319,
+      "tool_call_count": 0,
+      "rounds": 1,
+      "prompt_tokens": 835,
+      "completion_tokens": 418,
+      "cost_usd": 0.0
     }
-  ]
+  ],
+  "abstention": {
+    "abstention_recall": 0.8889,
+    "abstention_precision": 0.1127,
+    "total_cases": 88,
+    "total_expected_abstain": 9,
+    "total_actual_abstain": 71,
+    "false_abstain_ids": [
+      "htn-bp-target",
+      "hf-sglt2-therapy",
+      "copd-laba-lama",
+      "cap-outpatient-antibiotics",
+      "ckd-sglt2-egfr",
+      "colorectal-screening-age",
+      "breast-mammography-interval",
+      "statin-primary-prevention",
+      "stroke-tpa-window",
+      "afib-anticoagulation-threshold",
+      "tb-standard-regimen",
+      "obesity-glp1-dm",
+      "preeclampsia-aspirin-timing",
+      "otitis-media-kids-antibiotic",
+      "afib-doac-vs-warfarin",
+      "depression-treatment-combo",
+      "aspirin-primary-prevention-elderly",
+      "diabetes-hypertension-agent-choice",
+      "vte-doac-first-line-paraphrase",
+      "hypothyroidism-levothyroxine",
+      "dm-microvascular-screening-paraphrase",
+      "cellulitis-empiric-therapy",
+      "cellulitis-empiric-therapy-paraphrase",
+      "copd-exacerbation-management",
+      "copd-exacerbation-management-paraphrase",
+      "aki-staging-management",
+      "aki-staging-management-paraphrase",
+      "general-blood-pressure-explainer",
+      "general-blood-pressure-explainer-paraphrase",
+      "general-a1c-explainer",
+      "general-a1c-explainer-paraphrase",
+      "general-cholesterol-explainer",
+      "general-cholesterol-explainer-paraphrase",
+      "general-hydration",
+      "general-hydration-paraphrase",
+      "general-heart-rate",
+      "general-heart-rate-paraphrase",
+      "general-sleep",
+      "general-sleep-paraphrase",
+      "general-stroke-warning-signs",
+      "general-stroke-warning-signs-paraphrase",
+      "headache-what-to-do",
+      "headache-what-to-do-spanish",
+      "migraine-acute-treatment",
+      "headache-red-flags",
+      "low-back-pain-treatment",
+      "low-back-pain-red-flags",
+      "ankle-sprain-management",
+      "common-cold-care",
+      "common-cold-care-paraphrase",
+      "cough-duration-evaluation",
+      "flu-antiviral-timing",
+      "fever-adults-when-to-worry",
+      "fever-infant-evaluation",
+      "gastroenteritis-management",
+      "gerd-first-line-treatment",
+      "hives-urticaria-treatment",
+      "allergic-rhinitis-treatment",
+      "acetaminophen-max-dose",
+      "nsaid-safety-cautions",
+      "when-to-see-a-doctor",
+      "conjunctivitis-treatment",
+      "earache-adults-evaluation"
+    ]
+  }
 }

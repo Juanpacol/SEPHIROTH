@@ -1,0 +1,11 @@
+{
+  "case_id": "general-cholesterol-explainer",
+  "answer": "LDL stands for Low-Density Lipoprotein, often referred to as \u201cbad\u201d cholesterol because high levels are associated with increased risk of heart disease. High levels can lead to plaque buildup in arteries (atherosclerosis).\n\nOn the other hand, HDL stands for High-Density Lipoprotein, commonly known as \u201cgood\u201d cholesterol. HDL helps remove excess cholesterol from coronary arteries and carries it back to the liver where it is broken down, making this type of cholesterol effective at preventing blockages.\n\nIn summary:\n- **LDL** (Bad Cholesterol): Low levels are desirable; high levels can lead to plaque in arteries.\n- **HDL** (Good Cholesterol): High levels are beneficial as they remove excess and prevent atherosclerosis.",
+  "tool_calls": [],
+  "latency_ms": 5702,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 835,
+  "completion_tokens": 154,
+  "cost_usd": 0.0
+}

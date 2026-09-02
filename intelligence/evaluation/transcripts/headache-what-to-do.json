@@ -1,0 +1,55 @@
+{
+  "case_id": "headache-what-to-do",
+  "answer": "If you have a tension-type headache, treatment typically involves over-the-counter pain relievers like acetaminophen or an NSAID. According to the International Classification of Headache Disorders, 3rd edition (ICHD-3), tension-type headaches are characterized by bilateral, pressing or tightening pain without being aggravating by routine physical activity and can be effectively managed with analgesia and identifying and avoiding triggers such as stress, poor sleep, or dehydration [Tension-Type Headache, International Headache Society, 2018].\n\nFor acute migraine treatment, it is suggested that first-line treatments for most patients include NSAIDs or triptans. A combined approach of a triptan with an NSAID may be more effective than either medication alone. Additionally, for individuals who have four or more migraine days per month, preventive therapy should also be considered in addition to acute treatment recommendations [Acute Treatment of Migraine, American Headache Society, 2021].\n\nPlease consult a healthcare professional for personalized advice and treatment plans as these guidelines may vary based on individual circumstances.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "headache management",
+        "top_k": 2
+      },
+      "result": {
+        "query": "headache management",
+        "results": [
+          {
+            "id": "ichd3-tension-headache",
+            "content": "Tension-type headache presents as bilateral, pressing or tightening pain of mild to moderate intensity, not aggravated by routine physical activity. First-line treatment is over-the-counter analgesia (acetaminophen or an NSAID) and addressing triggers such as stress, poor sleep, or dehydration.",
+            "source": "International Classification of Headache Disorders, 3rd ed.",
+            "citation": "Tension-Type Headache, International Headache Society, 2018",
+            "url": "https://ichd-3.org/2-tension-type-headache/",
+            "score": 0.0328,
+            "metadata": {
+              "category": "neurology",
+              "organization": "International Headache Society",
+              "year": 2018,
+              "title": "Tension-Type Headache",
+              "url": "https://ichd-3.org/2-tension-type-headache/"
+            }
+          },
+          {
+            "id": "ahs-2021-migraine",
+            "content": "For acute migraine treatment, NSAIDs or triptans are first-line for most patients; combining a triptan with an NSAID is more effective than either alone. For patients with 4 or more migraine days per month, preventive therapy should be offered in addition to acute treatment.",
+            "source": "American Headache Society Consensus Statement",
+            "citation": "Acute Treatment of Migraine, American Headache Society, 2021",
+            "url": "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14153",
+            "score": 0.0323,
+            "metadata": {
+              "category": "neurology",
+              "organization": "American Headache Society",
+              "year": 2021,
+              "title": "Acute Treatment of Migraine",
+              "url": "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14153"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 14979,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2212,
+  "completion_tokens": 319,
+  "cost_usd": 0.0
+}

@@ -78,6 +78,34 @@ async def test_dynamic_planner_degrades_to_static_on_model_failure():
     assert result == route_specialists(context)
 
 
+async def test_dynamic_planner_prompt_carries_query_and_conditions():
+    """The prompt sent to the model must include the clinician's actual
+    question and known conditions, not just the three structured-data
+    booleans — otherwise the dynamic planner can't route on domains the
+    question mentions in free text (e.g. drug interactions) when no
+    matching structured field was populated."""
+    from sephiroth.runtime.planner import _routing_prompt
+
+    prompt = _routing_prompt(
+        {"conditions": ["type 2 diabetes"]}, query="Check for interactions with metformin"
+    )
+    assert "Check for interactions with metformin" in prompt
+    assert "type 2 diabetes" in prompt
+
+
+async def test_dynamic_planner_routes_drug_safety_from_free_text_query():
+    """No `medications` field is populated, but the question is clearly
+    about a drug interaction — the model (scripted here) should still be
+    able to pick `drug_safety` since the prompt now carries the query."""
+    client = FakeLLMClient(json_payloads=[{"agents": ["drug_safety", "evidence"]}])
+    result = await route_specialists_dynamic(
+        {"conditions": ["type 2 diabetes"]},
+        client,
+        query="Are there interactions between metformin and lisinopril?",
+    )
+    assert result == ["drug_safety", "evidence"]
+
+
 async def test_dynamic_routing_wired_into_run_consultation(monkeypatch):
     """Verifies AC-008-03: the flag actually changes which agents run."""
     monkeypatch.setattr(settings, "enable_dynamic_planner", True)

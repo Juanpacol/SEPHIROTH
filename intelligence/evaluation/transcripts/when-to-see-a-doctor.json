@@ -1,0 +1,54 @@
+{
+  "case_id": "when-to-see-a-doctor",
+  "answer": "For most minor symptoms such as a mild cold, a headache, or a small cut, self-care and over-the-counter remedies are appropriate. However, it is advisable to see a clinician promptly if you experience severe chest pain, shortness of breath, sudden severe pain, high fever, confusion, or any symptom that worsens over time.\n\nFor the common cold, consider supportive care including rest, fluids, and over-the-counter symptom relief like analgesics and decongestants. See a doctor if symptoms continue for more than 10 days or get worse after they have improved initially. [Source](cdc-2023-common-cold)",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "minor symptoms see doctor self-care"
+      },
+      "result": {
+        "query": "minor symptoms see doctor self-care",
+        "results": [
+          {
+            "id": "medlineplus-when-to-see-doctor",
+            "content": "For most minor symptoms \u2014 a mild cold, a headache, a small cut, occasional heartburn \u2014 self-care and over-the-counter remedies are appropriate. See a clinician promptly for chest pain, difficulty breathing, sudden severe pain, high fever, confusion, or any symptom that is severe, sudden, or progressively worsening.",
+            "source": "MedlinePlus",
+            "citation": "When to See a Doctor, MedlinePlus (U.S. National Library of Medicine), 2023",
+            "url": "https://medlineplus.gov/ency/patientinstructions/000605.htm",
+            "score": 0.0492,
+            "metadata": {
+              "category": "general_health",
+              "organization": "MedlinePlus (U.S. National Library of Medicine)",
+              "year": 2023,
+              "title": "When to See a Doctor",
+              "url": "https://medlineplus.gov/ency/patientinstructions/000605.htm"
+            }
+          },
+          {
+            "id": "cdc-2023-common-cold",
+            "content": "The common cold is a self-limited viral illness lasting 7-10 days; antibiotics do not help and are not recommended. Supportive care \u2014 rest, fluids, and over-the-counter symptom relief (analgesics, decongestants) \u2014 is the standard of care. See a clinician if symptoms last beyond 10 days or worsen after initial improvement.",
+            "source": "CDC",
+            "citation": "Common Cold: Symptoms and Care, Centers for Disease Control and Prevention, 2023",
+            "url": "https://www.cdc.gov/antibiotic-use/colds.html",
+            "score": 0.0161,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "Centers for Disease Control and Prevention",
+              "year": 2023,
+              "title": "Common Cold: Symptoms and Care",
+              "url": "https://www.cdc.gov/antibiotic-use/colds.html"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 9688,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2213,
+  "completion_tokens": 163,
+  "cost_usd": 0.0
+}

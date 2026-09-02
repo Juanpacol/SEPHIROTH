@@ -1,0 +1,11 @@
+{
+  "case_id": "acs-stemi-reperfusion-paraphrase",
+  "answer": "",
+  "tool_calls": [],
+  "latency_ms": 1495,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 845,
+  "completion_tokens": 38,
+  "cost_usd": 0.0
+}

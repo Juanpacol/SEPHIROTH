@@ -1,0 +1,54 @@
+{
+  "case_id": "sore-throat-strep-criteria",
+  "answer": "The criteria typically used to determine if a sore throat requires a strep test include the Centor score, which considers five conditions: fever, presence of tonsillar exudate, tender anterior cervical adenopathy (enlarged lymph nodes), and absence of cough. A score of 3-4 on the Centor scale suggests a likelihood sufficient to warrant rapid strep testing for group A Streptococcus.\n\nFor sore throats that do not meet these criteria, antibiotics are generally not indicated even if they suspect strep throat based on clinical suspicion alone. Penicillin or amoxicillin is first-line treatment for confirmed strep throat; however, this does not apply to a low Centor score where such testing is unnecessary. Other causes like influenza should be considered and ruled out in the case of severe symptoms with rapid onset. \n\n[IDA, 2012] [Cdcflu-2024] \u2014 please consult these resources for full details on clinical guidelines.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "sore throat testing guidelines"
+      },
+      "result": {
+        "query": "sore throat testing guidelines",
+        "results": [
+          {
+            "id": "idsa-2012-pharyngitis-centor",
+            "content": "The Centor criteria (fever, tonsillar exudate, tender anterior cervical adenopathy, absence of cough) estimate the likelihood of group A streptococcal pharyngitis; a score of 3-4 warrants rapid strep testing. Penicillin or amoxicillin is first-line treatment for confirmed strep throat; antibiotics are not indicated for a low Centor score.",
+            "source": "IDSA Clinical Practice Guideline",
+            "citation": "Diagnosis and Management of Group A Streptococcal Pharyngitis, IDSA, 2012",
+            "url": "https://academic.oup.com/cid/article/55/10/1279/300756",
+            "score": 0.0492,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "IDSA",
+              "year": 2012,
+              "title": "Diagnosis and Management of Group A Streptococcal Pharyngitis",
+              "url": "https://academic.oup.com/cid/article/55/10/1279/300756"
+            }
+          },
+          {
+            "id": "cdc-flu-2024",
+            "content": "Influenza symptoms include fever, cough, sore throat, muscle aches, and fatigue with rapid onset. Antiviral treatment (e.g. oseltamivir) is most effective when started within 48 hours of symptom onset and is prioritized for patients at high risk of complications (young children, pregnant patients, adults 65 and older, and those with chronic conditions).",
+            "source": "CDC",
+            "citation": "Influenza: Symptoms and Treatment, Centers for Disease Control and Prevention, 2024",
+            "url": "https://www.cdc.gov/flu/treatment/index.html",
+            "score": 0.0161,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "Centers for Disease Control and Prevention",
+              "year": 2024,
+              "title": "Influenza: Symptoms and Treatment",
+              "url": "https://www.cdc.gov/flu/treatment/index.html"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 13878,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2242,
+  "completion_tokens": 229,
+  "cost_usd": 0.0
+}

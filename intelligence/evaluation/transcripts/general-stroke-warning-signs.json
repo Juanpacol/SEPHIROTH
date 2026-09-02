@@ -1,0 +1,11 @@
+{
+  "case_id": "general-stroke-warning-signs",
+  "answer": "In case of suspected stroke, it's crucial to act fast by recognizing symptoms like facial drooping, arm weakness, speech difficulties, severe headaches, or sudden vision changes. Promptly call emergency services if any of these occur, as treatment is most effective within the first few hours after a stroke.\n\n[NIH Stroke Scale, 2015]\n\nFor immediate action:\n- Call emergency services at 911\n- Do not drive to the hospital or rely on family members to do so.\n- Inform them about potential signs of a stroke immediately.",
+  "tool_calls": [],
+  "latency_ms": 4100,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 838,
+  "completion_tokens": 113,
+  "cost_usd": 0.0
+}

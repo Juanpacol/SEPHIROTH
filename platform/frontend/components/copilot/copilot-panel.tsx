@@ -10,19 +10,18 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2,
-  ChevronDown,
   Download,
   Loader2,
   Send,
   ShieldAlert,
   ShieldCheck,
-  Wrench,
   X,
 } from "lucide-react";
 import { api, type CitationReport, type Explanation, type ToolCall } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import AgentBadge from "@/components/agent-badge";
+import AnswerText from "@/components/copilot/answer-text";
 import ExplainabilityPanel from "@/components/explainability-panel";
 
 interface AgentProgress {
@@ -45,12 +44,26 @@ interface Exchange {
 }
 
 /** Suggested starter questions — kept in English regardless of UI locale,
- * matching the clinical literature/citations the agents cite. */
+ * matching the clinical literature/citations the agents cite.
+ *
+ * Ordered general reference first, then specialist decisions. Every one was
+ * checked against the retrieval corpus (`data/rag`) before being listed: a
+ * suggested question the corpus cannot answer abstains, which reads as the
+ * product being broken rather than as it being careful. The last one routes
+ * to the drug-safety agent rather than evidence, so the set exercises both
+ * answering paths. */
+/** The query text sent to the backend/RAG corpus always stays the English
+ * original (`query`) regardless of UI language — the corpus match described
+ * above was verified against these exact English strings. `labelKey` is
+ * only what the button displays. */
 const SUGGESTED_QUESTIONS = [
-  "What's the best first medicine for high blood pressure?",
-  "When does someone with atrial fibrillation need blood thinners?",
-  "What antibiotic should I use for pneumonia caught outside the hospital?",
-  "Do warfarin and ibuprofen interact?",
+  { query: "What blood pressure reading is considered high?", labelKey: "copilot.suggested.bloodPressure" },
+  { query: "What are the warning signs of a stroke?", labelKey: "copilot.suggested.strokeWarningSigns" },
+  { query: "What is the A1C target for adults with type 2 diabetes?", labelKey: "copilot.suggested.a1cTarget" },
+  { query: "When should anticoagulation be started in atrial fibrillation?", labelKey: "copilot.suggested.anticoagulation" },
+  { query: "Which empiric antibiotics for outpatient community-acquired pneumonia?", labelKey: "copilot.suggested.antibiotics" },
+  { query: "Which patients with type 2 diabetes and CKD should get an SGLT2 inhibitor?", labelKey: "copilot.suggested.sglt2" },
+  { query: "Do warfarin and ibuprofen interact?", labelKey: "copilot.suggested.warfarinIbuprofen" },
 ];
 
 /** Token-overlap match — mirrors the >=0.5 overlap threshold Citation Guard
@@ -94,15 +107,15 @@ interface PdfPreview {
   sections: string[];
 }
 
-function reportSections(exchange: Exchange): string[] {
+function reportSectionKeys(exchange: Exchange): string[] {
   const citationCount =
     (exchange.citations?.verified?.length ?? 0) + (exchange.citations?.fabricated?.length ?? 0);
   return [
-    "Clinical question & AI response",
-    exchange.agents?.length ? "Agents involved" : null,
-    citationCount > 0 ? "Citation Guard" : null,
-    exchange.explanation?.steps.length ? "Reasoning trace" : null,
-    "Disclaimer",
+    "copilot.report.clinicalQaAndResponse",
+    exchange.agents?.length ? "copilot.report.agentsInvolved" : null,
+    citationCount > 0 ? "copilot.citationGuard" : null,
+    exchange.explanation?.steps.length ? "copilot.report.reasoningTrace" : null,
+    "copilot.report.disclaimer",
   ].filter((s): s is string => Boolean(s));
 }
 
@@ -134,7 +147,7 @@ function PdfPreviewModal({
           </div>
           <button
             onClick={onClose}
-            aria-label="Close preview"
+            aria-label={t("copilot.closePreview")}
             className="rounded-full p-1.5 text-muted hover:bg-surface"
           >
             <X size={16} />
@@ -142,7 +155,7 @@ function PdfPreviewModal({
         </div>
 
         <div className="flex-1 overflow-hidden bg-surface">
-          <iframe src={preview.url} title="PDF preview" className="h-[50vh] w-full" />
+          <iframe src={preview.url} title={t("copilot.pdfPreview")} className="h-[50vh] w-full" />
         </div>
 
         <div className="border-t border-line/60 p-4">
@@ -152,7 +165,7 @@ function PdfPreviewModal({
           <ul className="mb-4 space-y-1">
             {preview.sections.map((section) => (
               <li key={section} className="flex items-center gap-1.5 text-sm">
-                <CheckCircle2 size={13} className="text-success" /> {section}
+                <CheckCircle2 size={13} className="text-success" /> {t(section)}
               </li>
             ))}
           </ul>
@@ -190,57 +203,27 @@ function ThinkingDots() {
   );
 }
 
-function ToolCallRow({ call }: { call: ToolCall }) {
-  const [open, setOpen] = useState(false);
-  const hasDetail = call.arguments || call.result !== undefined;
-  return (
-    <div className="border-b border-line/50 last:border-0">
-      <button
-        onClick={() => hasDetail && setOpen((o) => !o)}
-        className={`flex w-full items-center gap-1.5 py-1.5 text-left ${hasDetail ? "cursor-pointer" : "cursor-default"}`}
-        aria-expanded={open}
-      >
-        {hasDetail && (
-          <ChevronDown
-            size={11}
-            className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`}
-          />
-        )}
-        <span className="truncate">
-          {call.agent && <span className="text-muted">{call.agent} → </span>}
-          <code className="text-ink/80">{call.name}</code>
-        </span>
-      </button>
-      {open && hasDetail && (
-        <pre className="mb-2 max-h-48 overflow-auto rounded-lg bg-card p-2 text-[11px] leading-relaxed text-muted">
-{JSON.stringify({ arguments: call.arguments, result: call.result }, null, 2)}
-        </pre>
-      )}
-    </div>
-  );
-}
-
 function CitationsPanel({ report, toolCalls }: { report: CitationReport; toolCalls?: ToolCall[] }) {
   const { t } = useLanguage();
   const verified = report.verified ?? [];
   const fabricated = report.fabricated ?? [];
   if (verified.length === 0 && fabricated.length === 0) return null;
   return (
-    <div className="rounded-xl bg-surface p-3 text-xs">
-      <div className="mb-1.5 flex items-center gap-1 font-semibold text-ink/80">
-        <ShieldCheck size={13} className="text-success" /> {t("copilot.citationGuard")}
+    <div className="rounded-xl bg-surface p-3 text-xs text-muted">
+      <div className="mb-1.5 flex items-center gap-1 font-semibold">
+        <ShieldCheck size={13} /> {t("copilot.citationGuard")}
       </div>
       {verified.map((citation) => {
         const url = citationUrl(citation, toolCalls);
         return (
-          <div key={citation} className="flex items-start gap-1.5 text-muted">
-            <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-success" />
+          <div key={citation} className="flex items-start gap-1.5">
+            <CheckCircle2 size={12} className="mt-0.5 shrink-0" />
             {url ? (
               <a
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary underline underline-offset-2"
+                className="underline underline-offset-2"
               >
                 {citation} — {t("copilot.viewSource")}
               </a>
@@ -291,7 +274,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
         exchangeId: exchange.id,
         url: URL.createObjectURL(blob),
         size: blob.size,
-        sections: reportSections(exchange),
+        sections: reportSectionKeys(exchange),
       });
     } finally {
       setPreviewLoadingId(null);
@@ -410,12 +393,12 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
             <div className="flex flex-wrap gap-1.5">
               {SUGGESTED_QUESTIONS.map((q) => (
                 <button
-                  key={q}
-                  onClick={() => submit(q)}
+                  key={q.query}
+                  onClick={() => submit(q.query)}
                   disabled={streaming}
                   className="rounded-full border border-line/70 bg-card px-3 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-primary hover:text-primary disabled:opacity-40"
                 >
-                  {q}
+                  {t(q.labelKey)}
                 </button>
               ))}
             </div>
@@ -426,7 +409,11 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
             <div className="ml-auto w-fit max-w-[85%] rounded-2xl bg-primary px-4 py-2.5 text-sm text-white">
               {exchange.question}
             </div>
-            <div className="ai-ring max-w-[95%] rounded-squircle bg-card p-4 text-sm shadow-card">
+            {/* No `ai-ring` here: its 2px #8c92ac halo read as a stray light
+                border around every answer. The AI-provenance signal that ring
+                carried (design decision #4) still ships on each answer via
+                AgentBadge, which uses the same Sephiroth gradient. */}
+            <div className="max-w-[95%] rounded-squircle bg-card p-4 text-sm shadow-card">
               {exchange.pending ? (
                 <div className="space-y-2">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted">
@@ -461,8 +448,8 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                       <button
                         onClick={() => openPdfPreview(exchange)}
                         disabled={previewLoadingId === exchange.id}
-                        aria-label="Preview and export this consultation as PDF"
-                        title="Export as PDF"
+                        aria-label={t("copilot.previewExportPdf")}
+                        title={t("copilot.exportPdf")}
                         className="ml-auto rounded-full p-1.5 text-muted hover:bg-surface hover:text-primary disabled:opacity-40"
                       >
                         {previewLoadingId === exchange.id ? (
@@ -473,22 +460,12 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                       </button>
                     )}
                   </div>
-                  <div className="whitespace-pre-wrap leading-relaxed">{exchange.answer}</div>
+                  <AnswerText answer={exchange.answer ?? ""} />
                   {exchange.citations && (
                     <CitationsPanel report={exchange.citations} toolCalls={exchange.toolCalls} />
                   )}
                   {exchange.explanation && (
                     <ExplainabilityPanel explanation={exchange.explanation} />
-                  )}
-                  {exchange.toolCalls && exchange.toolCalls.length > 0 && (
-                    <div className="rounded-xl bg-surface p-3 text-xs text-muted">
-                      <div className="mb-1 flex items-center gap-1 font-semibold">
-                        <Wrench size={12} /> {t("copilot.toolsUsed")}
-                      </div>
-                      {exchange.toolCalls.map((call, j) => (
-                        <ToolCallRow key={j} call={call} />
-                      ))}
-                    </div>
                   )}
                 </div>
               )}
@@ -540,7 +517,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                 ? "bg-primary-soft text-primary"
                 : "bg-surface text-muted"
             } disabled:cursor-not-allowed`}
-            aria-label="Send"
+            aria-label={t("copilot.send")}
           >
             {streaming ? (
               <Loader2 size={15} className="animate-spin" />

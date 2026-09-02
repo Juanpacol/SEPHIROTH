@@ -1,79 +1,55 @@
 {
   "case_id": "depression-treatment-combo",
-  "answer": "For someone with fairly severe depression, the recommended approach is a combination of medication and psychotherapy. According to the NICE Guideline on Depression in Adults [1], a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended for moderate to severe depression. This approach is preferred over either treatment alone.\n\nIn summary, both medication and therapy are important components of treating depression, and using them together may be the most effective approach.\n\n[1] NICE Guideline on Depression in Adults, 2022 [PMID: 28369337].",
+  "answer": "For someone with moderately to severely depressed, the best approach is often considered a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy. Evidence suggests this combination is more effective than either treatment alone [NICE Guideline on Depression in Adults, 2022]. \n\nGiven that no other relevant clinical guidelines were found for treating depression, it's important to note this recommendation is based on the provided guideline and does not account for individual patient differences or contraindications. Please consult a healthcare provider for personalized advice.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "combined medication and psychotherapy treatment approach for moderately to severely depressed patients",
-        "top_k": "5"
+        "top_k": 2,
+        "query": "best treatment for moderately to severely depressed patients"
       },
       "result": {
-        "query": "combined medication and psychotherapy treatment approach for moderately to severely depressed patients",
+        "query": "best treatment for moderately to severely depressed patients",
         "results": [
-          {
-            "id": "gold-2024-copd",
-            "content": "For COPD patients with frequent exacerbations, LABA+LAMA combination therapy is preferred. Inhaled corticosteroids are added for patients with blood eosinophils >=300 cells/uL or continued exacerbations.",
-            "source": "GOLD COPD Report",
-            "citation": "COPD Diagnosis, Management and Prevention, GOLD, 2024",
-            "score": 0.4472,
-            "metadata": {
-              "organization": "GOLD",
-              "year": 2024,
-              "title": "COPD Diagnosis, Management and Prevention"
-            }
-          },
           {
             "id": "nice-2022-depression",
             "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
             "source": "NICE Guideline on Depression in Adults",
             "citation": "Management of Depression in Adults, NICE, 2022",
-            "score": 0.4472,
+            "url": "https://www.nice.org.uk/guidance/ng222",
+            "score": 0.0328,
             "metadata": {
+              "category": "psychiatry",
               "organization": "NICE",
               "year": 2022,
-              "title": "Management of Depression in Adults"
+              "title": "Management of Depression in Adults",
+              "url": "https://www.nice.org.uk/guidance/ng222"
             }
           },
           {
-            "id": "accp-2024-afib",
-            "content": "Oral anticoagulation is recommended for patients with atrial fibrillation and a CHA2DS2-VASc score of 2 or more in men or 3 or more in women. Direct oral anticoagulants are preferred over warfarin in most eligible patients.",
-            "source": "ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline",
-            "citation": "Anticoagulation in Atrial Fibrillation, ACC/AHA/HRS, 2024",
-            "score": 0.4082,
+            "id": "ahs-2021-migraine",
+            "content": "For acute migraine treatment, NSAIDs or triptans are first-line for most patients; combining a triptan with an NSAID is more effective than either alone. For patients with 4 or more migraine days per month, preventive therapy should be offered in addition to acute treatment.",
+            "source": "American Headache Society Consensus Statement",
+            "citation": "Acute Treatment of Migraine, American Headache Society, 2021",
+            "url": "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14153",
+            "score": 0.0164,
             "metadata": {
-              "organization": "ACC/AHA/HRS",
-              "year": 2024,
-              "title": "Anticoagulation in Atrial Fibrillation"
-            }
-          },
-          {
-            "id": "acog-2020-preeclampsia",
-            "content": "Low-dose aspirin starting at 12-28 weeks of gestation is recommended for patients at high risk of preeclampsia. Magnesium sulfate is recommended for seizure prophylaxis in patients with severe features of preeclampsia.",
-            "source": "ACOG Practice Bulletin on Preeclampsia",
-            "citation": "Gestational Hypertension and Preeclampsia, ACOG, 2020",
-            "score": 0.4082,
-            "metadata": {
-              "organization": "ACOG",
-              "year": 2020,
-              "title": "Gestational Hypertension and Preeclampsia"
-            }
-          },
-          {
-            "id": "aha-asa-2021-stroke",
-            "content": "Intravenous alteplase is recommended within 4.5 hours of symptom onset for eligible patients with acute ischemic stroke. Mechanical thrombectomy is recommended for large-vessel occlusion within 24 hours in selected patients.",
-            "source": "AHA/ASA Acute Ischemic Stroke Guideline",
-            "citation": "Early Management of Acute Ischemic Stroke, AHA/ASA, 2021",
-            "score": 0.4,
-            "metadata": {
-              "organization": "AHA/ASA",
+              "category": "neurology",
+              "organization": "American Headache Society",
               "year": 2021,
-              "title": "Early Management of Acute Ischemic Stroke"
+              "title": "Acute Treatment of Migraine",
+              "url": "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14153"
             }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
-  ]
+  ],
+  "latency_ms": 8838,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2168,
+  "completion_tokens": 148,
+  "cost_usd": 0.0
 }

@@ -15,6 +15,7 @@ the change is additive. Verifies AC-008-04 (docs/specs/SPEC-008-dynamic-planner.
 
 import pytest
 
+from core.config import settings
 from sephiroth.runtime import route_specialists, run_consultation, stream_consultation
 from tests.conftest import FakeLLMClient
 
@@ -48,7 +49,13 @@ def test_route_specialists_all_four_branches():
 
 
 @pytest.mark.asyncio
-async def test_run_consultation_end_to_end_with_fake_client():
+@pytest.mark.parametrize("single_agent", [True, False], ids=["single-agent", "multi-agent"])
+async def test_run_consultation_end_to_end_with_fake_client(monkeypatch, single_agent):
+    """Both modes must produce a cited, disclaimer-bearing answer from the
+    evidence specialist. In single-agent mode the disclaimer is appended by
+    the executor (`_with_disclaimer`); in multi-agent the coordinator's
+    prompt instructs the model to end with it."""
+    monkeypatch.setattr(settings, "enable_single_agent_mode", single_agent)
     client = FakeLLMClient(
         scripts={
             "clinical evidence specialist": [
@@ -81,16 +88,21 @@ async def test_run_consultation_end_to_end_with_fake_client():
 
 
 @pytest.mark.asyncio
-async def test_run_consultation_sanitizes_fabricated_citation_in_final_answer():
+@pytest.mark.parametrize("single_agent", [True, False], ids=["single-agent", "multi-agent"])
+async def test_run_consultation_sanitizes_fabricated_citation_in_final_answer(monkeypatch, single_agent):
+    """Citation sanitization is a safety guarantee, so it must hold in both
+    execution modes. The fabricated citation is scripted into whichever
+    agent produces the final answer for that mode: the specialist itself
+    in single-agent mode, the coordinator in multi-agent."""
+    monkeypatch.setattr(settings, "enable_single_agent_mode", single_agent)
+    fabricated = "This is backed by [Totally Fabricated Journal, 2099]."
     client = FakeLLMClient(
         scripts={
             "clinical evidence specialist": [
                 ("tool", "search_clinical_guidelines", {"query": "x", "top_k": 5}),
-                ("answer", "No strong evidence found."),
+                ("answer", fabricated if single_agent else "No strong evidence found."),
             ],
-            "coordinating physician-assistant": [
-                ("answer", "This is backed by [Totally Fabricated Journal, 2099]."),
-            ],
+            "coordinating physician-assistant": [("answer", fabricated)],
         }
     )
     state = await run_consultation(client, "What about an unproven remedy?")

@@ -3,10 +3,15 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ImageDropzone from "@/components/image-dropzone";
 import { api } from "@/lib/api";
+import { LanguageProvider } from "@/lib/language";
 
 function renderWithClient(ui: React.ReactElement) {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <LanguageProvider>{ui}</LanguageProvider>
+    </QueryClientProvider>
+  );
 }
 
 vi.mock("@/lib/api", () => ({

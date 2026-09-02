@@ -2,6 +2,21 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import NotificationBell from "@/components/notification-bell";
 import { api } from "@/lib/api";
+import { LanguageProvider } from "@/lib/language";
+
+function renderBell() {
+  return render(
+    <LanguageProvider>
+      <NotificationBell />
+    </LanguageProvider>
+  );
+}
+
+const push = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+}));
 
 vi.mock("@/lib/api", () => ({
   api: {
@@ -32,12 +47,12 @@ describe("NotificationBell", () => {
   });
 
   it("shows the unread count badge after polling", async () => {
-    render(<NotificationBell />);
+    renderBell();
     await waitFor(() => expect(screen.getByText("2")).toBeInTheDocument());
   });
 
   it("opens the dropdown and lists notifications on click", async () => {
-    render(<NotificationBell />);
+    renderBell();
     await waitFor(() => expect(api.unreadNotificationCount).toHaveBeenCalled());
 
     fireEvent.click(screen.getByLabelText("Notifications"));
@@ -46,7 +61,7 @@ describe("NotificationBell", () => {
   });
 
   it("marks a notification read on click and decrements the badge", async () => {
-    render(<NotificationBell />);
+    renderBell();
     await waitFor(() => expect(screen.getByText("2")).toBeInTheDocument());
 
     fireEvent.click(screen.getByLabelText("Notifications"));

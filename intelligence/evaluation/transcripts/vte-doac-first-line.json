@@ -1,0 +1,55 @@
+{
+  "case_id": "vte-doac-first-line",
+  "answer": "For acute DVT or PE without cancer, direct oral anticoagulants are preferred over warfarin as first-line therapy. [ACCP Antithrombotic Therapy for VTE Guideline, 2021] \n\nIf you need further assistance, please contact a healthcare professional.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "anticoagulant first line for acute DVT or PE without cancer",
+        "top_k": 2
+      },
+      "result": {
+        "query": "anticoagulant first line for acute DVT or PE without cancer",
+        "results": [
+          {
+            "id": "acc-aha-2023-vte",
+            "content": "For acute deep vein thrombosis or pulmonary embolism without cancer, direct oral anticoagulants are preferred over warfarin as first-line therapy. Anticoagulation duration is at least 3 months, extended indefinitely for unprovoked events with low bleeding risk.",
+            "source": "ACCP Antithrombotic Therapy for VTE Guideline",
+            "citation": "Antithrombotic Therapy for VTE Disease, ACCP, 2021",
+            "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext",
+            "score": 0.0492,
+            "metadata": {
+              "category": "cardiovascular",
+              "organization": "ACCP",
+              "year": 2021,
+              "title": "Antithrombotic Therapy for VTE Disease",
+              "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext"
+            }
+          },
+          {
+            "id": "idsa-2019-uti",
+            "content": "Nitrofurantoin for 5 days or trimethoprim-sulfamethoxazole for 3 days are first-line agents for uncomplicated cystitis in women. Fluoroquinolones are reserved for cases where first-line agents are not suitable.",
+            "source": "IDSA Uncomplicated UTI Guideline",
+            "citation": "Treatment of Uncomplicated Cystitis, IDSA, 2019",
+            "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/",
+            "score": 0.0161,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "IDSA",
+              "year": 2019,
+              "title": "Treatment of Uncomplicated Cystitis",
+              "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 8227,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2244,
+  "completion_tokens": 106,
+  "cost_usd": 0.0
+}

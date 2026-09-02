@@ -1,0 +1,40 @@
+{
+  "case_id": "hypothyroidism-levothyroxine-paraphrase",
+  "answer": "You should take Levothyroxine, a medication prescribed for primary hypothyroidism. The typical dosage is adjusted to normalize your Thyroid Stimulating Hormone (TSH) levels, usually between 0.4-4.0 mIU/L, with adjustments depending on your age. It's recommended that you take this medication on an empty stomach and separate it from calcium or iron supplements by at least 4 hours to ensure better absorption.\n\nFor more detailed information, [refer to the American Thyroid Association's guidelines](https://www.thyroid.org/hypothyroidism/).",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "Levothyroxine Hypothyroidism treatment",
+        "top_k": 2
+      },
+      "result": {
+        "query": "Levothyroxine Hypothyroidism treatment",
+        "results": [
+          {
+            "id": "ata-2014-hypothyroidism",
+            "content": "Levothyroxine is the first-line treatment for primary hypothyroidism, dosed to normalize TSH (typical target 0.4-4.0 mIU/L, adjusted for age). Levothyroxine should be taken on an empty stomach, separated from calcium or iron supplements by at least 4 hours to avoid reduced absorption.",
+            "source": "ATA Guidelines for Hypothyroidism",
+            "citation": "Guidelines for the Treatment of Hypothyroidism, American Thyroid Association, 2014",
+            "url": "https://www.thyroid.org/hypothyroidism/",
+            "score": 0.0492,
+            "metadata": {
+              "category": "endocrinology",
+              "organization": "American Thyroid Association",
+              "year": 2014,
+              "title": "Guidelines for the Treatment of Hypothyroidism",
+              "url": "https://www.thyroid.org/hypothyroidism/"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 10279,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2029,
+  "completion_tokens": 233,
+  "cost_usd": 0.0
+}

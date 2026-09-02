@@ -1,0 +1,55 @@
+{
+  "case_id": "copd-exacerbation-management-paraphrase",
+  "answer": "For an acute COPD exacerbation with symptoms including more coughing and mucus, short-acting bronchodilators should be used. Additionally, the short-term use of oral corticosteroids (like prednisone at 40mg for 5 days) is recommended along with antibiotics if there's increased sputum purulence accompanied by dyspnea or significant changes in your mucus volume. Please consult healthcare providers to implement these recommendations.\n\nSource: [GOLD COPD Report, 2024] (https://goldcopd.org/2024-gold-report/)",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "COPD flare-up treatment",
+        "top_k": 2
+      },
+      "result": {
+        "query": "COPD flare-up treatment",
+        "results": [
+          {
+            "id": "gold-2024-copd-exacerbation",
+            "content": "Acute COPD exacerbations are treated with short-acting bronchodilators, a short course of oral corticosteroids (prednisone 40mg for 5 days), and antibiotics if increased sputum purulence is present alongside increased dyspnea or sputum volume.",
+            "source": "GOLD COPD Report",
+            "citation": "Management of COPD Exacerbations, GOLD, 2024",
+            "url": "https://goldcopd.org/2024-gold-report/",
+            "score": 0.0328,
+            "metadata": {
+              "category": "pulmonology",
+              "organization": "GOLD",
+              "year": 2024,
+              "title": "Management of COPD Exacerbations",
+              "url": "https://goldcopd.org/2024-gold-report/"
+            }
+          },
+          {
+            "id": "gold-2024-copd",
+            "content": "For COPD patients with frequent exacerbations, LABA+LAMA combination therapy is preferred. Inhaled corticosteroids are added for patients with blood eosinophils >=300 cells/uL or continued exacerbations.",
+            "source": "GOLD COPD Report",
+            "citation": "COPD Diagnosis, Management and Prevention, GOLD, 2024",
+            "url": "https://goldcopd.org/2024-gold-report/",
+            "score": 0.0323,
+            "metadata": {
+              "category": "pulmonology",
+              "organization": "GOLD",
+              "year": 2024,
+              "title": "COPD Diagnosis, Management and Prevention",
+              "url": "https://goldcopd.org/2024-gold-report/"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 9229,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2161,
+  "completion_tokens": 160,
+  "cost_usd": 0.0
+}

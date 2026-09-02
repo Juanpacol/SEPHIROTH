@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { getStoredUser, homeFor, storeAuth } from "@/lib/auth";
 import WingMark from "@/components/brand/wing-mark";
+import { useLanguage } from "@/lib/language";
 
 export default function ClaimInvitePage() {
   return (
@@ -18,6 +19,7 @@ export default function ClaimInvitePage() {
 function ClaimInviteForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   // The raw "{invite_id}.{secret}" code is meaningless to a patient asked
   // to paste it in by hand — it travels silently in the invite link's
   // query param instead (see app/patients/[id]/page.tsx's invite button),
@@ -57,13 +59,13 @@ function ClaimInviteForm() {
       router.push(homeFor(res.user.role));
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {
-        setError("This invite link is invalid or has expired. Ask your clinician to send a new one.");
+        setError(t("portal.claim.error.invalidInvite"));
       } else if (err instanceof ApiError && err.status === 409) {
-        setError("That email is already registered.");
+        setError(t("portal.claim.error.emailTaken"));
       } else if (err instanceof ApiError && err.status === 422) {
-        setError("Check your input (password ≥ 8 characters).");
+        setError(t("portal.claim.error.validation"));
       } else {
-        setError("Could not reach the server. Is the backend running?");
+        setError(t("portal.claim.error.serverUnreachable"));
       }
     } finally {
       setBusy(false);
@@ -82,36 +84,33 @@ function ClaimInviteForm() {
 
         {!code ? (
           <div className="card space-y-3 text-center">
-            <h1 className="font-extrabold">This invite link is incomplete</h1>
+            <h1 className="font-extrabold">{t("portal.claim.incompleteTitle")}</h1>
+            <p className="text-sm text-muted">{t("portal.claim.incompleteBody")}</p>
             <p className="text-sm text-muted">
-              Ask your clinician to resend your portal invite link, then open it directly.
-            </p>
-            <p className="text-sm text-muted">
-              Already have an account? <Link href="/login" className="font-semibold text-primary">Sign in</Link>
+              {t("portal.claim.alreadyHaveAccount")}{" "}
+              <Link href="/login" className="font-semibold text-primary">{t("portal.claim.signIn")}</Link>
             </p>
           </div>
         ) : (
           <form onSubmit={submit} className="card space-y-4">
             <div>
-              <h1 className="font-extrabold">Set up your portal account</h1>
-              <p className="text-sm text-muted">
-                Your clinician's invite is ready — add your name, email, and a password to finish.
-              </p>
+              <h1 className="font-extrabold">{t("portal.claim.setupTitle")}</h1>
+              <p className="text-sm text-muted">{t("portal.claim.setupBody")}</p>
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-semibold">Full name</label>
+              <label className="mb-1 block text-sm font-semibold">{t("portal.claim.fullName")}</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                placeholder="Jane Smith"
+                placeholder={t("portal.claim.fullNamePlaceholder")}
                 className="input"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-semibold">Email</label>
+              <label className="mb-1 block text-sm font-semibold">{t("portal.claim.email")}</label>
               <input
                 type="email"
                 value={email}
@@ -123,14 +122,14 @@ function ClaimInviteForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-semibold">Password</label>
+              <label className="mb-1 block text-sm font-semibold">{t("portal.claim.password")}</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                placeholder="At least 8 characters"
+                placeholder={t("portal.claim.passwordPlaceholder")}
                 className="input"
               />
             </div>
@@ -142,18 +141,17 @@ function ClaimInviteForm() {
               disabled={busy}
               className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white disabled:opacity-40"
             >
-              {busy ? "Please wait…" : "Set up my account"}
+              {busy ? t("portal.claim.pleaseWait") : t("portal.claim.submit")}
             </button>
 
             <p className="text-center text-sm text-muted">
-              Already have an account? <Link href="/login" className="font-semibold text-primary">Sign in</Link>
+              {t("portal.claim.alreadyHaveAccount")}{" "}
+              <Link href="/login" className="font-semibold text-primary">{t("portal.claim.signIn")}</Link>
             </p>
           </form>
         )}
 
-        <p className="mt-4 text-center text-xs text-muted">
-          Research and education use only — not a medical device.
-        </p>
+        <p className="mt-4 text-center text-xs text-muted">{t("common.disclaimer")}</p>
       </div>
     </div>
   );

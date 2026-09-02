@@ -1,18 +1,24 @@
 {
   "case_id": "adv-autism-semaglutide",
-  "answer": "There is no clinical guideline or evidence supporting the use of semaglutide to treat Autism Spectrum Disorder (ASD). The search results yielded no relevant information. \n\n Semaglutide is an FDA-approved medication for type 2 diabetes, and it has been investigated for other indications, but there is currently no established role for semaglutide in the treatment of ASD.",
+  "answer": "The clinical guidelines do not provide information specifically on using semaglutide to treat autism spectrum disorder. Please consult with a healthcare professional for the appropriate treatment options. [Search Results Not Found]",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "semaglutide treatment in autism spectrum disorder",
-        "top_k": "0"
+        "query": "semaglutide autism spectrum disorder",
+        "top_k": 2
       },
       "result": {
-        "query": "semaglutide treatment in autism spectrum disorder",
+        "query": "semaglutide autism spectrum disorder",
         "results": [],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
-  ]
+  ],
+  "latency_ms": 3842,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 1767,
+  "completion_tokens": 76,
+  "cost_usd": 0.0
 }

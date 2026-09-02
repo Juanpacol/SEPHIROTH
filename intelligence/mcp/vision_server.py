@@ -25,8 +25,15 @@ DESCRIPTION_PROMPT = (
     "language: image type/modality if recognizable, anatomical region, notable "
     "structures, and any visible abnormalities or areas warranting closer "
     "review. Be factual — describe only what is visible; do not diagnose. "
-    "Keep it under 200 words."
+    "Do not invent findings, measurements, or pathology names that are not "
+    "clearly visible — if something is unclear or ambiguous, say so instead "
+    "of guessing. Answer in 4-6 sentences, under 130 words."
 )
+# Hard ceiling on the model's own output — a small local VLM won't reliably
+# self-stop at the prompt's word target, so this bounds both hallucination
+# (less room to invent detail once the real findings are covered) and
+# latency (no generation past what a 130-word answer needs).
+DESCRIPTION_MAX_OUTPUT_TOKENS = 220
 
 READABLE_FORMATS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}
 _MIME_OVERRIDES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".bmp": "image/bmp"}
@@ -109,7 +116,12 @@ async def describe_medical_image(image_path: str, clinical_focus: str = "") -> D
     model_name = settings.gemini_vision_model or settings.gemini_model
     try:
         client = get_llm_client()
-        description = await client.describe_image(image_bytes=image_bytes, mime_type=mime_type, prompt=prompt)
+        description = await client.describe_image(
+            image_bytes=image_bytes,
+            mime_type=mime_type,
+            prompt=prompt,
+            max_output_tokens=DESCRIPTION_MAX_OUTPUT_TOKENS,
+        )
     except LLMUnavailableError as exc:
         return {
             "status": "unavailable",

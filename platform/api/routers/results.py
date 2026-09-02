@@ -15,6 +15,7 @@ from typing import Any, Dict, List
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +23,7 @@ from sqlalchemy.orm import selectinload
 from starlette.responses import Response
 
 from api.audit import log_phi_access
+from api.pdf_export import render_result_share_pdf
 from auth.deps import get_current_user, require_clinician
 from core.db import get_session
 from core.storage import get_blob_store
@@ -272,6 +274,31 @@ async def get_share(
         await session.commit()
     await log_phi_access(session, user, share.patient_id, "/api/results/shares/{share_id}", "GET")
     return _share_out(share)
+
+
+@router.get("/shares/{share_id}/pdf", summary="Download a shared result as a PDF")
+async def download_share_pdf(
+    share_id: str,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Renders the shared result (clinician message + result detail) as a
+    PDF the patient can save or print — separate from
+    `/attachments/{id}/download`, which serves files the clinician
+    attached, not the result content itself."""
+    share = await _get_own_share(session, user, share_id)
+    patient = await session.get(Patient, share.patient_id)
+    await log_phi_access(session, user, share.patient_id, "/api/results/shares/{share_id}/pdf", "GET")
+    # reportlab's SimpleDocTemplate.build() is synchronous and CPU-bound —
+    # offload it so one export doesn't stall every other in-flight request
+    # on the single-worker event loop (same reasoning as the consultation
+    # PDF export in routers/agents.py).
+    pdf_bytes = await run_in_threadpool(render_result_share_pdf, share, patient.name if patient else "")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="resultado-{share.id[:8]}.pdf"'},
+    )
 
 
 @router.get("/attachments/{attachment_id}/download")

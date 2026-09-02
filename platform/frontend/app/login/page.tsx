@@ -6,9 +6,11 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { homeFor, storeAuth } from "@/lib/auth";
 import WingMark from "@/components/brand/wing-mark";
+import { useLanguage } from "@/lib/language";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -29,10 +31,10 @@ export default function LoginPage() {
       router.push(homeFor(res.user.role));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Request failed";
-      if (message.includes("409")) setError("That email is already registered.");
-      else if (message.includes("401")) setError("Invalid email or password.");
-      else if (message.includes("422")) setError("Check your input (password ≥ 8 chars).");
-      else setError("Could not reach the server. Is the backend running?");
+      if (message.includes("409")) setError(t("login.error.emailTaken"));
+      else if (message.includes("401")) setError(t("login.error.invalidCredentials"));
+      else if (message.includes("422")) setError(t("login.error.validation"));
+      else setError(t("login.error.serverUnreachable"));
     } finally {
       setBusy(false);
     }
@@ -49,36 +51,34 @@ export default function LoginPage() {
         </div>
 
         <Link href="/" className="mb-2 block text-center text-sm font-medium text-muted hover:text-primary">
-          ← Back to home
+          {t("login.backToHome")}
         </Link>
 
         <form onSubmit={submit} className="card space-y-4">
           <div>
             <h1 className="font-extrabold">
-              {mode === "login" ? "Welcome back" : "Create your account"}
+              {mode === "login" ? t("login.welcomeBack") : t("login.createAccount")}
             </h1>
             <p className="text-sm text-muted">
-              {mode === "login"
-                ? "Sign in to access your consultations"
-                : "Register as a clinician to get started"}
+              {mode === "login" ? t("login.signInSubtitle") : t("login.registerSubtitle")}
             </p>
           </div>
 
           {mode === "register" && (
             <div>
-              <label className="mb-1 block text-sm font-semibold">Full name</label>
+              <label className="mb-1 block text-sm font-semibold">{t("login.fullName")}</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                placeholder="Dr. Jane Smith"
+                placeholder={t("login.fullNamePlaceholder")}
                 className="input"
               />
             </div>
           )}
 
           <div>
-            <label className="mb-1 block text-sm font-semibold">Email</label>
+            <label className="mb-1 block text-sm font-semibold">{t("login.email")}</label>
             <input
               type="email"
               value={email}
@@ -90,14 +90,14 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-semibold">Password</label>
+            <label className="mb-1 block text-sm font-semibold">{t("login.password")}</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              placeholder="At least 8 characters"
+              placeholder={t("login.passwordPlaceholder")}
               className="input"
             />
           </div>
@@ -105,31 +105,29 @@ export default function LoginPage() {
           {error && <p className="text-sm text-danger">{error}</p>}
 
           <button type="submit" disabled={busy} className="btn-primary w-full">
-            {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+            {busy ? t("login.pleaseWait") : mode === "login" ? t("login.signIn") : t("login.createAccountButton")}
           </button>
 
           <p className="text-center text-sm text-muted">
-            {mode === "login" ? "No account yet?" : "Already registered?"}{" "}
+            {mode === "login" ? t("login.noAccountYet") : t("login.alreadyRegistered")}{" "}
             <button
               type="button"
               onClick={() => setMode(mode === "login" ? "register" : "login")}
               className="font-semibold text-primary"
             >
-              {mode === "login" ? "Register as a clinician" : "Sign in"}
+              {mode === "login" ? t("login.registerAsClinician") : t("login.signIn")}
             </button>
           </p>
         </form>
 
         <p className="mt-4 text-center text-sm text-muted">
-          Patient with a claim code from your clinician?{" "}
+          {t("login.claimPrompt")}{" "}
           <Link href="/portal/claim" className="font-semibold text-primary">
-            Set up your portal account
+            {t("login.claimLink")}
           </Link>
         </p>
 
-        <p className="mt-4 text-center text-xs text-muted">
-          Research and education use only — not a medical device.
-        </p>
+        <p className="mt-4 text-center text-xs text-muted">{t("common.disclaimer")}</p>
       </div>
     </div>
   );

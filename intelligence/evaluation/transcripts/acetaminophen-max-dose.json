@@ -1,0 +1,55 @@
+{
+  "case_id": "acetaminophen-max-dose",
+  "answer": "The maximum daily dose of acetaminophen for an adult, as recommended by FDA guidelines, is 3000-4000 mg per day. This dosage limit is from all sources, including combination cold and flu products. Exceeding this daily amount increases the risk of liver injury, according to U.S. Food and Drug Administration recommendations [FDA Drug Safety Communication, Acetaminophen Dosing and Liver Safety, 2018]. It's important to note that acetaminophen is generally preferred over nonsteroidal anti-inflammatory drugs (NSAIDs) in patients with conditions such as kidney disease or a history of gastrointestinal bleeding [U.S. Food and Drug Administration, Acetaminophen Dosing and Liver Safety, 2018]. Care should be taken to avoid exceeding the maximum recommended dose to prevent liver damage.\n\nFor adults experiencing fever, it is advisable to manage symptoms with rest, fluids, and acetaminophen or ibuprofen; seek medical attention if fever persists beyond three days or reaches above 103\u00b0F (39.4\u00b0C), indicating a potential underlying issue [MedlinePlus, Fever in Adults, 2023].",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "acetaminophen dosage adults maximum",
+        "top_k": 2
+      },
+      "result": {
+        "query": "acetaminophen dosage adults maximum",
+        "results": [
+          {
+            "id": "fda-acetaminophen-dosing",
+            "content": "For adults, the maximum recommended acetaminophen dose is 3000-4000 mg per day from all sources, including combination cold and flu products; exceeding this risks liver injury. Acetaminophen is generally preferred over NSAIDs in patients with kidney disease, a history of GI bleeding, or on anticoagulants.",
+            "source": "FDA Drug Safety Communication",
+            "citation": "Acetaminophen Dosing and Liver Safety, U.S. Food and Drug Administration, 2018",
+            "url": "https://www.fda.gov/drugs/information-consumers-and-patients-drugs/acetaminophen-information",
+            "score": 0.0492,
+            "metadata": {
+              "category": "general_health",
+              "organization": "U.S. Food and Drug Administration",
+              "year": 2018,
+              "title": "Acetaminophen Dosing and Liver Safety",
+              "url": "https://www.fda.gov/drugs/information-consumers-and-patients-drugs/acetaminophen-information"
+            }
+          },
+          {
+            "id": "medlineplus-fever-adults",
+            "content": "A fever is a temperature at or above 100.4\u00b0F (38\u00b0C). Most fevers in otherwise healthy adults are due to a self-limited viral illness and can be managed with rest, fluids, and acetaminophen or ibuprofen. Seek care for a fever above 103\u00b0F (39.4\u00b0C), a fever lasting more than 3 days, or a fever with a severe headache, rash, stiff neck, or difficulty breathing.",
+            "source": "MedlinePlus",
+            "citation": "Fever in Adults, MedlinePlus (U.S. National Library of Medicine), 2023",
+            "url": "https://medlineplus.gov/ency/article/003090.htm",
+            "score": 0.0161,
+            "metadata": {
+              "category": "general_health",
+              "organization": "MedlinePlus (U.S. National Library of Medicine)",
+              "year": 2023,
+              "title": "Fever in Adults",
+              "url": "https://medlineplus.gov/ency/article/003090.htm"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 24057,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2278,
+  "completion_tokens": 284,
+  "cost_usd": 0.0
+}

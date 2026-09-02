@@ -64,8 +64,23 @@ LAB_RULES: Dict[str, List[tuple]] = {
     # potassium/inr/bnp/ef — bmi/cholesterol/ldl are the only extra signal
     # it does provide, using standard ATP III / WHO cutoffs.
     "bmi": [
-        (lambda v: 30 <= v < 40, LabRule("Obesity", "medium", "BMI {value} (≥ 30)")),
-        (lambda v: v >= 40, LabRule("Severe obesity", "high", "BMI {value} (≥ 40)")),
+        (
+            lambda v: 30 <= v < 40,
+            LabRule(
+                "Obesity",
+                "medium",
+                "BMI {value} (≥ 30) — raises risk of diabetes, high blood pressure, and joint problems.",
+            ),
+        ),
+        (
+            lambda v: v >= 40,
+            LabRule(
+                "Severe obesity",
+                "high",
+                "BMI {value} (≥ 40) — sharply raises risk of diabetes, heart disease, "
+                "and surgical/anesthesia complications.",
+            ),
+        ),
     ],
     "cholesterol": [
         (

@@ -349,6 +349,9 @@ class GeminiClient:
             response_json_schema=_sanitize_schema(schema),
             max_output_tokens=max(self.max_output_tokens, 4096),
             thinking_config=types.ThinkingConfig(thinking_budget=0),
+            # Deterministic: this is a classification/extraction call (claim
+            # verification, dynamic routing), not creative generation.
+            temperature=0,
         )
         started = time.perf_counter()
         response = await self._generate(contents, config)

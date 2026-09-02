@@ -49,6 +49,33 @@ def test_filtered_out_fields_are_absent_not_just_empty():
     assert result == {"medications": ["metformin"], "language": "en"}
 
 
+def test_answering_agent_also_receives_recent_consultations():
+    """In single-agent mode a specialist writes the final answer, so it
+    needs the per-patient memory digest the coordinator would otherwise
+    carry — without this, memory silently vanishes in that mode."""
+    capability = _capability(["conditions"])
+    result = context_for_agent(capability, _context(), answering=True)
+    assert result["recent_consultations"] == ["Q: x -> A: y"]
+    assert result["conditions"] == ["diabetes"]
+
+
+def test_answering_flag_does_not_widen_clinical_data_access():
+    """Only `recent_consultations` is added — a specialist that never
+    declared `medications`/`lab_results` still cannot see them."""
+    capability = _capability(["conditions"])
+    result = context_for_agent(capability, _context(), answering=True)
+    assert set(result.keys()) == {"conditions", "recent_consultations", "language"}
+    assert "medications" not in result
+    assert "lab_results" not in result
+    assert "image_path" not in result
+
+
+def test_non_answering_agent_never_sees_recent_consultations():
+    capability = _capability(["conditions"])
+    result = context_for_agent(capability, _context())
+    assert "recent_consultations" not in result
+
+
 def test_log_filtered_fields_does_not_raise_and_is_a_noop_for_full_view(caplog):
     capability = _capability([])
     log_filtered_fields(capability, _context())  # no context_fields declared -> nothing to log

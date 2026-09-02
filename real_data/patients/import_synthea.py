@@ -120,6 +120,39 @@ def _compute_age(birthdate: str, as_of: date) -> int:
     return as_of.year - born.year - ((as_of.month, as_of.day) < (born.month, born.day))
 
 
+def _latest_recorded_date(
+    conditions: List[Dict[str, str]], medications: List[Dict[str, str]], lab_series: List[Dict[str, Any]]
+) -> Optional[date]:
+    """Synthea's own in-universe "today" for a coherent dataset release is
+    the latest date across every record it generated (observed: 2021-07-17
+    for the bundled sample) -- computing age against the real wall clock
+    instead adds however many years have passed since the dataset was
+    imported on top of whatever age Synthea already intended, which is how
+    a handful of patients end up at 103-112: correct relative to Synthea's
+    timeline, inflated relative to ours. Computed per patient (not one
+    global constant) so this stays correct for any Synthea sample, not
+    just this one."""
+    candidates: List[str] = []
+    for row in conditions:
+        for key in ("START", "STOP"):
+            value = row.get(key, "")[:10]
+            if value:
+                candidates.append(value)
+    for row in medications:
+        for key in ("START", "STOP"):
+            value = row.get(key, "")[:10]
+            if value:
+                candidates.append(value)
+    for entry in lab_series:
+        value = entry.get("taken_at", "")
+        if value:
+            candidates.append(value)
+    if not candidates:
+        return None
+    year, month, day = (int(p) for p in max(candidates).split("-"))
+    return date(year, month, day)
+
+
 def _read_csv(path: Path) -> List[Dict[str, str]]:
     with open(path, newline="") as f:
         return list(csv.DictReader(f))
@@ -139,7 +172,10 @@ def parse_patients(
     No I/O beyond reading these files, no database access — fully testable
     against tiny fixture CSVs.
     """
-    as_of = as_of or datetime.now().date()
+    # `as_of` stays a per-patient computation (see `_latest_recorded_date`)
+    # unless a caller passes an explicit date (every test here does, for a
+    # deterministic fixture-independent expected age).
+    explicit_as_of = as_of
 
     patients_rows = _read_csv(raw_dir / "patients.csv")
     if patient_ids is not None:
@@ -231,11 +267,17 @@ def parse_patients(
         timeline.sort(key=lambda e: e["date"])
         timeline = timeline[:max_timeline_events]
 
+        patient_as_of = (
+            explicit_as_of
+            or _latest_recorded_date(conditions, medications, lab_series_by_patient.get(pid, []))
+            or datetime.now().date()
+        )
+
         results.append(
             ParsedPatient(
                 id=pid,
                 name=f"{_clean_name(row['FIRST'])} {_clean_name(row['LAST'])}",
-                age=_compute_age(row["BIRTHDATE"], as_of),
+                age=_compute_age(row["BIRTHDATE"], patient_as_of),
                 sex=row["GENDER"],
                 medical_record_number=f"SYN-{pid[:8].upper()}",
                 conditions=sorted({c["DESCRIPTION"] for c in conditions}),

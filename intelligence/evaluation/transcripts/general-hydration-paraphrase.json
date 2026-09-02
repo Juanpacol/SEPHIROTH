@@ -1,0 +1,11 @@
+{
+  "case_id": "general-hydration-paraphrase",
+  "answer": "To determine if you are adequately hydrated, monitor your urine color. A pale yellow to clear color is generally indicative of proper hydration. Aim for at least 8 glasses (about 2 liters) of fluids daily, which can include water, herbal teas, and light beverages like coffee or sparkling water. Consistently having darker colored urine suggests you may need to increase your fluid intake. [ADA, 2015]",
+  "tool_calls": [],
+  "latency_ms": 2827,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 835,
+  "completion_tokens": 87,
+  "cost_usd": 0.0
+}

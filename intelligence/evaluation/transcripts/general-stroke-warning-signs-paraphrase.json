@@ -1,0 +1,11 @@
+{
+  "case_id": "general-stroke-warning-signs-paraphrase",
+  "answer": "To determine if someone is experiencing a stroke, the FAST method involves checking for Face drooping, Arm weakness, Speech difficulty, and Time to call emergency services. Here\u2019s how:\n\n- **Face Drooping**: Ask the person to smile. Look to see if one side of their face is drooping or isn\u2019t moving normally.\n- **Arm Weakness**: Have them raise both arms. Observe if one arm drifts downward.\n- **Speech Difficulty**: Check if they can speak clearly and understand you when you ask simple questions, like \"What's your name?\"\n- **Time to Call Emergency Services**: If any of these signs are present, call emergency services immediately as a stroke is occurring.\n\nIf someone demonstrates any of these signs, it\u2019s essential to seek medical help right away. [ADA, 2018]",
+  "tool_calls": [],
+  "latency_ms": 5705,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 837,
+  "completion_tokens": 168,
+  "cost_usd": 0.0
+}

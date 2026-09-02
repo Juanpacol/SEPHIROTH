@@ -1,0 +1,28 @@
+{
+  "target": 0.9,
+  "winner": null,
+  "outcomes": [
+    {
+      "name": "baseline",
+      "coherent_rate": 0.5,
+      "metrics": {
+        "modality_accuracy": 1.0,
+        "anatomy_grounding": 1.0,
+        "hallucination_free_rate": 0.5,
+        "no_diagnosis_rate": 1.0,
+        "consistency_rate": 1.0
+      }
+    },
+    {
+      "name": "no_speculation_prompt",
+      "coherent_rate": 0.5,
+      "metrics": {
+        "modality_accuracy": 1.0,
+        "anatomy_grounding": 1.0,
+        "hallucination_free_rate": 0.5,
+        "no_diagnosis_rate": 1.0,
+        "consistency_rate": 1.0
+      }
+    }
+  ]
+}

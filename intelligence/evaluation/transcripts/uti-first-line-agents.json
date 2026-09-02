@@ -1,31 +1,40 @@
 {
   "case_id": "uti-first-line-agents",
-  "answer": "Based on the search of clinical guidelines, the first-line antibiotics for uncomplicated cystitis in women are Nitrofurantoin for 5 days or trimethoprim-sulfamethoxazole for 3 days. Fluoroquinolones are reserved for cases where first-line agents are not suitable.\n\n[Source: Treatment of Uncomplicated Cystitis, IDSA, 2019]",
+  "answer": "The first-line antibiotics recommended for uncomplicated cystitis in women are Nitrofurantoin for 5 days or Trimethoprim-sulfamethoxazole for 3 days. [IDSA Uncomplicated UTI Guideline, 2019] Fluoroquinolones should be reserved for cases where first-line agents are not suitable. Please consult a professional for further review and individual patient care considerations.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "First-line antibiotics for uncomplicated cystitis in women",
-        "top_k": "1"
+        "query": "uncomplicated cystitis in women",
+        "top_k": 2
       },
       "result": {
-        "query": "First-line antibiotics for uncomplicated cystitis in women",
+        "query": "uncomplicated cystitis in women",
         "results": [
           {
             "id": "idsa-2019-uti",
             "content": "Nitrofurantoin for 5 days or trimethoprim-sulfamethoxazole for 3 days are first-line agents for uncomplicated cystitis in women. Fluoroquinolones are reserved for cases where first-line agents are not suitable.",
             "source": "IDSA Uncomplicated UTI Guideline",
             "citation": "Treatment of Uncomplicated Cystitis, IDSA, 2019",
-            "score": 1.4924,
+            "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/",
+            "score": 0.0492,
             "metadata": {
+              "category": "infectious_disease",
               "organization": "IDSA",
               "year": 2019,
-              "title": "Treatment of Uncomplicated Cystitis"
+              "title": "Treatment of Uncomplicated Cystitis",
+              "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/"
             }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
-  ]
+  ],
+  "latency_ms": 7056,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 1980,
+  "completion_tokens": 124,
+  "cost_usd": 0.0
 }

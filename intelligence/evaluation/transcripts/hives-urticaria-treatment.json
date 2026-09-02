@@ -1,0 +1,55 @@
+{
+  "case_id": "hives-urticaria-treatment",
+  "answer": "The first-line treatment for acute hives, also known as an acute urticaria, is with a second-generation, non-sedating antihistamine (e.g., cetirizine, loratadine). The dose of the medication should be increased up to fourfold before considering switching to another agent if necessary. Patients with acute hives are advised to seek emergency care for symptoms such as swelling in the lips, tongue, or throat, difficulty breathing, or dizziness, which can indicate a possible anaphylactic reaction.\n\nThe source for this information is [AAD Clinical Guideline (2014)](https://www.aad.org/member/clinical-quality/guidelines/urticaria).",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "acute hives treatment",
+        "top_k": 2
+      },
+      "result": {
+        "query": "acute hives treatment",
+        "results": [
+          {
+            "id": "aad-2014-urticaria",
+            "content": "Acute urticaria (hives) is treated first-line with a second-generation, non-sedating antihistamine (e.g. cetirizine, loratadine); the dose may be increased up to fourfold before switching agents. Seek emergency care for hives with swelling of the lips/tongue/throat, difficulty breathing, or dizziness \u2014 possible signs of anaphylaxis.",
+            "source": "AAD Clinical Guideline",
+            "citation": "Management of Urticaria, American Academy of Dermatology, 2014",
+            "url": "https://www.aad.org/member/clinical-quality/guidelines/urticaria",
+            "score": 0.0489,
+            "metadata": {
+              "category": "dermatology",
+              "organization": "American Academy of Dermatology",
+              "year": 2014,
+              "title": "Management of Urticaria",
+              "url": "https://www.aad.org/member/clinical-quality/guidelines/urticaria"
+            }
+          },
+          {
+            "id": "ahs-2021-migraine",
+            "content": "For acute migraine treatment, NSAIDs or triptans are first-line for most patients; combining a triptan with an NSAID is more effective than either alone. For patients with 4 or more migraine days per month, preventive therapy should be offered in addition to acute treatment.",
+            "source": "American Headache Society Consensus Statement",
+            "citation": "Acute Treatment of Migraine, American Headache Society, 2021",
+            "url": "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14153",
+            "score": 0.0164,
+            "metadata": {
+              "category": "neurology",
+              "organization": "American Headache Society",
+              "year": 2021,
+              "title": "Acute Treatment of Migraine",
+              "url": "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14153"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 11895,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2216,
+  "completion_tokens": 181,
+  "cost_usd": 0.0
+}

@@ -251,6 +251,9 @@ class GroqClient:
             "messages": messages,
             "response_format": {"type": "json_object"},
             "max_tokens": self.max_output_tokens,
+            # Deterministic: this is a classification/extraction call (claim
+            # verification, dynamic routing), not creative generation.
+            "temperature": 0,
         }
         data = await self._post(payload)
         return json.loads(data["choices"][0]["message"]["content"])

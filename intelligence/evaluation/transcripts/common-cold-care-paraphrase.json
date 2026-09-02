@@ -1,0 +1,40 @@
+{
+  "case_id": "common-cold-care-paraphrase",
+  "answer": "If your symptoms of a runny nose, cough, and possibly fever persist for more than 14 days or are severe enough to disrupt daily activities, it is advisable that you consult a healthcare provider. However, if these symptoms align with the characteristics of influenza (such as sudden onset of fever, cough, sore throat, muscle aches, and fatigue), consider seeking treatment promptly. Antiviral medications like oseltamivir can be effective when initiated within 48 hours of symptom onset, particularly for high-risk populations such as young children, pregnant women, adults aged 65 years or older, and individuals with underlying health conditions.\n\nCite: [CDC, 2024]",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "runny nose and cough in adults",
+        "top_k": 2
+      },
+      "result": {
+        "query": "runny nose and cough in adults",
+        "results": [
+          {
+            "id": "cdc-flu-2024",
+            "content": "Influenza symptoms include fever, cough, sore throat, muscle aches, and fatigue with rapid onset. Antiviral treatment (e.g. oseltamivir) is most effective when started within 48 hours of symptom onset and is prioritized for patients at high risk of complications (young children, pregnant patients, adults 65 and older, and those with chronic conditions).",
+            "source": "CDC",
+            "citation": "Influenza: Symptoms and Treatment, Centers for Disease Control and Prevention, 2024",
+            "url": "https://www.cdc.gov/flu/treatment/index.html",
+            "score": 0.0164,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "Centers for Disease Control and Prevention",
+              "year": 2024,
+              "title": "Influenza: Symptoms and Treatment",
+              "url": "https://www.cdc.gov/flu/treatment/index.html"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 15633,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2043,
+  "completion_tokens": 274,
+  "cost_usd": 0.0
+}

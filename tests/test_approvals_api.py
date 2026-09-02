@@ -124,6 +124,18 @@ async def test_list_and_count_filter_by_status(client, pending_row):
     assert count_after.json() == {"count": 0}
 
 
+async def test_list_includes_patient_name_not_just_id(client, pending_row):
+    """Regression test: the approvals inbox used to show only the raw
+    patient_id — a clinician landing on the page had no idea who a
+    pending message was for without cross-referencing another tab."""
+    headers = await _clinician(client)
+    res = await client.get("/api/approvals", headers=headers)
+    body = res.json()
+    assert len(body) == 1
+    assert body[0]["patient_name"] == "Approval Patient"
+    assert body[0]["instructions"] is None  # pending_row sets no proposed_payload
+
+
 async def test_db_level_constraint_blocks_approved_without_reviewer(db_session):
     """Even bypassing the router entirely, the DB refuses an
     approved/rejected row with no reviewer -- the actual safety

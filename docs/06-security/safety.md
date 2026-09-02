@@ -20,7 +20,12 @@ They are easy to conflate and answer different questions.
 | **Assesses** | patient data | model output |
 | **Asks** | "is this lab value dangerous?" | "is this answer safe to show?" |
 | **Method** | deterministic thresholds | claims, policies, risk classification |
-| **State** | ✅ implemented | 📋 phase 4 |
+| **State** | ✅ implemented | ✅ implemented (`sephiroth.safety.abstention`) |
+
+They never talk to each other: `risk.py`'s flags feed only the patient-record
+risk badge (`patients.py`, `dashboard.py`), never `abstention.py`'s `decide()`.
+A "high" patient risk level and an "abstained" AI answer are unrelated
+signals that happen to share the word "risk."
 
 `risk_engine.py` is genuinely useful clinical logic and is kept. It is simply
 not output safety, and calling it that would overstate what the system does
@@ -38,32 +43,67 @@ today.
 | Tool confinement | Whitelist enforced at dispatch |
 | Disclaimer | On every answer and every page |
 
+## Abstention: hard stops vs. tunable thresholds
+
+`sephiroth.safety.abstention.decide()` (`ADR-008`) is the actual gate on every
+AI answer, checked in this priority order — an earlier, non-negotiable check
+overrides a later, tunable one:
+
+| Check | Kind | Overrides confidence? |
+|---|---|---|
+| `prompt_injection` input flag | **hard stop** (policy) | Yes — abstains regardless of how confident the answer is |
+| `has_unsupported_high_risk_claim` | **hard stop** | Yes — an answer that "sounds confident" but asserts one unsupported high-risk claim must still abstain (the invariant `abstention.py`'s own docstring calls out) |
+| Any `contradictions` between claims/evidence | **hard stop** | Yes |
+| `confidence < ABSTAIN_THRESHOLD` (0.4) | **tunable score** | Abstains only via this threshold, not a fixed rule |
+| `confidence < PARTIAL_THRESHOLD` (0.65) | **tunable score** | Downgrades to `partial` (caveat banner), not a full abstention |
+
+The three hard stops are structural — no threshold tuning changes whether
+they fire. The two thresholds are explicitly flagged in code as an
+experiment ("tuning them is itself an experiment — validate against the eval
+harness before hardening further") — they're the only part of this gate
+that's a judgment call rather than a rule.
+
+`risk.py`'s `LAB_RULES`/drug-interaction table has **no hard-stop
+equivalent** — every rule there only ever produces a display flag
+(`severity: "high"|"medium"`) that feeds `assess_risk_level()` for the
+patient-record badge. No lab value or drug interaction, however severe, ever
+blocks or alters an AI answer directly; it isn't wired into `abstention.py`
+at all. If a future spec wants patient risk to influence AI caution (e.g.
+lower the abstain threshold for a patient already flagged "high risk"), that
+link doesn't exist yet — it would be new code, not a config change.
+
 ## What is missing
 
 The honest gap, in order of severity:
 
-1. **No abstention.** The system always answers. Fabricated citations are
-   stripped and the answer is returned anyway — including when what remains is
-   unsupported. ([ADR-008](../08-decisions/ADR-008-abstention.md))
-2. **No claim-content verification.** A real citation attached to a claim it
-   does not support passes every current check.
-   ([ADR-006](../08-decisions/ADR-006-claim-level-verification.md))
-3. **No output risk classification.** Nothing asks whether a recommendation is
-   dangerous.
-4. **No contradiction detection.** Two agents can disagree — say, on a lab value
-   — and the coordinator will synthesise over the conflict silently.
-5. **No human-in-the-loop gate.** No high-risk path routes for review.
-6. **No PHI detection or prompt-injection defence in output.**
+1. **Claim-content verification is implemented** (`sephiroth.verification`,
+   `ADR-006`) — closes the "real citation, wrong claim" gap the
+   citation-label-only check couldn't catch on its own. Listed here only
+   because this doc previously called it missing; no longer a gap.
+2. **No output risk classification beyond claim risk.** Claims carry a
+   `risk: RiskLevel` used by the unsupported-high-risk-claim check above, but
+   nothing classifies a *recommendation* (e.g. a specific drug/dose) as
+   dangerous independent of whether its claims are cited.
+3. **No contradiction detection between specialist agents' own outputs** —
+   `contradictions` in `VerificationReport` catches claim-vs-evidence
+   conflicts; two specialists disagreeing with each other (not with retrieved
+   evidence) isn't a checked case.
+4. **No human-in-the-loop gate.** No high-risk path routes for review before
+   an answer reaches a clinician.
+5. **No PHI detection or prompt-injection defence in output** (input-side
+   prompt-injection is checked — see the hard-stop table above; the
+   `sephiroth.safety` heuristic is input-only).
 
-## The target pipeline
+## The pipeline, as implemented
 
 ```
-answer → claims → verification → risk → policy → abstain? → answer or decline
+answer → citation_guard (sanitize) → claims → verification → abstention.decide() → answer | partial | abstain
 ```
 
-with the invariant that an **unsupported high-risk claim** must trigger
-abstention rather than a caveat. That signal already exists as a computable
-contract property; nothing consumes it yet.
+matching the target pipeline this doc previously described as aspirational —
+the invariant that an **unsupported high-risk claim** must trigger abstention
+rather than a caveat is implemented, not just a documented intent (see the
+hard-stop table above).
 
 ## How safety gets measured
 

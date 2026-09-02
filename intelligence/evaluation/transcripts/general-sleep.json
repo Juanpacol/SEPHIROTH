@@ -1,0 +1,11 @@
+{
+  "case_id": "general-sleep",
+  "answer": "According to the guidelines from the National Sleep Foundation, adults are recommended to get 7-9 hours of sleep per night. Here's a brief citation for this information: [National Sleep Foundation, 2015].\n\nFor more detailed or specific guidance, additional research into individual health conditions and sleep needs might be necessary.",
+  "tool_calls": [],
+  "latency_ms": 2374,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 835,
+  "completion_tokens": 66,
+  "cost_usd": 0.0
+}

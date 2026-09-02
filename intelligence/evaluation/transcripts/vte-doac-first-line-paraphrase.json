@@ -1,0 +1,40 @@
+{
+  "case_id": "vte-doac-first-line-paraphrase",
+  "answer": "Based on the clinical guidelines reviewed, for acute pulmonary embolism without cancer, direct oral anticoagulants are preferred over warfarin as first-line therapy. The duration of anticoagulation is at least 3 months. However, if it's an unprovoked event with low bleeding risk, it should be extended indefinitely [ACCP Antithrombotic Therapy for VTE Guideline, 2021]. Please note that these details require professional review and consultation.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "blood thinners for pulmonary embolism (PE)",
+        "top_k": 2
+      },
+      "result": {
+        "query": "blood thinners for pulmonary embolism (PE)",
+        "results": [
+          {
+            "id": "acc-aha-2023-vte",
+            "content": "For acute deep vein thrombosis or pulmonary embolism without cancer, direct oral anticoagulants are preferred over warfarin as first-line therapy. Anticoagulation duration is at least 3 months, extended indefinitely for unprovoked events with low bleeding risk.",
+            "source": "ACCP Antithrombotic Therapy for VTE Guideline",
+            "citation": "Antithrombotic Therapy for VTE Disease, ACCP, 2021",
+            "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext",
+            "score": 0.0164,
+            "metadata": {
+              "category": "cardiovascular",
+              "organization": "ACCP",
+              "year": 2021,
+              "title": "Antithrombotic Therapy for VTE Disease",
+              "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 8231,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2026,
+  "completion_tokens": 141,
+  "cost_usd": 0.0
+}

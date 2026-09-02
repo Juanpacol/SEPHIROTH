@@ -6,6 +6,7 @@ import { addDays, format, startOfWeek } from "date-fns";
 import { CalendarClock } from "lucide-react";
 import { api, ApiError, type Appointment } from "@/lib/api";
 import { useUser } from "@/lib/auth";
+import { useLanguage } from "@/lib/language";
 import AvailabilitySheet from "@/components/schedule/availability-sheet";
 import BookAppointmentSheet from "@/components/schedule/book-appointment-sheet";
 import { useToast } from "@/components/ui/toast";
@@ -23,6 +24,7 @@ function minutesFromDayStart(iso: string): number {
 
 export default function SchedulePage() {
   const user = useUser();
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const showToast = useToast();
   const [anchor, setAnchor] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -58,9 +60,9 @@ export default function SchedulePage() {
     try {
       await api.cancelAppointment(appointmentId);
       await queryClient.invalidateQueries({ queryKey: ["schedule", "appointments"] });
-      showToast("Appointment cancelled.");
+      showToast(t("schedule.cancelled"));
     } catch (err) {
-      showToast(err instanceof ApiError ? err.message : "Could not cancel.", "error");
+      showToast(err instanceof ApiError ? err.message : t("schedule.error.cancel"), "error");
     }
   };
 
@@ -68,12 +70,12 @@ export default function SchedulePage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h1 className="text-lg font-bold">Schedule</h1>
+          <h1 className="text-lg font-bold">{t("nav.schedule")}</h1>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setAnchor(addDays(anchor, -7))}
               className="btn-ghost px-2.5 py-1.5"
-              aria-label="Previous week"
+              aria-label={t("schedule.previousWeek")}
             >
               ‹
             </button>
@@ -81,12 +83,12 @@ export default function SchedulePage() {
               onClick={() => setAnchor(startOfWeek(new Date(), { weekStartsOn: 1 }))}
               className="btn-ghost px-2.5 py-1.5 text-sm"
             >
-              Today
+              {t("schedule.today")}
             </button>
             <button
               onClick={() => setAnchor(addDays(anchor, 7))}
               className="btn-ghost px-2.5 py-1.5"
-              aria-label="Next week"
+              aria-label={t("schedule.nextWeek")}
             >
               ›
             </button>
@@ -97,7 +99,7 @@ export default function SchedulePage() {
         </div>
         <div className="flex gap-2">
           <button onClick={() => setAvailabilityOpen(true)} className="btn-secondary">
-            <CalendarClock size={16} /> Working hours
+            <CalendarClock size={16} /> {t("schedule.workingHours")}
           </button>
           <button
             onClick={() => {
@@ -106,7 +108,7 @@ export default function SchedulePage() {
             }}
             className="btn-primary"
           >
-            New appointment
+            {t("schedule.newAppointment")}
           </button>
         </div>
       </div>
@@ -166,16 +168,22 @@ export default function SchedulePage() {
                           <button
                             key={appt.id}
                             onClick={() => {
-                              if (appt.status === "booked" && window.confirm(`Cancel appointment with ${appt.patient_name ?? "patient"}?`))
+                              const name = appt.patient_name ?? t("schedule.patientFallback");
+                              if (
+                                appt.status === "booked" &&
+                                window.confirm(t("schedule.confirmCancel").replace("{name}", name))
+                              )
                                 cancel(appt.id);
                             }}
                             className={`absolute inset-x-0.5 top-0 z-10 overflow-hidden rounded-lg px-1.5 py-0.5 text-left text-[11px] font-semibold text-white shadow-sm ${
                               appt.status === "completed" ? "bg-success" : "bg-primary"
                             }`}
                             style={{ height: `${heightRem}rem` }}
-                            title={`${appt.patient_name ?? "Patient"} — ${appt.reason || "No reason given"}`}
+                            title={`${appt.patient_name ?? t("schedule.patientFallback")} — ${
+                              appt.reason || t("schedule.noReason")
+                            }`}
                           >
-                            {appt.patient_name ?? "Patient"}
+                            {appt.patient_name ?? t("schedule.patientFallback")}
                           </button>
                         );
                       })}
@@ -190,9 +198,9 @@ export default function SchedulePage() {
 
       {(!availability || availability.rules.length === 0) && (
         <div className="card">
-          <p className="text-sm font-semibold">Set your working hours to start taking appointments.</p>
+          <p className="text-sm font-semibold">{t("schedule.setHoursPrompt")}</p>
           <button onClick={() => setAvailabilityOpen(true)} className="btn-primary mt-3">
-            Set working hours
+            {t("schedule.setWorkingHours")}
           </button>
         </div>
       )}

@@ -1,55 +1,55 @@
 {
   "case_id": "sepsis-antibiotic-timing",
-  "answer": "For patients with sepsis or septic shock, broad-spectrum antibiotics should be administered within 1 hour of recognition. [Surviving Sepsis Campaign Guidelines, 2021]",
+  "answer": "Based on the guidelines from the Surviving Sepsis Campaign, for patients with septic shock or sepsis, broad-spectrum antibiotics should be administered within 1 hour of recognition. Additionally, along with this, 30 mL/kg of intravenous crystalloid fluid is recommended for those experiencing hypotension or elevated lactate levels.\n\n[citation]\n[Surviving Sepsis Campaign Guidelines, 2021] [https://www.sccm.org/SurvivingSepsisCampaign/Guidelines]\n[/citation]",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "antibiotics in septic shock treatment timing",
-        "top_k": "5"
+        "query": "septic shock treatment antibiotics timing",
+        "top_k": 2
       },
       "result": {
-        "query": "antibiotics in septic shock treatment timing",
+        "query": "septic shock treatment antibiotics timing",
         "results": [
           {
             "id": "sscm-2021-sepsis",
             "content": "For patients with sepsis or septic shock, broad-spectrum antibiotics should be administered within 1 hour of recognition, along with 30 mL/kg of intravenous crystalloid fluid for hypotension or elevated lactate.",
             "source": "Surviving Sepsis Campaign Guidelines",
             "citation": "Management of Sepsis and Septic Shock, Surviving Sepsis Campaign, 2021",
-            "score": 0.6396,
+            "url": "https://www.sccm.org/SurvivingSepsisCampaign/Guidelines",
+            "score": 0.0492,
             "metadata": {
+              "category": "critical_care",
               "organization": "Surviving Sepsis Campaign",
               "year": 2021,
-              "title": "Management of Sepsis and Septic Shock"
+              "title": "Management of Sepsis and Septic Shock",
+              "url": "https://www.sccm.org/SurvivingSepsisCampaign/Guidelines"
             }
           },
           {
-            "id": "nice-2022-depression",
-            "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
-            "source": "NICE Guideline on Depression in Adults",
-            "citation": "Management of Depression in Adults, NICE, 2022",
-            "score": 0.2236,
+            "id": "idsa-2012-pharyngitis-centor",
+            "content": "The Centor criteria (fever, tonsillar exudate, tender anterior cervical adenopathy, absence of cough) estimate the likelihood of group A streptococcal pharyngitis; a score of 3-4 warrants rapid strep testing. Penicillin or amoxicillin is first-line treatment for confirmed strep throat; antibiotics are not indicated for a low Centor score.",
+            "source": "IDSA Clinical Practice Guideline",
+            "citation": "Diagnosis and Management of Group A Streptococcal Pharyngitis, IDSA, 2012",
+            "url": "https://academic.oup.com/cid/article/55/10/1279/300756",
+            "score": 0.0161,
             "metadata": {
-              "organization": "NICE",
-              "year": 2022,
-              "title": "Management of Depression in Adults"
-            }
-          },
-          {
-            "id": "gina-2024-asthma",
-            "content": "For adults and adolescents with asthma, as-needed low-dose ICS-formoterol is preferred as reliever therapy over short-acting beta-agonist alone, even at the mildest step of treatment, to reduce exacerbation risk.",
-            "source": "Global Initiative for Asthma Report",
-            "citation": "Global Strategy for Asthma Management, GINA, 2024",
-            "score": 0.1925,
-            "metadata": {
-              "organization": "GINA",
-              "year": 2024,
-              "title": "Global Strategy for Asthma Management"
+              "category": "infectious_disease",
+              "organization": "IDSA",
+              "year": 2012,
+              "title": "Diagnosis and Management of Group A Streptococcal Pharyngitis",
+              "url": "https://academic.oup.com/cid/article/55/10/1279/300756"
             }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
-  ]
+  ],
+  "latency_ms": 9200,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2227,
+  "completion_tokens": 146,
+  "cost_usd": 0.0
 }

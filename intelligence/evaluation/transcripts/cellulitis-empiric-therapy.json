@@ -1,0 +1,40 @@
+{
+  "case_id": "cellulitis-empiric-therapy",
+  "answer": "Based on the clinical guidelines from the IDSA Skin and Soft Tissue Infection Guideline (IDSA, 2014), for non-purulent cellulitis, empiric therapy should cover streptococci with an agent such as cephalexin or dicloxacillin. For purulent cellulitis or abscess, treatment should be enhanced to include coverage of MRSA with agents like trimethoprim-sulfamethoxazole, doxycycline, or clindamycin, along with incision and drainage of any abscess.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "empiric antibiotic choice non-purulent cellulitis purulent cellulitis",
+        "top_k": 2
+      },
+      "result": {
+        "query": "empiric antibiotic choice non-purulent cellulitis purulent cellulitis",
+        "results": [
+          {
+            "id": "idsa-2014-cellulitis",
+            "content": "For non-purulent cellulitis, empiric therapy should cover streptococci with an agent such as cephalexin or dicloxacillin. Purulent cellulitis or abscess should be covered for MRSA with trimethoprim-sulfamethoxazole, doxycycline, or clindamycin, plus incision and drainage of any abscess.",
+            "source": "IDSA Skin and Soft Tissue Infection Guideline",
+            "citation": "Diagnosis and Management of Skin and Soft Tissue Infections, IDSA, 2014",
+            "url": "https://academic.oup.com/cid/article/59/2/e10/2895845",
+            "score": 0.0492,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "IDSA",
+              "year": 2014,
+              "title": "Diagnosis and Management of Skin and Soft Tissue Infections",
+              "url": "https://academic.oup.com/cid/article/59/2/e10/2895845"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 7874,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2041,
+  "completion_tokens": 163,
+  "cost_usd": 0.0
+}

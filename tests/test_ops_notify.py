@@ -55,23 +55,66 @@ async def _patient_workflow_step(session, step_type, *, status="pending"):
     return wf, step
 
 
+def _dump(fallback_text, blocks):
+    """Flattens a (fallback_text, blocks) pair into one searchable string
+    -- tests assert on content, not exact Block Kit shape."""
+    import json
+
+    return fallback_text + "\n" + json.dumps(blocks, ensure_ascii=False)
+
+
 async def test_patient_id_is_rejected_not_dropped():
     """A caller passing patient_id is a bug -- it must be loud, not
     silently swallowed like an unknown key would be elsewhere."""
-    from api.workflows.ops_notify import _format_text
+    from api.workflows.ops_notify import _format_blocks
 
     with pytest.raises(ValueError, match="patient_id"):
-        _format_text({"tick_id": "t1", "patient_id": "P001"})
+        _format_blocks({"tick_id": "t1", "patient_id": "P001"})
 
 
-async def test_format_text_only_uses_allowed_fields():
-    from api.workflows.ops_notify import _format_text
+async def test_format_blocks_only_uses_allowed_fields():
+    from api.workflows.ops_notify import _format_blocks
 
-    text = _format_text({"tick_id": "t1", "claimed": 3, "failed": 1})
+    fallback, blocks, _color = _format_blocks({"tick_id": "t1", "claimed": 3, "failed": 1})
+    dump = _dump(fallback, blocks)
 
-    assert "t1" in text
-    assert "claimed=3" in text
-    assert "failed=1" in text
+    assert "t1" in dump
+    assert "Claimed:*\\n3" in dump
+    assert "Failed:*\\n1" in dump
+
+
+async def test_format_blocks_lists_one_bullet_per_failed_step():
+    from api.workflows.ops_notify import _format_blocks
+
+    fallback, blocks, color = _format_blocks(
+        {
+            "tick_id": "t1",
+            "claimed": 2,
+            "failed": 2,
+            "failed_steps": [
+                {"step_id": "WS-1", "workflow_id": "WF-1", "step_type": "alert_refresh"},
+                {"step_id": "WS-2", "workflow_id": "WF-2", "step_type": "alert_refresh"},
+            ],
+        }
+    )
+    dump = _dump(fallback, blocks)
+
+    assert "*Failed steps:*" in dump
+    assert "`alert_refresh` — step `WS-1` (workflow `WF-1`)" in dump
+    assert "`alert_refresh` — step `WS-2` (workflow `WF-2`)" in dump
+    assert color == "#E01E5A"  # claimed == failed, nothing succeeded -> full failure
+
+
+async def test_format_blocks_rejects_disallowed_failed_step_field():
+    from api.workflows.ops_notify import _format_blocks
+
+    with pytest.raises(ValueError, match="patient_id"):
+        _format_blocks(
+            {
+                "tick_id": "t1",
+                "failed_steps": [{"step_id": "WS-1", "workflow_id": "WF-1", "patient_id": "P001"}],
+            }
+        )
 
 
 async def test_null_notifier_when_no_webhook_configured():
@@ -134,8 +177,8 @@ async def test_tick_with_failure_notifies_with_workflow_and_step_id_never_patien
 
     assert res.status_code == 200
     assert res.json()["failed"] == 1
-    assert captured["step_id"] == step.id
-    assert captured["workflow_id"] == wf.id
+    assert captured["failed_steps"][0]["step_id"] == step.id
+    assert captured["failed_steps"][0]["workflow_id"] == wf.id
     assert "patient_id" not in captured
     assert "POPS1" not in str(captured)
 

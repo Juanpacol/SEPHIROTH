@@ -1,0 +1,40 @@
+{
+  "case_id": "acs-stemi-reperfusion",
+  "answer": "The preferred reperfusion strategy for ST-segment elevation myocardial infarction (STEMI) is primary percutaneous coronary intervention (PCI) within 90 minutes of first medical contact, as recommended over fibrinolysis. For all acute coronary syndrome patients, dual antiplatelet therapy involving aspirin plus a P2Y12 inhibitor is recommended, regardless of the reperfusion strategy employed [ACC/AHA Acute Coronary Syndrome Guideline, 2025].",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "STEMI preferred reperfusion strategy",
+        "top_k": 2
+      },
+      "result": {
+        "query": "STEMI preferred reperfusion strategy",
+        "results": [
+          {
+            "id": "acc-aha-2025-acs",
+            "content": "For ST-elevation myocardial infarction (STEMI), primary percutaneous coronary intervention within 90 minutes of first medical contact is preferred over fibrinolysis. Dual antiplatelet therapy (aspirin plus a P2Y12 inhibitor) is recommended for all acute coronary syndrome patients regardless of reperfusion strategy.",
+            "source": "ACC/AHA Acute Coronary Syndrome Guideline",
+            "citation": "Management of Acute Coronary Syndromes, ACC/AHA, 2025",
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001168",
+            "score": 0.0492,
+            "metadata": {
+              "category": "cardiovascular",
+              "organization": "ACC/AHA",
+              "year": 2025,
+              "title": "Management of Acute Coronary Syndromes",
+              "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001168"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 8538,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2031,
+  "completion_tokens": 138,
+  "cost_usd": 0.0
+}

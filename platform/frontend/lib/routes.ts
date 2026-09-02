@@ -17,7 +17,6 @@ export const CLINICIAN_PREFIXES = [
   "/agents",
   "/schedule",
   "/profile",
-  "/recommendations",
   "/approvals",
   "/alerts",
   "/preferences",

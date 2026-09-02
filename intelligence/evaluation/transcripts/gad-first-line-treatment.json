@@ -1,0 +1,55 @@
+{
+  "case_id": "gad-first-line-treatment",
+  "answer": "For generalized anxiety disorder, guided self-help and psychoeducation are usually the first-line treatments. If symptoms persist despite these interventions, high-intensity psychological therapy (CBT) or medication (SSRI antidepressants) is recommended. Both CBT and medication are considered equally effective in treating moderate to severe cases of generalized anxiety disorder [NICE Guideline CG113, 2019].\n\nAlternative treatments such as fluoroquinolones should not be used without prior suitability assessment as they are typically reserved for certain resistant bacterial infections instead of being first-line agents for uncomplicated cystitis[IDsociety.org, 2019]. Please note, these citations are from the respective guidelines and fall under professional review rather than a diagnosis. \n\nGiven the question specifically about generalized anxiety disorder treatment, focus on the guideline recommending CBT or an SSRI as the primary treatments following the initial intervention strategies.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "generalized anxiety disorder first line treatment",
+        "top_k": 2
+      },
+      "result": {
+        "query": "generalized anxiety disorder first line treatment",
+        "results": [
+          {
+            "id": "nice-2019-gad",
+            "content": "For generalized anxiety disorder, guided self-help and psychoeducation are offered first; if symptoms persist, high-intensity psychological therapy (CBT) or medication (an SSRI) is recommended, with CBT and medication considered equally effective first-line options for moderate to severe cases.",
+            "source": "NICE Guideline CG113",
+            "citation": "Generalized Anxiety Disorder: Management, NICE, 2019",
+            "url": "https://www.nice.org.uk/guidance/cg113",
+            "score": 0.0492,
+            "metadata": {
+              "category": "psychiatry",
+              "organization": "NICE",
+              "year": 2019,
+              "title": "Generalized Anxiety Disorder: Management",
+              "url": "https://www.nice.org.uk/guidance/cg113"
+            }
+          },
+          {
+            "id": "idsa-2019-uti",
+            "content": "Nitrofurantoin for 5 days or trimethoprim-sulfamethoxazole for 3 days are first-line agents for uncomplicated cystitis in women. Fluoroquinolones are reserved for cases where first-line agents are not suitable.",
+            "source": "IDSA Uncomplicated UTI Guideline",
+            "citation": "Treatment of Uncomplicated Cystitis, IDSA, 2019",
+            "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/",
+            "score": 0.0161,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "IDSA",
+              "year": 2019,
+              "title": "Treatment of Uncomplicated Cystitis",
+              "url": "https://www.idsociety.org/practice-guideline/uncomplicated-cystitis-and-pyelonephritis-uti/"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 13148,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2169,
+  "completion_tokens": 219,
+  "cost_usd": 0.0
+}

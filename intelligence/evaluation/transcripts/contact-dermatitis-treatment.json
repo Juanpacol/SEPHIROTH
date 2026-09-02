@@ -1,0 +1,40 @@
+{
+  "case_id": "contact-dermatitis-treatment",
+  "answer": "For contact dermatitis, the American Academy of Dermatology recommends starting with avoiding the trigger and using a topical corticosteroid for inflammation along with an oral antihistamine for itching. If the rash spreads, blisters extensively, or involves the face or genitals, it should be evaluated clinically [AAD Clinical Guideline, 2019].",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "contact dermatitis treatment",
+        "top_k": 2
+      },
+      "result": {
+        "query": "contact dermatitis treatment",
+        "results": [
+          {
+            "id": "aad-contact-dermatitis",
+            "content": "Contact dermatitis presents as an itchy, red rash where the skin touched an irritant or allergen. First-line treatment is avoiding the trigger plus a topical corticosteroid for inflammation and an oral antihistamine for itching. A rash that spreads, blisters extensively, or involves the face or genitals warrants clinical evaluation.",
+            "source": "AAD Clinical Guideline",
+            "citation": "Contact Dermatitis, American Academy of Dermatology, 2019",
+            "url": "https://www.aad.org/public/diseases/eczema/types/contact-dermatitis",
+            "score": 0.0492,
+            "metadata": {
+              "category": "dermatology",
+              "organization": "American Academy of Dermatology",
+              "year": 2019,
+              "title": "Contact Dermatitis",
+              "url": "https://www.aad.org/public/diseases/eczema/types/contact-dermatitis"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 6843,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 1947,
+  "completion_tokens": 106,
+  "cost_usd": 0.0
+}

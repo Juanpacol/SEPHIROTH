@@ -1,0 +1,55 @@
+{
+  "case_id": "conjunctivitis-treatment",
+  "answer": "For viral conjunctivitis, which is commonly caused by viruses and typically does not require antibiotics as they are ineffective against viral infections, treatment primarily involves supportive measures such as cool compresses and lubricating eye drops. These treatments help reduce symptoms like redness and discomfort. Seek medical attention if you or your child experience severe pain, sensitivity to light, or changes in vision.\n\nConsultation with an ophthalmologist is recommended for evaluation when presenting unusual symptoms do not align with the typical symptoms of viral conjunctivitis such as sore throat or other respiratory complaints. [AAO Preferred Practice Pattern, 2019]",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "viral conjunctivitis treatment",
+        "top_k": 2
+      },
+      "result": {
+        "query": "viral conjunctivitis treatment",
+        "results": [
+          {
+            "id": "aao-2019-conjunctivitis",
+            "content": "Most acute conjunctivitis is viral and self-limited over 1-2 weeks, treated with cool compresses and lubricating drops; antibiotics are not helpful for viral cases. Bacterial conjunctivitis (thick purulent discharge) may warrant topical antibiotics. Seek urgent eye care for significant eye pain, light sensitivity, or vision change \u2014 these are not typical of simple conjunctivitis.",
+            "source": "AAO Preferred Practice Pattern",
+            "citation": "Conjunctivitis, American Academy of Ophthalmology, 2019",
+            "url": "https://www.aao.org/education/preferred-practice-pattern/conjunctivitis-ppp",
+            "score": 0.0492,
+            "metadata": {
+              "category": "ophthalmology",
+              "organization": "American Academy of Ophthalmology",
+              "year": 2019,
+              "title": "Conjunctivitis",
+              "url": "https://www.aao.org/education/preferred-practice-pattern/conjunctivitis-ppp"
+            }
+          },
+          {
+            "id": "acc-cough-guideline",
+            "content": "Acute cough (under 3 weeks) is most often due to a viral upper respiratory infection and resolves without treatment; over-the-counter cough suppressants provide modest symptom relief. A cough lasting more than 8 weeks is chronic and warrants evaluation for causes such as asthma, GERD, or post-nasal drip.",
+            "source": "ACCP Clinical Practice Guideline",
+            "citation": "Diagnosis and Management of Cough, American College of Chest Physicians, 2006",
+            "url": "https://journal.chestnet.org/article/S0012-3692(15)37852-0/fulltext",
+            "score": 0.0161,
+            "metadata": {
+              "category": "pulmonology",
+              "organization": "American College of Chest Physicians",
+              "year": 2006,
+              "title": "Diagnosis and Management of Cough",
+              "url": "https://journal.chestnet.org/article/S0012-3692(15)37852-0/fulltext"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 11187,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2242,
+  "completion_tokens": 163,
+  "cost_usd": 0.0
+}

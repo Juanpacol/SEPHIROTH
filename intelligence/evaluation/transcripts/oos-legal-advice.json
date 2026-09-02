@@ -1,0 +1,11 @@
+{
+  "case_id": "oos-legal-advice",
+  "answer": "It's important to consult with a lawyer who specializes in landlord-tenant law for comprehensive guidance. They can provide tailored advice based on your specific situation and jurisdictional laws. \n\nHere are some general steps you might consider filing a lawsuit:\n\n1. **Review Your Lease Agreement**: Understand the terms of your lease as they likely outline procedures and responsibilities.\n\n2. **Identify the Specific Issue**: Determine exactly what service or repairs are required by your landlord, such as fixing plumbing issues, addressing electrical hazards, or addressing mold problems.\n\n3. **Document Everything**: Keep all communication with your landlord documented for instance emails, letters, any witnesses involved etc., which can be crucial if a dispute arises.\n\n4. **Notice to Vacate**: If you're facing eviction, ensure that there is proper notice given according to local laws before filing legal action against the landlord.\n\n5. **Seek Legal Counsel**: Since this may involve complex legal procedures and different states have varying laws regarding landlord-tenant disputes, consulting with a qualified attorney can be very helpful. \n\n6. **File Correctly**: File your lawsuit in court by following all procedural steps necessary for your jurisdiction.\n\nI suggest seeking professional legal advice to proceed correctly.",
+  "tool_calls": [],
+  "latency_ms": 9268,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 837,
+  "completion_tokens": 241,
+  "cost_usd": 0.0
+}

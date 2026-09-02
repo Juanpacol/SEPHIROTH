@@ -204,7 +204,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: ${{ github.event_name == 'pull_request' && 1 || 0 }}
+          # gitleaks diffs the PR's first commit's parent through its last
+          # commit — a shallow checkout (depth 1 or a fixed small depth)
+          # leaves that parent missing as soon as a PR has more than a
+          # couple of commits ("unknown revision"), failing the job
+          # regardless of content. Full history removes the guesswork;
+          # this repo is small enough that the extra clone time is noise.
+          fetch-depth: 0
       - name: gitleaks (secret scanning)
         uses: gitleaks/gitleaks-action@v2
         env:

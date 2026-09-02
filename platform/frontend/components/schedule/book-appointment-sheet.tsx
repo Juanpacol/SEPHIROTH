@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Sheet from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError, type Slot } from "@/lib/api";
+import { useLanguage } from "@/lib/language";
 
 export default function BookAppointmentSheet({
   open,
@@ -17,6 +18,7 @@ export default function BookAppointmentSheet({
   clinicianId: string;
   defaultDate: string; // yyyy-MM-dd
 }) {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const showToast = useToast();
   const [date, setDate] = useState(defaultDate);
@@ -58,15 +60,15 @@ export default function BookAppointmentSheet({
       });
       await queryClient.invalidateQueries({ queryKey: ["schedule", "appointments"] });
       await queryClient.invalidateQueries({ queryKey: ["agenda", "today"] });
-      showToast("Appointment booked.");
+      showToast(t("schedule.book.booked"));
       onClose();
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        showToast("That time was just taken — pick another slot.", "error");
+        showToast(t("schedule.book.error.taken"), "error");
       } else if (err instanceof ApiError && err.status === 422) {
-        showToast("That time is outside working hours.", "error");
+        showToast(t("schedule.book.error.outsideHours"), "error");
       } else {
-        showToast("Could not book this appointment.", "error");
+        showToast(t("schedule.book.error.generic"), "error");
       }
     } finally {
       setBusy(false);
@@ -74,12 +76,12 @@ export default function BookAppointmentSheet({
   };
 
   return (
-    <Sheet open={open} onClose={onClose} title="New appointment">
+    <Sheet open={open} onClose={onClose} title={t("schedule.newAppointment")}>
       <div className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-semibold">Patient</label>
+          <label className="mb-1 block text-sm font-semibold">{t("schedule.book.patient")}</label>
           <select value={patientId} onChange={(e) => setPatientId(e.target.value)} className="input">
-            <option value="">Select a patient…</option>
+            <option value="">{t("schedule.book.selectPatient")}</option>
             {patients?.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name} ({p.medical_record_number})
@@ -89,7 +91,7 @@ export default function BookAppointmentSheet({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold">Date</label>
+          <label className="mb-1 block text-sm font-semibold">{t("schedule.book.date")}</label>
           <input
             type="date"
             value={date}
@@ -102,10 +104,10 @@ export default function BookAppointmentSheet({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold">Time</label>
+          <label className="mb-1 block text-sm font-semibold">{t("schedule.book.time")}</label>
           <div className="flex flex-wrap gap-2">
             {(slotsData?.slots ?? []).length === 0 && (
-              <p className="text-sm text-muted">No open slots this day.</p>
+              <p className="text-sm text-muted">{t("schedule.book.noSlots")}</p>
             )}
             {slotsData?.slots.map((slot) => {
               const active = selectedSlot?.start_at === slot.start_at;
@@ -131,11 +133,11 @@ export default function BookAppointmentSheet({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold">Reason</label>
+          <label className="mb-1 block text-sm font-semibold">{t("schedule.book.reason")}</label>
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Follow-up, annual checkup, …"
+            placeholder={t("schedule.book.reasonPlaceholder")}
             className="input"
           />
         </div>
@@ -145,7 +147,7 @@ export default function BookAppointmentSheet({
           disabled={busy || !patientId || !selectedSlot}
           className="btn-primary w-full"
         >
-          {busy ? "Booking…" : "Book appointment"}
+          {busy ? t("schedule.book.booking") : t("schedule.book.bookAppointment")}
         </button>
       </div>
     </Sheet>

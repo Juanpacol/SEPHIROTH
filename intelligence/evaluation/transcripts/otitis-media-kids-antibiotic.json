@@ -1,55 +1,55 @@
 {
   "case_id": "otitis-media-kids-antibiotic",
-  "answer": "I can't provide specific antibiotic recommendations for an ear infection. However, I can suggest that you consult with your child's healthcare provider or a pediatrician for proper diagnosis and treatment.\n\nThe American Academy of Pediatrics (AAP) recommends that children with otitis media (ear infection) be treated with antibiotics only if they have certain risk factors, such as:\n\n* Severe symptoms\n* Fever above 102\u00b0F (39\u00b0C)\n* Purulent discharge\n* Hearing loss\n\nEven then, the choice of antibiotic may vary depending on the specific circumstances.\n\nFor more information, you can refer to the following clinical guidelines:\n\n* American Academy of Pediatrics. (2022). Otitis Media.\n* Pediatric Infectious Disease Society. (2020). Practice Guidelines for the Diagnosis and Management of Acute Otitis Media.\n* Centers for Disease Control and Prevention. (2022). Otitis Media.\n\nThese guidelines are available online and can provide more detailed information on the diagnosis and treatment of ear infections in children.",
+  "answer": "The go-to antibiotic for an ear infection in children, without recent exposure to beta-lactam antibiotics, is Amoxicillin. According to the American Academy of Pediatrics (AAP), it is the first-line option for acute otitis media in this population from the year 2013 clinical practice guideline [AAP Clinical Practice Guideline on Acute Otitis Media, 2013]. For children aged 6 months to 12 years with unilateral mild symptoms, watchful waiting may be considered. Please consult a healthcare professional for personalized advice and further evaluation of your child's condition.\n\nThis response is based on the clinical practice guideline provided by AAP in 2013. It does not include all possible treatment options or considerations, so please seek guidance from medical professionals who can provide more individualized recommendations.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "top_k": "5",
-        "query": "ear infection treatment antibiotics"
+        "top_k": 2,
+        "query": "ear infection in children treatment"
       },
       "result": {
-        "query": "ear infection treatment antibiotics",
+        "query": "ear infection in children treatment",
         "results": [
           {
-            "id": "nice-2022-depression",
-            "content": "For moderate to severe depression, a combination of antidepressant medication and high-intensity psychological therapy such as cognitive behavioral therapy is recommended over either treatment alone.",
-            "source": "NICE Guideline on Depression in Adults",
-            "citation": "Management of Depression in Adults, NICE, 2022",
-            "score": 0.2236,
+            "id": "aap-2013-otitis",
+            "content": "Amoxicillin is the first-line antibiotic for acute otitis media in children without recent beta-lactam exposure. Watchful waiting may be offered for children 6 months to 12 years with unilateral mild symptoms.",
+            "source": "AAP Clinical Practice Guideline on Acute Otitis Media",
+            "citation": "Diagnosis and Management of Acute Otitis Media, AAP, 2013",
+            "url": "https://publications.aap.org/pediatrics/article/131/3/e964/30912",
+            "score": 0.0328,
             "metadata": {
-              "organization": "NICE",
-              "year": 2022,
-              "title": "Management of Depression in Adults"
+              "category": "pediatrics",
+              "organization": "AAP",
+              "year": 2013,
+              "title": "Diagnosis and Management of Acute Otitis Media",
+              "url": "https://publications.aap.org/pediatrics/article/131/3/e964/30912"
             }
           },
           {
-            "id": "sscm-2021-sepsis",
-            "content": "For patients with sepsis or septic shock, broad-spectrum antibiotics should be administered within 1 hour of recognition, along with 30 mL/kg of intravenous crystalloid fluid for hypotension or elevated lactate.",
-            "source": "Surviving Sepsis Campaign Guidelines",
-            "citation": "Management of Sepsis and Septic Shock, Surviving Sepsis Campaign, 2021",
-            "score": 0.2132,
+            "id": "acc-cough-guideline",
+            "content": "Acute cough (under 3 weeks) is most often due to a viral upper respiratory infection and resolves without treatment; over-the-counter cough suppressants provide modest symptom relief. A cough lasting more than 8 weeks is chronic and warrants evaluation for causes such as asthma, GERD, or post-nasal drip.",
+            "source": "ACCP Clinical Practice Guideline",
+            "citation": "Diagnosis and Management of Cough, American College of Chest Physicians, 2006",
+            "url": "https://journal.chestnet.org/article/S0012-3692(15)37852-0/fulltext",
+            "score": 0.0164,
             "metadata": {
-              "organization": "Surviving Sepsis Campaign",
-              "year": 2021,
-              "title": "Management of Sepsis and Septic Shock"
-            }
-          },
-          {
-            "id": "gina-2024-asthma",
-            "content": "For adults and adolescents with asthma, as-needed low-dose ICS-formoterol is preferred as reliever therapy over short-acting beta-agonist alone, even at the mildest step of treatment, to reduce exacerbation risk.",
-            "source": "Global Initiative for Asthma Report",
-            "citation": "Global Strategy for Asthma Management, GINA, 2024",
-            "score": 0.1925,
-            "metadata": {
-              "organization": "GINA",
-              "year": 2024,
-              "title": "Global Strategy for Asthma Management"
+              "category": "pulmonology",
+              "organization": "American College of Chest Physicians",
+              "year": 2006,
+              "title": "Diagnosis and Management of Cough",
+              "url": "https://journal.chestnet.org/article/S0012-3692(15)37852-0/fulltext"
             }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
-  ]
+  ],
+  "latency_ms": 10563,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2215,
+  "completion_tokens": 202,
+  "cost_usd": 0.0
 }

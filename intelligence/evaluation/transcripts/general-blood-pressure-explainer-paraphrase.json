@@ -1,0 +1,11 @@
+{
+  "case_id": "general-blood-pressure-explainer-paraphrase",
+  "answer": "The top number in a blood pressure reading (systolic blood pressure) represents the pressure in the arteries when the heart beats. The bottom number (diastolic blood pressure) represents the pressure between beats, when the heart is at rest. [Circulation, 2018]",
+  "tool_calls": [],
+  "latency_ms": 2581,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 836,
+  "completion_tokens": 61,
+  "cost_usd": 0.0
+}
