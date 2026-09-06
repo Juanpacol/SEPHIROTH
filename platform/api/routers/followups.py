@@ -16,13 +16,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.paging import capped
+from api.workflows.instantiate import cancel_workflow
+from api.workflows.patient_followup import enroll_plan
 from auth.deps import require_clinician
 from core.db import get_session
 from data.schemas import FollowupPlan, Patient, User, Workflow
-
-from ..paging import capped
-from ..workflows.instantiate import cancel_workflow
-from ..workflows.patient_followup import enroll_plan
 
 router = APIRouter()
 

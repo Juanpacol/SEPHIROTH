@@ -16,14 +16,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.audit import add_phi_access
+from api.services import result_service as svc
+from api.timeparse import optional_aware
 from auth.deps import require_clinician
 from core.config import settings
 from core.db import get_session
 from data.schemas import Patient, ResultReview, TimelineEvent, User
-
-from ..audit import add_phi_access
-from ..services import result_service as svc
-from ..timeparse import optional_aware
 
 router = APIRouter(dependencies=[Depends(require_clinician)])
 

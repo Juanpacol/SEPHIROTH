@@ -23,11 +23,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.services.task_service import OPEN_STATUSES
 from auth.deps import get_current_user
 from core.db import get_session
 from data.schemas import Alert, Notification, Task, User
-
-from ..services.task_service import OPEN_STATUSES
 
 router = APIRouter()
 

@@ -22,15 +22,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.audit import add_phi_access
+from api.services import task_service as svc
+from api.services.task_adapters import can_complete, complete_task
+from api.services.task_adapters import reopen_task as _reopen_with_source
+from api.timeparse import require_aware
 from auth.deps import require_clinician
 from core.db import get_session
 from data.schemas import Patient, Task, User
-
-from ..audit import add_phi_access
-from ..services import task_service as svc
-from ..services.task_adapters import can_complete, complete_task
-from ..services.task_adapters import reopen_task as _reopen_with_source
-from ..timeparse import require_aware
 
 router = APIRouter()
 

@@ -28,13 +28,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.paging import capped
+from api.services import task_service
+from api.services.task_adapters import _resolve_alert
 from auth.deps import require_clinician
 from core.db import get_session
 from data.schemas import Alert, User
-
-from ..paging import capped
-from ..services import task_service
-from ..services.task_adapters import _resolve_alert
 
 router = APIRouter()
 
