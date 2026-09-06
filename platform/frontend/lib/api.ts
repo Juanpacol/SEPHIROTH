@@ -53,6 +53,109 @@ export interface DashboardActionItem {
   action_type?: string;
   query_preview?: string;
   consultation_id?: string;
+  /** Present once the endpoint reads from `tasks` (SPEC-018). Optional on
+   * purpose: with the flag off the same rows arrive without one, so this
+   * component never needs to know which side of the flag it is on — it just
+   * offers actions when there is something to act on. */
+  task_id?: string;
+  status?: TaskStatus;
+  due_at?: string | null;
+}
+
+// --- Tasks (SPEC-018) -------------------------------------------------------
+
+export type TaskStatus = "open" | "in_progress" | "snoozed" | "done" | "dismissed" | "superseded";
+export type TaskSeverity = "critical" | "high" | "medium" | "low";
+
+/** Where the work came from. `kind` is what the inbox deep-links on — a task
+ * is a handle on something that lives elsewhere, and a row nobody can follow
+ * back to its origin is a dead end. */
+export interface TaskSource {
+  kind:
+    | "alert"
+    | "approval"
+    | "followup"
+    | "result"
+    | "appointment"
+    | "automation"
+    | "consultation"
+    | "deteriorating"
+    | "interaction";
+  id: string | null;
+}
+
+export interface ClinicalTask {
+  id: string;
+  source: TaskSource;
+  category: string;
+  severity: TaskSeverity;
+  status: TaskStatus;
+  title: string;
+  detail: string;
+  context: Record<string, unknown>;
+  patient_id: string | null;
+  patient_name: string | null;
+  assigned_to_user_id: string | null;
+  due_at: string | null;
+  snoozed_until: string | null;
+  escalation_level: number;
+  dismiss_reason: string;
+  closed_at: string | null;
+  created_at: string;
+  /** False when the source refuses to be closed from the inbox — an approval,
+   * for instance. Surfaced so the UI can omit the button rather than let
+   * someone press it and receive a 409. */
+  completable: boolean;
+  completable_refusal: string;
+}
+
+export interface TaskEvent {
+  id: number;
+  event_type: string;
+  actor_user_id: string | null;
+  from_status: string | null;
+  to_status: string | null;
+  note: string;
+  created_at: string;
+}
+
+export interface TaskPage {
+  items: ClinicalTask[];
+  total_count: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
+export interface TaskCounts {
+  open: number;
+  in_progress: number;
+  snoozed: number;
+  mine: number;
+  unassigned: number;
+  overdue: number;
+}
+
+export interface TaskFilters {
+  status?: TaskStatus[];
+  category?: string;
+  severity?: TaskSeverity;
+  assignee?: "me" | "unassigned" | string;
+  patient_id?: string;
+  overdue?: boolean;
+  q?: string;
+  sort?: "priority" | "due" | "created";
+  limit?: number;
+  offset?: number;
+}
+
+/** Every counter the chrome shows, in one request — see the backend router's
+ * docstring for why this is not part of `/api/dashboard`. */
+export interface BadgeCounts {
+  tasks_open: number;
+  tasks_overdue: number;
+  alerts_active: number;
+  notifications_unread: number;
 }
 
 export interface DashboardActionItems {
@@ -771,6 +874,37 @@ export const api = {
   createFollowupPlan: (body: { patient_id: string; consultation_id?: string; instructions?: string }) =>
     post<FollowupPlan>("/api/followups", body),
   cancelFollowupPlan: (planId: string) => post<FollowupPlan>(`/api/followups/${planId}/cancel`, {}),
+
+  // --- Tasks --------------------------------------------------------------
+  listTasks: (filters: TaskFilters = {}) => {
+    const qs = new URLSearchParams();
+    // `status` is repeatable rather than comma-joined, matching FastAPI's
+    // List[str] query binding.
+    for (const status of filters.status ?? []) qs.append("status", status);
+    for (const [key, value] of Object.entries(filters)) {
+      if (key === "status" || value === undefined || value === "") continue;
+      qs.set(key, String(value));
+    }
+    const query = qs.toString();
+    return get<TaskPage>(`/api/tasks${query ? `?${query}` : ""}`);
+  },
+  taskCounts: () => get<TaskCounts>("/api/tasks/count"),
+  task: (taskId: string) => get<ClinicalTask & { events: TaskEvent[] }>(`/api/tasks/${taskId}`),
+  claimTask: (taskId: string) => post<ClinicalTask>(`/api/tasks/${taskId}/claim`, {}),
+  assignTask: (taskId: string, assigneeId: string) =>
+    post<ClinicalTask>(`/api/tasks/${taskId}/assign`, { assignee_id: assigneeId }),
+  snoozeTask: (taskId: string, until: string) =>
+    post<ClinicalTask>(`/api/tasks/${taskId}/snooze`, { until }),
+  resumeTask: (taskId: string) => post<ClinicalTask>(`/api/tasks/${taskId}/resume`, {}),
+  completeTask: (taskId: string) => post<ClinicalTask>(`/api/tasks/${taskId}/complete`, {}),
+  dismissTask: (taskId: string, reason: string) =>
+    post<ClinicalTask>(`/api/tasks/${taskId}/dismiss`, { reason }),
+  reopenTask: (taskId: string) => post<ClinicalTask>(`/api/tasks/${taskId}/reopen`, {}),
+  commentOnTask: (taskId: string, body: string) =>
+    post<ClinicalTask>(`/api/tasks/${taskId}/comment`, { body }),
+
+  // --- Badges -------------------------------------------------------------
+  badges: () => get<BadgeCounts>("/api/badges"),
 
   // --- Automation memory / preferences ------------------------------------
   automationMemoryKeys: () => get<Record<string, string>>("/api/automation-memory/keys"),

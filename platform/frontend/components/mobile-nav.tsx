@@ -20,6 +20,7 @@ import { LogOut, MoreHorizontal } from "lucide-react";
 import { clearAuth, useUser } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import { flatNav, isActive, navFor } from "@/lib/nav";
+import { useBadgeCounts } from "@/lib/hooks/use-badge-counts";
 import Sheet from "@/components/ui/sheet";
 
 export default function MobileNav() {
@@ -28,6 +29,7 @@ export default function MobileNav() {
   const user = useUser();
   const { t } = useLanguage();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { data: counts } = useBadgeCounts();
 
   const groups = navFor(user?.role);
   const items = flatNav(groups);
@@ -52,8 +54,9 @@ export default function MobileNav() {
         aria-label={t("nav.primary")}
         className="glass-surface safe-bottom fixed inset-x-0 bottom-0 z-40 flex border-t border-line/60 md:hidden"
       >
-        {barItems.map(({ href, id, icon: Icon }) => {
+        {barItems.map(({ href, id, icon: Icon, badge }) => {
           const active = isActive(pathname, href, allHrefs);
+          const count = badge ? (counts?.[badge] ?? 0) : 0;
           return (
             <Link
               key={href}
@@ -63,7 +66,14 @@ export default function MobileNav() {
                 active ? "text-primary" : "text-ink/60"
               }`}
             >
-              <Icon size={20} />
+              <span className="relative">
+                <Icon size={20} />
+                {count > 0 && (
+                  <span className="absolute -right-2 -top-1 rounded-full bg-primary px-1 text-[10px] font-bold text-white">
+                    {count > 99 ? "99+" : count}
+                  </span>
+                )}
+              </span>
               <span className="max-w-full truncate px-1">{t(`nav.${id}`)}</span>
             </Link>
           );

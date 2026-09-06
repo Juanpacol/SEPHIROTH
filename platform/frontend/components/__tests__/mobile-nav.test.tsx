@@ -8,6 +8,7 @@
  * the one that silently rots if the two lists are ever maintained separately.
  */
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -26,16 +27,26 @@ const user = vi.fn<() => { name: string; role: string } | null>(() => ({
   name: "Dra. Ruiz",
   role: "clinician",
 }));
+vi.mock("@/lib/api", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
+  return { ...actual, api: { ...actual.api, badges: vi.fn().mockResolvedValue({}) } };
+});
+
 vi.mock("@/lib/auth", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth")>("@/lib/auth");
   return { ...actual, useUser: () => user(), clearAuth: vi.fn() };
 });
 
 function renderNav() {
+  // MobileNav reads the shared badge counters, so it needs a query client.
+  // `retry: false` keeps a failing fetch from retrying past the test.
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <LanguageProvider>
-      <MobileNav />
-    </LanguageProvider>,
+    <QueryClientProvider client={client}>
+      <LanguageProvider>
+        <MobileNav />
+      </LanguageProvider>
+    </QueryClientProvider>,
   );
 }
 

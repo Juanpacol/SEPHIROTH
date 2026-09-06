@@ -15,6 +15,7 @@ import {
   Bell,
   BookOpenCheck,
   CalendarDays,
+  CheckSquare,
   ClipboardCheck,
   ClipboardList,
   FileText,
@@ -32,6 +33,8 @@ export interface NavItem {
    * Four at most: the fifth slot is the drawer trigger, and a bar of six
    * targets on a 375px screen is under the 44px comfortable minimum. */
   mobile?: boolean;
+  /** Which counter from `useBadgeCounts` this destination shows, if any. */
+  badge?: "tasks_open" | "alerts_active";
 }
 
 export interface NavGroup {
@@ -47,10 +50,14 @@ export const CLINICIAN_NAV: NavGroup[] = [
   {
     groupId: "groupClinical",
     items: [
+      // Tasks displaces /alerts on the phone bar: an alert is one source of
+      // work and this is all of them, so a clinician who can only reach four
+      // destinations should reach the superset.
+      { href: "/tasks", id: "tasks", icon: CheckSquare, mobile: true, badge: "tasks_open" },
       { href: "/patients", id: "patients", icon: Users, mobile: true },
       { href: "/schedule", id: "schedule", icon: CalendarDays, mobile: true },
       { href: "/approvals", id: "approvals", icon: ClipboardCheck },
-      { href: "/alerts", id: "alerts", icon: Bell, mobile: true },
+      { href: "/alerts", id: "alerts", icon: Bell, badge: "alerts_active" },
     ],
   },
   {

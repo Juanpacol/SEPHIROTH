@@ -6,6 +6,7 @@ import { LogOut, Search } from "lucide-react";
 import { clearAuth, useUser } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import { flatNav, isActive, navFor } from "@/lib/nav";
+import { useBadgeCounts } from "@/lib/hooks/use-badge-counts";
 import WingMark from "@/components/brand/wing-mark";
 
 export default function Sidebar() {
@@ -15,6 +16,7 @@ export default function Sidebar() {
   const { t } = useLanguage();
   const groups = navFor(user?.role);
   const allHrefs = flatNav(groups).map((i) => i.href);
+  const { data: counts } = useBadgeCounts();
   const homeHref = user?.role === "patient" ? "/portal" : "/dashboard";
   const profileHref = user?.role === "patient" ? "/portal" : "/profile";
 
@@ -53,16 +55,18 @@ export default function Sidebar() {
         {groups.map((group) => (
           <div key={group.groupId ?? "root"}>
             {group.groupId && <div className="nav-group-label">{t(`nav.${group.groupId}`)}</div>}
-            {group.items.map(({ href, id, icon: Icon }) => {
+            {group.items.map(({ href, id, icon: Icon, badge }) => {
               const active = isActive(pathname, href, allHrefs);
+              const count = badge ? (counts?.[badge] ?? 0) : 0;
               return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`nav-item ${active ? "nav-item-active" : ""}`}
-                >
+                <Link key={href} href={href} className={`nav-item ${active ? "nav-item-active" : ""}`}>
                   <Icon size={17} />
-                  {t(`nav.${id}`)}
+                  <span className="flex-1">{t(`nav.${id}`)}</span>
+                  {count > 0 && (
+                    <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold text-white">
+                      {count > 99 ? "99+" : count}
+                    </span>
+                  )}
                 </Link>
               );
             })}
