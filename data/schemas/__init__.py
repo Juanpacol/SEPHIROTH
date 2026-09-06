@@ -414,6 +414,12 @@ class ResultShare(Base):
     status: Mapped[str] = mapped_column(String(10), default="sent", server_default="sent")  # sent|revoked
     shared_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     viewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    #: Which result this share communicated, when it came from one (SPEC-024).
+    #: Nullable and additive: shares made before this existed point at a
+    #: timeline event and keep doing so, because rewriting them to point
+    #: somewhere else would rewrite what was actually shared.
+    result_type: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    result_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
 
     event: Mapped["TimelineEvent"] = relationship()
     attachments: Mapped[List["ResultAttachment"]] = relationship(
@@ -936,7 +942,8 @@ class Task(Base):
         UniqueConstraint("dedupe_key", name="uq_task_dedupe_key"),
         CheckConstraint(
             "source_type IN ('alert','approval','followup','result','appointment',"
-            "'automation','consultation','deteriorating','interaction','encounter')",
+            "'automation','consultation','deteriorating','interaction','encounter',"
+            "'result_review')",
             name="ck_task_source_type",
         ),
         CheckConstraint("severity IN ('critical','high','medium','low')", name="ck_task_severity"),
@@ -1155,6 +1162,85 @@ class EncounterOrder(Base):
     encounter: Mapped["Encounter"] = relationship(back_populates="orders")
 
 
+class ResultReview(Base):
+    """What a human did about a result.
+
+    A separate row rather than columns on `lab_results` and `imaging_studies`
+    (ADR-017): those two have incompatible primary-key types, so the column
+    approach is two implementations of one concept from the first day, and
+    every "what is unreviewed" query would be written twice and unioned.
+
+    It also keeps the measurement and the judgement apart. A lab value is true
+    forever; a review is one clinician's decision on one day, in their own
+    words, and `note` carries PHI accordingly.
+
+    The state machine's one load-bearing guard is that a result whose
+    disposition was "tell the patient" cannot be closed until they have been
+    told. Without it the states are decoration.
+    """
+
+    __tablename__ = "result_reviews"
+    __table_args__ = (
+        UniqueConstraint("result_type", "result_id", name="uq_result_review_result"),
+        CheckConstraint("result_type IN ('lab','imaging')", name="ck_result_review_type"),
+        CheckConstraint(
+            "status IN ('received','reviewed','communicated','closed')",
+            name="ck_result_review_status",
+        ),
+        CheckConstraint(
+            "severity IN ('critical','abnormal','normal','unclassified')",
+            name="ck_result_review_severity",
+        ),
+        CheckConstraint(
+            "disposition IS NULL OR disposition IN "
+            "('normal','abnormal_expected','action_taken','needs_patient_contact')",
+            name="ck_result_review_disposition",
+        ),
+        # A reviewed result with no reviewer is a decision nobody made. Same
+        # posture as `ck_encounter_signed_requires_signer`.
+        CheckConstraint(
+            "status = 'received' OR (reviewed_at IS NOT NULL AND reviewed_by IS NOT NULL)",
+            name="ck_result_review_reviewed",
+        ),
+        CheckConstraint(
+            "status <> 'closed' OR (closed_at IS NOT NULL AND closed_by IS NOT NULL)",
+            name="ck_result_review_closed",
+        ),
+        Index("ix_result_reviews_status_severity", "status", "severity"),
+        Index("ix_result_reviews_patient_created", "patient_id", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    result_type: Mapped[str] = mapped_column(String(10))
+    #: String even for a lab, whose own id is an integer -- one column has to
+    #: hold both key types, the same compromise `tasks.source_id` makes.
+    result_id: Mapped[str] = mapped_column(String(64))
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    status: Mapped[str] = mapped_column(String(14), default="received", server_default="received", index=True)
+    #: From `sephiroth.clinical.results`, computed once at intake. Stored rather
+    #: than derived on read because the reference range that produced it came
+    #: with the result and may not be the one in code tomorrow.
+    severity: Mapped[str] = mapped_column(String(12))
+    #: The one line explaining the severity, so a clinician can check the
+    #: judgement instead of trusting it.
+    classification_reason: Mapped[str] = mapped_column(String(300), default="", server_default="")
+
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    reviewed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    disposition: Mapped[Optional[str]] = mapped_column(String(24), nullable=True)
+    #: The clinician's own words. Free clinical text, so it goes through the
+    #: PHI column types (ADR-014).
+    note: Mapped[str] = mapped_column(EncryptedText, default="")
+
+    share_id: Mapped[Optional[str]] = mapped_column(ForeignKey("result_shares.id"), nullable=True)
+    task_id: Mapped[Optional[str]] = mapped_column(ForeignKey("tasks.id"), nullable=True)
+
+    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    closed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
 __all__ = [
     "Base",
     "User",
@@ -1190,4 +1276,5 @@ __all__ = [
     "TaskEvent",
     "Encounter",
     "EncounterOrder",
+    "ResultReview",
 ]

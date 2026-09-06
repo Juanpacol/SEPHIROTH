@@ -34,6 +34,7 @@ from api.routers import (
     patients,
     portal,
     rag,
+    result_reviews,
     results,
     scheduling,
     tasks,
@@ -203,6 +204,12 @@ app.include_router(
 app.include_router(portal.router, prefix="/api/portal", tags=["portal"])
 app.include_router(scheduling.router, prefix="/api/scheduling", tags=["scheduling"])
 app.include_router(results.router, prefix="/api/results", tags=["results"])
+# Beside the sharing endpoints above, not inside them: everything here is
+# clinician-only, while those are role-scoped per route because a patient
+# legitimately calls most of them.
+app.include_router(
+    result_reviews.router, prefix="/api/results", tags=["results"], dependencies=_clinician_only
+)
 # Notifications: every route is scoped to the caller's own identity
 # (`get_current_user`), so it mixes roles per-route like the three above
 # rather than carrying a blanket clinician-only guard.

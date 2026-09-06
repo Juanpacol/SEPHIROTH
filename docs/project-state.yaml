@@ -44,6 +44,7 @@ phases:
   "19": {name: "Deterministic clinical rules — stable rule identity, no repeat alerts, allergy/duplicate rules (SPEC-021)", status: done}
   "20": {name: "Local AI by default — ollama as the default provider, honest provider reporting, PHI egress gate (SPEC-022)", status: done}
   "21": {name: "The clinical encounter — one record per visit, signing files the work, AI drafts nothing unread (SPEC-023)", status: done}
+  "22": {name: "Results with a closed loop — intake, deterministic classification, review that cannot be short-circuited (SPEC-024)", status: done}
 
 components:
   legacy:

@@ -1,107 +1,142 @@
 "use client";
 
-/** Every result shared with a patient, in one list (SPEC-019).
+/** Results, in two halves.
  *
- * `GET /api/results/shares` has existed since the results phase and had no
- * clinician-facing page: the only way to see a share was to open the patient
- * it belonged to, which answers "what did I send this person" and never
- * "what is still unread across the panel".
+ * The inbox leads, because "what has nobody read" is the question a clinic gets
+ * sued over and the one this page previously could not answer at all. The share
+ * list stays a tab away: what was sent and what is still unread is a different
+ * question, and it already had a good answer.
  *
- * `viewed_at` is the column that earns the page. A shared result nobody opened
- * is the failure mode this feature has — the sharing worked and the
- * communication did not.
+ * Communicating a result opens the patient's chart rather than sending from
+ * here. The share needs the timeline entry the portal will render, and picking
+ * that is a decision about which of a patient's entries this result *is* —
+ * guessing it would show somebody the wrong result.
  */
 
-import { useMemo } from "react";
-import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { api, type ResultShare } from "@/lib/api";
+import { api, type Disposition, type ResultReview } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
-import DataList, { type Column } from "@/components/ui/data-list";
-import StatusPill from "@/components/status-pill";
+import SegmentedControl from "@/components/ui/segmented-control";
+import ResultReviewCard from "@/components/results/result-review-card";
+import SharedResultsList from "@/components/results/shared-results-list";
+
+type Tab = "inbox" | "shared";
+type Filter = "open" | "critical" | "closed";
+
+const INBOX_QUERY_KEY = ["results", "inbox"] as const;
 
 export default function ResultsPage() {
   const { t } = useLanguage();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [tab, setTab] = useState<Tab>("inbox");
+  const [filter, setFilter] = useState<Filter>("open");
+  const [error, setError] = useState<string | null>(null);
 
-  const { data: shares, isLoading } = useQuery({
-    queryKey: ["results", "shares"],
-    queryFn: () => api.listShares(),
+  const params = useMemo(() => {
+    if (filter === "closed") return { status: ["closed"] as const };
+    if (filter === "critical") return { severity: "critical" as const };
+    return {};
+  }, [filter]);
+
+  const inbox = useQuery({
+    queryKey: [...INBOX_QUERY_KEY, filter],
+    queryFn: () => api.resultsInbox({ ...params, status: params.status ? [...params.status] : undefined }),
+    enabled: tab === "inbox",
   });
-  // Names are not on the share payload, and adding them there would change a
-  // response the patient portal also reads. One extra request, joined here.
-  const { data: patients } = useQuery({ queryKey: ["patients", "name"], queryFn: () => api.patients() });
 
-  const nameFor = useMemo(() => {
-    const map = new Map((patients ?? []).map((p) => [p.id, p.name]));
-    return (id: string | undefined) => (id ? (map.get(id) ?? id) : "—");
-  }, [patients]);
+  function settle(updated: ResultReview) {
+    queryClient.invalidateQueries({ queryKey: INBOX_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    queryClient.invalidateQueries({ queryKey: ["badges"] });
+    setError(null);
+    return updated;
+  }
 
-  const columns: Column<ResultShare>[] = useMemo(
-    () => [
-      {
-        key: "event",
-        header: t("results.column.result"),
-        primary: true,
-        render: (share) => (
-          <span className="min-w-0">
-            <span className="block font-semibold">{share.event.title}</span>
-            <span className="block text-xs text-muted">{nameFor(share.patient_id)}</span>
-          </span>
-        ),
-      },
-      {
-        key: "sharedAt",
-        header: t("results.column.sharedAt"),
-        render: (share) => new Date(share.shared_at).toLocaleDateString(),
-      },
-      {
-        key: "viewed",
-        header: t("results.column.viewed"),
-        render: (share) =>
-          share.viewed_at ? (
-            <span className="text-muted">{new Date(share.viewed_at).toLocaleDateString()}</span>
-          ) : (
-            // The point of the page: shared is not the same as seen.
-            <span className="font-semibold text-warning">{t("results.notViewed")}</span>
-          ),
-      },
-      {
-        key: "status",
-        header: t("results.column.status"),
-        render: (share) => <StatusPill label={share.status} />,
-      },
-      {
-        key: "open",
-        header: t("results.column.patient"),
-        desktopOnly: true,
-        render: (share) =>
-          share.patient_id ? (
-            <Link href={`/patients/${share.patient_id}`} className="text-primary hover:underline">
-              {t("results.openPatient")}
-            </Link>
-          ) : null,
-      },
-    ],
-    [t, nameFor],
-  );
+  const review = useMutation({
+    mutationFn: ({ id, ...body }: { id: string; disposition: Disposition; note: string }) =>
+      api.reviewResult(id, body),
+    onSuccess: settle,
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const close = useMutation({
+    mutationFn: (id: string) => api.closeResult(id),
+    onSuccess: settle,
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const reopen = useMutation({
+    mutationFn: (id: string) => api.reopenResult(id),
+    onSuccess: settle,
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const busy = review.isPending || close.isPending || reopen.isPending;
+  const items = inbox.data?.items ?? [];
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-extrabold">{t("results.title")}</h1>
-        <p className="text-sm text-muted">{t("results.subtitle")}</p>
+        <p className="text-sm text-muted">{t("results.inbox.subtitle")}</p>
       </div>
 
-      <DataList
-        items={shares ?? []}
-        columns={columns}
-        rowKey={(share) => share.id}
-        isLoading={isLoading}
-        loadingLabel={t("results.loading")}
-        emptyLabel={t("results.empty")}
-        caption={t("results.title")}
+      <SegmentedControl
+        label={t("results.title")}
+        value={tab}
+        onChange={(value) => setTab(value as Tab)}
+        options={[
+          { value: "inbox", label: t("results.tab.inbox") },
+          { value: "shared", label: t("results.tab.shared") },
+        ]}
       />
+
+      {tab === "shared" ? (
+        <SharedResultsList />
+      ) : (
+        <>
+          <SegmentedControl
+            label={t("results.filter.open")}
+            value={filter}
+            onChange={(value) => setFilter(value as Filter)}
+            options={[
+              { value: "open", label: t("results.filter.open") },
+              { value: "critical", label: t("results.filter.critical") },
+              { value: "closed", label: t("results.filter.closed") },
+            ]}
+          />
+
+          {error ? (
+            <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+              {error}
+            </p>
+          ) : null}
+
+          {inbox.isLoading ? (
+            <div className="h-32 animate-pulse rounded-xl bg-surface" aria-busy="true" />
+          ) : items.length === 0 ? (
+            <p className="card text-sm text-muted">{t("results.inbox.empty")}</p>
+          ) : (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {items.map((item) => (
+                <ResultReviewCard
+                  key={item.id}
+                  review={item}
+                  busy={busy}
+                  onReview={(body) => review.mutate({ id: item.id, ...body })}
+                  onCommunicate={() => router.push(`/patients/${item.patient_id}`)}
+                  onClose={() => close.mutate(item.id)}
+                  onReopen={() => reopen.mutate(item.id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

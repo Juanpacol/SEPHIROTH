@@ -245,6 +245,55 @@ export interface PreVisitBrief {
   risk_flags: { rule_key: string; label: string; severity: string; detail: string }[];
 }
 
+// --- The results loop (SPEC-024) --------------------------------------------
+
+export type ResultReviewStatus = "received" | "reviewed" | "communicated" | "closed";
+export type ResultSeverity = "critical" | "abnormal" | "normal" | "unclassified";
+export type Disposition =
+  | "normal"
+  | "abnormal_expected"
+  | "action_taken"
+  | "needs_patient_contact";
+
+export interface ResultReview {
+  id: string;
+  result_type: "lab" | "imaging";
+  result_id: string;
+  patient_id: string;
+  patient_name: string | null;
+  status: ResultReviewStatus;
+  severity: ResultSeverity;
+  /** One line a clinician can check the severity against, rather than trust. */
+  classification_reason: string;
+  disposition: Disposition | null;
+  note: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  share_id: string | null;
+  task_id: string | null;
+  closed_at: string | null;
+  created_at: string;
+  /** Computed server-side so a button is never offered that would 409. */
+  needs_communication: boolean;
+  closable: boolean;
+  result: {
+    kind: string;
+    missing?: boolean;
+    test_name?: string;
+    value?: number;
+    unit?: string;
+    reference_low?: number | null;
+    reference_high?: number | null;
+    taken_at?: string;
+    modality?: string;
+    body_part?: string;
+    study_date?: string;
+    finding_summary?: string;
+    severity?: string;
+  };
+  created?: boolean;
+}
+
 export interface TaskCounts {
   /** The `open` status alone. Sum the statuses with `total_open`, not by hand. */
   open: number;
@@ -1032,6 +1081,42 @@ export const api = {
     get<{ vitals: VitalSpecOut[]; specialties: string[] }>("/api/encounters/vitals/spec"),
   preVisitBrief: (patientId: string) =>
     get<PreVisitBrief>(`/api/patients/${patientId}/pre-visit`),
+
+  // --- The results loop ---------------------------------------------------
+  recordLab: (body: {
+    patient_id: string;
+    test_name: string;
+    value: number;
+    unit?: string;
+    taken_at?: string;
+    reference_low?: number | null;
+    reference_high?: number | null;
+  }) => post<ResultReview>("/api/results/labs", body),
+  recordImaging: (body: {
+    patient_id: string;
+    modality: string;
+    body_part: string;
+    study_date?: string;
+    severity?: "critical" | "review" | "none";
+    finding_summary?: string;
+  }) => post<ResultReview>("/api/results/imaging", body),
+  resultsInbox: (
+    params: { status?: ResultReviewStatus[]; severity?: ResultSeverity; patient_id?: string } = {},
+  ) => {
+    const qs = new URLSearchParams();
+    for (const status of params.status ?? []) qs.append("status", status);
+    if (params.severity) qs.set("severity", params.severity);
+    if (params.patient_id) qs.set("patient_id", params.patient_id);
+    const query = qs.toString();
+    return get<{ items: ResultReview[] }>(`/api/results/inbox${query ? `?${query}` : ""}`);
+  },
+  resultReview: (id: string) => get<ResultReview>(`/api/results/reviews/${id}`),
+  reviewResult: (id: string, body: { disposition: Disposition; note: string }) =>
+    post<ResultReview>(`/api/results/reviews/${id}/review`, body),
+  communicateResult: (id: string, body: { message: string; timeline_event_id: number }) =>
+    post<ResultReview>(`/api/results/reviews/${id}/communicate`, body),
+  closeResult: (id: string) => post<ResultReview>(`/api/results/reviews/${id}/close`, {}),
+  reopenResult: (id: string) => post<ResultReview>(`/api/results/reviews/${id}/reopen`, {}),
 
   taskCounts: () => get<TaskCounts>("/api/tasks/count"),
   task: (taskId: string) => get<ClinicalTask & { events: TaskEvent[] }>(`/api/tasks/${taskId}`),
