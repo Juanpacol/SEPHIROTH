@@ -24,7 +24,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,6 +32,7 @@ from auth.deps import require_clinician
 from core.db import get_session
 from data.schemas import Alert, User
 
+from ..paging import capped
 from ..services import task_service
 from ..services.task_adapters import _resolve_alert
 
@@ -68,6 +69,9 @@ async def list_alerts(
     severity: Optional[str] = None,
     kind: Optional[str] = Query(None, description="clinical | administrative"),
     patient_id: Optional[str] = None,
+    limit: int = Query(200, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    response: Response = None,  # type: ignore[assignment]
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
 ) -> List[Dict[str, Any]]:
@@ -80,7 +84,10 @@ async def list_alerts(
         stmt = stmt.where(Alert.kind == kind)
     if patient_id is not None:
         stmt = stmt.where(Alert.patient_id == patient_id)
-    alerts = (await session.scalars(stmt)).all()
+    # Capped rather than paginated: the response is a bare array several
+    # callers destructure directly, and the problem here is size, not shape.
+    # `X-Total-Count` says what was left out (SPEC-027 §6.2).
+    alerts = await capped(session, stmt, response, limit=limit, offset=offset)
     return [_alert_out(a) for a in alerts]
 
 

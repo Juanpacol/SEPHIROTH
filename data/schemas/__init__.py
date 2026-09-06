@@ -189,6 +189,12 @@ class TimelineEvent(Base):
     """One event on a patient's Intelligent Timeline."""
 
     __tablename__ = "timeline_events"
+    __table_args__ = (
+        # Every read of a timeline filters by patient and orders by date; only
+        # `patient_id` was indexed, so the ordering was a sort over the
+        # patient's whole history on each load.
+        Index("ix_timeline_events_patient_date", "patient_id", "date"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
@@ -458,6 +464,12 @@ class Consultation(Base):
     """One multi-agent consultation, owned by the requesting clinician."""
 
     __tablename__ = "consultations"
+    __table_args__ = (
+        # `GET /api/agents/history` filters by user and orders by recency.
+        # `user_id` alone was indexed and `created_at` was not, so the ordering
+        # was a sort over every consultation a clinician has ever run.
+        Index("ix_consultations_user_created", "user_id", "created_at"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)

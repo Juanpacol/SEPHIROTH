@@ -14,7 +14,7 @@ import hashlib
 from typing import Any, Dict, List
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
@@ -29,6 +29,8 @@ from core.db import get_session
 from core.storage import get_blob_store
 from data.schemas import Notification, Patient, ResultAttachment, ResultShare, TimelineEvent, User
 from sephiroth.workflows import events as workflow_events
+
+from ..paging import capped
 
 router = APIRouter()
 
@@ -238,6 +240,9 @@ async def upload_attachment(
 @router.get("/shares")
 async def list_shares(
     patient_id: str | None = None,
+    limit: int = Query(200, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    response: Response = None,  # type: ignore[assignment]
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> List[Dict[str, Any]]:
@@ -248,7 +253,13 @@ async def list_shares(
         if patient_id is None:
             raise HTTPException(status_code=422, detail="patient_id is required")
         stmt = stmt.where(ResultShare.patient_id == patient_id)
-    shares = (await session.scalars(stmt.order_by(ResultShare.shared_at.desc()))).all()
+    shares = await capped(
+        session,
+        stmt.order_by(ResultShare.shared_at.desc()),
+        response,
+        limit=limit,
+        offset=offset,
+    )
     return [_share_out(s) for s in shares]
 
 
