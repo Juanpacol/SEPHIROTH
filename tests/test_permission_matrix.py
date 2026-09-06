@@ -33,6 +33,13 @@ PUBLIC = {
     ("POST", "/api/auth/password-reset/request"): "cannot require a session to recover one",
     ("POST", "/api/auth/password-reset/confirm"): "same",
     ("POST", "/api/auth/portal/claim"): "a patient redeeming an invite has no account yet",
+    # Guarded by a shared secret (`_check_tick_token`), not a JWT -- cron has no
+    # user, and minting a service JWT for a third-party cron config would park
+    # a permanent clinician-role credential outside this system's control. When
+    # `enable_workflow_engine` is off (the default; SPEC-009, `render.yaml`),
+    # the handler short-circuits to `{"status": "disabled"}` before the secret
+    # check ever runs -- true of every caller, not a hole for an anonymous one.
+    ("POST", "/internal/tick"): "shared-secret auth; a no-op response when the engine is off",
 }
 
 #: Routes a patient account is allowed to reach. Everything else in the API is
