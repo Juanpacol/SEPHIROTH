@@ -123,6 +123,17 @@ read-only derived list that nothing could act on.
 | F-080 | Task inbox API with filters and offset paging | ✅ | `platform/api/routers/tasks.py` | `test_tasks_router.py` | — | SPEC-018 (the first paginated endpoint in the codebase) |
 | F-081 | The inbox UI, with optimistic actions and undo | ✅ | `platform/frontend/app/tasks/`, `lib/hooks/use-task-actions.ts` | `app/tasks/__tests__/page.test.tsx` | — | SPEC-018 |
 
+## Work center and information architecture (Phase 17)
+
+Specified in [SPEC-019](../specs/SPEC-019-work-center.md). The navigation now
+names work rather than subsystems; nothing was removed from the product.
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-082 | Flat, work-ordered navigation with redirects for every old URL | ✅ | `platform/frontend/lib/nav.ts`, `lib/routes.ts`, the six redirect stubs | `lib/__tests__/route-restructure.test.ts` | — | SPEC-019 |
+| F-083 | `/work` — today first, three counters instead of four | ✅ | `platform/frontend/app/work/`, `components/work/agenda-today-card.tsx` | `components/__tests__/agenda-today-card.test.tsx` | — | SPEC-019 |
+| F-084 | Panel-wide `/results` and `/followups` over endpoints that already existed | ✅ | `platform/frontend/app/results/`, `app/followups/` | (covered by the route/nav correspondence test) | — | SPEC-019 |
+
 ## Removed
 
 | ID | Feature | Status | Note |

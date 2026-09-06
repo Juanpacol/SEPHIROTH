@@ -12,7 +12,7 @@ schema_version: 1
 project: SEPHIROTH
 version: 1.0.0
 updated: 2026-09-06
-phase_current: 16
+phase_current: 17
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
@@ -39,6 +39,7 @@ phases:
   # SPEC-017; see the note above for why 010-016 are unavailable.
   "15": {name: "Interface foundations — portal, focus trap, DataList, mobile nav, frontend CI gate (SPEC-017)", status: done}
   "16": {name: "Unified clinical tasks — one inbox, source adapters, derivation with retirement (SPEC-018)", status: done}
+  "17": {name: "Work center + information architecture — flat nav, redirects, /work leads with today (SPEC-019)", status: done}
 
 components:
   legacy:

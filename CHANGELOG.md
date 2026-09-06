@@ -5,6 +5,24 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 17 — work center and information architecture (SPEC-019)
+
+The primary navigation listed the system's parts. "Clinical" and "Intelligence" as group labels were the tell, and the second group was the proof: `/imaging`, `/evidence` and `/agents` were top-level destinations because they are interesting features, not because anyone starts a day by opening them.
+
+#### Changed
+- The clinician navigation is flat and ordered the way a day runs. Nothing was removed from the product — three destinations left the nav and kept their URLs.
+- `/dashboard` → `/work`. The old page led with how many patients fall into each risk bucket; the new one leads with today. Three counters instead of four (`moderate_count`, `stable_count` and `max_priority_score` are not decisions anybody acts on).
+- `/schedule` → `/agenda`, `/agents` → `/admin/ai`, `/profile` + `/preferences` → `/settings`. Every old URL keeps working through a redirect stub, and every stub is in `CLINICIAN_PREFIXES` — without that, `AuthGuard` bounces a signed-in clinician *before* the redirect runs and an old bookmark becomes a logout. There is a test for exactly that.
+- `t()` takes optional `{name}` interpolation. Several call sites already hand-rolled it.
+- `_share_out` gains `patient_id` (additive) so a panel-wide shares list can name its rows.
+
+#### Added
+- `components/work/agenda-today-card.tsx` — `bootstrap.agenda` has always been returned by the endpoint and the old dashboard fetched it and rendered none of it, so "who am I seeing next" was a second page.
+- `/results` and `/followups`, thin pages over endpoints that existed and were only reachable inside one patient's chart. Cancelling a plan is deliberately not offered from the list: it is a decision about one patient and belongs next to that patient.
+
+#### Removed
+- Eleven `lib/api.ts` dashboard endpoints nothing rendered, their interfaces, ~80 orphaned i18n keys, and the non-functional sidebar search box.
+
 ### Phase 16 — the unified clinical task inbox (SPEC-018)
 
 Work was scattered across five inboxes plus `GET /api/dashboard/action-items`, which already knew what a clinician should do today and could not help them do it: its items had no id, no state, no assignee, no history. Nothing on it could be claimed, snoozed, commented on, or tracked to closure.
