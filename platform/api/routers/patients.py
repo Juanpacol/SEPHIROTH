@@ -96,9 +96,7 @@ async def list_patients(
     """`sort=risk` reorders the (still name-sorted-first) list by risk level,
     highest first — used by the dashboard's critical-patients view. Omitting
     it keeps the original alphabetical-by-name order unchanged."""
-    patients = (
-        await session.scalars(select(Patient).order_by(Patient.name).limit(limit))
-    ).all()
+    patients = (await session.scalars(select(Patient).order_by(Patient.name).limit(limit))).all()
     summaries = [_summary(p) for p in patients]
     if sort == "risk":
         summaries.sort(key=lambda s: RISK_ORDER.get(s["risk_level"], len(RISK_ORDER)))

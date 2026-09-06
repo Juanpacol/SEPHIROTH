@@ -310,7 +310,7 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"phi_encryption_key must not be the built-in dev default in "
                 f"environment={self.environment!r}. Generate one with "
-                "`python -c \"from cryptography.fernet import Fernet; "
+                '`python -c "from cryptography.fernet import Fernet; '
                 'print(Fernet.generate_key().decode())"`.'
             )
         try:
@@ -320,7 +320,7 @@ class Settings(BaseSettings):
         except Exception as exc:
             raise ValueError(
                 f"phi_encryption_key is not a valid Fernet key ({exc}). Generate one with "
-                "`python -c \"from cryptography.fernet import Fernet; "
+                '`python -c "from cryptography.fernet import Fernet; '
                 'print(Fernet.generate_key().decode())"`.'
             ) from exc
         return self
