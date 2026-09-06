@@ -154,7 +154,7 @@ async def pre_visit_brief(
     A cached brief is wrong the moment a lab comes back, and the value of this
     one is that it is true when it is opened.
     """
-    from ..services.pre_visit import build_pre_visit_brief
+    from api.services.pre_visit import build_pre_visit_brief
 
     patient = await _get_patient(session, patient_id)
     await log_phi_access(session, user, patient_id, "/api/patients/{patient_id}/pre-visit", "GET")

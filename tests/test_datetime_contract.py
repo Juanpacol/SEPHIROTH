@@ -23,15 +23,26 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 
-from api.routers import result_reviews as results_module
-from api.routers import scheduling as scheduling_module
+from api.clinical.routers import result_reviews as results_module
+from api.operations.routers import scheduling as scheduling_module
 from api.timeparse import require_aware
 from auth import router as auth_router_module
 from core.db import get_session
 from data.schemas import AvailabilityException, Patient
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-ROUTERS = REPO_ROOT / "platform/api/routers"
+# Routers live under one domain package each since SPEC-028 (clinical/,
+# operations/, intelligence/, security/), not in one flat directory.
+ROUTER_DIRS = [
+    REPO_ROOT / "platform/api" / domain / "routers"
+    for domain in ("clinical", "operations", "intelligence", "security")
+]
+
+
+def _router_files():
+    for directory in ROUTER_DIRS:
+        yield from sorted(directory.glob("*.py"))
+
 
 CREDS = {"email": "tz-doc@example.org", "name": "Dra. Ruiz", "password": "password123"}
 
@@ -223,7 +234,7 @@ class TestTheContractIsUniform:
     #: Fields whose handler is expected to guard them.
     def _datetime_request_fields(self):
         found = {}
-        for path in sorted(ROUTERS.glob("*.py")):
+        for path in _router_files():
             tree = ast.parse(path.read_text())
             for node in ast.walk(tree):
                 if not isinstance(node, ast.ClassDef):
@@ -239,9 +250,10 @@ class TestTheContractIsUniform:
         return found
 
     def test_every_datetime_request_field_is_guarded(self):
+        by_stem = {path.stem: path for path in _router_files()}
         unguarded = []
         for module, fields in self._datetime_request_fields().items():
-            source = (ROUTERS / f"{module}.py").read_text()
+            source = by_stem[module].read_text()
             for field in sorted(fields):
                 guarded = re.search(rf"(require_aware|optional_aware)\(\s*body\.{field}\b", source)
                 if not guarded:
@@ -256,7 +268,8 @@ class TestTheContractIsUniform:
     def test_the_helper_is_what_they_all_use(self):
         """Five endpoints had this logic inline, five times, and the sixth had
         none. One function is what makes 'everywhere' checkable."""
-        source = (ROUTERS / "scheduling.py").read_text()
+        (scheduling_path,) = [p for p in _router_files() if p.stem == "scheduling"]
+        source = scheduling_path.read_text()
 
         assert "require_aware(" in source
         assert "must be timezone-aware" not in source, "an inline copy came back"

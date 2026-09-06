@@ -48,6 +48,7 @@ phases:
   "23": {name: "PWA and web push — installable, reachable when closed, payloads that carry no PHI (SPEC-025)", status: done}
   "24": {name: "Landing rewrite — the page describes the product that exists, and a test keeps it honest (SPEC-026)", status: done}
   "25": {name: "Hardening — the datetime contract, the permission matrix, bounded reads (SPEC-027)", status: done}
+  "26": {name: "Domain reorganization — routers grouped by domain, services and workflows left where they already made sense (SPEC-028)", status: done}
 
 components:
   legacy:

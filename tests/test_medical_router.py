@@ -12,7 +12,7 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from api.routers import medical as medical_router_module
+from api.intelligence.routers import medical as medical_router_module
 from auth import router as auth_router_module
 from core.db import get_session
 from sephiroth.models import LLMUnavailableError
@@ -62,7 +62,7 @@ def img_dir(tmp_path, monkeypatch):
     (see `_resolve_allowed_image_path`) — point the module's upload dir at a
     per-test tmp_path instead of the real scratch dir, so these tests still
     get an isolated, writable directory that also passes the allow-list."""
-    from api.routers import medical as medical_module
+    from api.intelligence.routers import medical as medical_module
 
     monkeypatch.setattr(medical_module, "_UPLOAD_DIR", tmp_path)
     allowed_dirs = [tmp_path.resolve()] + medical_module._ALLOWED_IMAGE_DIRS[1:]
@@ -214,7 +214,7 @@ async def test_describe_image_stream_unsupported_format(client, img_dir):
 
 @pytest.mark.asyncio
 async def test_describe_image_stream_oversized_image(client, img_dir, monkeypatch):
-    from api.routers import medical as medical_module
+    from api.intelligence.routers import medical as medical_module
 
     monkeypatch.setattr(medical_module, "MAX_IMAGE_BYTES", 4)
     img_path = img_dir / "x.png"
@@ -318,7 +318,7 @@ async def test_detect_modality_unsupported_format(client, img_dir):
 
 @pytest.mark.asyncio
 async def test_detect_modality_oversized_image(client, img_dir, monkeypatch):
-    from api.routers import medical as medical_module
+    from api.intelligence.routers import medical as medical_module
 
     monkeypatch.setattr(medical_module, "MAX_IMAGE_BYTES", 4)
     img_path = img_dir / "x.png"
@@ -436,7 +436,7 @@ async def test_upload_image_rejects_unsupported_extension(client):
 
 @pytest.mark.asyncio
 async def test_upload_image_rejects_oversized_file(client, monkeypatch):
-    from api.routers import medical as medical_module
+    from api.intelligence.routers import medical as medical_module
 
     monkeypatch.setattr(medical_module, "_MAX_UPLOAD_BYTES", 10)
     async with client:

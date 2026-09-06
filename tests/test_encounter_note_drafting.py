@@ -21,7 +21,7 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from api.routers import encounters as encounters_module
+from api.clinical.routers import encounters as encounters_module
 from api.services import encounter_drafting
 from api.services.encounter_drafting import added_content_sections, draft_encounter_note
 from auth import router as auth_router_module

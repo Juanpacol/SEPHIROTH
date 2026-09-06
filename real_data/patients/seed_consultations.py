@@ -33,7 +33,7 @@ def _question_for(conditions: list[str]) -> str:
 async def _seed(limit: int, user_email: str) -> int:
     from sqlalchemy import func, select  # noqa: PLC0415
 
-    from api.routers.agents import ConsultRequest, _persist  # noqa: PLC0415
+    from api.intelligence.routers.agents import ConsultRequest, _persist  # noqa: PLC0415
     from core.db import SessionLocal  # noqa: PLC0415
     from data.schemas import Consultation, Patient, User  # noqa: PLC0415
     from sephiroth.models import get_llm_client  # noqa: PLC0415

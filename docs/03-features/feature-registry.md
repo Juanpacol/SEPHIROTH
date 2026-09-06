@@ -224,6 +224,17 @@ three findings worth fixing.
 | F-111 | The permission boundary (143 routes × 3 credentials) is a measured, enforced fact | ✅ | `tests/test_permission_matrix.py` | `test_permission_matrix.py` | — | SPEC-027 |
 | F-112 | Unbounded list endpoints capped, with the true total in a header | ✅ | `platform/api/paging.py` | `test_bounded_reads.py` | — | SPEC-027 |
 
+## Domain reorganization (Phase 26)
+
+Specified in [SPEC-028](../specs/SPEC-028-domain-reorganization.md). The last
+phase of the master plan. Routers only, by decision — see
+[ADR-019](../08-decisions/ADR-019-api-routers-by-domain-not-services-and-workflows.md)
+for why `services/` and `workflows/` stayed put.
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-113 | Twenty routers regrouped into clinical/operations/intelligence/security, same routes, same behaviour | ✅ | `platform/api/{clinical,operations,intelligence,security}/routers/` | `test_domain_reorganization.py` | — | SPEC-028 |
+
 ## Removed
 
 | ID | Feature | Status | Note |

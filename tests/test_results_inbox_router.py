@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 
-from api.routers import result_reviews as reviews_module
+from api.clinical.routers import result_reviews as reviews_module
 from auth import router as auth_router_module
 from core.db import get_session
 from data.schemas import Patient, PhiAccessLog, TimelineEvent, User

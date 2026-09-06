@@ -809,7 +809,7 @@ async def dashboard_bootstrap(
     browser<->backend round trip. The queries still run sequentially (a
     single `AsyncSession` isn't safe for concurrent use), but that's one
     HTTP round trip instead of many — the actual cost being cut."""
-    from api.routers.scheduling import agenda_today  # noqa: PLC0415 — avoid a router import cycle
+    from api.operations.routers.scheduling import agenda_today  # noqa: PLC0415 — avoid a router import cycle
 
     stats = await _cached("stats", lambda: _dashboard_stats(session))
     agenda = await agenda_today(clinician=clinician, session=session)

@@ -1,6 +1,6 @@
 """API tests for /api/agents/* — the consultation endpoints.
 
-`api.routers.agents` resolves its LLM client via `get_llm_client()`, a lazy
+`api.intelligence.routers.agents` resolves its LLM client via `get_llm_client()`, a lazy
 singleton defined in `sephiroth.models.factory`, so tests swap it by
 setting that module's `_client` global (see `patch_llm_factory` in
 conftest.py) rather than `dependency_overrides`.
@@ -20,7 +20,7 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from api.routers import agents as agents_router_module
+from api.intelligence.routers import agents as agents_router_module
 from auth import router as auth_router_module
 from core.db import get_session
 from tests.conftest import FakeLLMClient

@@ -18,9 +18,9 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
+from api.clinical.routers import alerts as alerts_module
+from api.operations.routers import followups as followups_module
 from api.paging import TOTAL_HEADER
-from api.routers import alerts as alerts_module
-from api.routers import followups as followups_module
 from auth import router as auth_router_module
 from core.db import get_session
 from data.schemas import Alert, FollowupPlan, Patient
