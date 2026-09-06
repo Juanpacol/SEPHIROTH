@@ -120,6 +120,10 @@ class Settings(BaseSettings):
     # SPEC-022 section 6.5 for the list.
     ai_allow_phi: bool = False
 
+    # How long a signed encounter may be amended (SPEC-023). Matches the task
+    # reopen window, so a clinician meets one number rather than two.
+    encounter_amend_window_days: int = 30
+
     # Fallback LLM — Groq (OpenAI-compatible API), free tier. Used only for
     # text/tool-calling when Gemini is unavailable (rate-limited or its
     # daily request quota is exhausted — a real constraint observed on

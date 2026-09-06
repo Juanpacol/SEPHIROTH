@@ -26,6 +26,7 @@ from api.routers import (
     automation_memory,
     badges,
     dashboard,
+    encounters,
     followups,
     internal,
     medical,
@@ -182,6 +183,9 @@ app.include_router(
 app.include_router(audit.router, prefix="/api/audit", tags=["audit"], dependencies=_clinician_only)
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"], dependencies=_clinician_only)
 app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"], dependencies=_clinician_only)
+app.include_router(
+    encounters.router, prefix="/api/encounters", tags=["encounters"], dependencies=_clinician_only
+)
 app.include_router(
     approvals.router, prefix="/api/approvals", tags=["approvals"], dependencies=_clinician_only
 )
