@@ -99,10 +99,10 @@ the first.
 ```python
 @dataclass
 class LabRule:
-    key: str        # stable identity, e.g. "lab.potassium.high"
-    label: str      # display copy
-    severity: str   # "high" | "medium"
-    detail: str     # formatted with the observed value
+    key: str  # stable identity, e.g. "lab.potassium.high"
+    label: str  # display copy
+    severity: str  # "high" | "medium"
+    detail: str  # formatted with the observed value
     source: str = ""  # the threshold, e.g. "K+ > 5.5 mEq/L"
 ```
 
