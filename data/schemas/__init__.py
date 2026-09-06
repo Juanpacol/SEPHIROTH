@@ -1241,6 +1241,82 @@ class ResultReview(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
+class PushSubscription(Base):
+    """One browser on one device, as the push service identifies it.
+
+    `endpoint` is the unique key rather than `(user_id, device)`: the push
+    service issues it, the browser can throw it away and get a new one at any
+    time, and the same endpoint moving between accounts on a shared machine is
+    something that has to be handled rather than refused.
+
+    A gone subscription is disabled, never deleted. `disabled_at` plus
+    `failure_count` is what lets a person look at their device list and see
+    that the phone they replaced stopped working in March, instead of finding
+    a row silently absent.
+    """
+
+    __tablename__ = "push_subscriptions"
+    __table_args__ = (
+        UniqueConstraint("endpoint", name="uq_push_subscription_endpoint"),
+        Index("ix_push_subscriptions_user_active", "user_id", "disabled_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    endpoint: Mapped[str] = mapped_column(String(500))
+    #: The browser's public key and shared secret. Not PHI and not a
+    #: credential for this system -- they authorise sending *to* one browser,
+    #: and are useless without the VAPID private key.
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))
+    #: So a person can tell their own devices apart in the settings list.
+    user_agent: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    failure_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    disabled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_success_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class PushDelivery(Base):
+    """One attempt to reach one device with one notification.
+
+    A row per device rather than per notification, so a failure is attributable
+    to a phone rather than to a person: one dead subscription must not make a
+    clinician's other devices look broken.
+
+    Shaped like a workflow step on purpose -- `attempts`, `send_after`,
+    `last_error` -- because it is the same problem the engine already solved,
+    and a second retry vocabulary would be a second set of bugs.
+    """
+
+    __tablename__ = "push_deliveries"
+    __table_args__ = (
+        # One buzz per device per notification. A retried enqueue is a no-op
+        # rather than a phone vibrating twice.
+        UniqueConstraint("subscription_id", "notification_id", name="uq_push_delivery"),
+        CheckConstraint("status IN ('pending','sent','failed','dropped')", name="ck_push_delivery_status"),
+        Index("ix_push_deliveries_due", "status", "send_after"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    subscription_id: Mapped[str] = mapped_column(
+        ForeignKey("push_subscriptions.id", ondelete="CASCADE"), index=True
+    )
+    notification_id: Mapped[str] = mapped_column(ForeignKey("notifications.id"), index=True)
+    #: Where a tap should land. A route, never patient content -- and stored on
+    #: the row rather than held in a process dictionary, which would grow
+    #: without bound and lose every pending destination on restart.
+    url: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    status: Mapped[str] = mapped_column(String(10), default="pending", server_default="pending", index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    send_after: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    #: Truncated deliberately: a push service's error body can be long, and
+    #: none of it is worth storing beyond the first line.
+    last_error: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
 __all__ = [
     "Base",
     "User",
@@ -1277,4 +1353,6 @@ __all__ = [
     "Encounter",
     "EncounterOrder",
     "ResultReview",
+    "PushSubscription",
+    "PushDelivery",
 ]

@@ -842,6 +842,21 @@ const ES: Record<string, string> = {
   "results.communicate": "Avisar al paciente",
   "results.close": "Cerrar",
   "results.reopen": "Reabrir",
+
+  // --- Web push (SPEC-025) ---
+  "push.title": "Notificaciones en este dispositivo",
+  "push.help": "Entérate de escalamientos y recordatorios con la aplicación cerrada.",
+  "push.enable": "Activar",
+  "push.disable": "Desactivar",
+  "push.unsupported": "Este navegador no puede mostrar notificaciones. En iPhone, agrega la aplicación a la pantalla de inicio primero.",
+  "push.notConfigured": "Este despliegue no tiene claves de push configuradas. Un administrador define VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY.",
+  "push.denied": "Bloqueaste las notificaciones para este sitio. Solo la configuración del navegador puede revertirlo — esta página no puede volver a pedirlo.",
+  "push.failed": "No se pudieron activar las notificaciones.",
+  "push.devices": "Dispositivos registrados",
+  "push.unknownDevice": "Dispositivo desconocido",
+  "push.deviceInactive": "inactivo",
+  "push.noPhi": "Las notificaciones nunca contienen información del paciente — dicen que algo requiere atención, y la aplicación muestra qué.",
+  "settings.section.notifications": "Notificaciones",
 };
 
 export default ES;

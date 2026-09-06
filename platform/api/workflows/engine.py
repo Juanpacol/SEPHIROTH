@@ -53,6 +53,10 @@ class TickSummary:
     tasks_superseded: int = 0
     tasks_created: int = 0
     no_shows: int = 0
+    #: Push deliveries attempted this tick. Absent from `to_dict()` for the
+    #: same reason the counters above are: the cron response shape is frozen.
+    push_sent: int = 0
+    push_failed: int = 0
     # Not included in to_dict() -- the HTTP response shape to the cron
     # caller never changes. Only read by internal.py to compose an
     # ops_notify.py Slack payload (workflow_id/step_id only, never
@@ -282,6 +286,7 @@ async def run_tick(session: AsyncSession, tick_id: str) -> TickSummary:
     # produced it rather than waiting five minutes.
     from .instantiate import maybe_seed_alert_refresh
     from .no_show import sweep_missed_appointments
+    from .push import dispatch_due
 
     summary_no_shows = await sweep_missed_appointments(session, now)
     await maybe_seed_alert_refresh(session)
@@ -354,6 +359,14 @@ async def run_tick(session: AsyncSession, tick_id: str) -> TickSummary:
         derived = await sync_derived_tasks(session, now)
         summary.tasks_created = derived["created"]
         summary.tasks_superseded += derived["superseded"]
+
+    # Last, and after the commit-worthy work above: a push service having a bad
+    # afternoon must not stop appointments being reminded. `dispatch_due`
+    # catches every failure itself; this guard is for the one it cannot.
+    try:
+        summary.push_sent, summary.push_failed = await dispatch_due(session, now)
+    except Exception:  # pragma: no cover - defensive
+        logger.exception("push dispatch failed; the rest of the tick stands")
 
     await session.commit()
     return summary
