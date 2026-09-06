@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from .base import ChatResult, LLMUnavailableError, ToolExecutor
+from .base import ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -152,6 +152,21 @@ class FallbackLLMClient:
                 max_output_tokens=max_output_tokens,
             ):
                 yield chunk
+
+    def describe(self) -> ProviderInfo:
+        """`local` is the conjunction: a fallback that can reach out to Groq
+        when the local model is busy is not a local deployment, and a status
+        page that says otherwise is worse than one that says nothing."""
+        primary = self.primary.describe()
+        secondary = self.secondary.describe()
+        return ProviderInfo(
+            provider="fallback",
+            model=primary.model,
+            vision_model=primary.vision_model,
+            local=primary.local and secondary.local,
+            endpoint=primary.endpoint,
+            components=(primary, secondary),
+        )
 
     async def health(self) -> bool:
         primary_ok = await self.primary.health()

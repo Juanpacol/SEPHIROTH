@@ -3,16 +3,17 @@
 ![CI](https://github.com/Juanpacol/SEPHIROTH/actions/workflows/ci.yml/badge.svg)
 ![coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)
 
-**Clinical AI Intelligence Platform** — an **AI decision-support platform** for healthcare professionals. Specialized AI agents — powered by the Google Gemini API — extract clinical entities, analyze medical images, screen drug interactions, and retrieve cited evidence from clinical guidelines and PubMed.
+**Clinical AI Intelligence Platform** — an **AI decision-support platform** for healthcare professionals. Specialized AI agents — running on a local model by default, or Google Gemini if you configure it — extract clinical entities, analyze medical images, screen drug interactions, and retrieve cited evidence from clinical guidelines and PubMed.
 
 > ⚠️ **Research, education and professional support only.** Not a medical device. All AI output requires review by a qualified healthcare professional.
 
-> ⚠️ **Privacy notice:** clinical text and medical images are sent to the Google Gemini API (AI Studio free tier). This is **not HIPAA/GDPR-compliant as-is**, and the free tier may use submitted data to improve Google's models. Use only with synthetic or de-identified data, or migrate to Vertex AI with a Business Associate Agreement before using real patient data.
+> ⚠️ **Privacy notice:** the default configuration (`LLM_PROVIDER=ollama`, `AI_ALLOW_PHI=false`) runs the model on your own machine and **sends no clinical content anywhere**. Set `LLM_PROVIDER=gemini` and clinical text and medical images go to the Google Gemini API, whose free tier may use submitted data to improve Google's models — and even then, the features that carry patient content refuse to send until `AI_ALLOW_PHI=true` is set as well. Neither configuration is a **HIPAA/GDPR compliance claim**: running locally removes one specific exposure, not the programme around it. For a clinic deployment see [`docs/05-operations/on-premise-runbook.md`](docs/05-operations/on-premise-runbook.md).
 
 ## Highlights
 
-- 🧠 **Cloud LLM via Google Gemini** — `gemini-flash-latest` with native tool calling and JSON-Schema structured output; free tier, no local GPU required
-- 👁️ **Vision-enabled image reasoning** — the same Gemini model describes medical images multimodally; the Radiology agent reasons over the description
+- 🏠 **Local by default, cloud by choice** — `qwen2.5:14b` via Ollama out of the box, with native tool calling and schema-constrained JSON; swap to Gemini, Groq, or a split of the two with one setting, and every status endpoint reports which one is actually running
+- 🔒 **PHI egress switch** — `AI_ALLOW_PHI` decides whether patient content may reach a provider outside your deployment, enforced at an enumerated list of call sites rather than guessed at by a classifier
+- 👁️ **Vision-enabled image reasoning** — the model describes medical images multimodally; the Radiology agent reasons over the description
 - 🔧 **MCP tool layer** — clinical capabilities exposed as FastMCP servers (NLP, imaging, vision, evidence, drug safety)
 - 🤖 **Multi-agent workflow** — 4 specialists + a coordinator orchestrated by a purpose-built async executor, fanning out in parallel
 - 📡 **Live streaming consultations** — SSE stream shows each agent and tool call as it completes
@@ -28,15 +29,22 @@
 ## Quick Start
 
 ### Prerequisites
-- A free Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey)
+- [Ollama](https://ollama.com/download) — the default provider, local and free. No API key.
 - Python 3.10+ (3.11 recommended)
 - Node.js 18+
 
-### 1. Set your API key
+### 1. Pull a model
 ```bash
-cp .env.example .env
-# edit .env and set GEMINI_API_KEY=your-key-here
+cp .env.example .env          # defaults are local-only; nothing to edit
+ollama serve &
+ollama pull qwen2.5:14b       # ~9 GB; see the on-premise runbook for smaller options
+ollama pull nomic-embed-text  # ~275 MB, for RAG retrieval
 ```
+
+Prefer Gemini? Get a free key from [Google AI Studio](https://aistudio.google.com/apikey) and set
+`LLM_PROVIDER=gemini` **and** `GEMINI_API_KEY=...` in `.env`. As of SPEC-022 the key alone no
+longer selects it — a default that quietly ships clinical text to a third party is the wrong
+default for this product.
 
 ### 2. Database + Backend
 ```bash
@@ -204,10 +212,14 @@ Schema is Alembic-managed (`migrations/`) for both local Postgres and any cloud 
 ## Docker
 
 ```bash
-GEMINI_API_KEY=your-key JWT_SECRET=$(openssl rand -hex 32) docker-compose up   # Postgres + API
+# Everything on one machine: Postgres + API + Ollama. Nothing leaves the building.
+docker compose -f docker-compose.local.yml up -d
+
+# Or the hosted-model stack (Postgres + API only), for the public demo:
+LLM_PROVIDER=gemini GEMINI_API_KEY=your-key JWT_SECRET=$(openssl rand -hex 32) docker compose up
 ```
 
-The API reaches Gemini over the internet — no host GPU or local model server required. `JWT_SECRET` is a required environment variable; compose refuses to start without it.
+`JWT_SECRET` is required in both; compose refuses to start without it. The on-premise file additionally requires `POSTGRES_PASSWORD` and `PHI_ENCRYPTION_KEY`, binds Postgres and Ollama to loopback rather than every interface, and pins `AI_ALLOW_PHI=false`. Model pulls are a deliberate manual step — several gigabytes should not download silently on first boot. Full walkthrough, hardware table and backup procedure: [`docs/05-operations/on-premise-runbook.md`](docs/05-operations/on-premise-runbook.md).
 
 ## Built On
 

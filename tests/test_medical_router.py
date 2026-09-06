@@ -16,11 +16,12 @@ from api.routers import medical as medical_router_module
 from auth import router as auth_router_module
 from core.db import get_session
 from sephiroth.models import LLMUnavailableError
+from tests.conftest import LocalProviderDouble
 
 CREDS = {"email": "medical-router@example.org", "name": "Dr. Router", "password": "password123"}
 
 
-class _UnavailableVisionClient:
+class _UnavailableVisionClient(LocalProviderDouble):
     """Deterministic stand-in for "Gemini has no API key configured" —
     used instead of relying on the real, unmonkeypatched `get_llm_client()`
     singleton, which is process-global and can end up holding a stale
@@ -255,7 +256,7 @@ async def test_describe_image_stream_no_api_key_yields_error_event(client, img_d
 async def test_describe_image_stream_success_yields_chunks_then_final(client, img_dir, monkeypatch):
     import sephiroth.models.factory as factory_module
 
-    class _FakeVisionClient:
+    class _FakeVisionClient(LocalProviderDouble):
         model = "fake-vision-model"
 
         async def describe_image_stream(self, **kwargs):
@@ -354,7 +355,7 @@ async def test_detect_modality_no_api_key_degrades_to_unknown(client, img_dir, m
 async def test_detect_modality_returns_guessed_modality(client, img_dir, monkeypatch):
     import sephiroth.models.factory as factory_module
 
-    class _FakeVisionClient:
+    class _FakeVisionClient(LocalProviderDouble):
         model = "fake-vision-model"
 
         async def describe_image(self, **kwargs):

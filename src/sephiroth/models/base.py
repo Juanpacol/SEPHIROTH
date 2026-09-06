@@ -23,6 +23,18 @@ class LLMUnavailableError(RuntimeError):
     exhausted, an unsupported capability, or a transient outage)."""
 
 
+class PHINotAllowedError(LLMUnavailableError):
+    """Patient content was about to reach a provider outside the deployment
+    while `ai_allow_phi` is off (SPEC-022, ADR-015).
+
+    Subclasses `LLMUnavailableError` on purpose. Every seam that can carry
+    patient content already handles "the model cannot serve this" by degrading
+    to something deterministic, and a refusal on privacy grounds should take
+    that same path rather than needing a second one written at each site. A
+    caller that wants to tell the two apart still can.
+    """
+
+
 @dataclass
 class ChatResult:
     """Final result of a chat exchange, including the tool-call trace.
@@ -39,6 +51,69 @@ class ChatResult:
     rounds: int = 0
     prompt_tokens: int = 0
     completion_tokens: int = 0
+
+
+#: Hosts that mean "this machine". A `base_url` on one of these is local by
+#: construction; anything else is judged by `_is_private_host`.
+_LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "0.0.0.0", "host.docker.internal"})
+
+
+def _is_local_endpoint(base_url: str) -> bool:
+    """Whether a request to this URL stays inside the deployment.
+
+    A report, not a firewall (SPEC-022 §11 risk 2). It answers the question a
+    host string can actually answer -- is this address on this machine or this
+    private network -- and a tunnel on loopback can defeat it. Being wrong in
+    the safe direction matters more than being clever: an unparseable or empty
+    URL is treated as *not* local.
+    """
+    from urllib.parse import urlsplit
+
+    host = (urlsplit(base_url).hostname or "").lower()
+    if not host:
+        return False
+    if host in _LOOPBACK_HOSTS or host.endswith(".local") or host.endswith(".internal"):
+        return True
+    try:
+        from ipaddress import ip_address
+
+        return ip_address(host).is_private
+    except ValueError:
+        # A bare service name on a container network ("ollama", "api") has no
+        # dots and cannot be a public DNS name.
+        return "." not in host
+
+
+@dataclass(frozen=True)
+class ProviderInfo:
+    """What is actually running, for anything that reports it to a human.
+
+    Exists because three endpoints each answered that question from
+    `settings.gemini_*` regardless of the configured provider, so an operator
+    running entirely on a local model was told their data was going to Google
+    (SPEC-022 §2). One structure, built by the client itself, is the only way
+    those three stay true to each other.
+
+    `endpoint` is a host, never a full URL with a key in it.
+    """
+
+    provider: str
+    model: str
+    vision_model: str = ""
+    local: bool = False
+    endpoint: str = ""
+    #: A composite (fallback, split) describes its parts. Empty for a leaf.
+    components: tuple["ProviderInfo", ...] = ()
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "provider": self.provider,
+            "model": self.model,
+            "vision_model": self.vision_model,
+            "local": self.local,
+            "endpoint": self.endpoint,
+            "components": [c.as_dict() for c in self.components],
+        }
 
 
 @runtime_checkable
@@ -78,5 +153,20 @@ class ModelProvider(Protocol):
 
     async def health(self) -> bool: ...
 
+    def describe(self) -> ProviderInfo:
+        """What this client is, for a human reading a status page.
 
-__all__ = ["ChatResult", "LLMUnavailableError", "ModelProvider", "ToolExecutor"]
+        Pure: no I/O, so `/health` can call it without becoming a probe.
+        """
+        ...
+
+
+__all__ = [
+    "ChatResult",
+    "LLMUnavailableError",
+    "ModelProvider",
+    "PHINotAllowedError",
+    "ProviderInfo",
+    "ToolExecutor",
+    "_is_local_endpoint",
+]

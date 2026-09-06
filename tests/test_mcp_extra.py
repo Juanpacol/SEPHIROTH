@@ -4,6 +4,7 @@
 import pytest
 
 from intelligence.mcp import imaging_server, nlp_server, vision_server
+from tests.conftest import LocalProviderDouble
 
 
 def test_extract_medical_entities_lexicon_fallback():
@@ -124,7 +125,7 @@ async def test_describe_medical_image_happy_path(monkeypatch, tmp_path):
     img_path = tmp_path / "chest.png"
     img_path.write_bytes(b"fake png bytes")
 
-    class _FakeClient:
+    class _FakeClient(LocalProviderDouble):
         async def describe_image(self, image_bytes, mime_type, prompt, max_output_tokens=512):
             assert mime_type == "image/png"
             return "Chest X-ray, no acute findings."
@@ -145,7 +146,7 @@ async def test_describe_medical_image_llm_unavailable(monkeypatch, tmp_path):
     img_path = tmp_path / "chest.jpg"
     img_path.write_bytes(b"fake jpg bytes")
 
-    class _FakeClient:
+    class _FakeClient(LocalProviderDouble):
         async def describe_image(self, image_bytes, mime_type, prompt, max_output_tokens=512):
             raise LLMUnavailableError("no key")
 

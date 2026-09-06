@@ -221,6 +221,9 @@ async def draft_pending_action(
             status_code=422, detail="Follow-up instructions matched a prompt-injection heuristic pattern"
         )
 
+    # `draft_message` gates PHI egress itself (SPEC-022 §6.5), and the refusal
+    # is a `LLMUnavailableError` subclass, so it lands in the handler below:
+    # keep the deterministic template, which is already reviewable.
     try:
         draft = await draft_message(purpose=action.action_type, patient_first_name=first_name, facts=facts)
     except LLMUnavailableError:

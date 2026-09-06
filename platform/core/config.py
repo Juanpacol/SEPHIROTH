@@ -90,15 +90,35 @@ class Settings(BaseSettings):
     # OpenAI API (for data generation, testing, etc.)
     openai_api_key: Optional[str] = None
 
-    # Which provider `get_llm_client()` builds as primary. "gemini" (default)
-    # preserves all pre-Phase-1 behavior, including Groq fallback below.
+    # Which provider `get_llm_client()` builds as primary.
+    #
+    # "ollama" is the default as of SPEC-022: a fresh install runs against a
+    # local model and sends nothing anywhere. It used to be "gemini", which
+    # meant an operator who set no provider at all was shipping clinical text
+    # to a third party by omission -- the one default a clinical product must
+    # not have. Wanting Gemini is now something a deployment says out loud.
+    #
     # "groq" returns a bare GroqClient, never wrapped the other way around.
-    # "ollama" returns a bare OllamaClient — local dev only, no fallback.
-    # "split" routes vision to Gemini only and chat/tool-calling to Ollama
-    # (nemotron via OpenRouter's OpenAI-compatible endpoint by default,
-    # `ollama_base_url`/`ollama_model`), falling back to Groq for chat —
+    # "gemini" restores the pre-SPEC-022 path, including the Groq fallback
+    # below. "split" routes vision to Gemini and chat/tool-calling to Ollama
+    # (`ollama_base_url`/`ollama_model`), falling back to Groq for chat --
     # see `VisionChatSplitClient` and the runtime audit's model comparison.
-    llm_provider: Literal["gemini", "groq", "ollama", "split"] = "gemini"
+    llm_provider: Literal["gemini", "groq", "ollama", "split"] = "ollama"
+
+    # May patient-derived content reach a provider outside the deployment?
+    #
+    # Off by default, and inert while the provider is local -- nothing leaves,
+    # so there is nothing to gate. It bites exactly when someone points the
+    # stack at a remote model without deciding, separately and explicitly, that
+    # patient data may go there.
+    #
+    # The gate is an enumerated list of call sites, not a payload classifier:
+    # a query reading "56-year-old on warfarin, INR 4.8, is the dose safe"
+    # carries no name and no identifier, and any detector tuned to catch it
+    # also refuses the guideline lookups that are fine to send. See
+    # `docs/08-decisions/ADR-015-phi-egress-enumerated-seams.md` and
+    # SPEC-022 section 6.5 for the list.
+    ai_allow_phi: bool = False
 
     # Fallback LLM — Groq (OpenAI-compatible API), free tier. Used only for
     # text/tool-calling when Gemini is unavailable (rate-limited or its

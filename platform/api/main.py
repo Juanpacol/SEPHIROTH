@@ -47,6 +47,7 @@ from core.rate_limit import limiter
 
 setup_logging(debug=settings.debug)
 request_logger = logging.getLogger("api.request")
+logger = logging.getLogger("api.startup")
 
 # Loud, unmissable at every boot — a local `uvicorn --reload` with
 # DATABASE_URL pointed at Supabase (easy to do by accident: `.env` is one
@@ -59,9 +60,44 @@ logging.getLogger("api.startup").warning("Connecting to database host: %s", _db_
 
 
 @asynccontextmanager
+def _log_ai_configuration() -> None:
+    """One line saying what this instance will do with patient content.
+
+    SPEC-022 flipped `llm_provider` to `ollama`, so a deployment that set
+    `GEMINI_API_KEY` and never set `LLM_PROVIDER` now gets a different model
+    than it did yesterday. That is the intended change, but it must not be
+    silent -- an operator who reads one line of the boot log should know which
+    provider is serving and whether patient data may leave the machine.
+    """
+    from sephiroth.models.factory import get_llm_client
+
+    info = get_llm_client().describe()
+    logger.info(
+        "AI provider: %s (model=%s, endpoint=%s, local=%s, phi_egress_allowed=%s)",
+        info.provider,
+        info.model,
+        info.endpoint or "n/a",
+        info.local,
+        settings.ai_allow_phi,
+    )
+    if settings.gemini_api_key and info.provider != "gemini":
+        logger.warning(
+            "GEMINI_API_KEY is set but LLM_PROVIDER is '%s'. Since SPEC-022 the default "
+            "provider is 'ollama'; set LLM_PROVIDER=gemini to restore the previous behaviour.",
+            info.provider,
+        )
+    if not info.local and settings.ai_allow_phi:
+        logger.warning(
+            "Patient content may be sent to %s (%s): AI_ALLOW_PHI is enabled with a non-local provider.",
+            info.provider,
+            info.endpoint or "unknown endpoint",
+        )
+
+
 async def lifespan(_: FastAPI):
     await init_db()
     register_subscriptions()
+    _log_ai_configuration()
     yield
 
 
@@ -181,7 +217,19 @@ async def health_check():
     """Liveness only — no I/O, never flaps. This is what Render's
     `healthCheckPath` polls; pointing it at a DB-touching endpoint would let
     a transient Supabase pooler blip trigger an unnecessary restart."""
-    return {"status": "healthy", "version": settings.api_version, "model": settings.gemini_model}
+    # `describe()` is a pure attribute read, so naming the *running* model
+    # costs this probe nothing. It used to print `settings.gemini_model`
+    # unconditionally, which named a model that may not be in use at all.
+    from sephiroth.models.factory import get_llm_client
+
+    info = get_llm_client().describe()
+    return {
+        "status": "healthy",
+        "version": settings.api_version,
+        "model": info.model,
+        "provider": info.provider,
+        "local_only": info.local,
+    }
 
 
 @app.get("/health/ready")
@@ -199,8 +247,24 @@ async def readiness_check(response: Response):
         checks["database"] = "ok"
     except Exception as exc:
         checks["database"] = f"error: {type(exc).__name__}"
-    checks["llm"] = "configured" if settings.gemini_api_key else "unconfigured"
+    # A real probe of whatever is configured. The old check asked whether
+    # `GEMINI_API_KEY` was set, which reports the local-first deployment --
+    # the default since SPEC-022 -- as unconfigured while it is serving
+    # requests correctly. A readiness probe that cries wolf gets ignored.
+    from sephiroth.models.factory import get_llm_client
 
+    client = get_llm_client()
+    info = client.describe()
+    try:
+        checks["llm"] = "ok" if await client.health() else "unreachable"
+    except Exception as exc:
+        checks["llm"] = f"error: {type(exc).__name__}"
+    checks["llm_provider"] = info.provider
+    checks["llm_model"] = info.model
+
+    # Deliberately not part of `ok`: the database is what this instance cannot
+    # serve without. A model that is down degrades features (SPEC-022 B-10/11)
+    # and must not take the instance out of rotation.
     ok = checks["database"] == "ok"
     if not ok:
         response.status_code = 503

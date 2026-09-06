@@ -158,6 +158,17 @@ Specified in [SPEC-021](../specs/SPEC-021-clinical-rules.md).
 | F-089 | Stable rule identity, auditable thresholds, no repeat alerts | ✅ | `src/sephiroth/safety/risk.py`, `safety/alerts.py` | `test_clinical_rules.py` | — | SPEC-021 |
 | F-090 | Allergy-conflict and duplicate-medication rules; clinical vs administrative | ⚠️ | `src/sephiroth/safety/risk.py` | `test_clinical_rules.py::TestNewRules` | — | SPEC-021 NG-2 (no cross-class inference — no drug-class table exists) |
 
+## Local AI by default (Phase 20)
+
+Specified in [SPEC-022](../specs/SPEC-022-local-ai.md).
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-091 | The local provider is the default; a fresh install sends nothing anywhere | ✅ | `platform/core/config.py`, `src/sephiroth/models/factory.py` | `test_local_ai_default.py` | — | SPEC-022 |
+| F-092 | `ProviderInfo` — every endpoint names the provider actually running | ✅ | `src/sephiroth/models/base.py`, `platform/api/main.py`, `routers/agents.py` | `test_provider_describe.py`, `test_provider_honesty_endpoints.py` | — | SPEC-022 |
+| F-093 | `ai_allow_phi` — patient content may be forbidden from leaving the deployment | ⚠️ | `src/sephiroth/models/egress.py` | `test_phi_egress_gate.py` | — | SPEC-022 NG-2 (enumerated seams, not a classifier — ADR-015) |
+| F-094 | One vector space per deployment; a model that is down degrades, not 503s | ✅ | `data/embeddings/__init__.py`, `platform/api/routers/agents.py` | `test_embedding_provider_selection.py`, `test_local_ai_degradation.py` | — | SPEC-022 |
+
 ## Removed
 
 | ID | Feature | Status | Note |

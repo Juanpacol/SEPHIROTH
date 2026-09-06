@@ -42,6 +42,7 @@ phases:
   "17": {name: "Work center + information architecture — flat nav, redirects, /work leads with today (SPEC-019)", status: done}
   "18": {name: "Automation correctness — deferred outcome, quiet hours, periodic refresh, no-show detection (SPEC-020)", status: done}
   "19": {name: "Deterministic clinical rules — stable rule identity, no repeat alerts, allergy/duplicate rules (SPEC-021)", status: done}
+  "20": {name: "Local AI by default — ollama as the default provider, honest provider reporting, PHI egress gate (SPEC-022)", status: done}
 
 components:
   legacy:

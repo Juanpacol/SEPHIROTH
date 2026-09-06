@@ -57,7 +57,13 @@ async def draft_message(
     (`drug_safety_server.py`). Never called from the tick (SPEC-009's
     "no LLM inside the tick, ever") -- only on-demand, when a clinician
     opens the approval queue."""
+    # The patient's first name and the follow-up facts are patient content
+    # (SPEC-022 §6.5). Gated here rather than in the router because this is
+    # where the model is reached, and the `@mcp.tool` below shares it.
+    from sephiroth.models.egress import assert_phi_egress_allowed
+
     client = get_llm_client()
+    assert_phi_egress_allowed(client, "patient message draft")
     prompt = _build_prompt(purpose, patient_first_name, facts, language, reading_level)
     result = await client.chat(messages=[{"role": "user", "content": prompt}], system_prompt=_SYSTEM_PROMPT)
     return result.content.strip()

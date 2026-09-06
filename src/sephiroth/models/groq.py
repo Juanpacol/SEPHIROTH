@@ -24,7 +24,7 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional
 import httpx
 
 from ._throttle import RateLimiter, backoff_delay
-from .base import ChatResult, LLMUnavailableError, ToolExecutor
+from .base import ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor, _is_local_endpoint
 
 logger = logging.getLogger(__name__)
 
@@ -332,6 +332,17 @@ class GroqClient:
                         yield text
         except httpx.HTTPError as exc:
             raise LLMUnavailableError(str(exc)) from exc
+
+    def describe(self) -> ProviderInfo:
+        from urllib.parse import urlsplit
+
+        return ProviderInfo(
+            provider="groq",
+            model=self.model,
+            vision_model=self.vision_model or "",
+            local=_is_local_endpoint(self.base_url),
+            endpoint=urlsplit(self.base_url).hostname or "",
+        )
 
     async def health(self) -> bool:
         if not self.api_key:
