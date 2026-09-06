@@ -24,6 +24,29 @@ async def db_session():
     await engine.dispose()
 
 
+class LocalProviderDouble:
+    """Mixin giving a hand-rolled test client the one member SPEC-022 added.
+
+    `describe()` is now part of `ModelProvider`, and the PHI-egress gate reads
+    it before every model call. Reporting `local=True` keeps a double on the
+    permissive side of the gate, so a test about vision or drafting stays a
+    test about vision or drafting.
+    """
+
+    model = "fake-model"
+
+    def describe(self):
+        from sephiroth.models import ProviderInfo
+
+        return ProviderInfo(
+            provider="fake",
+            model=self.model,
+            vision_model=self.model,
+            local=True,
+            endpoint="in-process",
+        )
+
+
 @pytest.fixture
 def anyio_backend():
     return "asyncio"
@@ -148,6 +171,16 @@ class FakeLLMClient:
 
     async def health(self) -> bool:
         return True
+
+    def describe(self):
+        """Local: the fake never opens a socket, so a test that asserts on
+        egress policy sees the safe side of the switch unless it says
+        otherwise."""
+        from sephiroth.models import ProviderInfo
+
+        return ProviderInfo(
+            provider="fake", model=self.model, vision_model=self.model, local=True, endpoint="in-process"
+        )
 
 
 @pytest.fixture

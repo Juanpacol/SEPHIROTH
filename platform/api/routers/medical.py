@@ -161,11 +161,25 @@ async def describe_image_stream(
         prompt = DESCRIPTION_PROMPT
         if request.clinical_focus:
             prompt += f"\nFocus especially on: {request.clinical_focus}."
-        model_name = settings.gemini_vision_model or settings.gemini_model
+        from sephiroth.models.egress import assert_phi_egress_allowed
+
+        client = get_llm_client()
+        info = client.describe()
+        # The model that would actually run, not `settings.gemini_vision_model`,
+        # which named Gemini on a stack serving vision from somewhere else.
+        model_name = info.vision_model or info.model
+        hint = (
+            f"Is `ollama serve` running at {info.endpoint}?"
+            if info.provider == "ollama"
+            else "Check the provider's credentials and quota."
+        )
 
         full_text = []
         try:
-            client = get_llm_client()
+            # A medical image is patient content. `PHINotAllowedError`
+            # subclasses `LLMUnavailableError`, so a refusal takes the same
+            # error-event path below as an outage.
+            assert_phi_egress_allowed(client, "medical image description")
             async for chunk in client.describe_image_stream(
                 image_bytes=image_bytes,
                 mime_type=mime_type,
@@ -175,7 +189,7 @@ async def describe_image_stream(
                 full_text.append(chunk)
                 yield f"data: {json.dumps({'event': 'chunk', 'text': chunk})}\n\n"
         except LLMUnavailableError as exc:
-            detail = f"Vision model '{model_name}' failed: {exc}. Check GEMINI_API_KEY and quota."
+            detail = f"Vision model '{model_name}' failed: {exc}. {hint}"
             yield f"data: {json.dumps({'event': 'error', 'detail': detail})}\n\n"
             return
         except Exception as exc:

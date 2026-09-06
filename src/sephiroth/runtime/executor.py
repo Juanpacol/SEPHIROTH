@@ -354,6 +354,15 @@ def _early_reject(query: str):
     return decide_abstention(VerificationReport(), confidence=0.0, input_flags=flags)
 
 
+def _guard_phi_egress(client: ModelProvider) -> None:
+    """A consultation carries the query and the patient's context, so it is a
+    PHI seam (SPEC-022 §6.5). Checked after the injection early-reject, which
+    sends nothing, and before the first model call."""
+    from sephiroth.models.egress import assert_phi_egress_allowed
+
+    assert_phi_egress_allowed(client, "consultation")
+
+
 async def run_consultation(
     client: ModelProvider,
     query: str,
@@ -384,6 +393,7 @@ async def run_consultation(
             "trace": trace.model_dump(mode="json"),
         }
 
+    _guard_phi_egress(client)
     _node_names, answer = await _select_and_run(context, client, query, run_context, state)
 
     citation_report = audit(answer, [_tool_call_wire(tc) for tc in state.tool_calls])
@@ -457,6 +467,8 @@ async def stream_consultation(
             "trace": trace.model_dump(mode="json"),
         }
         return
+
+    _guard_phi_egress(client)
 
     # Single-agent mode routes to one specialist and returns its answer
     # directly; multi-agent fans out and merges via the coordinator. Both

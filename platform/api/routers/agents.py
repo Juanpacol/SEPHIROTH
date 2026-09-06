@@ -55,15 +55,54 @@ class ConsultResponse(BaseModel):
     disclaimer: str = DISCLAIMER
 
 
+#: A fast-path answer comes from a tool with its own citation, so nothing was
+#: claimed that needs verifying and nothing was withheld.
+_FAST_PATH_ABSTENTION = {
+    "status": "answer",
+    "reason": None,
+    "confidence": 1.0,
+    "supported_claim_ratio": 1.0,
+    "message": "",
+}
+
+
+def _fast_path_state(fast: Dict[str, Any]) -> Dict[str, Any]:
+    """The persisted shape of a fast-path answer.
+
+    One builder for both call sites: `_persist` reads `agent_outputs` to fill
+    `Consultation.agents`, and a second hand-written copy of this dict is
+    exactly how one of them ends up persisting a consultation with no agents
+    on it.
+    """
+    return {
+        "final_answer": fast["final_answer"],
+        "agent_outputs": {fast["source"]: ""},
+        "tool_calls": fast["tool_calls"],
+        "citation_report": fast["citation_report"],
+        "verification_report": {"claims": [], "contradictions": []},
+        "abstention": _FAST_PATH_ABSTENTION,
+        "trace": {},
+    }
+
+
 async def _ensure_llm() -> None:
-    if not await get_llm_client().health():
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                f"Gemini is not reachable or model '{settings.gemini_model}' is unavailable. "
-                "Check GEMINI_API_KEY and quota."
-            ),
-        )
+    client = get_llm_client()
+    if await client.health():
+        return
+    # Name the provider that is actually down. The old message blamed Gemini
+    # and told the reader to check `GEMINI_API_KEY` even when the stack was
+    # running on a local Ollama, which sends whoever is on call to look at the
+    # wrong thing entirely.
+    info = client.describe()
+    hint = (
+        f"Is `ollama serve` running at {info.endpoint}, and has `{info.model}` been pulled?"
+        if info.provider == "ollama"
+        else "Check the provider's credentials and quota."
+    )
+    raise HTTPException(
+        status_code=503,
+        detail=f"{info.provider} is not reachable or model '{info.model}' is unavailable. {hint}",
+    )
 
 
 async def _persist(
@@ -167,13 +206,36 @@ async def consult(
     """
     if not settings.enable_agents:
         raise HTTPException(status_code=503, detail="Agent workflow is disabled")
-    await _ensure_llm()
 
     context = dict(body.context)
     if body.patient_id:
         async with SessionLocal() as lookup_session:
             context["recent_consultations"] = await recent_consultation_summaries(
                 body.patient_id, lookup_session
+            )
+
+    if not await get_llm_client().health():
+        # The model is down. Before refusing, check whether this question ever
+        # needed one: a drug-interaction or guideline lookup is answered from
+        # local data with its own citation (SPEC-022 B-10). The healthy path is
+        # untouched — this runs only when the model is already unavailable.
+        async with SessionLocal() as fp_session:
+            fast = await try_fast_path(body.query, body.patient_id, context, fp_session)
+        if fast is None:
+            await _ensure_llm()  # raises 503 naming the provider that is down
+        else:
+            async with SessionLocal() as session:
+                consultation = await _persist(session, user, body, _fast_path_state(fast))
+            return ConsultResponse(
+                id=consultation.id,
+                answer=consultation.answer,
+                agents_involved=consultation.agents,
+                tool_calls=consultation.tool_calls,
+                citation_report=consultation.citation_report,
+                explanation=build_explanation([fast["source"]], fast["tool_calls"], fast["citation_report"]),
+                verification_report=consultation.verification_report,
+                abstention=consultation.abstention or None,
+                trace=consultation.trace,
             )
 
     state = await run_consultation(
@@ -211,7 +273,6 @@ async def consult_stream(
     """
     if not settings.enable_agents:
         raise HTTPException(status_code=503, detail="Agent workflow is disabled")
-    await _ensure_llm()
 
     context = dict(body.context)
     if body.patient_id:
@@ -224,18 +285,19 @@ async def consult_stream(
     # needs no LLM synthesis at all — see api/fast_path.py's module
     # docstring for why this is a safety improvement, not just a speed
     # one. None means "doesn't apply here", falls through unchanged.
+    #
+    # Attempted *before* the health gate (SPEC-022 B-10). It used to run
+    # after, so a question that needs no model at all — "does warfarin
+    # interact with aspirin" — was refused with a 503 about the model being
+    # down. The answer was available from a local table the whole time.
     async with SessionLocal() as fp_session:
         fast = await try_fast_path(body.query, body.patient_id, context, fp_session)
+    if fast is None:
+        await _ensure_llm()
 
     async def event_stream():
         if fast is not None:
-            abstention = {
-                "status": "answer",
-                "reason": None,
-                "confidence": 1.0,
-                "supported_claim_ratio": 1.0,
-                "message": "",
-            }
+            abstention = _FAST_PATH_ABSTENTION
             yield f"data: {json.dumps({'event': 'routing', 'agents': [fast['source']]})}\n\n"
             agent_completed_payload = {
                 "event": "agent_completed",
@@ -258,15 +320,7 @@ async def consult_stream(
             }
             yield f"data: {json.dumps(final_event, default=str)}\n\n"
 
-            final_state = {
-                "final_answer": fast["final_answer"],
-                "agent_outputs": {fast["source"]: ""},
-                "tool_calls": fast["tool_calls"],
-                "citation_report": fast["citation_report"],
-                "verification_report": {"claims": [], "contradictions": []},
-                "abstention": abstention,
-                "trace": {},
-            }
+            final_state = _fast_path_state(fast)
             async with SessionLocal() as session:
                 consultation = await _persist(session, user, body, final_state)
             yield f"data: {json.dumps({'event': 'persisted', 'id': consultation.id})}\n\n"
@@ -342,7 +396,14 @@ async def agents_status(
     # loop above never counts it either.
     usage["Coordinator"] = 0 if settings.enable_single_agent_mode else consultation_count
 
-    llm_ok = await get_llm_client().health()
+    client = get_llm_client()
+    llm_ok = await client.health()
+    # Every field below used to be a literal or a `settings.gemini_*` read,
+    # printed whatever the configured provider was: a stack running entirely
+    # on a local model told its operator the data was going to Google, and
+    # that `local_only` was False while it was local only. A status page that
+    # is wrong in that direction is worse than no status page.
+    info = client.describe()
     return {
         "agents": [
             {"name": name, "status": "ready" if llm_ok else "offline", "consultations": usage[name]}
@@ -350,9 +411,14 @@ async def agents_status(
         ],
         "system": {
             "llm": "online" if llm_ok else "offline",
-            "model": settings.gemini_model,
-            "provider": "gemini",
-            "local_only": False,
+            "model": info.model,
+            "provider": info.provider,
+            "local_only": info.local,
+            "endpoint": info.endpoint,
+            # What this deployment will do with patient content, stated where
+            # someone can read it rather than only in a README.
+            "phi_allowed": settings.ai_allow_phi,
+            "components": [c.as_dict() for c in info.components],
         },
     }
 

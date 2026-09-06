@@ -29,15 +29,20 @@ def get_embedding_provider() -> Optional[CachedEmbeddingProvider]:
     The live (cache-miss) provider must always match whichever model
     produced the committed artifact — vectors from two different embedding
     models are not comparable, mixing them silently corrupts similarity
-    scores. `llm_provider="ollama"` (local dev, no Gemini quota) routes
-    here too, via `OllamaEmbeddingProvider`, so a fresh query at runtime
-    stays in the same vector space as an Ollama-built artifact."""
+    scores. `llm_provider="ollama"` and `"split"` both route here via
+    `OllamaEmbeddingProvider`, so a fresh query at runtime stays in the same
+    vector space as an Ollama-built artifact."""
     from core.config import settings  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
 
     if not getattr(settings, "enable_rag_embeddings", True):
         return None
 
-    if settings.llm_provider == "ollama":
+    # "split" belongs here too: it runs chat on Ollama and only *vision* on
+    # Gemini, so its text vector space is Ollama's. Selecting the Gemini
+    # provider for it built the cached artifact with one model and answered
+    # cache misses with another -- similarity scores silently comparing
+    # vectors from two spaces, with nothing failing to say so.
+    if settings.llm_provider in ("ollama", "split"):
         from .ollama import OllamaEmbeddingProvider  # noqa: PLC0415 — avoid a hard httpx dep at import time
 
         inner = OllamaEmbeddingProvider(base_url=settings.ollama_base_url)
