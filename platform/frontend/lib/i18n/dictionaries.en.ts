@@ -4,6 +4,7 @@
  * but a key present in neither file renders as the literal key string
  * (silently wrong — see `lib/language.tsx`'s `t()`). */
 const EN: Record<string, string> = {
+  "nav.primary": "Primary",
   "nav.search": "Search",
   "nav.logout": "Log out",
   "nav.dashboard": "Dashboard",
@@ -535,6 +536,11 @@ const EN: Record<string, string> = {
   "schedule.book.error.generic": "Could not book this appointment.",
 
   "common.close": "Close",
+  "common.cancel": "Cancel",
+  "common.confirm": "Confirm",
+  "common.undo": "Undo",
+  "common.menu": "Menu",
+  "common.more": "More",
   "common.retry": "Retry",
   "common.light": "Light",
   "common.dark": "Dark",
