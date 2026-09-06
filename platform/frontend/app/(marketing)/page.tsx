@@ -28,7 +28,7 @@ import ConsultationWalkthrough from "@/components/landing/consultation-walkthrou
 import ClaimVerifier from "@/components/landing/claim-verifier";
 import CitationGuardToggle from "@/components/landing/citation-guard-toggle";
 import AbstentionGate from "@/components/landing/abstention-gate";
-import ProductWall from "@/components/landing/product-wall";
+import AnalysisGallery from "@/components/landing/analysis-gallery";
 import { Marquee } from "@/components/magicui/marquee";
 import { BentoGrid, BentoCard } from "@/components/magicui/bento-grid";
 import { BorderBeam } from "@/components/magicui/border-beam";
@@ -171,12 +171,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Product wall — real screenshots, not stock photos */}
+      {/* Imaging analysis gallery — one real sample per supported modality */}
       <section className="mx-auto max-w-6xl px-6 pb-24">
-        <h2 className="text-center text-2xl font-extrabold md:text-3xl">{t("marketing.productSection.title")}</h2>
-        <p className="mx-auto mt-3 max-w-xl text-center text-muted">{t("marketing.productSection.subtitle")}</p>
+        <h2 className="text-center text-2xl font-extrabold md:text-3xl">{t("marketing.analysisGallery.title")}</h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-muted">{t("marketing.analysisGallery.subtitle")}</p>
         <div className="mt-8">
-          <ProductWall />
+          <AnalysisGallery />
         </div>
       </section>
 
