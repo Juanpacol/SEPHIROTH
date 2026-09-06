@@ -55,12 +55,10 @@ def upgrade() -> None:
         sa.Column("closed_by", sa.String(length=36), nullable=True),
         sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
-        sa.CheckConstraint(
-            "severity IN ('critical','high','medium','low')", name="ck_task_severity"
-        ),
+        sa.CheckConstraint("severity IN ('critical','high','medium','low')", name="ck_task_severity"),
         sa.CheckConstraint(
             "source_type IN ('alert','approval','followup','result','appointment',"
-            "'automation','deteriorating','interaction')",
+            "'automation','consultation','deteriorating','interaction')",
             name="ck_task_source_type",
         ),
         sa.CheckConstraint(

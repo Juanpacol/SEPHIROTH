@@ -900,7 +900,7 @@ class Task(Base):
         UniqueConstraint("dedupe_key", name="uq_task_dedupe_key"),
         CheckConstraint(
             "source_type IN ('alert','approval','followup','result','appointment',"
-            "'automation','deteriorating','interaction')",
+            "'automation','consultation','deteriorating','interaction')",
             name="ck_task_source_type",
         ),
         CheckConstraint("severity IN ('critical','high','medium','low')", name="ck_task_severity"),
