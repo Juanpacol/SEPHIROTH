@@ -69,6 +69,9 @@ export default function ImageDropzone({
   if (previewUrl) {
     return (
       <div className="relative h-full min-h-[220px] w-full">
+        {/* eslint-disable-next-line @next/next/no-img-element -- previewUrl is
+            an object URL (see the revokeObjectURL cleanup above); next/image
+            cannot optimize a blob: source and would only add a broken loader. */}
         <img
           src={previewUrl}
           alt={t("imageDropzone.alt")}

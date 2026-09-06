@@ -1,4 +1,6 @@
-"""`POST /api/scheduling/appointments/{id}/confirm` (SPEC-012)."""
+"""`POST /api/scheduling/appointments/{id}/confirm`.
+
+Verifies AC-009-19 (docs/specs/SPEC-009-automation-substrate.md)."""
 
 from datetime import date, timedelta
 

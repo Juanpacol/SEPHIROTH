@@ -1,4 +1,8 @@
-"""Event catalog (SPEC-010) — outbox recording + dispatch-to-registry."""
+"""Event catalog — outbox recording + dispatch-to-registry.
+
+Verifies AC-009-11, AC-009-12 (docs/specs/SPEC-009-automation-substrate.md).
+Written under the never-issued SPEC-010; that number is retired and the
+behaviour is specified in SPEC-009 §6.2/§7 instead."""
 
 import pytest
 from sqlalchemy import select

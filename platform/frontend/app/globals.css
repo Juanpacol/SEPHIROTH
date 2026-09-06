@@ -55,7 +55,20 @@ input:-webkit-autofill:focus {
 
 @layer components {
   .card {
-    @apply bg-card rounded-squircle shadow-card p-5;
+    @apply bg-card rounded-squircle shadow-card p-4 md:p-5;
+  }
+
+  /* Minimum comfortable touch target. 44px is Apple's HIG figure and the one
+     WCAG 2.5.5 lands nearest to; below it, a thumb hits the neighbour. Applied
+     to icon-only controls, which are the ones that shrink to their glyph. */
+  .tap {
+    @apply min-h-11 min-w-11 flex items-center justify-center;
+  }
+
+  /* Clears the home indicator on notched phones, and the fixed bottom nav.
+     env() returns 0px everywhere else, so this is inert on desktop. */
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
   }
   .nav-group-label {
     @apply px-3 pt-5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted;

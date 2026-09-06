@@ -1,7 +1,9 @@
 """The approval gate's send path (Phase F) -- the piece that was missing
 end-to-end: approving a `PendingAction` must actually deliver `final_text`
 to the patient's portal notification feed, and rejecting must deliver
-nothing. Also covers the injection-screening added alongside it."""
+nothing. Also covers the injection-screening added alongside it.
+
+Verifies AC-009-21 (docs/specs/SPEC-009-automation-substrate.md)."""
 
 import pytest
 from httpx import ASGITransport, AsyncClient

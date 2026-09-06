@@ -2,6 +2,7 @@
  * see that file's header comment for why a missing key here is worse than a
  * missing translation (it renders as the raw key string, not English). */
 const ES: Record<string, string> = {
+  "nav.primary": "Principal",
   "nav.search": "Buscar",
   "nav.logout": "Cerrar sesión",
   "nav.dashboard": "Panel",
@@ -539,6 +540,11 @@ const ES: Record<string, string> = {
   "schedule.book.error.generic": "No se pudo reservar la cita.",
 
   "common.close": "Cerrar",
+  "common.cancel": "Cancelar",
+  "common.confirm": "Confirmar",
+  "common.undo": "Deshacer",
+  "common.menu": "Menú",
+  "common.more": "Más",
   "common.retry": "Reintentar",
   "common.light": "Claro",
   "common.dark": "Oscuro",

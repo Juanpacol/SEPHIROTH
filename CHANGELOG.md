@@ -5,6 +5,24 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Documentation debt — SPEC-009, written retroactively
+
+Prerequisite for the clinical-operating-system plan. `docs/project-state.yaml`
+declared phases 7–14 done citing SPEC-009 through SPEC-016, but none of those
+spec files were ever authored, and `feature-registry.md` stopped at F-043.
+
+#### Added
+- `docs/specs/SPEC-009-automation-substrate.md` — one retroactive spec consolidating all eight phases (tick engine, event outbox, alert lifecycle and escalation, appointment automation, approval gate, patient follow-up, operational memory, automation observability). 20 normative behaviours and 26 acceptance criteria, each mapped to a test that already exists and passes.
+- `F-060`…`F-071` in the feature registry, five of them ⚠️ against a named defect rather than against missing work.
+- A `platform/api/workflows` component entry in `project-state.yaml`, status `partial`.
+
+#### Changed
+- 14 test modules gained an `AC-009-NN` reference in their docstring, so `scripts/docs_check.py` verifies the spec against the suite mechanically rather than on trust.
+- `project-state.yaml` phases 7–14 now cite SPEC-009. **SPEC-010 through SPEC-016 are permanently retired** (SPEC-000 §6.3 — specs are never renumbered); new specs start at SPEC-017.
+
+#### Notable
+- §11 records nine risks the substrate ships with, three of them defects found while writing this spec and not previously known: `execute_step` ignores the per-row `WorkflowStep.max_lateness_seconds` (`engine.py:128`), `alert_refresh` runs exactly once and nothing reschedules it, and rescheduling an appointment silently loses its reminder. Recording them is the point of the exercise — they scope the next phase.
+
 ### Phase E — landing page, brand icon, entry flow (landing/icon/portal/scheduling plan — final phase)
 
 #### Added

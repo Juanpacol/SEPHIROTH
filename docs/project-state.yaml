@@ -11,8 +11,8 @@
 schema_version: 1
 project: SEPHIROTH
 version: 1.0.0
-updated: 2026-08-21
-phase_current: 14
+updated: 2026-09-06
+phase_current: 15
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
@@ -22,14 +22,22 @@ phases:
   "4": {name: "Context Engine (4a, done — SPEC-005) + Verification & Safety (4b, done — SPEC-004)", status: done}
   "5": {name: "Observability, recovery, relocation, dynamic planner, debt cleanup (SPEC-006/007/008)", status: done}
   "6": {name: "Delete the 3 phase-5 shims owed by the charter's strangler-fig schedule", status: done}
+  # Phases 7-14 shipped before their specs were written. SPEC-010 through
+  # SPEC-016 were referenced here but never authored; those numbers are
+  # retired (SPEC-000 §6.3 -- specs are never renumbered). All eight phases
+  # are specified retroactively by the single SPEC-009, which also records
+  # in its §11 the defects the substrate ships with.
   "7": {name: "Workflow automation substrate — durable tick, no worker process (SPEC-009)", status: done}
-  "8": {name: "Event catalog — transactional outbox, no broker (SPEC-010)", status: done}
-  "9": {name: "Alert lifecycle mutation surface + escalation workflow (SPEC-011)", status: done}
-  "10": {name: "Appointment automation — T-24h reminder, patient confirm, T-2h unconfirmed escalation (SPEC-012)", status: done}
-  "11": {name: "Human-in-the-loop approval gate — pending_actions (SPEC-013)", status: done}
-  "12": {name: "Patient follow-up (day 3/7/30) + draft_patient_message tool (SPEC-014)", status: done}
-  "13": {name: "Operational memory — namespaced preferences, never clinical facts (SPEC-015)", status: done}
-  "14": {name: "Automation observability — GET /api/dashboard/automation + frontend tab (SPEC-016)", status: done}
+  "8": {name: "Event catalog — transactional outbox, no broker (SPEC-009)", status: done}
+  "9": {name: "Alert lifecycle mutation surface + escalation workflow (SPEC-009)", status: done}
+  "10": {name: "Appointment automation — T-24h reminder, patient confirm, T-2h unconfirmed escalation (SPEC-009)", status: done}
+  "11": {name: "Human-in-the-loop approval gate — pending_actions (SPEC-009)", status: done}
+  "12": {name: "Patient follow-up (day 3/7/30) + draft_patient_message tool (SPEC-009)", status: done}
+  "13": {name: "Operational memory — namespaced preferences, never clinical facts (SPEC-009)", status: done}
+  "14": {name: "Automation observability — GET /api/dashboard/automation + frontend tab (SPEC-009)", status: done}
+  # Phase 15 opens the clinical-operating-system plan. New specs start at
+  # SPEC-017; see the note above for why 010-016 are unavailable.
+  "15": {name: "Interface foundations — portal, focus trap, DataList, mobile nav, frontend CI gate (SPEC-017)", status: done}
 
 components:
   legacy:
@@ -66,6 +74,20 @@ components:
     platform/api:
       status: implemented
       tests: [tests/test_api_agents.py, tests/test_api_patients_rag.py, tests/test_main_health.py]
+    platform/api/workflows:
+      status: partial
+      spec: SPEC-009
+      description: >-
+        The DB-touching half of the automation substrate — tick engine,
+        step-type registry, notification channel, and the seven workflow
+        definitions. Partial rather than implemented because SPEC-009 §11
+        records three live defects (per-row max_lateness ignored,
+        alert_refresh runs once, rescheduling loses its reminder) and two
+        stored-but-unread settings (quiet_hours, reminder_lead_hours).
+      tests: [tests/test_workflow_engine_tick.py, tests/test_workflow_channels.py,
+              tests/test_workflow_alert_refresh.py, tests/test_alert_escalation_workflow.py,
+              tests/test_appointment_reminder_workflow.py, tests/test_patient_followup_workflow.py,
+              tests/test_automation_memory.py, tests/test_dashboard_automation.py]
     platform/auth:
       status: implemented
       tests: [tests/test_auth.py]
