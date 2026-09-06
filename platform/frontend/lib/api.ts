@@ -128,7 +128,9 @@ export interface TaskPage {
 }
 
 export interface TaskCounts {
+  /** The `open` status alone. Sum the statuses with `total_open`, not by hand. */
   open: number;
+  total_open: number;
   in_progress: number;
   snoozed: number;
   mine: number;

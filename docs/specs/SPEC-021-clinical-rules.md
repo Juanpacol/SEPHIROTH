@@ -2,7 +2,7 @@
 id: SPEC-021
 title: Deterministic Clinical Rules
 phase: 19
-version: 1.0.0
+version: 1.1.0
 status: Implemented
 authors: [jbotero]
 created: 2026-09-06
@@ -46,6 +46,18 @@ per deploy, because `generate_alerts_for_all_patients` only ran at boot. Making
 `alert_refresh` genuinely periodic turned it into every six hours — this phase
 exists partly because the previous one made an existing bug matter.
 
+**And "resolved means raise it again" is wrong for chronic findings.** The
+first draft of this spec allowed a resolved alert to be re-raised on the very
+next sweep, reasoning that a recurrence is new information. That holds for a
+condition that goes away and comes back. It does not hold for potassium that
+stays at 6.2, or a drug pair the clinician has looked at and decided to keep:
+there, `resolved` means *I have dealt with this*, and re-filing it six hours
+later reproduces the exact flooding this phase set out to stop — moved from
+once per deploy to four times a day. A resolved alert's rule is therefore quiet
+for `RESOLVED_SUPPRESSION` (7 days: longer than any sweep interval, shorter
+than a typical follow-up), after which a still-true condition surfaces again.
+Suppression is a delay, not a mute.
+
 Two further problems with keying on `(category, title)`:
 
 - **The key is display copy.** Rewording "Hypokalemia" to "Low potassium" would
@@ -61,7 +73,8 @@ the first.
 ## 3. Goals
 
 - **G-1** A rule's identity survives rewording its label.
-- **G-2** An alert somebody is already working on is not filed again.
+- **G-2** An alert somebody is already working on — or has just dealt with —
+  is not filed again.
 - **G-3** Every warning can name the threshold that produced it.
 - **G-4** Clinical and administrative findings are distinguishable.
 - **G-5** Two rules that were missing are present.
@@ -153,9 +166,9 @@ cutoff that can be changed without review is a clinical cutoff nobody reviews.
   only `active` ones.
 - **B-6** Deduplication MUST key on `rule_key`, falling back to
   `(category, title)` for rows that predate it.
-- **B-7** A `resolved` alert whose condition still holds MUST be raisable
-  again — resolved means the clinician dealt with it, so a recurrence is new
-  information.
+- **B-7** A `resolved` alert whose condition still holds MUST NOT be raised
+  again within `RESOLVED_SUPPRESSION` (7 days) of its resolution, and MUST be
+  raisable again once that window passes.
 - **B-8** `Alert.source` MUST record the threshold that fired, not the engine.
 - **B-9** A medication matching a recorded allergy MUST be flagged `high`.
 - **B-10** An allergy entry too short to match on MUST be ignored rather than
@@ -169,7 +182,7 @@ cutoff that can be changed without review is a clinical cutoff nobody reviews.
 |---|---|---|---|
 | AC-021-01 | Every rule carries a key, a source and a kind, and keys are unique | B-1, B-2 | `tests/test_clinical_rules.py::TestRuleIdentity` |
 | AC-021-02 | A rule's key is stable across values and drug-pair order | B-3, B-4 | `tests/test_clinical_rules.py::TestRuleIdentity` |
-| AC-021-03 | A reviewed-but-unresolved alert is not filed again; a resolved one may be | B-5, B-7 | `tests/test_clinical_rules.py::TestAlertsDoNotRepeat` |
+| AC-021-03 | A reviewed-but-unresolved alert is not filed again; a just-resolved one is suppressed for 7 days and raised again after | B-5, B-7 | `tests/test_clinical_rules.py::TestAlertsDoNotRepeat` |
 | AC-021-04 | An alert records the rule key and the threshold that fired | B-8 | `tests/test_clinical_rules.py::test_the_alert_records_the_rule_and_its_threshold` |
 | AC-021-05 | Allergy conflicts and duplicate medications are flagged; near-misses are not | B-9, B-10, B-11 | `tests/test_clinical_rules.py::TestNewRules` |
 
@@ -194,8 +207,10 @@ a label is reworded. `alerts.py` handles the mixed population directly: a row
 with a key dedupes on it, a row without one keeps the old comparison until it
 is resolved, at which point the population heals itself.
 
-Written by hand; the local Postgres was unavailable. Not yet executed against a
-real database — see §11 risk 1.
+Written by hand because the local Postgres was unavailable at the time, and
+verified against a real Postgres afterwards: `upgrade head` on a fresh
+database, `downgrade -3`, re-`upgrade`, and the `tests/test_alembic_migration.py`
+drift guard, all clean.
 
 `assess_patient_risk` gains a third parameter with a default, so no call site
 changes. `Alert.source` now varies per rule instead of always being
@@ -205,12 +220,14 @@ changes. `Alert.source` now varies per rule instead of always being
 
 | # | Risk / question | Resolution |
 |---|---|---|
-| 1 | Neither this revision nor SPEC-020's has run against a real Postgres | Recorded; both are on the verification list. This one is purely additive, so the risk is lower than SPEC-020's backfill |
+| 1 | Neither this revision nor SPEC-020's had run against a real Postgres when written | Closed. Both were verified afterwards -- fresh upgrade, downgrade, re-upgrade and drift guard -- see §10 |
 | 2 | Allergy matching is substring-based and will miss cross-class reactions | Accepted and stated in NG-2. It is a screening rule a clinician reads, not a prescribing decision, and catching "Penicilina V 500mg" from "penicilina" is worth more than the false positives fuzzier matching would add. A drug-class table is the real fix and is not something to invent here |
 | 3 | Duplicate-medication detection normalises crudely (strips dose and form) | Same reasoning. Two spellings of one drug being recognised as one is the point; a missed exotic synonym is a missed flag, not a wrong one |
 | 4 | An allergy recorded as a brand name will not match a generic prescription | Known gap, same root cause as risk 2 — there is no name-mapping table. Recorded rather than half-solved |
 | 5 | `kind` defaults to `clinical`, so a future administrative producer that forgets to set it is silently miscategorised | Accepted: the alternative is a required field that every existing call site must be edited to supply, and `clinical` is the safer default of the two — over-prioritising an administrative item is a smaller harm than burying a clinical one |
 | 6 | Thresholds live in code, so changing one needs a deploy | Deliberate. A clinical cutoff that can be edited without review is a clinical cutoff nobody reviews |
+| 7 | A condition that genuinely resolves and recurs within 7 days is surfaced late | Accepted. The alternative — the pre-suppression behaviour — floods the inbox for every chronic finding, and an inbox nobody reads is a worse failure than one alert arriving days late. The task the first alert produced is still open and still assigned if nobody closed it |
+| 8 | `resolved_at` is null on rows resolved before it was stamped | Treated as recently resolved: an unknown resolution time delays one alert, whereas treating it as ancient re-files every historical row at once |
 
 ## 12. References
 
@@ -224,3 +241,4 @@ changes. `Alert.source` now varies per rule instead of always being
 | Version | Date | Change |
 |---|---|---|
 | 1.0.0 | 2026-09-06 | Initial version; implemented in phase 19 |
+| 1.1.0 | 2026-09-06 | B-7 reversed: a resolved alert is suppressed for 7 days rather than re-raisable on the next sweep (review finding) |

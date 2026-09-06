@@ -251,6 +251,48 @@ class TestSourceConsistency:
         # dashboard's response-time metric would have no numerator.
         assert alert.reviewed_at is not None
 
+    async def test_reopening_an_alert_task_un_resolves_its_alert(self, client, db_session):
+        """Undo has to reach the source. Otherwise the task comes back, the
+        alert stays resolved, and the next reconciliation sweep supersedes the
+        reopened task because its source is still terminal — the clinician's
+        undo silently undoes itself."""
+        patient = Patient(id="PTK6", name="Elsa", age=58, sex="F", medical_record_number="PT-PTK6")
+        alert = Alert(
+            id="ALK6",
+            patient_id="PTK6",
+            category="lab",
+            severity="high",
+            title="Potasio alto",
+            detail="",
+            source="K+ > 5.5 mEq/L",
+        )
+        db_session.add_all([patient, alert])
+        await db_session.flush()
+        task, _ = await svc.create_task(
+            db_session,
+            source_type="alert",
+            source_id=alert.id,
+            category="alert",
+            severity="high",
+            title=alert.title,
+            dedupe_key=f"alert:{alert.id}",
+            patient_id=patient.id,
+        )
+        await db_session.commit()
+        headers = await _clinician(client)
+        await client.post(f"/api/tasks/{task.id}/complete", headers=headers)
+
+        res = await client.post(f"/api/tasks/{task.id}/reopen", headers=headers)
+
+        assert res.status_code == 200
+        assert res.json()["status"] == "open"
+        await db_session.refresh(alert)
+        assert alert.status == "reviewed"
+        assert alert.resolved_at is None
+        # The review itself is not undone: it happened, and the dashboard's
+        # response-time metric measures it.
+        assert alert.reviewed_at is not None
+
     async def test_resolving_the_alert_closes_its_task(self, client, db_session):
         patient = Patient(id="PTK3", name="Cami", age=44, sex="F", medical_record_number="PT-PTK3")
         alert = Alert(
@@ -326,8 +368,11 @@ class TestCounters:
 
         counts = (await client.get("/api/tasks/count", headers=headers)).json()
 
-        assert counts["open"] == 3
+        # `open` is the status, not the total -- claiming one moved it out of
+        # `open` and into `in_progress`, and both must not count it.
+        assert counts["open"] == 2
         assert counts["in_progress"] == 1
+        assert counts["total_open"] == 3
         assert counts["mine"] == 1
         assert counts["unassigned"] == 2
 

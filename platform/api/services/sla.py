@@ -7,8 +7,9 @@ a different caller, so the table moves here and both read it. Two copies of a
 clinical deadline that drift apart is exactly the kind of bug nobody notices
 until the wrong thing is overdue.
 
-`alert_escalation` still imports the old name from this module, so no call site
-changed and the existing tests keep asserting against the same object.
+`alert_escalation` re-exports `ESCALATION_WINDOW_BY_SEVERITY` from here, so no
+call site changed and the existing tests keep asserting against the same
+object -- literally the same object, not an equal copy.
 """
 
 from __future__ import annotations

@@ -233,6 +233,30 @@ def _normalise_drug(name: str) -> str:
     return " ".join(cleaned.split())
 
 
+#: The wrapper words a coded allergy list puts around the substance itself.
+#: Synthea -- the corpus this repository actually imports -- records SNOMED
+#: descriptions ("Allergy to penicillin", "Latex allergy", "Allergy to bee
+#: venom"), and the substring rule below compares against a medication name,
+#: which never contains them. Without this the whole allergy rule is inert on
+#: every imported patient: it fires only for the hand-seeded "penicillin".
+_ALLERGY_PREFIX_RE = re.compile(
+    r"^(?:allergy\s+to|allergic\s+to|hypersensitivity\s+to|intolerance\s+to|sensitivity\s+to)\s+",
+    re.IGNORECASE,
+)
+_ALLERGY_SUFFIX_RE = re.compile(r"\s+(?:allergy|hypersensitivity|intolerance)$", re.IGNORECASE)
+
+
+def _normalise_allergen(name: str) -> str:
+    """The substance an allergy entry is about, with the coding wrapper removed.
+
+    Applied on top of `_normalise_drug`, not instead of it -- an entry may
+    carry both a wrapper and a form ("Allergy to penicillin V tablet").
+    """
+    cleaned = _ALLERGY_PREFIX_RE.sub("", name.strip())
+    cleaned = _ALLERGY_SUFFIX_RE.sub("", cleaned)
+    return _normalise_drug(cleaned)
+
+
 def _pair_key(drug_a: str, drug_b: str) -> str:
     a, b = sorted([_normalise_drug(drug_a), _normalise_drug(drug_b)])
     return f"{a}|{b}"
@@ -243,7 +267,9 @@ def _allergy_conflicts(medications: List[str], allergies: List[str]) -> List[Dic
 
     Substring matching on the normalised names: an allergy to "penicillin"
     catches "Penicillin V 500mg", and an allergy recorded as "sulfa" catches
-    "sulfamethoxazole". It will not catch cross-class reactions (a
+    "sulfamethoxazole". Coded entries are unwrapped first (see
+    `_normalise_allergen`), because a real allergy list says "Allergy to
+    penicillin" and no medication name ever will. It will not catch cross-class reactions (a
     cephalosporin for a penicillin allergy) -- that needs a class table this
     codebase does not have, and inventing one here would be guessing at
     clinical content rather than encoding it.
@@ -252,7 +278,7 @@ def _allergy_conflicts(medications: List[str], allergies: List[str]) -> List[Dic
     seen: set[str] = set()
 
     for allergy in allergies:
-        allergen = _normalise_drug(allergy)
+        allergen = _normalise_allergen(allergy)
         if len(allergen) < 4:
             # Too short to match on without generating nonsense.
             continue

@@ -58,6 +58,12 @@ class _Adapter:
     refusal: str = ""
     #: Applied to the source row when the task is completed.
     on_complete: Optional[Callable[..., Any]] = None
+    #: Applied to the source row when a completed task is reopened -- the undo
+    #: of `on_complete`. Without it, undo is a lie: the task comes back and the
+    #: source stays closed, and the next `reconcile_tasks` sweep supersedes the
+    #: reopened task again because its source is still terminal. An adapter
+    #: with an `on_complete` and no `on_reopen` is a one-way door.
+    on_reopen: Optional[Callable[..., Any]] = None
 
 
 async def _load_alert(session: AsyncSession, task: Task) -> Optional[Alert]:
@@ -99,12 +105,33 @@ async def _resolve_alert(session: AsyncSession, alert: Alert, actor: User, now: 
         await cancel_workflow(session, wf, now)
 
 
+async def _unresolve_alert(session: AsyncSession, alert: Alert, actor: User, now: datetime) -> None:
+    """Undo `_resolve_alert` on the alert itself.
+
+    Back to `reviewed`, not `active`: the review genuinely happened, and
+    `reviewed_at` is what `dashboard.py::_dashboard_alerts` computes its
+    response-time metric from -- clearing it would erase a real measurement to
+    describe an undo.
+
+    The escalation workflows `_resolve_alert` cancelled are deliberately *not*
+    revived. A cancelled workflow's steps are terminal, and re-running an
+    escalation clock from the middle would page people about a delay that
+    already elapsed. If the alert needs escalating again it will be escalated
+    from its own state, which is the path that has the guards.
+    """
+    if alert.status != "resolved":
+        return
+    alert.status = "reviewed"
+    alert.resolved_at = None
+
+
 ADAPTERS: Dict[str, _Adapter] = {
     "alert": _Adapter(
         source_type="alert",
         load=_load_alert,
         terminal_source_statuses=frozenset({"resolved"}),
         on_complete=_resolve_alert,
+        on_reopen=_unresolve_alert,
     ),
     "approval": _Adapter(
         source_type="approval",
@@ -168,6 +195,27 @@ async def complete_task(
     return await svc.transition(session, task, "complete", actor=actor, now=moment)
 
 
+async def reopen_task(
+    session: AsyncSession, task: Task, *, actor: User, now: Optional[datetime] = None
+) -> Task:
+    """Reopen a closed task and undo what completing it did to its source.
+
+    The mirror of `complete_task`. The source is reverted *before* the
+    transition, so a transition the state machine refuses (the 30-day reopen
+    window, a `superseded` task) leaves the source untouched.
+    """
+    moment = now or datetime.utcnow()
+    adapter = ADAPTERS.get(task.source_type)
+    reverted: Optional[Any] = None
+    if task.status == "done" and adapter is not None and adapter.on_reopen is not None:
+        reverted = await adapter.load(session, task)
+
+    reopened = await svc.transition(session, task, "reopen", actor=actor, now=moment)
+    if reverted is not None:
+        await adapter.on_reopen(session, reverted, actor, moment)
+    return reopened
+
+
 async def reconcile_tasks(session: AsyncSession, now: Optional[datetime] = None, limit: int = 200) -> int:
     """Supersede tasks whose source is gone or finished. Runs from the tick.
 
@@ -211,4 +259,4 @@ async def reconcile_tasks(session: AsyncSession, now: Optional[datetime] = None,
     return superseded
 
 
-__all__ = ["ADAPTERS", "can_complete", "complete_task", "reconcile_tasks"]
+__all__ = ["ADAPTERS", "can_complete", "complete_task", "reconcile_tasks", "reopen_task"]

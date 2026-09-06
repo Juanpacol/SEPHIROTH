@@ -29,6 +29,7 @@ from data.schemas import Patient, Task, User
 from ..audit import add_phi_access
 from ..services import task_service as svc
 from ..services.task_adapters import can_complete, complete_task
+from ..services.task_adapters import reopen_task as _reopen_with_source
 
 router = APIRouter()
 
@@ -173,9 +174,15 @@ async def task_counts(
         or 0
     )
     return {
-        "open": sum(by_status.values()),
+        # `open` is the *status*, not the sum: the three open statuses are
+        # reported alongside it, so summing them into a field named after one
+        # of them made "open + in_progress" count the same task twice for any
+        # caller that added the fields up. `total_open` is the sum, named as
+        # one.
+        "open": by_status.get("open", 0),
         "in_progress": by_status.get("in_progress", 0),
         "snoozed": by_status.get("snoozed", 0),
+        "total_open": sum(by_status.values()),
         "mine": mine,
         "unassigned": unassigned,
         "overdue": overdue,
@@ -279,7 +286,13 @@ async def snooze_task(
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
-    until = body.until.replace(tzinfo=None) if body.until.tzinfo else body.until
+    # Every datetime column in this schema is naive UTC, so an aware input is
+    # *converted* rather than stripped: dropping the offset on
+    # `2026-09-06T09:00-05:00` would store 09:00 UTC and wake the task five
+    # hours early -- and a snooze that ends early is the one thing a snooze
+    # must not do. A naive input is trusted as UTC, which is what the API
+    # documents and what the frontend sends.
+    until = body.until.astimezone(timezone.utc).replace(tzinfo=None) if body.until.tzinfo else body.until
     return await _apply(session, await _get_task(session, task_id), "snooze", clinician, snooze_until=until)
 
 
@@ -327,7 +340,18 @@ async def reopen_task(
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
-    return await _apply(session, await _get_task(session, task_id), "reopen", clinician)
+    """Reopening also undoes what completing did to the source — a reopened
+    alert task un-resolves its alert. Otherwise the undo is cosmetic: the task
+    returns, the alert stays resolved, and the next reconciliation sweep
+    supersedes the task again because its source is still terminal."""
+    task = await _get_task(session, task_id)
+    try:
+        await _reopen_with_source(session, task, actor=clinician, now=_now())
+    except svc.TaskTransitionError as exc:
+        await session.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    await session.commit()
+    return _task_out(task)
 
 
 @router.post("/{task_id}/comment")

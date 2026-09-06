@@ -7,7 +7,7 @@ entry point lands here without disturbing `engine.py`.
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -105,8 +105,10 @@ async def maybe_seed_alert_refresh(session: AsyncSession) -> int:
     five minutes to discover nothing new nearly always.
     """
     from .memory import get_memory, set_memory
+    from .quiet_hours import clinic_today
 
-    today = date.today().isoformat()
+    # The clinic's day, not the host's -- see `clinic_today`.
+    today = clinic_today().isoformat()
     if await get_memory(session, "clinic", "default", "last_alert_seed_date") == today:
         return 0
 
