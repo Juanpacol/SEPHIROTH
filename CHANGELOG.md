@@ -5,6 +5,21 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 19 — deterministic clinical rules (SPEC-021)
+
+#### Fixed
+- **Alerts repeated themselves**, and not for the reason previously recorded. SPEC-009's audit suggested titles varied by a numeric value; they do not — `LabRule.label` is a fixed string. The real defect was that the dedup set only held `active` alerts, so one a clinician had marked **`reviewed`** but not resolved came straight back. Before SPEC-020 that surfaced once per deploy; making `alert_refresh` genuinely periodic turned it into every six hours. This phase exists partly because the previous one made an existing bug matter.
+
+#### Added
+- A stable `rule_key` per rule, decoupled from display copy — rewording "Hypokalemia" to "Low potassium" would otherwise have duplicated every open alert of that rule at once.
+- `Alert.source` records the **threshold** that fired (`K+ > 5.5 mEq/L`) instead of the literal string `"risk_engine"`. A warning a clinician cannot trace back to its rule is one they have to take on faith.
+- `Alert.kind` — `clinical` or `administrative`. "Critical potassium" and "nobody confirmed a booking" sat in one undifferentiated queue, which is how the second teaches people to skim past the first.
+- Two rules that were missing: a medication matching a recorded allergy (always `high`), and the same active ingredient listed twice.
+
+#### Notable
+- No alerts were added for overdue follow-ups, patients without recent control, or no-shows, though the plan listed them: those already exist as **tasks**, and a second mechanism filing the same work twice would be worse than not having it.
+- `rule_key` is deliberately **not** backfilled. The only value available is the display title, which would invent identities that were never real. Old rows keep the old comparison until they resolve, and the population heals itself.
+
 ### Phase 18 — automation correctness (SPEC-020)
 
 Closes the defects SPEC-009 §11 recorded, and the deferral gap that made three of them unfixable.

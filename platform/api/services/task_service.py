@@ -404,16 +404,17 @@ async def close_tasks_for_source(
         task.closed_at = moment
         task.updated_at = moment
         task.snoozed_until = None
-        if status == "done":
-            # The database refuses a done task with no actor. When the source
-            # closed itself without one (a bulk expiry), record it as
-            # superseded instead -- which is the honest description anyway.
-            if actor is None:
-                task.status = "superseded"
-            else:
-                task.closed_by = actor.id
+        # `ck_task_closed_requires_actor` refuses both `done` and `dismissed`
+        # with no actor. When the source closed itself without one (a bulk
+        # expiry sweep), record it as `superseded` instead -- which is the
+        # honest description anyway, and the one terminal status the
+        # constraint allows the system to reach alone.
+        if actor is None:
+            task.status = "superseded"
+        elif status == "done":
+            task.closed_by = actor.id
         elif status == "dismissed":
-            task.closed_by = actor.id if actor is not None else None
+            task.closed_by = actor.id
             task.dismiss_reason = (reason or "closed by its source")[:300]
         _record(
             session,

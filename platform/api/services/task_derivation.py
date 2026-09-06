@@ -45,9 +45,21 @@ from . import task_service as svc
 #: silently close real work.
 DERIVED_SOURCE_TYPES = ("deteriorating", "interaction", "result", "consultation")
 
-#: Mirrors `dashboard.py::_ACTION_ITEM_LIMIT_PER_CATEGORY`. A cap per category
-#: rather than overall, so one noisy category cannot crowd the others out.
-LIMIT_PER_CATEGORY = 8
+#: How many rows of one category the *dashboard* shows. It is deliberately NOT
+#: applied to derivation.
+#:
+#: It used to be, copied from `dashboard.py` where it caps a display list. That
+#: is a different thing from capping what exists: the sweep supersedes any open
+#: derived task whose condition is absent from the current pass, so a ninth
+#: critical lab silently and permanently destroyed the eighth -- `create_task`
+#: never revives a superseded key, so an unreviewed critical result left the
+#: inbox and could not come back. A clinician cannot see a cap; they only see
+#: work disappear.
+#:
+#: Derivation now yields every condition that is currently true. The bound is
+#: the clinical reality: if fifty patients have a critical potassium, fifty
+#: tasks is the correct answer.
+DISPLAY_LIMIT_PER_CATEGORY = 8
 
 
 def _now() -> datetime:
@@ -73,7 +85,7 @@ async def _deteriorating(session: AsyncSession, names: Dict[str, str]) -> List[D
 
     entries, _ = await _evolution_deteriorating(session)
     out = []
-    for entry in entries[:LIMIT_PER_CATEGORY]:
+    for entry in entries:
         out.append(
             {
                 "dedupe_key": f"derived:deteriorating:{entry['id']}",
@@ -110,7 +122,7 @@ async def _critical_labs(session: AsyncSession, names: Dict[str, str]) -> List[D
             "title": f"{r.test_name} crítico: {r.value} {r.unit}".strip(),
             "context": {"test_name": r.test_name, "value": r.value, "unit": r.unit},
         }
-        for r in critical[:LIMIT_PER_CATEGORY]
+        for r in critical
     ]
 
 
@@ -120,13 +132,9 @@ async def _interactions(session: AsyncSession) -> List[Dict[str, Any]]:
     patients = (await session.scalars(select(Patient).where(Patient.status == "active"))).all()
     out: List[Dict[str, Any]] = []
     for p in patients:
-        if len(out) >= LIMIT_PER_CATEGORY:
-            break
         if len(p.medications) < 2:
             continue
         for hit in find_interactions(p.medications):
-            if len(out) >= LIMIT_PER_CATEGORY:
-                break
             drug_a, drug_b = hit["pair"]
             out.append(
                 {
@@ -148,8 +156,7 @@ async def _imaging(session: AsyncSession) -> List[Dict[str, Any]]:
         await session.scalars(
             select(ImagingStudy)
             .where(ImagingStudy.severity.in_(("critical", "review")))
-            .order_by(ImagingStudy.severity.desc(), ImagingStudy.study_date.desc())
-            .limit(LIMIT_PER_CATEGORY)
+            .order_by(ImagingStudy.study_date.desc())
         )
     ).all()
     return [
@@ -173,7 +180,6 @@ async def _unacted_high_risk(session: AsyncSession) -> List[Dict[str, Any]]:
             select(Consultation.id, Consultation.patient_id, Consultation.query)
             .where(Consultation.acted_on.is_(None), Consultation.risk_level == "high")
             .order_by(Consultation.id.desc())
-            .limit(LIMIT_PER_CATEGORY)
         )
     ).all()
     out = []
@@ -206,7 +212,6 @@ async def _overdue_followups(session: AsyncSession, now: datetime) -> List[Dict[
                 Workflow.followup_plan_id.isnot(None),
             )
             .order_by(WorkflowStep.due_at)
-            .limit(LIMIT_PER_CATEGORY)
         )
     ).all()
     return [
@@ -229,10 +234,7 @@ async def _overdue_followups(session: AsyncSession, now: datetime) -> List[Dict[
 async def _pending_approvals(session: AsyncSession) -> List[Dict[str, Any]]:
     rows = (
         await session.scalars(
-            select(PendingAction)
-            .where(PendingAction.status == "pending")
-            .order_by(PendingAction.created_at)
-            .limit(LIMIT_PER_CATEGORY)
+            select(PendingAction).where(PendingAction.status == "pending").order_by(PendingAction.created_at)
         )
     ).all()
     return [
@@ -303,4 +305,4 @@ async def sync_derived_tasks(session: AsyncSession, now: datetime | None = None)
     return {"created": created, "superseded": superseded}
 
 
-__all__ = ["sync_derived_tasks", "DERIVED_SOURCE_TYPES", "LIMIT_PER_CATEGORY"]
+__all__ = ["sync_derived_tasks", "DERIVED_SOURCE_TYPES", "DISPLAY_LIMIT_PER_CATEGORY"]

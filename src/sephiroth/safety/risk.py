@@ -17,20 +17,40 @@ from typing import Any, Dict, List, Optional
 from intelligence.mcp.drug_safety_server import find_interactions
 
 _NUMBER_RE = re.compile(r"-?\d+(?:\.\d+)?")
+#: Dose ("500mg", "10 mL") and form ("tablet", "oral") noise, stripped before
+#: two medication strings are compared.
+_DOSE_RE = re.compile(r"\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|iu|units?|%)\b", re.IGNORECASE)
+_FORM_RE = re.compile(
+    r"\b(?:tablet|tablets|capsule|capsules|oral|solution|injection|inj|susp|suspension|cream|"
+    r"ointment|patch|inhaler|drops?|daily|bid|tid|qid|prn)\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass
 class LabRule:
+    #: Stable identity for this rule, independent of what it is called on
+    #: screen (SPEC-021). Deduplication keys on this rather than on `label`,
+    #: because a label is display copy: rewording "Hypokalemia" to "Low
+    #: potassium" would otherwise silently duplicate every open alert.
+    key: str
     label: str
     severity: str  # "high" | "medium"
     detail: str
+    #: Where the threshold comes from. Every warning has to be able to say
+    #: why it fired -- a rule a clinician cannot audit is one they have to
+    #: take on faith.
+    source: str = ""
 
     def flag(self, value: float) -> Dict[str, str]:
         return {
             "source": "lab",
+            "rule_key": self.key,
             "label": self.label,
             "severity": self.severity,
             "detail": self.detail.format(value=value),
+            "rule_source": self.source,
+            "kind": "clinical",
         }
 
 
@@ -42,23 +62,74 @@ def _first_number(raw: Any) -> Optional[float]:
 # key in Patient.lab_results (lowercase) -> list of (predicate, rule)
 LAB_RULES: Dict[str, List[tuple]] = {
     "potassium": [
-        (lambda v: v < 3.5, LabRule("Hypokalemia", "high", "Potassium {value} mEq/L (< 3.5)")),
-        (lambda v: v > 5.5, LabRule("Hyperkalemia", "high", "Potassium {value} mEq/L (> 5.5)")),
+        (
+            lambda v: v < 3.5,
+            LabRule(
+                "lab.potassium.low",
+                "Hypokalemia",
+                "high",
+                "Potassium {value} mEq/L (< 3.5)",
+                "K+ < 3.5 mEq/L",
+            ),
+        ),
+        (
+            lambda v: v > 5.5,
+            LabRule(
+                "lab.potassium.high",
+                "Hyperkalemia",
+                "high",
+                "Potassium {value} mEq/L (> 5.5)",
+                "K+ > 5.5 mEq/L",
+            ),
+        ),
     ],
     "inr": [
-        (lambda v: v > 3.5, LabRule("Supratherapeutic INR", "high", "INR {value} (> 3.5) — bleeding risk")),
+        (
+            lambda v: v > 3.5,
+            LabRule(
+                "lab.inr.high",
+                "Supratherapeutic INR",
+                "high",
+                "INR {value} (> 3.5) — bleeding risk",
+                "INR > 3.5",
+            ),
+        ),
     ],
     "hba1c": [
-        (lambda v: v > 9, LabRule("Poor glycemic control", "medium", "HbA1c {value}% (> 9%)")),
+        (
+            lambda v: v > 9,
+            LabRule(
+                "lab.hba1c.high",
+                "Poor glycemic control",
+                "medium",
+                "HbA1c {value}% (> 9%)",
+                "HbA1c > 9%",
+            ),
+        ),
     ],
     "bnp": [
         (
             lambda v: v > 400,
-            LabRule("Elevated BNP", "medium", "BNP {value} pg/mL (> 400) — decompensation risk"),
+            LabRule(
+                "lab.bnp.high",
+                "Elevated BNP",
+                "medium",
+                "BNP {value} pg/mL (> 400) — decompensation risk",
+                "BNP > 400 pg/mL",
+            ),
         ),
     ],
     "ef": [
-        (lambda v: v < 40, LabRule("Reduced ejection fraction", "high", "EF {value}% (< 40%)")),
+        (
+            lambda v: v < 40,
+            LabRule(
+                "lab.ef.low",
+                "Reduced ejection fraction",
+                "high",
+                "EF {value}% (< 40%)",
+                "EF < 40%",
+            ),
+        ),
     ],
     # Added for the Synthea-imported patient panel, which never carries
     # potassium/inr/bnp/ef — bmi/cholesterol/ldl are the only extra signal
@@ -67,30 +138,58 @@ LAB_RULES: Dict[str, List[tuple]] = {
         (
             lambda v: 30 <= v < 40,
             LabRule(
+                "lab.bmi.obese",
                 "Obesity",
                 "medium",
                 "BMI {value} (≥ 30) — raises risk of diabetes, high blood pressure, and joint problems.",
+                "WHO: BMI ≥ 30",
             ),
         ),
         (
             lambda v: v >= 40,
             LabRule(
+                "lab.bmi.severe",
                 "Severe obesity",
                 "high",
                 "BMI {value} (≥ 40) — sharply raises risk of diabetes, heart disease, "
                 "and surgical/anesthesia complications.",
+                "WHO: BMI ≥ 40",
             ),
         ),
     ],
     "cholesterol": [
         (
             lambda v: v >= 240,
-            LabRule("High total cholesterol", "medium", "Cholesterol {value} mg/dL (≥ 240)"),
+            LabRule(
+                "lab.cholesterol.high",
+                "High total cholesterol",
+                "medium",
+                "Cholesterol {value} mg/dL (≥ 240)",
+                "ATP III: total cholesterol ≥ 240 mg/dL",
+            ),
         ),
     ],
     "ldl": [
-        (lambda v: 160 <= v < 190, LabRule("High LDL cholesterol", "medium", "LDL {value} mg/dL (≥ 160)")),
-        (lambda v: v >= 190, LabRule("Very high LDL cholesterol", "high", "LDL {value} mg/dL (≥ 190)")),
+        (
+            lambda v: 160 <= v < 190,
+            LabRule(
+                "lab.ldl.high",
+                "High LDL cholesterol",
+                "medium",
+                "LDL {value} mg/dL (≥ 160)",
+                "ATP III: LDL ≥ 160 mg/dL",
+            ),
+        ),
+        (
+            lambda v: v >= 190,
+            LabRule(
+                "lab.ldl.veryhigh",
+                "Very high LDL cholesterol",
+                "high",
+                "LDL {value} mg/dL (≥ 190)",
+                "ATP III: LDL ≥ 190 mg/dL",
+            ),
+        ),
     ],
 }
 
@@ -100,9 +199,12 @@ def _blood_pressure_threshold_flags(systolic: float, diastolic: float) -> List[D
         return [
             {
                 "source": "lab",
+                "rule_key": "lab.bp.hypertensive",
                 "label": "Hypertensive range",
                 "severity": "medium",
                 "detail": f"BP {int(systolic)}/{int(diastolic)} (≥ 160/100)",
+                "rule_source": "BP ≥ 160/100 mmHg",
+                "kind": "clinical",
             }
         ]
     return []
@@ -117,11 +219,129 @@ def _blood_pressure_flags(raw: Any) -> List[Dict[str, str]]:
     return _blood_pressure_threshold_flags(numbers[0], numbers[1])
 
 
+def _normalise_drug(name: str) -> str:
+    """A drug name reduced to something two spellings of the same thing agree
+    on: lowercased, dose and form stripped.
+
+    Deliberately crude. This is a *screening* rule whose output a clinician
+    reads, not a prescribing decision -- "Metformin 500mg" and "metformin"
+    being recognised as the same drug is worth far more than the false
+    positives a fuzzier match would add.
+    """
+    cleaned = _DOSE_RE.sub(" ", name.lower())
+    cleaned = _FORM_RE.sub(" ", cleaned)
+    return " ".join(cleaned.split())
+
+
+#: The wrapper words a coded allergy list puts around the substance itself.
+#: Synthea -- the corpus this repository actually imports -- records SNOMED
+#: descriptions ("Allergy to penicillin", "Latex allergy", "Allergy to bee
+#: venom"), and the substring rule below compares against a medication name,
+#: which never contains them. Without this the whole allergy rule is inert on
+#: every imported patient: it fires only for the hand-seeded "penicillin".
+_ALLERGY_PREFIX_RE = re.compile(
+    r"^(?:allergy\s+to|allergic\s+to|hypersensitivity\s+to|intolerance\s+to|sensitivity\s+to)\s+",
+    re.IGNORECASE,
+)
+_ALLERGY_SUFFIX_RE = re.compile(r"\s+(?:allergy|hypersensitivity|intolerance)$", re.IGNORECASE)
+
+
+def _normalise_allergen(name: str) -> str:
+    """The substance an allergy entry is about, with the coding wrapper removed.
+
+    Applied on top of `_normalise_drug`, not instead of it -- an entry may
+    carry both a wrapper and a form ("Allergy to penicillin V tablet").
+    """
+    cleaned = _ALLERGY_PREFIX_RE.sub("", name.strip())
+    cleaned = _ALLERGY_SUFFIX_RE.sub("", cleaned)
+    return _normalise_drug(cleaned)
+
+
+def _pair_key(drug_a: str, drug_b: str) -> str:
+    a, b = sorted([_normalise_drug(drug_a), _normalise_drug(drug_b)])
+    return f"{a}|{b}"
+
+
+def _allergy_conflicts(medications: List[str], allergies: List[str]) -> List[Dict[str, str]]:
+    """A medication on the list that the patient is recorded as allergic to.
+
+    Substring matching on the normalised names: an allergy to "penicillin"
+    catches "Penicillin V 500mg", and an allergy recorded as "sulfa" catches
+    "sulfamethoxazole". Coded entries are unwrapped first (see
+    `_normalise_allergen`), because a real allergy list says "Allergy to
+    penicillin" and no medication name ever will. It will not catch cross-class reactions (a
+    cephalosporin for a penicillin allergy) -- that needs a class table this
+    codebase does not have, and inventing one here would be guessing at
+    clinical content rather than encoding it.
+    """
+    flags: List[Dict[str, str]] = []
+    seen: set[str] = set()
+
+    for allergy in allergies:
+        allergen = _normalise_allergen(allergy)
+        if len(allergen) < 4:
+            # Too short to match on without generating nonsense.
+            continue
+        for medication in medications:
+            drug = _normalise_drug(medication)
+            if allergen not in drug:
+                continue
+            key = f"allergy.conflict.{allergen}|{drug}"
+            if key in seen:
+                continue
+            seen.add(key)
+            flags.append(
+                {
+                    "source": "drug",
+                    "rule_key": key,
+                    "label": f"Allergy conflict: {medication}",
+                    # Always high: this is a documented allergy against an
+                    # active prescription, which is not a matter of degree.
+                    "severity": "high",
+                    "detail": (
+                        f"{medication} matches a recorded allergy to {allergy}. Confirm before continuing."
+                    ),
+                    "rule_source": "patient's own recorded allergy list",
+                    "kind": "clinical",
+                }
+            )
+    return flags
+
+
+def _duplicate_medications(medications: List[str]) -> List[Dict[str, str]]:
+    """The same drug on the list twice under different spellings or doses."""
+    by_drug: Dict[str, List[str]] = {}
+    for medication in medications:
+        drug = _normalise_drug(medication)
+        if drug:
+            by_drug.setdefault(drug, []).append(medication)
+
+    return [
+        {
+            "source": "drug",
+            "rule_key": f"drug.duplicate.{drug}",
+            "label": f"Duplicate medication: {drug}",
+            "severity": "medium",
+            "detail": "Listed more than once: " + ", ".join(entries) + ".",
+            "rule_source": "same active ingredient listed twice",
+            "kind": "clinical",
+        }
+        for drug, entries in by_drug.items()
+        if len(entries) > 1
+    ]
+
+
 def assess_patient_risk(
     lab_results: Optional[Dict[str, Any]],
     medications: Optional[List[str]] = None,
+    allergies: Optional[List[str]] = None,
 ) -> List[Dict[str, str]]:
-    """All rule-based risk flags for a patient (labs + drug interactions)."""
+    """All rule-based risk flags for a patient.
+
+    `allergies` is optional and defaults to none, so every existing two-argument
+    call site keeps working and simply gets no allergy flags -- the same
+    degrade-quietly posture the rest of this module takes toward missing data.
+    """
     flags: List[Dict[str, str]] = []
     by_key_lower = {key.strip().lower(): raw for key, raw in (lab_results or {}).items()}
 
@@ -150,14 +370,23 @@ def assess_patient_risk(
 
     severity_map = {"major": "high", "moderate": "medium"}
     for interaction in find_interactions(medications or []):
+        drug_a, drug_b = interaction["pair"]
         flags.append(
             {
                 "source": "drug",
-                "label": f"Interaction: {' + '.join(interaction['pair'])}",
+                # Sorted, so "warfarin + aspirin" and "aspirin + warfarin" are
+                # one finding rather than two alerts about the same fact.
+                "rule_key": f"drug.interaction.{_pair_key(drug_a, drug_b)}",
+                "label": f"Interaction: {drug_a} + {drug_b}",
                 "severity": severity_map.get(interaction["severity"], "medium"),
                 "detail": interaction["effect"],
+                "rule_source": "curated interaction table (drug_safety_server)",
+                "kind": "clinical",
             }
         )
+
+    flags.extend(_allergy_conflicts(medications or [], allergies or []))
+    flags.extend(_duplicate_medications(medications or []))
 
     return flags
 

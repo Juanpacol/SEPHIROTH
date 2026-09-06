@@ -365,6 +365,25 @@ class TestDatabaseConstraints:
             await db_session.flush()
         await db_session.rollback()
 
+    async def test_a_source_closing_without_an_actor_supersedes_instead_of_failing(self, db_session):
+        """`ck_task_closed_requires_actor` refuses `dismissed` with no actor
+        exactly as it refuses `done`. `approvals.py::_expire_due_pending` is a
+        bulk UPDATE with no actor, so the honest terminal status for it is
+        `superseded` -- not an IntegrityError at commit time."""
+        task = await _task(db_session, status="open")
+        task.source_type = "approval"
+        task.source_id = "PA-NOACTOR"
+        await db_session.flush()
+
+        closed = await svc.close_tasks_for_source(
+            db_session, "approval", "PA-NOACTOR", status="dismissed", actor=None, reason="expired"
+        )
+        await db_session.flush()
+
+        assert closed == 1
+        assert task.status == "superseded"
+        assert task.closed_by is None
+
     async def test_two_tasks_cannot_share_a_dedupe_key(self, db_session):
         from sqlalchemy.exc import IntegrityError
 

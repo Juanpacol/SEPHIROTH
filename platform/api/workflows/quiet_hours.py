@@ -16,7 +16,7 @@ this module.
 
 from __future__ import annotations
 
-from datetime import datetime, tzinfo
+from datetime import date, datetime, tzinfo
 from typing import Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -44,6 +44,18 @@ def clinic_timezone() -> tzinfo:
         from datetime import timezone
 
         return timezone.utc
+
+
+def clinic_today() -> date:
+    """The clinic's calendar day, not the server's.
+
+    Every timestamp in this schema is naive UTC, so `date.today()` -- which
+    reads the *host's* local zone -- gives a third answer that matches neither
+    the data nor the clinic. On a UTC host in a UTC-5 clinic it rolls the day
+    over at 7pm local; on a developer's laptop it rolls at a different hour
+    again, so "once per day" means something different in each deployment.
+    """
+    return datetime.now(clinic_timezone()).date()
 
 
 async def defer_for_quiet_hours(
@@ -79,4 +91,4 @@ async def defer_for_quiet_hours(
     return None
 
 
-__all__ = ["defer_for_quiet_hours", "clinic_timezone", "CLINIC_SCOPE_ID"]
+__all__ = ["defer_for_quiet_hours", "clinic_timezone", "clinic_today", "CLINIC_SCOPE_ID"]

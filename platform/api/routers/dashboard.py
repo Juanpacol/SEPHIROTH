@@ -560,35 +560,48 @@ async def _action_items_from_tasks(session: AsyncSession) -> Dict[str, Any]:
     names: Dict[str, str] = dict(
         (await session.execute(select(Patient.id, Patient.name))).all()  # type: ignore[arg-type]
     )
+    # Bounded: the cap below keeps at most 8 per category, and there are 8
+    # categories, so anything past a few hundred rows can never reach the page.
+    # Without a limit this loads every open task in the clinic to discard most
+    # of them.
     tasks = (
         await session.scalars(
-            select(Task).where(Task.status.in_(OPEN_STATUSES)).order_by(Task.created_at.desc())
+            select(Task)
+            .where(Task.status.in_(OPEN_STATUSES))
+            .order_by(Task.created_at.desc())
+            .limit(_ACTION_ITEM_LIMIT_PER_CATEGORY * 40)
         )
     ).all()
 
+    rows: List[Dict[str, Any]] = [
+        {
+            "category": task.category,
+            "severity": task.severity,
+            "patient_id": task.patient_id,
+            "patient_name": names.get(task.patient_id or ""),
+            **(task.context or {}),
+            "task_id": task.id,
+            "status": task.status,
+            "due_at": task.due_at.isoformat() if task.due_at else None,
+        }
+        for task in tasks
+    ]
+
+    # Sort BEFORE capping. The first cut of this capped while walking newest-
+    # first and sorted afterwards, so a critical alert older than eight newer
+    # medium ones in the same category was dropped before the severity sort
+    # ever saw it -- the exact inversion the ranking exists to prevent.
+    rows.sort(key=lambda item: _SEVERITY_RANK.get(item["severity"], len(_SEVERITY_RANK)))
+
     items: List[Dict[str, Any]] = []
     per_category: Dict[str, int] = {}
-    for task in tasks:
-        # Same per-category cap the derived version applied, so one noisy
-        # category still cannot crowd the others off the page.
-        seen = per_category.get(task.category, 0)
+    for row in rows:
+        seen = per_category.get(row["category"], 0)
         if seen >= _ACTION_ITEM_LIMIT_PER_CATEGORY:
             continue
-        per_category[task.category] = seen + 1
-        items.append(
-            {
-                "category": task.category,
-                "severity": task.severity,
-                "patient_id": task.patient_id,
-                "patient_name": names.get(task.patient_id or ""),
-                **(task.context or {}),
-                "task_id": task.id,
-                "status": task.status,
-                "due_at": task.due_at.isoformat() if task.due_at else None,
-            }
-        )
+        per_category[row["category"]] = seen + 1
+        items.append(row)
 
-    items.sort(key=lambda item: _SEVERITY_RANK.get(item["severity"], len(_SEVERITY_RANK)))
     return {"items": items, "total_count": len(items)}
 
 
