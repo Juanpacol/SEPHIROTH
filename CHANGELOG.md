@@ -5,6 +5,37 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 16 — the unified clinical task inbox (SPEC-018)
+
+Work was scattered across five inboxes plus `GET /api/dashboard/action-items`, which already knew what a clinician should do today and could not help them do it: its items had no id, no state, no assignee, no history. Nothing on it could be claimed, snoozed, commented on, or tracked to closure.
+
+#### Added
+- `Task` and `TaskEvent`, with an auditable state machine (`platform/api/services/task_service.py`). `TRANSITIONS` is exported so tests assert against the table itself; the test that matters walks every `(status, action)` pair *absent* from it and requires a refusal.
+- `platform/api/services/` — the first service layer in this codebase. Nothing in it commits (the `set_memory`/`emit` precedent); routers commit, the tick commits once.
+- `/api/tasks` with one verb per transition, filters, and offset paging — the first paginated endpoint here. `/api/badges` collapses what were two independent 30-second polls into one.
+- `task_derivation` for the work that has no row at all (worsening trends, drug interactions, unreviewed results, unacted high-risk consultations) — and the retirement half, without which a persisted inbox is worse than the derived list it replaced, because it accumulates.
+- `/tasks` in the frontend, with optimistic removal and an undo toast, plus a badge on the sidebar and the phone's bottom bar.
+- `scripts/backfill_tasks.py`, and migration `98e0a1e35b4a` (additive; hand-corrected after autogenerate emitted `core.crypto.EncryptedText()` with no import for it).
+
+#### Changed
+- `alerts.py::resolve_alert`'s body moved into `task_adapters`, so resolving the alert and completing its task are the same code rather than two implementations that agree until one is edited.
+- `/api/dashboard/action-items` reads from `tasks` behind `enable_task_inbox`, with a byte-identical response shape plus optional `task_id`/`status`/`due_at`. A test runs one fixture through both paths and requires the same items — a flag whose two sides disagree is a rollback that does not roll back.
+
+#### Notable
+- Writing the claim race test found a real defect in the first cut: claim was a read-modify-write in Python, so two clinicians opening the inbox at the same moment could both be told they owned the work. It is now an `UPDATE … WHERE assigned_to_user_id IS NULL` with a rowcount check.
+- An approval task deliberately refuses completion from the inbox. Approving a message to a patient is consent, and consent is given by pressing approve on the message, not by tidying a row.
+
+### Phase 15 — interface foundations (SPEC-017)
+
+#### Added
+- `Portal` and `useFocusTrap`, and `Sheet` rebuilt on both. It had neither: `.glass-surface`'s `backdrop-blur` and the sticky sidebar establish containing blocks that clip an overlay regardless of `z-index`, and without a trap Tab walked out of the drawer into the page behind it.
+- `MobileNav` — below `md` the app had **no navigation at all**, so a clinician on a phone could reach exactly the page they landed on. The nav config moved to `lib/nav.ts` so the sidebar and the bar cannot disagree about what exists.
+- `DataList`: one column set, rendered as a table or as cards. Deliberately one component, not a `<Table>`/`<CardList>` pair — two components mean two places to add a column, and the mobile one falls behind because nobody develops on a phone.
+- `Dialog`, `DropdownMenu`, `SegmentedControl`, `Skeleton`, and an optional action on toasts.
+
+#### Changed
+- The `frontend` CI job now runs `tsc --noEmit` and eslint at zero warnings as separate steps. The lint script existed and nothing called it; ESLint was not installed.
+
 ### Documentation debt — SPEC-009, written retroactively
 
 Prerequisite for the clinical-operating-system plan. `docs/project-state.yaml`

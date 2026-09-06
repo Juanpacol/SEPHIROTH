@@ -5,7 +5,7 @@ are *not* in it. A permissive state machine is worse than none: it lets a
 clinician close work from a state where closing means something different, and
 nothing downstream can tell the difference afterwards.
 
-Verifies AC-018-03, AC-018-04, AC-018-05, AC-018-06
+Verifies AC-018-01, AC-018-02, AC-018-03, AC-018-04, AC-018-05, AC-018-06
 (docs/specs/SPEC-018-unified-tasks.md).
 """
 
