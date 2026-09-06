@@ -1,4 +1,6 @@
-"""Pure unit tests for `sephiroth.workflows.policy` — no DB, no I/O."""
+"""Pure unit tests for `sephiroth.workflows.policy` — no DB, no I/O.
+
+Verifies AC-009-08 (docs/specs/SPEC-009-automation-substrate.md)."""
 
 from datetime import datetime, timedelta
 

@@ -1,5 +1,7 @@
-"""`alert_escalation` workflow definition (SPEC-011): the CLINICAL_ALERT
-subscriber + the escalate_if_unresolved step handler."""
+"""`alert_escalation` workflow definition: the CLINICAL_ALERT subscriber
++ the escalate_if_unresolved step handler.
+
+Verifies AC-009-16 (docs/specs/SPEC-009-automation-substrate.md)."""
 
 from datetime import datetime, timezone
 from uuid import uuid4

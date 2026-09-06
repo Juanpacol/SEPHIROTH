@@ -1,5 +1,9 @@
-"""`patient_followup` workflow definition (SPEC-014): enrollment + the
-day-3/7/30 step handler creating an empty-draft PendingAction."""
+"""`patient_followup` workflow definition: enrollment + the day-3/7/30
+step handler creating an empty-draft PendingAction.
+
+Verifies AC-009-22, AC-009-23 (docs/specs/SPEC-009-automation-substrate.md).
+Written under the never-issued SPEC-014; that number is retired. The empty
+draft is a known defect, recorded in SPEC-009 §11 risk 6."""
 
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4

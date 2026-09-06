@@ -1,6 +1,7 @@
 """`alert_refresh` — the proof-of-life step type for SPEC-009. Exercises
 seeding + the handler end to end, and asserts running it twice creates
-no duplicate `Alert` (AC-009-09)."""
+no duplicate `Alert` (AC-009-09,
+docs/specs/SPEC-009-automation-substrate.md)."""
 
 from datetime import datetime, timezone
 
