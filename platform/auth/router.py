@@ -7,7 +7,7 @@ from typing import List, Optional
 from uuid import uuid4
 
 import pyotp
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,6 +23,7 @@ from auth.security import (
 )
 from core.config import settings
 from core.db import get_session
+from core.rate_limit import limiter
 from data.schemas import MfaRecoveryCode, PasswordResetToken, PatientInvite, User
 
 router = APIRouter()
@@ -31,6 +32,10 @@ PASSWORD_RESET_TTL = timedelta(hours=1)
 MFA_RECOVERY_CODE_COUNT = 10
 _INVALID_RESET_TOKEN = "Invalid or expired reset token"
 _INVALID_MFA_CODE = "Invalid or expired code"
+
+MAX_FAILED_LOGIN_ATTEMPTS = 5
+LOGIN_LOCKOUT_DURATION = timedelta(minutes=15)
+_ACCOUNT_LOCKED = "Account temporarily locked due to repeated failed login attempts. Try again later."
 
 
 class RegisterRequest(BaseModel):
@@ -153,18 +158,21 @@ def _auth_response(user: User) -> AuthResponse:
     status_code=201,
     dependencies=[Depends(require_clinician_for_registration)],
 )
-async def register(request: RegisterRequest, session: AsyncSession = Depends(get_session)) -> AuthResponse:
+@limiter.limit("10/hour")
+async def register(
+    request: Request, body: RegisterRequest, session: AsyncSession = Depends(get_session)
+) -> AuthResponse:
     """Clinician registration only — a patient account is created solely
     via `POST /api/auth/portal/claim` (see below), never here."""
-    existing = await session.scalar(select(User).where(User.email == request.email))
+    existing = await session.scalar(select(User).where(User.email == body.email))
     if existing:
         raise HTTPException(status_code=409, detail="Email already registered")
 
     user = User(
         id=str(uuid4()),
-        email=request.email,
-        name=request.name,
-        hashed_password=await hash_password(request.password),
+        email=body.email,
+        name=body.name,
+        hashed_password=await hash_password(body.password),
         role="clinician",
     )
     session.add(user)
@@ -176,8 +184,9 @@ _INVALID_CLAIM_CODE = "Invalid or expired claim code"
 
 
 @router.post("/portal/claim", response_model=AuthResponse, status_code=201)
+@limiter.limit("10/hour")
 async def claim_invite(
-    request: ClaimInviteRequest, session: AsyncSession = Depends(get_session)
+    request: Request, body: ClaimInviteRequest, session: AsyncSession = Depends(get_session)
 ) -> AuthResponse:
     """Redeem a clinician-issued invite code to create a patient portal
     login. Public (no auth) by design — this IS the patient's
@@ -186,7 +195,7 @@ async def claim_invite(
     already redeemed, expired, wrong secret) returns the identical 400
     detail string — distinguishing them would let an attacker use the
     endpoint as an oracle to enumerate valid invite ids."""
-    invite_id, _, secret = request.code.partition(".")
+    invite_id, _, secret = body.code.partition(".")
     if not invite_id or not secret:
         raise HTTPException(status_code=400, detail=_INVALID_CLAIM_CODE)
 
@@ -199,7 +208,7 @@ async def claim_invite(
     ):
         raise HTTPException(status_code=400, detail=_INVALID_CLAIM_CODE)
 
-    existing_email = await session.scalar(select(User).where(User.email == request.email))
+    existing_email = await session.scalar(select(User).where(User.email == body.email))
     if existing_email:
         raise HTTPException(status_code=409, detail="Email already registered")
 
@@ -209,9 +218,9 @@ async def claim_invite(
 
     user = User(
         id=str(uuid4()),
-        email=request.email,
-        name=request.name,
-        hashed_password=await hash_password(request.password),
+        email=body.email,
+        name=body.name,
+        hashed_password=await hash_password(body.password),
         role="patient",
         patient_id=invite.patient_id,
     )
@@ -229,11 +238,34 @@ async def claim_invite(
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(request: LoginRequest, session: AsyncSession = Depends(get_session)) -> LoginResponse:
-    user = await session.scalar(select(User).where(User.email == request.email))
-    valid_password = user is not None and await verify_password(request.password, user.hashed_password)
+@limiter.limit("10/minute")
+async def login(
+    request: Request, body: LoginRequest, session: AsyncSession = Depends(get_session)
+) -> LoginResponse:
+    user = await session.scalar(select(User).where(User.email == body.email))
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    if user is not None and user.locked_until is not None:
+        if user.locked_until > now:
+            raise HTTPException(status_code=403, detail=_ACCOUNT_LOCKED)
+        # Lockout window elapsed — clear it so a good password below succeeds
+        # instead of being compared against a stale locked state.
+        user.locked_until = None
+        user.failed_login_attempts = 0
+
+    valid_password = user is not None and await verify_password(body.password, user.hashed_password)
     if user is None or not user.is_active or not valid_password:
+        if user is not None and user.is_active:
+            user.failed_login_attempts += 1
+            if user.failed_login_attempts >= MAX_FAILED_LOGIN_ATTEMPTS:
+                user.locked_until = now + LOGIN_LOCKOUT_DURATION
+            await session.commit()
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    await session.commit()
+
     if user.mfa_enabled:
         return LoginResponse(mfa_required=True, mfa_token=create_mfa_pending_token(user.id))
     auth = _auth_response(user)
@@ -261,14 +293,17 @@ async def _verify_mfa_code(session: AsyncSession, user: User, code: str) -> bool
 
 
 @router.post("/login/mfa", response_model=AuthResponse)
-async def login_mfa(request: MfaLoginRequest, session: AsyncSession = Depends(get_session)) -> AuthResponse:
-    user_id = decode_mfa_pending_token(request.mfa_token)
+@limiter.limit("10/minute")
+async def login_mfa(
+    request: Request, body: MfaLoginRequest, session: AsyncSession = Depends(get_session)
+) -> AuthResponse:
+    user_id = decode_mfa_pending_token(body.mfa_token)
     if user_id is None:
         raise HTTPException(status_code=401, detail=_INVALID_MFA_CODE)
     user = await session.get(User, user_id)
     if user is None or not user.is_active or not user.mfa_enabled:
         raise HTTPException(status_code=401, detail=_INVALID_MFA_CODE)
-    if not await _verify_mfa_code(session, user, request.code):
+    if not await _verify_mfa_code(session, user, body.code):
         raise HTTPException(status_code=401, detail=_INVALID_MFA_CODE)
     return _auth_response(user)
 
@@ -324,13 +359,14 @@ async def deactivate_account(
 
 
 @router.post("/password-reset/request", response_model=PasswordResetResponse, status_code=202)
+@limiter.limit("5/hour")
 async def request_password_reset(
-    request: PasswordResetRequest, session: AsyncSession = Depends(get_session)
+    request: Request, body: PasswordResetRequest, session: AsyncSession = Depends(get_session)
 ) -> PasswordResetResponse:
     """Always 202s. No send capability exists in this codebase (see
     `PatientInvite`'s precedent) — the raw token is returned directly in
     the response when the account exists, rather than emailed."""
-    user = await session.scalar(select(User).where(User.email == request.email))
+    user = await session.scalar(select(User).where(User.email == body.email))
     if user is None or not user.is_active:
         return PasswordResetResponse()
 

@@ -4,10 +4,10 @@ import logging
 import secrets
 from datetime import date as date_cls
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,6 +68,8 @@ def _full(patient: Patient) -> Dict[str, Any]:
 
 
 class PatientCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     name: str = Field(..., min_length=1)
     age: int = Field(..., ge=0, le=130)
     sex: str = Field(..., pattern="^[MF]$")
@@ -76,14 +78,27 @@ class PatientCreate(BaseModel):
     allergies: List[str] = []
 
 
+# Hard ceiling on a single `GET /api/patients` response — this product has
+# no per-clinician scoping (every clinician sees every patient, CLAUDE.md
+# decision #7), so without a cap the endpoint's cost grows unbounded with
+# the whole clinic's patient count. Kept high enough that no real clinic
+# roster hits it and the frontend's plain-array contract (`PatientSummary[]`,
+# `lib/api.ts`) never has to change to `{items, total}`.
+_MAX_PATIENTS_PER_LIST = 1000
+
+
 @router.get("")
 async def list_patients(
-    sort: Optional[str] = None, session: AsyncSession = Depends(get_session)
+    sort: Optional[Literal["risk"]] = None,
+    limit: int = Query(_MAX_PATIENTS_PER_LIST, ge=1, le=_MAX_PATIENTS_PER_LIST),
+    session: AsyncSession = Depends(get_session),
 ) -> List[Dict[str, Any]]:
     """`sort=risk` reorders the (still name-sorted-first) list by risk level,
     highest first — used by the dashboard's critical-patients view. Omitting
     it keeps the original alphabetical-by-name order unchanged."""
-    patients = (await session.scalars(select(Patient).order_by(Patient.name))).all()
+    patients = (
+        await session.scalars(select(Patient).order_by(Patient.name).limit(limit))
+    ).all()
     summaries = [_summary(p) for p in patients]
     if sort == "risk":
         summaries.sort(key=lambda s: RISK_ORDER.get(s["risk_level"], len(RISK_ORDER)))

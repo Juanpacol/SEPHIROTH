@@ -55,6 +55,19 @@ def client(app):
     return AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
 
 
+@pytest.fixture
+def img_dir(tmp_path, monkeypatch):
+    """`analyze`/`describe`/`preview` now only read from `_ALLOWED_IMAGE_DIRS`
+    (see `_resolve_allowed_image_path`) — point the module's upload dir at a
+    per-test tmp_path instead of the real scratch dir, so these tests still
+    get an isolated, writable directory that also passes the allow-list."""
+    from api.routers import medical as medical_module
+
+    monkeypatch.setattr(medical_module, "_UPLOAD_DIR", tmp_path)
+    monkeypatch.setattr(medical_module, "_ALLOWED_IMAGE_DIRS", [tmp_path.resolve()] + medical_module._ALLOWED_IMAGE_DIRS[1:])
+    return tmp_path
+
+
 async def _auth_headers(client: AsyncClient) -> dict:
     res = await client.post("/api/auth/register", json=CREDS)
     assert res.status_code == 201, res.text
@@ -99,8 +112,8 @@ async def test_summarize_note(client):
 
 
 @pytest.mark.asyncio
-async def test_analyze_image_no_weights(client, tmp_path):
-    img_path = tmp_path / "x.png"
+async def test_analyze_image_no_weights(client, img_dir):
+    img_path = img_dir / "x.png"
     img_path.write_bytes(b"fake")
     async with client:
         headers = await _auth_headers(client)
@@ -114,11 +127,11 @@ async def test_analyze_image_no_weights(client, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_describe_image_no_api_key_returns_unavailable(client, tmp_path, monkeypatch):
+async def test_describe_image_no_api_key_returns_unavailable(client, img_dir, monkeypatch):
     import sephiroth.models.factory as factory_module
 
     monkeypatch.setattr(factory_module, "_client", _UnavailableVisionClient())
-    img_path = tmp_path / "x.png"
+    img_path = img_dir / "x.png"
     img_path.write_bytes(b"fake")
     async with client:
         headers = await _auth_headers(client)
@@ -146,11 +159,11 @@ async def _sse_events(response) -> list:
 
 
 @pytest.mark.asyncio
-async def test_describe_image_stream_analysis_disabled(client, tmp_path, monkeypatch):
+async def test_describe_image_stream_analysis_disabled(client, img_dir, monkeypatch):
     from core.config import settings
 
     monkeypatch.setattr(settings, "enable_vision_analysis", False)
-    img_path = tmp_path / "x.png"
+    img_path = img_dir / "x.png"
     img_path.write_bytes(b"fake")
     async with client:
         headers = await _auth_headers(client)
@@ -182,8 +195,8 @@ async def test_describe_image_stream_file_not_found(client):
 
 
 @pytest.mark.asyncio
-async def test_describe_image_stream_unsupported_format(client, tmp_path):
-    img_path = tmp_path / "scan.dcm"
+async def test_describe_image_stream_unsupported_format(client, img_dir):
+    img_path = img_dir / "scan.dcm"
     img_path.write_bytes(b"not an image")
     async with client:
         headers = await _auth_headers(client)
@@ -198,11 +211,11 @@ async def test_describe_image_stream_unsupported_format(client, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_describe_image_stream_oversized_image(client, tmp_path, monkeypatch):
+async def test_describe_image_stream_oversized_image(client, img_dir, monkeypatch):
     from api.routers import medical as medical_module
 
     monkeypatch.setattr(medical_module, "MAX_IMAGE_BYTES", 4)
-    img_path = tmp_path / "x.png"
+    img_path = img_dir / "x.png"
     img_path.write_bytes(b"more than four bytes")
     async with client:
         headers = await _auth_headers(client)
@@ -217,11 +230,11 @@ async def test_describe_image_stream_oversized_image(client, tmp_path, monkeypat
 
 
 @pytest.mark.asyncio
-async def test_describe_image_stream_no_api_key_yields_error_event(client, tmp_path, monkeypatch):
+async def test_describe_image_stream_no_api_key_yields_error_event(client, img_dir, monkeypatch):
     import sephiroth.models.factory as factory_module
 
     monkeypatch.setattr(factory_module, "_client", _UnavailableVisionClient())
-    img_path = tmp_path / "x.png"
+    img_path = img_dir / "x.png"
     img_path.write_bytes(b"fake")
     async with client:
         headers = await _auth_headers(client)
@@ -238,7 +251,7 @@ async def test_describe_image_stream_no_api_key_yields_error_event(client, tmp_p
 
 
 @pytest.mark.asyncio
-async def test_describe_image_stream_success_yields_chunks_then_final(client, tmp_path, monkeypatch):
+async def test_describe_image_stream_success_yields_chunks_then_final(client, img_dir, monkeypatch):
     import sephiroth.models.factory as factory_module
 
     class _FakeVisionClient:
@@ -249,7 +262,7 @@ async def test_describe_image_stream_success_yields_chunks_then_final(client, tm
                 yield chunk
 
     monkeypatch.setattr(factory_module, "_client", _FakeVisionClient())
-    img_path = tmp_path / "x.png"
+    img_path = img_dir / "x.png"
     img_path.write_bytes(b"fake")
     async with client:
         headers = await _auth_headers(client)
@@ -267,8 +280,8 @@ async def test_describe_image_stream_success_yields_chunks_then_final(client, tm
 
 
 @pytest.mark.asyncio
-async def test_describe_image_stream_requires_auth(client, tmp_path):
-    img_path = tmp_path / "x.png"
+async def test_describe_image_stream_requires_auth(client, img_dir):
+    img_path = img_dir / "x.png"
     img_path.write_bytes(b"fake")
     async with client:
         res = await client.post("/api/medical/imaging/describe/stream", json={"image_path": str(img_path)})
@@ -288,8 +301,8 @@ async def test_detect_modality_file_not_found(client):
 
 
 @pytest.mark.asyncio
-async def test_detect_modality_unsupported_format(client, tmp_path):
-    img_path = tmp_path / "scan.dcm"
+async def test_detect_modality_unsupported_format(client, img_dir):
+    img_path = img_dir / "scan.dcm"
     img_path.write_bytes(b"not an image")
     async with client:
         headers = await _auth_headers(client)
@@ -302,11 +315,11 @@ async def test_detect_modality_unsupported_format(client, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_detect_modality_oversized_image(client, tmp_path, monkeypatch):
+async def test_detect_modality_oversized_image(client, img_dir, monkeypatch):
     from api.routers import medical as medical_module
 
     monkeypatch.setattr(medical_module, "MAX_IMAGE_BYTES", 4)
-    img_path = tmp_path / "x.png"
+    img_path = img_dir / "x.png"
     img_path.write_bytes(b"more than four bytes")
     async with client:
         headers = await _auth_headers(client)
@@ -319,11 +332,11 @@ async def test_detect_modality_oversized_image(client, tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_detect_modality_no_api_key_degrades_to_unknown(client, tmp_path, monkeypatch):
+async def test_detect_modality_no_api_key_degrades_to_unknown(client, img_dir, monkeypatch):
     import sephiroth.models.factory as factory_module
 
     monkeypatch.setattr(factory_module, "_client", _UnavailableVisionClient())
-    img_path = tmp_path / "x.png"
+    img_path = img_dir / "x.png"
     img_path.write_bytes(b"fake")
     async with client:
         headers = await _auth_headers(client)
@@ -337,7 +350,7 @@ async def test_detect_modality_no_api_key_degrades_to_unknown(client, tmp_path, 
 
 
 @pytest.mark.asyncio
-async def test_detect_modality_returns_guessed_modality(client, tmp_path, monkeypatch):
+async def test_detect_modality_returns_guessed_modality(client, img_dir, monkeypatch):
     import sephiroth.models.factory as factory_module
 
     class _FakeVisionClient:
@@ -347,7 +360,7 @@ async def test_detect_modality_returns_guessed_modality(client, tmp_path, monkey
             return "ct"
 
     monkeypatch.setattr(factory_module, "_client", _FakeVisionClient())
-    img_path = tmp_path / "x.png"
+    img_path = img_dir / "x.png"
     img_path.write_bytes(b"fake")
     async with client:
         headers = await _auth_headers(client)
@@ -361,8 +374,8 @@ async def test_detect_modality_returns_guessed_modality(client, tmp_path, monkey
 
 
 @pytest.mark.asyncio
-async def test_detect_modality_requires_auth(client, tmp_path):
-    img_path = tmp_path / "x.png"
+async def test_detect_modality_requires_auth(client, img_dir):
+    img_path = img_dir / "x.png"
     img_path.write_bytes(b"fake")
     async with client:
         res = await client.post("/api/medical/imaging/detect-modality", json={"image_path": str(img_path)})
@@ -466,8 +479,8 @@ async def test_preview_image_404_when_missing(client):
 
 
 @pytest.mark.asyncio
-async def test_preview_image_serves_existing_file(client, tmp_path):
-    img_path = tmp_path / "preview.png"
+async def test_preview_image_serves_existing_file(client, img_dir):
+    img_path = img_dir / "preview.png"
     img_path.write_bytes(b"fake png bytes")
     async with client:
         headers = await _auth_headers(client)
@@ -478,8 +491,8 @@ async def test_preview_image_serves_existing_file(client, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_preview_image_requires_auth(client, tmp_path):
-    img_path = tmp_path / "preview.png"
+async def test_preview_image_requires_auth(client, img_dir):
+    img_path = img_dir / "preview.png"
     img_path.write_bytes(b"fake png bytes")
     async with client:
         res = await client.get("/api/medical/imaging/preview", params={"path": str(img_path)})

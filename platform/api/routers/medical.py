@@ -47,6 +47,22 @@ _MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20 MB
 # just needs *some* real path on disk for analyze/describe/preview to read
 # back, the same way a typed-in path always has.
 _UPLOAD_DIR = Path(tempfile.gettempdir()) / "sephiroth-imaging-uploads"
+# Every legitimate image this flow ever reads lives in one of these two
+# places (an upload just made, or a sample bundled with the repo) — not
+# "anywhere on disk". Resolved once at import time so a caller can't use
+# `..`/symlinks to escape either directory; any `path`/`image_path` outside
+# both is rejected before it reaches the filesystem or a tool call.
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_ALLOWED_IMAGE_DIRS = [_UPLOAD_DIR.resolve(), (_REPO_ROOT / "real_data" / "imaging").resolve()]
+
+
+def _resolve_allowed_image_path(raw_path: str) -> Path:
+    """Resolve `raw_path` and reject it (404, not 403 — don't confirm files
+    exist outside the allow-list) unless it lands inside `_ALLOWED_IMAGE_DIRS`."""
+    resolved = Path(raw_path).expanduser().resolve()
+    if not any(resolved.is_relative_to(base) for base in _ALLOWED_IMAGE_DIRS):
+        raise HTTPException(status_code=404, detail="File not found")
+    return resolved
 
 
 class ExtractRequest(BaseModel):
@@ -78,11 +94,12 @@ class ImagingRequest(BaseModel):
 @router.post("/imaging/analyze")
 async def analyze_image(request: ImagingRequest, user: User = Depends(get_current_user)) -> Dict[str, Any]:
     """Analyze a medical image (returns structured findings)."""
+    resolved = _resolve_allowed_image_path(request.image_path)
     registry = get_tool_runtime()
     await registry.load()
     return await registry.execute(
         "analyze_medical_image",
-        {"image_path": request.image_path, "modality": request.modality, "target": request.target},
+        {"image_path": str(resolved), "modality": request.modality, "target": request.target},
     )
 
 
@@ -94,11 +111,12 @@ class DescribeRequest(BaseModel):
 @router.post("/imaging/describe", summary="Describe a medical image with the local vision model")
 async def describe_image(request: DescribeRequest, user: User = Depends(get_current_user)) -> Dict[str, Any]:
     """Generate an AI clinical description of a medical image (LLaVA via Ollama)."""
+    resolved = _resolve_allowed_image_path(request.image_path)
     registry = get_tool_runtime()
     await registry.load()
     return await registry.execute(
         "describe_medical_image",
-        {"image_path": request.image_path, "clinical_focus": request.clinical_focus},
+        {"image_path": str(resolved), "clinical_focus": request.clinical_focus},
     )
 
 
@@ -120,8 +138,9 @@ async def describe_image_stream(
             yield f"data: {json.dumps({'event': 'error', 'detail': detail})}\n\n"
             return
 
-        path = Path(request.image_path)
-        if not path.exists():
+        try:
+            path = _resolve_allowed_image_path(request.image_path)
+        except HTTPException:
             detail = f"File not found: {request.image_path}"
             yield f"data: {json.dumps({'event': 'error', 'detail': detail})}\n\n"
             return
@@ -183,7 +202,7 @@ async def detect_image_modality(
     file-read/validation as `/imaging/describe/stream`. Never errors on a
     readable image; degrades to `{"modality": "unknown"}` if vision is
     unavailable, same posture as `detect_modality` itself."""
-    path = Path(request.image_path)
+    path = _resolve_allowed_image_path(request.image_path)
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"File not found: {request.image_path}")
     if path.suffix.lower() not in READABLE_FORMATS:
@@ -229,13 +248,13 @@ async def upload_image(file: UploadFile, user: User = Depends(get_current_user))
 async def preview_image(path: str, user: User = Depends(get_current_user)) -> FileResponse:
     """Serve a browser-renderable image so the imaging page can show it next to the AI findings.
 
-    Same trust boundary as `describe_medical_image`/`analyze_medical_image` — this is a
-    local-first, single-user tool where the caller already names arbitrary local file paths.
-    Restricted to image extensions so this can't become a general file-download route.
+    Same trust boundary as `describe_medical_image`/`analyze_medical_image` — restricted to
+    `_ALLOWED_IMAGE_DIRS` (an upload just made, or a bundled sample) and to image extensions,
+    so this can't become a general file-download route.
     """
-    file_path = Path(path).expanduser()
-    if file_path.suffix.lower() not in _PREVIEWABLE_EXTENSIONS:
+    if Path(path).suffix.lower() not in _PREVIEWABLE_EXTENSIONS:
         raise HTTPException(status_code=400, detail="Only image files can be previewed")
+    file_path = _resolve_allowed_image_path(path)
     if not file_path.is_file():
         raise HTTPException(status_code=404, detail="File not found")
     media_type = mimetypes.guess_type(file_path.name)[0] or "application/octet-stream"

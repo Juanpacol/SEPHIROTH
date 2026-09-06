@@ -104,6 +104,35 @@ does not always get `pgvector.sqlalchemy.Vector` right on the first pass.
 `tests/test_alembic_migration.py` is the drift guard; it self-skips when no
 local Postgres is reachable.
 
+## Database roles
+
+By default (zero-config local dev) the app connects as `clinical_ai`, the
+same role that owns the schema and runs migrations — fine for a laptop, not
+for anything shared. To run the app as a least-privilege role instead:
+
+1. Run `migrations/roles.sql` once, connected as the owner role
+   (`psql`/Supabase's SQL editor). It creates `clinical_ai_app` — `SELECT`/
+   `INSERT`/`UPDATE`/`DELETE` on every table, no `CREATE`/`ALTER`/`DROP`,
+   no ownership — and is idempotent (safe to re-run after a schema change,
+   since `ALTER DEFAULT PRIVILEGES` covers tables the owner creates later).
+2. Point `DATABASE_URL` at `clinical_ai_app`'s connection string instead of
+   the owner's.
+3. Set `MIGRATION_DATABASE_URL` to the owner role's connection string, so
+   `init_db()`'s `alembic upgrade head` on boot (`platform/core/db.py`) still
+   has somewhere to run DDL from — `migrations/env.py` prefers it over
+   `DATABASE_URL` whenever it's set.
+
+**Local Postgres**: the owner role is `clinical_ai`, the database is
+`clinical_ai_db` — `roles.sql` already targets these, no edits needed.
+
+**Supabase**: the owner role is `postgres`, the database is `postgres` —
+edit `roles.sql`'s two `ALTER DEFAULT PRIVILEGES FOR ROLE clinical_ai`
+lines and its `GRANT CONNECT ON DATABASE clinical_ai_db` line to match
+before running it in the SQL editor, then use `clinical_ai_app`'s password
+(the one you set in the script) with Supabase's Session pooler host/port
+for `DATABASE_URL`, and the existing owner connection string for
+`MIGRATION_DATABASE_URL`.
+
 ## Vendored code
 
 `references/` holds cloned open-source projects for reference and is read-only.

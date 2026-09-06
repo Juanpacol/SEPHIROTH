@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
@@ -19,6 +19,7 @@ from api.workflows import clinical_notify
 from auth.deps import get_current_user
 from core.config import settings
 from core.db import SessionLocal, get_session
+from core.rate_limit import key_by_user_or_ip, limiter
 from data.schemas import AIEvaluation, Consultation, Patient, User
 from sephiroth.context import recent_consultation_summaries
 from sephiroth.models import get_llm_client
@@ -150,8 +151,10 @@ async def _persist(
 
 
 @router.post("/consult", response_model=ConsultResponse)
+@limiter.limit("20/hour", key_func=key_by_user_or_ip)
 async def consult(
-    request: ConsultRequest,
+    request: Request,
+    body: ConsultRequest,
     user: User = Depends(get_current_user),
 ) -> ConsultResponse:
     """Run the multi-agent clinical workflow and persist it to the user's history.
@@ -166,21 +169,21 @@ async def consult(
         raise HTTPException(status_code=503, detail="Agent workflow is disabled")
     await _ensure_llm()
 
-    context = dict(request.context)
-    if request.patient_id:
+    context = dict(body.context)
+    if body.patient_id:
         async with SessionLocal() as lookup_session:
             context["recent_consultations"] = await recent_consultation_summaries(
-                request.patient_id, lookup_session
+                body.patient_id, lookup_session
             )
 
     state = await run_consultation(
         get_llm_client(),
-        query=request.query,
-        patient_id=request.patient_id,
+        query=body.query,
+        patient_id=body.patient_id,
         context=context,
     )
     async with SessionLocal() as session:
-        consultation = await _persist(session, user, request, dict(state))
+        consultation = await _persist(session, user, body, dict(state))
     return ConsultResponse(
         id=consultation.id,
         answer=consultation.answer,
@@ -195,8 +198,10 @@ async def consult(
 
 
 @router.post("/consult/stream")
+@limiter.limit("20/hour", key_func=key_by_user_or_ip)
 async def consult_stream(
-    request: ConsultRequest,
+    request: Request,
+    body: ConsultRequest,
     user: User = Depends(get_current_user),
 ) -> StreamingResponse:
     """Stream the multi-agent workflow as Server-Sent Events.
@@ -208,11 +213,11 @@ async def consult_stream(
         raise HTTPException(status_code=503, detail="Agent workflow is disabled")
     await _ensure_llm()
 
-    context = dict(request.context)
-    if request.patient_id:
+    context = dict(body.context)
+    if body.patient_id:
         async with SessionLocal() as lookup_session:
             context["recent_consultations"] = await recent_consultation_summaries(
-                request.patient_id, lookup_session
+                body.patient_id, lookup_session
             )
 
     # Fast path: pure data retrieval (RAG lookup, drug interaction check)
@@ -220,7 +225,7 @@ async def consult_stream(
     # docstring for why this is a safety improvement, not just a speed
     # one. None means "doesn't apply here", falls through unchanged.
     async with SessionLocal() as fp_session:
-        fast = await try_fast_path(request.query, request.patient_id, context, fp_session)
+        fast = await try_fast_path(body.query, body.patient_id, context, fp_session)
 
     async def event_stream():
         if fast is not None:
@@ -263,7 +268,7 @@ async def consult_stream(
                 "trace": {},
             }
             async with SessionLocal() as session:
-                consultation = await _persist(session, user, request, final_state)
+                consultation = await _persist(session, user, body, final_state)
             yield f"data: {json.dumps({'event': 'persisted', 'id': consultation.id})}\n\n"
             return
 
@@ -271,8 +276,8 @@ async def consult_stream(
         try:
             async for event in stream_consultation(
                 get_llm_client(),
-                query=request.query,
-                patient_id=request.patient_id,
+                query=body.query,
+                patient_id=body.patient_id,
                 context=context,
             ):
                 if event["event"] == "final":
@@ -294,7 +299,7 @@ async def consult_stream(
         # then tell the client its id so Export PDF works without a reload.
         if final_state:
             async with SessionLocal() as session:
-                consultation = await _persist(session, user, request, final_state)
+                consultation = await _persist(session, user, body, final_state)
             yield f"data: {json.dumps({'event': 'persisted', 'id': consultation.id})}\n\n"
 
     return StreamingResponse(

@@ -46,6 +46,17 @@ def no_slack_webhook(monkeypatch):
     monkeypatch.setattr(settings, "slack_webhook_url", None)
 
 
+@pytest.fixture(autouse=True)
+def no_rate_limiting(monkeypatch):
+    """The suite hits /login, /register, /consult etc. from the same
+    in-process client far faster and more often than any real user could —
+    rate limiting would make test order/count affect pass/fail instead of
+    the behavior under test."""
+    from core.rate_limit import limiter
+
+    monkeypatch.setattr(limiter, "enabled", False)
+
+
 class FakeLLMClient:
     """Scripted double for `GeminiClient` — the only LLM touchpoint the
     whole agent stack uses (`base.py::MCPAgent.run` calls `.chat()`

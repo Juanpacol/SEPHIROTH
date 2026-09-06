@@ -16,6 +16,13 @@ _INSECURE_JWT_SECRETS = {
     "changeme",
 }
 
+# A real Fernet key (not a placeholder string) so dev/test can encrypt/decrypt
+# PHI columns with zero setup — same "insecure but functional by default,
+# blocked outside dev/test" posture as DEFAULT_JWT_SECRET. Committing a known
+# key is fine precisely because it's rejected in staging/production below;
+# anyone using it there would already have every other insecure default too.
+DEFAULT_PHI_ENCRYPTION_KEY = "unLzHmKnvSSq0IvsBYQHmAATciMLh7_30c7bVMCnoKk="
+
 
 class Settings(BaseSettings):
     """Application settings (overridable via environment / .env)."""
@@ -26,12 +33,32 @@ class Settings(BaseSettings):
     debug: bool = False
     environment: Literal["development", "test", "staging", "production"] = "development"
 
-    # Database (async driver; host port 5433 — see docker-compose.yml)
+    # Database (async driver; host port 5433 — see docker-compose.yml). This
+    # is the connection the running app uses for every request — point it at
+    # a least-privilege role (no DDL, no ALTER/DROP; see migrations/roles.sql)
+    # once one exists, rather than the schema-owning role migrations run as.
     database_url: str = "postgresql+asyncpg://clinical_ai:clinical_ai_password@localhost:5433/clinical_ai_db"
+
+    # Optional: a separate, schema-owning connection string used ONLY for
+    # `alembic upgrade head` (`core/db.py::init_db`, `migrations/env.py`).
+    # Unset (default) means migrations run as `database_url`'s role, same as
+    # before this setting existed — set this once `database_url` has been
+    # narrowed to a least-privilege app role, so DDL still has an owner
+    # connection to run as. See docs/04-development/setup.md's "Database
+    # roles" section.
+    migration_database_url: Optional[str] = None
 
     # Auth
     jwt_secret: str = DEFAULT_JWT_SECRET  # >=32 bytes for HS256
     jwt_expires_minutes: int = 1440
+
+    # Column-level PHI encryption (core/crypto.py) for ClinicalNote.content
+    # and Patient.{conditions,medications,allergies,lab_results}. Must be a
+    # Fernet key (`Fernet.generate_key()` — 32 url-safe base64 bytes), never
+    # a plain passphrase. Rotating it makes every already-encrypted row
+    # unreadable — there is no key-rotation/re-encryption tool yet; changing
+    # it means a full re-encrypt migration first.
+    phi_encryption_key: str = DEFAULT_PHI_ENCRYPTION_KEY
 
     # POST /api/auth/register is clinician-only once a clinician account
     # exists (a patient account is created only via the invite/claim
@@ -268,6 +295,34 @@ class Settings(BaseSettings):
                 f"jwt_secret must be >=32 chars in environment={self.environment!r} "
                 "(HS256 requires a sufficiently long key)."
             )
+        return self
+
+    @model_validator(mode="after")
+    def _check_phi_encryption_key(self) -> "Settings":
+        if self.environment in ("development", "test"):
+            if self.phi_encryption_key == DEFAULT_PHI_ENCRYPTION_KEY:
+                logger.warning(
+                    "phi_encryption_key is using the built-in dev default; this is only "
+                    "acceptable in development/test environments."
+                )
+            return self
+        if self.phi_encryption_key == DEFAULT_PHI_ENCRYPTION_KEY:
+            raise ValueError(
+                f"phi_encryption_key must not be the built-in dev default in "
+                f"environment={self.environment!r}. Generate one with "
+                "`python -c \"from cryptography.fernet import Fernet; "
+                'print(Fernet.generate_key().decode())"`.'
+            )
+        try:
+            from cryptography.fernet import Fernet
+
+            Fernet(self.phi_encryption_key.encode())
+        except Exception as exc:
+            raise ValueError(
+                f"phi_encryption_key is not a valid Fernet key ({exc}). Generate one with "
+                "`python -c \"from cryptography.fernet import Fernet; "
+                'print(Fernet.generate_key().decode())"`.'
+            ) from exc
         return self
 
     @model_validator(mode="after")
