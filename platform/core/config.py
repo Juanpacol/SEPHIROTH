@@ -124,6 +124,10 @@ class Settings(BaseSettings):
     # reopen window, so a clinician meets one number rather than two.
     encounter_amend_window_days: int = 30
 
+    # How long a closed result may be reopened (SPEC-024). Matches the task and
+    # encounter windows, so a clinician meets one number rather than three.
+    result_reopen_window_days: int = 30
+
     # Fallback LLM — Groq (OpenAI-compatible API), free tier. Used only for
     # text/tool-calling when Gemini is unavailable (rate-limited or its
     # daily request quota is exhausted — a real constraint observed on

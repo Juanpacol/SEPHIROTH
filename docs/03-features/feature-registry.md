@@ -181,6 +181,17 @@ Specified in [SPEC-023](../specs/SPEC-023-clinical-encounter.md).
 | F-098 | AI note drafting that persists nothing and always degrades to a template | ⚠️ | `platform/api/services/encounter_drafting.py` | `test_encounter_note_drafting.py` | — | SPEC-023 §11 risk 1 (a small local model adds content; flagged, not prevented) |
 | F-099 | The pre-visit brief, assembled on read | ✅ | `platform/api/services/pre_visit.py` | `test_pre_visit_brief.py` | — | SPEC-023 |
 
+## Results with a closed loop (Phase 22)
+
+Specified in [SPEC-024](../specs/SPEC-024-results-loop.md).
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-100 | Result intake — the first code path that writes a `LabResult` | ✅ | `platform/api/services/result_service.py`, `routers/result_reviews.py` | `test_result_intake.py` | — | SPEC-024 |
+| F-101 | Deterministic classification, traceable to the threshold that fired | ⚠️ | `src/sephiroth/clinical/results.py` | `test_result_classification.py` | — | SPEC-024 §11 risk 3 (small range table; unknown tests are `unclassified`, not guessed) |
+| F-102 | The loop: received → reviewed → communicated → closed, and it cannot be short-circuited | ✅ | `platform/api/services/result_service.py` | `test_result_loop.py` | — | SPEC-024 |
+| F-103 | Every abnormal result becomes work, not only a critical one | ✅ | `platform/api/services/result_service.py`, `app/results/page.tsx` | `test_result_intake.py::TestWorkCreated`, `result-review-card.test.tsx` | — | SPEC-024 |
+
 ## Removed
 
 | ID | Feature | Status | Note |
