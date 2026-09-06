@@ -143,6 +143,24 @@ async def get_patient(
     return _full(patient)
 
 
+@router.get("/{patient_id}/pre-visit", summary="What to know before this patient sits down")
+async def pre_visit_brief(
+    patient_id: str,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Assembled on read from rows that already exist; nothing is stored.
+
+    A cached brief is wrong the moment a lab comes back, and the value of this
+    one is that it is true when it is opened.
+    """
+    from ..services.pre_visit import build_pre_visit_brief
+
+    patient = await _get_patient(session, patient_id)
+    await log_phi_access(session, user, patient_id, "/api/patients/{patient_id}/pre-visit", "GET")
+    return await build_pre_visit_brief(session, patient)
+
+
 class NoteCreate(BaseModel):
     content: str = Field(..., min_length=10)
     note_type: str = "progress_note"

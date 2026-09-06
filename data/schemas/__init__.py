@@ -28,6 +28,7 @@ from sqlalchemy import (
     Time,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -935,7 +936,7 @@ class Task(Base):
         UniqueConstraint("dedupe_key", name="uq_task_dedupe_key"),
         CheckConstraint(
             "source_type IN ('alert','approval','followup','result','appointment',"
-            "'automation','consultation','deteriorating','interaction')",
+            "'automation','consultation','deteriorating','interaction','encounter')",
             name="ck_task_source_type",
         ),
         CheckConstraint("severity IN ('critical','high','medium','low')", name="ck_task_severity"),
@@ -1027,6 +1028,133 @@ class TaskEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
 
 
+class Encounter(Base):
+    """One clinical visit: what was measured, what was said, what was decided.
+
+    `Appointment` said a visit was booked and `ClinicalNote` said something was
+    written afterwards; nothing joined them, so the work of a consultation
+    landed as a wall of free text or not at all (SPEC-023 §2).
+
+    Four narrative columns rather than one blob, because SOAP is what a
+    clinician already thinks in and what every template renders into -- and
+    because a single `note` field would make a model's draft and the
+    clinician's edit fight over the same column.
+
+    `draft` -> `signed` is the review gate for AI-drafted content (ADR-016):
+    an unsigned encounter has no `ClinicalNote`, contributes nothing to the
+    timeline, files no tasks and is invisible to the patient, so there is no
+    path by which unreviewed text reaches the chart.
+    """
+
+    __tablename__ = "encounters"
+    __table_args__ = (
+        CheckConstraint("status IN ('draft','signed','amended')", name="ck_encounter_status"),
+        CheckConstraint("note_source IN ('clinician','llm','template')", name="ck_encounter_note_source"),
+        # A signed record without a signer is a clinical record nobody stands
+        # behind. Same posture as `ck_pending_action_requires_reviewer` and
+        # `ck_task_closed_requires_actor`.
+        CheckConstraint(
+            "status = 'draft' OR (signed_at IS NOT NULL AND signed_by IS NOT NULL)",
+            name="ck_encounter_signed_requires_signer",
+        ),
+        CheckConstraint("amended_at IS NULL OR amendment_reason <> ''", name="ck_encounter_amendment_reason"),
+        # One encounter per booking. Nullable elsewhere, so a walk-in and a
+        # second unlinked encounter on the same day both stay possible.
+        Index(
+            "uq_encounter_appointment",
+            "appointment_id",
+            unique=True,
+            sqlite_where=text("appointment_id IS NOT NULL"),
+            postgresql_where=text("appointment_id IS NOT NULL"),
+        ),
+        Index("ix_encounters_patient_started", "patient_id", "started_at"),
+        Index("ix_encounters_clinician_status", "clinician_id", "status"),
+        Index("ix_encounters_status_started", "status", "started_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    clinician_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    appointment_id: Mapped[Optional[str]] = mapped_column(ForeignKey("appointments.id"), nullable=True)
+    #: Chooses a note template and nothing else -- no taxonomy, no routing.
+    specialty: Mapped[str] = mapped_column(String(40), default="general", server_default="general")
+    status: Mapped[str] = mapped_column(String(12), default="draft", server_default="draft", index=True)
+
+    chief_complaint: Mapped[str] = mapped_column(EncryptedText, default="")
+    #: Keys bounded by `sephiroth.clinical.vitals.VITAL_SPECS`. JSON rather
+    #: than columns for the same reason `Patient.lab_results` is: nothing
+    #: filters on a vital in SQL, and a trend view would want a normalised
+    #: table rather than nine columns nobody reads (SPEC-023 §11 risk 2).
+    vitals: Mapped[Dict[str, Any]] = mapped_column(EncryptedJSON, default=dict)
+
+    subjective: Mapped[str] = mapped_column(EncryptedText, default="")
+    objective: Mapped[str] = mapped_column(EncryptedText, default="")
+    assessment: Mapped[str] = mapped_column(EncryptedText, default="")
+    plan: Mapped[str] = mapped_column(EncryptedText, default="")
+    #: The one output the patient actually leaves with.
+    patient_instructions: Mapped[str] = mapped_column(EncryptedText, default="")
+
+    #: Whether the persisted narrative started as a model's draft. Kept on the
+    #: content itself so a later reader can see it without a join (ADR-016).
+    note_source: Mapped[str] = mapped_column(String(10), default="clinician", server_default="clinician")
+    note_model: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+
+    started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    signed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    signed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    amended_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    amendment_reason: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    #: Written on signing. The note carries the narrative as it stood then, so
+    #: an amendment cannot erase what was originally committed (SPEC-023 NG-5).
+    clinical_note_id: Mapped[Optional[str]] = mapped_column(ForeignKey("clinical_notes.id"), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    #: Declared so the cascade is the database's job rather than the
+    #: caller's. Application code reads orders through
+    #: `encounter_service.list_orders`, never through this attribute: touching
+    #: a lazy collection on a flushed instance issues IO from wherever it is
+    #: touched, which under asyncio surfaces as a `MissingGreenlet` far from
+    #: the cause.
+    orders: Mapped[List["EncounterOrder"]] = relationship(
+        back_populates="encounter", cascade="all, delete-orphan", lazy="raise"
+    )
+
+
+class EncounterOrder(Base):
+    """Something decided in the room that somebody has to do afterwards.
+
+    A child table rather than a JSON list on the encounter, for the same
+    reason `task_events` is one: "which orders were never acted on" has to be
+    answerable by query, not by loading every encounter and reading a blob.
+
+    It becomes a `Task` on signing, never before -- a task created from an
+    unsigned decision is work nobody committed to, and the inbox is only worth
+    reading because everything in it is real (SPEC-023 §11 risk 3).
+    """
+
+    __tablename__ = "encounter_orders"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('lab','imaging','referral','followup','medication')",
+            name="ck_encounter_order_kind",
+        ),
+        CheckConstraint("due_in_days IS NULL OR due_in_days > 0", name="ck_encounter_order_due"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    encounter_id: Mapped[str] = mapped_column(ForeignKey("encounters.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(20))
+    detail: Mapped[str] = mapped_column(EncryptedText)
+    due_in_days: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    #: Set on signing. Its presence is what makes signing idempotent.
+    task_id: Mapped[Optional[str]] = mapped_column(ForeignKey("tasks.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    encounter: Mapped["Encounter"] = relationship(back_populates="orders")
+
+
 __all__ = [
     "Base",
     "User",
@@ -1060,4 +1188,6 @@ __all__ = [
     "AutomationMemory",
     "Task",
     "TaskEvent",
+    "Encounter",
+    "EncounterOrder",
 ]

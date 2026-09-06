@@ -127,6 +127,124 @@ export interface TaskPage {
   has_more: boolean;
 }
 
+// --- Encounters (SPEC-023) --------------------------------------------------
+
+export type EncounterStatus = "draft" | "signed" | "amended";
+export type OrderKind = "lab" | "imaging" | "referral" | "followup" | "medication";
+
+export interface EncounterOrder {
+  id: string;
+  kind: OrderKind;
+  detail: string;
+  due_in_days: number | null;
+  /** Set when the visit is signed. Until then the order has filed no work. */
+  task_id: string | null;
+}
+
+export interface VitalFinding {
+  key: string;
+  label: string;
+  display: string;
+  severity: "high" | "medium";
+  detail: string;
+}
+
+export interface Encounter {
+  id: string;
+  patient_id: string;
+  patient_name: string | null;
+  clinician_id: string;
+  appointment_id: string | null;
+  specialty: string;
+  status: EncounterStatus;
+  chief_complaint: string;
+  vitals: Record<string, number>;
+  /** Computed on read, never stored — a flag written at save time would still
+   *  say "normal" after the ranges were corrected. */
+  vital_findings: VitalFinding[];
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+  patient_instructions: string;
+  note_source: "clinician" | "llm" | "template";
+  note_model: string | null;
+  editable: boolean;
+  signable: boolean;
+  started_at: string;
+  signed_at: string | null;
+  signed_by: string | null;
+  amended_at: string | null;
+  amendment_reason: string;
+  clinical_note_id: string | null;
+  orders: EncounterOrder[];
+  template: Record<"subjective" | "objective" | "assessment" | "plan", string>;
+  tasks_created?: string[];
+}
+
+export interface VitalSpecOut {
+  key: string;
+  label: string;
+  unit: string;
+  min: number;
+  max: number;
+  normal_low: number;
+  normal_high: number;
+  decimals: number;
+}
+
+export interface NoteDraft {
+  /** `llm` when the model organised the text; `template` for every degraded
+   *  path, so the UI never presents the clinician's own words as a draft. */
+  source: "llm" | "template";
+  model: string | null;
+  degraded_reason?: string;
+  /** Sections whose vocabulary is largely absent from the source. Read these
+   *  hardest — a local model does not reliably obey "do not add information". */
+  added_content?: string[];
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+}
+
+export interface PreVisitBrief {
+  patient: { id: string; name: string; age: number; sex: string; medical_record_number: string };
+  reason: string;
+  next_appointment: { id: string; start_at: string; mode: string; confirmed: boolean } | null;
+  recent_encounters: {
+    id: string;
+    started_at: string;
+    status: EncounterStatus;
+    specialty: string;
+    chief_complaint: string;
+    assessment: string;
+    plan: string;
+    vitals: string;
+  }[];
+  open_tasks: {
+    id: string;
+    title: string;
+    category: string;
+    severity: string;
+    due_at: string | null;
+    overdue: boolean;
+  }[];
+  alerts: { id: string; title: string; severity: string; kind: string; status: string }[];
+  recent_results: {
+    kind: string;
+    name: string;
+    value: string;
+    date: string;
+    abnormal: boolean;
+    critical: boolean;
+  }[];
+  medications: string[];
+  allergies: string[];
+  conditions: string[];
+  risk_flags: { rule_key: string; label: string; severity: string; detail: string }[];
+}
+
 export interface TaskCounts {
   /** The `open` status alone. Sum the statuses with `total_open`, not by hand. */
   open: number;
@@ -880,6 +998,41 @@ export const api = {
     const query = qs.toString();
     return get<TaskPage>(`/api/tasks${query ? `?${query}` : ""}`);
   },
+  // --- Encounters ---------------------------------------------------------
+  startEncounter: (body: {
+    patient_id: string;
+    appointment_id?: string | null;
+    specialty?: string;
+    chief_complaint?: string;
+  }) => post<Encounter>("/api/encounters", body),
+  encounters: (params: { patient_id?: string; status?: EncounterStatus; mine?: boolean } = {}) => {
+    const qs = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value === undefined || value === "") continue;
+      qs.set(key, String(value));
+    }
+    const query = qs.toString();
+    return get<{ items: Encounter[] }>(`/api/encounters${query ? `?${query}` : ""}`);
+  },
+  encounter: (id: string) => get<Encounter>(`/api/encounters/${id}`),
+  updateEncounter: (id: string, body: Partial<Encounter>) =>
+    patch<Encounter>(`/api/encounters/${id}`, body),
+  addEncounterOrder: (
+    id: string,
+    body: { kind: OrderKind; detail: string; due_in_days?: number | null },
+  ) => post<Encounter>(`/api/encounters/${id}/orders`, body),
+  removeEncounterOrder: (id: string, orderId: string) =>
+    del(`/api/encounters/${id}/orders/${orderId}`),
+  draftEncounterNote: (id: string, transcript: string, specialty?: string) =>
+    post<NoteDraft>(`/api/encounters/${id}/draft-note`, { transcript, specialty }),
+  signEncounter: (id: string) => post<Encounter>(`/api/encounters/${id}/sign`, {}),
+  amendEncounter: (id: string, reason: string) =>
+    post<Encounter>(`/api/encounters/${id}/amend`, { reason }),
+  vitalsSpec: () =>
+    get<{ vitals: VitalSpecOut[]; specialties: string[] }>("/api/encounters/vitals/spec"),
+  preVisitBrief: (patientId: string) =>
+    get<PreVisitBrief>(`/api/patients/${patientId}/pre-visit`),
+
   taskCounts: () => get<TaskCounts>("/api/tasks/count"),
   task: (taskId: string) => get<ClinicalTask & { events: TaskEvent[] }>(`/api/tasks/${taskId}`),
   claimTask: (taskId: string) => post<ClinicalTask>(`/api/tasks/${taskId}/claim`, {}),

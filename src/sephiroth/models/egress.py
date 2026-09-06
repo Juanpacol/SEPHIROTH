@@ -27,6 +27,8 @@ PHI_SEAMS = (
     "intelligence.nlp.timeline_extractor",
     "intelligence.mcp.vision_server",
     "intelligence.mcp.patient_comms_server",
+    # The encounter note drafted from the clinician's own free text (SPEC-023).
+    "api.services.encounter_drafting",
     # The streaming half of image description. It calls the client directly
     # rather than going through `vision_server`, which is precisely why the
     # enforcement test exists -- this seam was missing from the first draft of

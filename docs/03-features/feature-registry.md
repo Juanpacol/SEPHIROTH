@@ -169,6 +169,18 @@ Specified in [SPEC-022](../specs/SPEC-022-local-ai.md).
 | F-093 | `ai_allow_phi` — patient content may be forbidden from leaving the deployment | ⚠️ | `src/sephiroth/models/egress.py` | `test_phi_egress_gate.py` | — | SPEC-022 NG-2 (enumerated seams, not a classifier — ADR-015) |
 | F-094 | One vector space per deployment; a model that is down degrades, not 503s | ✅ | `data/embeddings/__init__.py`, `platform/api/routers/agents.py` | `test_embedding_provider_selection.py`, `test_local_ai_degradation.py` | — | SPEC-022 |
 
+## The clinical encounter (Phase 21)
+
+Specified in [SPEC-023](../specs/SPEC-023-clinical-encounter.md).
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-095 | `Encounter` — one record per visit, `draft` until signed | ✅ | `data/schemas/__init__.py`, `platform/api/services/encounter_service.py` | `test_encounter_model.py`, `test_encounters_router.py` | — | SPEC-023 |
+| F-096 | Signing writes the note and files one task per order, idempotently | ✅ | `platform/api/services/encounter_service.py` | `test_encounter_signing.py` | — | SPEC-023 |
+| F-097 | Vitals with two bounds: impossible refused, abnormal stored and flagged | ✅ | `src/sephiroth/clinical/vitals.py` | `test_vitals.py` | — | SPEC-023 |
+| F-098 | AI note drafting that persists nothing and always degrades to a template | ⚠️ | `platform/api/services/encounter_drafting.py` | `test_encounter_note_drafting.py` | — | SPEC-023 §11 risk 1 (a small local model adds content; flagged, not prevented) |
+| F-099 | The pre-visit brief, assembled on read | ✅ | `platform/api/services/pre_visit.py` | `test_pre_visit_brief.py` | — | SPEC-023 |
+
 ## Removed
 
 | ID | Feature | Status | Note |
