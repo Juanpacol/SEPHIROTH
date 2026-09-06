@@ -171,6 +171,7 @@ jobs:
             --network host \
             -e ENVIRONMENT=production \
             -e JWT_SECRET="$(openssl rand -hex 32)" \
+            -e PHI_ENCRYPTION_KEY="$(python3 -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')" \
             -e DATABASE_URL="postgresql+asyncpg://clinical_ai:clinical_ai_password@localhost:5432/clinical_ai_db" \
             sephiroth-api:ci
           for i in $(seq 1 30); do

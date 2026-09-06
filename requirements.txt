@@ -14,6 +14,10 @@ pgvector>=0.3
 bcrypt>=4.1
 pyjwt>=2.8
 pyotp>=2.9
+slowapi>=0.1.9
+cryptography>=42.0  # column-level PHI encryption (core/crypto.py) — already a
+                     # transitive dep (pyjwt/cryptography backends), pinned
+                     # explicitly since we now use it directly
 
 # LLM & Agents — Google Gemini API (AI Studio free tier); PHI leaves the
 # machine, see README's privacy notice.

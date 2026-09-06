@@ -8,7 +8,7 @@
  * `motion-reduce:` utility and the "thinking" dots render as static text
  * instead of animating. */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Play, Pause } from "lucide-react";
 import AgentBadge from "@/components/agent-badge";
 import {
@@ -35,6 +35,8 @@ export default function ConsultationWalkthrough() {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [panelHeight, setPanelHeight] = useState<number>();
 
   useEffect(() => {
     if (!playing) return;
@@ -46,50 +48,71 @@ export default function ConsultationWalkthrough() {
     };
   }, [playing]);
 
+  // Panel height tracks each stage's actual content instead of a fixed
+  // min-height sized for the busiest stage — the box no longer dwarfs
+  // short stages like "routing". Measured post-render so the transition
+  // animates from the previous stage's height to this one's.
+  useLayoutEffect(() => {
+    if (panelRef.current) setPanelHeight(panelRef.current.scrollHeight);
+  }, [index]);
+
   const stage = WALKTHROUGH_STAGES[index];
 
   return (
     <div
-      className="card"
+      className="overflow-hidden rounded-squircle border border-line/60 bg-card shadow-card"
       onMouseEnter={() => setPlaying(false)}
       onFocus={() => setPlaying(false)}
     >
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div
-          role="tablist"
-          aria-label={t("marketing.walkthrough.stagesLabel")}
-          className="flex flex-wrap items-center gap-1.5"
-        >
-          {WALKTHROUGH_STAGES.map((s, i) => (
-            <button
-              key={s.id}
-              role="tab"
-              aria-selected={i === index}
-              onClick={() => setIndex(i)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors motion-reduce:transition-none ${
-                i === index ? "bg-primary text-white" : "bg-primary-soft text-primary hover:brightness-95"
-              }`}
-            >
-              {t(s.labelKey)}
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={() => setPlaying((p) => !p)}
-          aria-label={playing ? t("marketing.walkthrough.pause") : t("marketing.walkthrough.runIt")}
-          className="btn-secondary py-1.5 text-xs"
-        >
-          {playing ? <Pause size={13} /> : <Play size={13} />}
-          {playing ? t("marketing.walkthrough.pause") : t("marketing.walkthrough.runIt")}
-        </button>
+      <div className="flex items-center gap-2 border-b border-line/60 bg-surface/60 px-4 py-2.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-danger/70" />
+        <span className="h-2.5 w-2.5 rounded-full bg-warning/70" />
+        <span className="h-2.5 w-2.5 rounded-full bg-success/70" />
+        <span className="ml-2 font-mono text-[11px] text-muted">{t("marketing.walkthrough.windowTitle")}</span>
       </div>
 
-      <div
-        role="tabpanel"
-        aria-live="polite"
-        className="min-h-[22rem] animate-fadeIn motion-reduce:animate-none"
-        key={stage.id}
-      >
+      <div className="p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div
+            role="tablist"
+            aria-label={t("marketing.walkthrough.stagesLabel")}
+            className="flex flex-wrap items-center gap-1.5"
+          >
+            {WALKTHROUGH_STAGES.map((s, i) => (
+              <button
+                key={s.id}
+                role="tab"
+                aria-selected={i === index}
+                onClick={() => setIndex(i)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors motion-reduce:transition-none ${
+                  i === index ? "bg-primary text-white" : "bg-primary-soft text-primary hover:brightness-95"
+                }`}
+              >
+                {t(s.labelKey)}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setPlaying((p) => !p)}
+            aria-label={playing ? t("marketing.walkthrough.pause") : t("marketing.walkthrough.runIt")}
+            className="btn-secondary py-1.5 text-xs"
+          >
+            {playing ? <Pause size={13} /> : <Play size={13} />}
+            {playing ? t("marketing.walkthrough.pause") : t("marketing.walkthrough.runIt")}
+          </button>
+        </div>
+
+        <div
+          className="overflow-hidden transition-[height] duration-300 ease-ios motion-reduce:transition-none"
+          style={{ height: panelHeight }}
+        >
+          <div
+            ref={panelRef}
+            role="tabpanel"
+            aria-live="polite"
+            className="animate-fadeIn motion-reduce:animate-none"
+            key={stage.id}
+          >
         {stage.render === "routing" && (
           <div>
             <p className="mb-4 text-sm text-muted">{t("marketing.walkthrough.clinicianAsks")}</p>
@@ -177,6 +200,8 @@ export default function ConsultationWalkthrough() {
             </div>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -15,13 +15,17 @@ from data.schemas import Base  # noqa: E402
 # access to the values within the .ini file in use.
 config = context.config
 
-# Single source of truth for the DB URL: the same setting the app itself
+# Single source of truth for the DB URL: the same setting(s) the app itself
 # uses (local docker-compose Postgres or Supabase), never duplicated in
 # alembic.ini — unless a caller already set one explicitly on this Config
 # object (e.g. tests/test_alembic_migration.py deliberately targets local
 # Postgres regardless of what settings.database_url currently points at).
+# `migration_database_url` takes priority when set: once `database_url` has
+# been narrowed to a least-privilege, no-DDL app role, migrations still need
+# a schema-owning connection to run `CREATE TABLE`/`ALTER TABLE` as — see
+# `migrations/roles.sql` and docs/04-development/setup.md's "Database roles".
 if not config.get_main_option("sqlalchemy.url"):
-    config.set_main_option("sqlalchemy.url", settings.database_url)
+    config.set_main_option("sqlalchemy.url", settings.migration_database_url or settings.database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

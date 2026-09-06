@@ -31,6 +31,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from core.crypto import EncryptedJSON, EncryptedText
+
 
 class Base(DeclarativeBase):
     type_annotation_map = {Dict[str, Any]: JSON, List[str]: JSON}
@@ -70,6 +72,12 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(default=True, server_default="true")
     mfa_secret: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     mfa_enabled: Mapped[bool] = mapped_column(default=False, server_default="false")
+    # Login brute-force lockout (`auth.router::login`): a wrong password
+    # increments this and, on crossing the threshold, sets `locked_until`;
+    # a correct login resets both. Checked alongside `is_active` so a
+    # locked-but-active account still can't log in until the window lapses.
+    failed_login_attempts: Mapped[int] = mapped_column(default=0, server_default="0")
+    locked_until: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     consultations: Mapped[List["Consultation"]] = relationship(back_populates="user")
@@ -84,10 +92,15 @@ class Patient(Base):
     age: Mapped[int]
     sex: Mapped[str] = mapped_column(String(1))
     medical_record_number: Mapped[str] = mapped_column(String(20), unique=True)
-    conditions: Mapped[List[str]] = mapped_column(JSON, default=list)
-    medications: Mapped[List[str]] = mapped_column(JSON, default=list)
-    allergies: Mapped[List[str]] = mapped_column(JSON, default=list)
-    lab_results: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    # PHI at rest, encrypted transparently (core/crypto.py) — the DB column
+    # is TEXT ciphertext, not JSON; every ORM read/write still sees a plain
+    # list/dict, and nothing in this codebase filters on these by value in
+    # SQL (confirmed before encrypting them — see ADR-014), so there is no
+    # query-layer fallout from ciphertext being opaque.
+    conditions: Mapped[List[str]] = mapped_column(EncryptedJSON, default=list)
+    medications: Mapped[List[str]] = mapped_column(EncryptedJSON, default=list)
+    allergies: Mapped[List[str]] = mapped_column(EncryptedJSON, default=list)
+    lab_results: Mapped[Dict[str, Any]] = mapped_column(EncryptedJSON, default=dict)
     status: Mapped[str] = mapped_column(String(20), default="active")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
@@ -194,7 +207,7 @@ class ClinicalNote(Base):
     patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
     user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
     note_type: Mapped[str] = mapped_column(String(40), default="progress_note")
-    content: Mapped[str] = mapped_column(Text)
+    content: Mapped[str] = mapped_column(EncryptedText)  # PHI at rest, see Patient's columns above
     extracted_entities: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

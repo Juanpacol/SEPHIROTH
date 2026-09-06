@@ -19,4 +19,9 @@ paths = [
 regexTarget = "line"
 regexes = [
   '''[a-zA-Z]+Key: "[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9]*)+"''',
+  # Built-in dev-only Fernet key for phi_encryption_key — Settings fails
+  # fast at startup if this literal value is still in use outside dev
+  # (see platform/core/config.py::_check_phi_encryption_key). Not a real
+  # credential; it's the well-known fallback, checked against by value.
+  '''DEFAULT_PHI_ENCRYPTION_KEY = "[A-Za-z0-9_=-]+"''',
 ]

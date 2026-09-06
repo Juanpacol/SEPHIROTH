@@ -14,6 +14,9 @@ from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from api.routers import (
     agents,
@@ -38,9 +41,19 @@ from auth.deps import require_clinician
 from core.config import settings
 from core.db import init_db
 from core.logging import setup_logging
+from core.rate_limit import limiter
 
 setup_logging(debug=settings.debug)
 request_logger = logging.getLogger("api.request")
+
+# Loud, unmissable at every boot — a local `uvicorn --reload` with
+# DATABASE_URL pointed at Supabase (easy to do by accident: `.env` is one
+# line to edit and boot doesn't otherwise say which database it landed on)
+# means every manual `curl`/test run during that session hits real data
+# instead of a local sandbox, including the automatic `alembic upgrade
+# head` in `init_db()` below.
+_db_host = settings.database_url.split("@")[-1].split("/")[0]
+logging.getLogger("api.startup").warning("Connecting to database host: %s", _db_host)
 
 
 @asynccontextmanager
@@ -60,6 +73,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_allow_origins,
@@ -67,6 +84,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    """Defense-in-depth headers absent by default from FastAPI/Starlette.
+    HSTS only outside dev/test: it's a promise ("always use HTTPS for this
+    host") that would be actively wrong to make while developing over
+    plain http://127.0.0.1."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # This API never serves rendered HTML from user content, except the
+    # auto-generated docs (Swagger UI needs its own CDN script/style).
+    if request.url.path not in ("/docs", "/redoc"):
+        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+    if settings.environment not in ("development", "test"):
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+    return response
 
 
 @app.middleware("http")
