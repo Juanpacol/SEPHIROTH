@@ -42,6 +42,11 @@ export default function AnalysisGallery() {
         >
           <span className="pointer-events-none absolute inset-x-[14%] top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent" />
           <div className="overflow-hidden rounded-xl border border-white/20 bg-white/10">
+            {/* eslint-disable-next-line @next/next/no-img-element -- these are
+                five static local webp thumbnails already lazy-loaded at a fixed
+                aspect ratio. Moving to next/image means `fill` plus a relative
+                parent, a layout change on a page nobody can visually verify in
+                CI; it belongs with the landing rewrite, not here. */}
             <img
               src={item.image}
               alt={t(item.titleKey)}

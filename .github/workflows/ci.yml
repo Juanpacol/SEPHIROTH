@@ -87,6 +87,11 @@ jobs:
           cache: npm
           cache-dependency-path: platform/frontend/package-lock.json
       - run: npm ci
+      # Separate steps on purpose: `next build` only type-checks code it can
+      # reach and takes minutes to say so, while `tsc --noEmit` covers the whole
+      # project in seconds and fails with a legible step name.
+      - run: npm run typecheck
+      - run: npm run lint
       - run: npm run test
       - run: npm run build
 
