@@ -13,13 +13,16 @@
 
 import Link from "next/link";
 import {
-  Layers,
-  Link as LinkIcon,
-  ShieldCheck,
-  ScanEye,
-  FlaskConical,
-  Pill,
   BookOpen,
+  ClipboardCheck,
+  FileText,
+  FlaskConical,
+  History,
+  Inbox,
+  Lock,
+  Pill,
+  ScanEye,
+  Server,
   Users,
 } from "lucide-react";
 import WingMark from "@/components/brand/wing-mark";
@@ -36,10 +39,43 @@ import { TextAnimate } from "@/components/magicui/text-animate";
 import { ShimmerButton } from "@/components/magicui/shimmer-button";
 import { useLanguage } from "@/lib/language";
 
+// The three things the product actually fixed, in the order a clinician feels
+// them: work scattered across screens, results nobody closed the loop on, and
+// notes that eat the evening. They replace an earlier trio about lookups and
+// citations -- that was the product before the inbox, the encounter and the
+// results loop existed, and a landing page describing last season's product is
+// the most expensive kind of stale copy.
 const PAIN_POINTS = [
-  { icon: Layers, problemKey: "marketing.painPoints.lookups.problem", solutionKey: "marketing.painPoints.lookups.solution" },
-  { icon: LinkIcon, problemKey: "marketing.painPoints.trust.problem", solutionKey: "marketing.painPoints.trust.solution" },
-  { icon: ShieldCheck, problemKey: "marketing.painPoints.confidence.problem", solutionKey: "marketing.painPoints.confidence.solution" },
+  {
+    icon: Inbox,
+    problemKey: "marketing.painPoints.scattered.problem",
+    solutionKey: "marketing.painPoints.scattered.solution",
+  },
+  {
+    icon: ClipboardCheck,
+    problemKey: "marketing.painPoints.results.problem",
+    solutionKey: "marketing.painPoints.results.solution",
+  },
+  {
+    icon: FileText,
+    problemKey: "marketing.painPoints.notes.problem",
+    solutionKey: "marketing.painPoints.notes.solution",
+  },
+];
+
+//: What running locally actually buys, one claim per item. Each is something
+//: the codebase does, not something the copy would like to be true.
+const PRIVACY_POINTS = [
+  { icon: Server, titleKey: "marketing.privacy.point1.title", bodyKey: "marketing.privacy.point1.body" },
+  { icon: Lock, titleKey: "marketing.privacy.point2.title", bodyKey: "marketing.privacy.point2.body" },
+  { icon: History, titleKey: "marketing.privacy.point3.title", bodyKey: "marketing.privacy.point3.body" },
+];
+
+const DAY = [
+  { titleKey: "marketing.day.step1.title", bodyKey: "marketing.day.step1.body" },
+  { titleKey: "marketing.day.step2.title", bodyKey: "marketing.day.step2.body" },
+  { titleKey: "marketing.day.step3.title", bodyKey: "marketing.day.step3.body" },
+  { titleKey: "marketing.day.step4.title", bodyKey: "marketing.day.step4.body" },
 ];
 
 const AGENTS = [
@@ -93,6 +129,8 @@ const FAQS = [
   { qKey: "marketing.faq.q3", aKey: "marketing.faq.a3" },
   { qKey: "marketing.faq.q4", aKey: "marketing.faq.a4" },
   { qKey: "marketing.faq.q5", aKey: "marketing.faq.a5" },
+  { qKey: "marketing.faq.q6", aKey: "marketing.faq.a6" },
+  { qKey: "marketing.faq.q7", aKey: "marketing.faq.a7" },
 ];
 
 export default function LandingPage() {
@@ -171,6 +209,52 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Privacy — the claim most clinical AI cannot make, so it goes high */}
+      <section id="privacy" className="scroll-mt-24 border-y border-line/60 bg-primary-soft/30">
+        <div className="mx-auto max-w-6xl px-6 py-24">
+          <span className="text-xs font-bold uppercase tracking-wide text-primary">
+            {t("marketing.privacy.eyebrow")}
+          </span>
+          <h2 className="mt-2 max-w-2xl text-2xl font-extrabold md:text-3xl">
+            {t("marketing.privacy.title")}
+          </h2>
+          <p className="mt-3 max-w-2xl text-muted">{t("marketing.privacy.body")}</p>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {PRIVACY_POINTS.map((point) => (
+              <div key={point.titleKey} className="card">
+                <div className="inline-flex rounded-2xl bg-primary-soft p-2.5 text-primary">
+                  <point.icon size={20} />
+                </div>
+                <h3 className="mt-3 font-bold">{t(point.titleKey)}</h3>
+                <p className="mt-1 text-sm text-muted">{t(point.bodyKey)}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Says plainly what this is not. A landing page that lets a reader
+              infer "HIPAA compliant" from "runs locally" has misled them. */}
+          <p className="mt-8 max-w-2xl text-xs text-muted">{t("marketing.privacy.disclaimer")}</p>
+        </div>
+      </section>
+
+      {/* A day with it — every step is a feature that exists */}
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <h2 className="text-center text-2xl font-extrabold md:text-3xl">{t("marketing.day.title")}</h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-muted">{t("marketing.day.subtitle")}</p>
+        <ol className="mt-10 grid gap-4 md:grid-cols-4">
+          {DAY.map((step, index) => (
+            <li key={step.titleKey} className="card">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
+                {index + 1}
+              </span>
+              <h3 className="mt-3 font-bold">{t(step.titleKey)}</h3>
+              <p className="mt-1 text-sm text-muted">{t(step.bodyKey)}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       {/* Imaging analysis gallery — one real sample per supported modality */}
       <section className="mx-auto max-w-6xl px-6 pb-24">
         <h2 className="text-center text-2xl font-extrabold md:text-3xl">{t("marketing.analysisGallery.title")}</h2>
@@ -242,20 +326,16 @@ export default function LandingPage() {
         <div className="card card-interactive mt-8 border-l-4 border-primary/40">
           <ol className="space-y-3 text-sm">
             <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-primary" /> {t("marketing.trace.step1")}
+              <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+              {t("marketing.trace.record1")}
             </li>
             <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-primary" /> {t("marketing.trace.step2Pre")}{" "}
-              <code className="rounded bg-surface px-1">search_clinical_guidelines</code>
+              <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+              {t("marketing.trace.record2")}
             </li>
             <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-primary" /> {t("marketing.trace.step3")}
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-danger" /> {t("marketing.trace.step4")}
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-success" /> {t("marketing.trace.step5")}
+              <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+              {t("marketing.trace.record3")}
             </li>
           </ol>
         </div>

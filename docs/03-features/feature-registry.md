@@ -203,6 +203,16 @@ Specified in [SPEC-025](../specs/SPEC-025-pwa-push.md).
 | F-106 | Per-device subscriptions a person can see and turn off | ✅ | `platform/api/routers/push.py`, `components/settings/push-toggle.tsx` | `test_push_router.py`, `push-toggle.test.tsx` | — | SPEC-025 |
 | F-107 | Installable PWA whose worker never caches an API response | ⚠️ | `app/manifest.ts`, `app/sw.ts`, `lib/service-worker-policy.ts` | `service-worker-policy.test.ts` | — | SPEC-025 NG-2 (no offline writes, no background sync) |
 
+## Landing rewrite (Phase 24)
+
+Specified in [SPEC-026](../specs/SPEC-026-landing.md). Content only — the page,
+its components and its interactive demos are unchanged.
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-108 | The page describes the product that exists, privacy first | ✅ | `app/(marketing)/page.tsx`, `lib/i18n/dictionaries.*.ts` | `test_landing_claims.py` | — | SPEC-026 |
+| F-109 | Every claim is tied to code, and forbidden claims fail the build | ⚠️ | `tests/test_landing_claims.py` | `test_landing_claims.py` | — | SPEC-026 §11 risk 1 (catches false claims, not every kind of drift) |
+
 ## Removed
 
 | ID | Feature | Status | Note |
