@@ -27,7 +27,7 @@ function renderSheet(props: Partial<React.ComponentProps<typeof Sheet>> = {}) {
 }
 
 describe("Sheet", () => {
-  it("renders into document.body, not where it sits in the tree", () => {
+  it("AC-017-01 — renders into document.body, not where it sits in the tree", () => {
     const { container } = renderSheet();
     const dialog = screen.getByRole("dialog");
 
@@ -50,12 +50,12 @@ describe("Sheet", () => {
 
   // Tab order inside the panel is [close, first, second] — the close button
   // lives in the header, above the children.
-  it("moves focus into the panel when it opens", () => {
+  it("AC-017-02 — moves focus into the panel when it opens", () => {
     renderSheet();
     expect(document.activeElement).toBe(screen.getByRole("button", { name: /close/i }));
   });
 
-  it("cycles Tab from the last control back to the first", () => {
+  it("AC-017-03 — cycles Tab from the last control back to the first", () => {
     renderSheet();
 
     screen.getByRole("button", { name: "second" }).focus();
@@ -64,7 +64,7 @@ describe("Sheet", () => {
     expect(document.activeElement).toBe(screen.getByRole("button", { name: /close/i }));
   });
 
-  it("cycles Shift+Tab from the first control back to the last", () => {
+  it("AC-017-03 — cycles Shift+Tab from the first control back to the last", () => {
     renderSheet();
 
     screen.getByRole("button", { name: /close/i }).focus();
@@ -73,7 +73,7 @@ describe("Sheet", () => {
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "second" }));
   });
 
-  it("does not let Tab reach the page behind the scrim", () => {
+  it("AC-017-04 — does not let Tab reach the page behind the scrim", () => {
     renderSheet();
     const opener = screen.getByRole("button", { name: "opener" });
 
@@ -85,7 +85,7 @@ describe("Sheet", () => {
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "second" }));
   });
 
-  it("restores focus to whatever opened it", () => {
+  it("AC-017-02 — restores focus to whatever opened it", () => {
     const { rerender } = renderSheet();
     const opener = screen.getByRole("button", { name: "opener" });
     // The trap captures document.activeElement on open, so establish it first
@@ -104,7 +104,7 @@ describe("Sheet", () => {
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "opener" }));
   });
 
-  it("locks page scroll while open and releases it on close", () => {
+  it("AC-017-05 — locks page scroll while open and releases it on close", () => {
     const { rerender } = renderSheet();
     expect(document.body.style.overflow).toBe("hidden");
 

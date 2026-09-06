@@ -57,19 +57,19 @@ describe("MobileNav", () => {
     expect(within(bar).getByRole("button", { name: /more/i })).toBeInTheDocument();
   });
 
-  it("marks the current destination for assistive tech, not just visually", () => {
+  it("AC-017-07 — marks the current destination for assistive tech, not just visually", () => {
     renderNav();
     const current = screen.getByRole("link", { current: "page" });
     expect(current).toHaveAttribute("href", "/patients");
   });
 
-  it("resolves a nested route to its parent destination", () => {
+  it("AC-017-07 — resolves a nested route to its parent destination", () => {
     pathname.mockReturnValue("/patients/P001");
     renderNav();
     expect(screen.getByRole("link", { current: "page" })).toHaveAttribute("href", "/patients");
   });
 
-  it("opens the drawer with the overflow destinations and closes it on Escape", () => {
+  it("AC-017-08 — opens the drawer with the overflow destinations and closes it on Escape", () => {
     renderNav();
     expect(screen.queryByRole("dialog")).toBeNull();
 
@@ -81,7 +81,7 @@ describe("MobileNav", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("reaches every sidebar destination from either the bar or the drawer", () => {
+  it("AC-017-06 — reaches every sidebar destination from either the bar or the drawer", () => {
     renderNav();
     fireEvent.click(screen.getByRole("button", { name: /more/i }));
 

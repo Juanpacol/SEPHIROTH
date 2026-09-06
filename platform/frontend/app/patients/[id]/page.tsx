@@ -24,6 +24,7 @@ import ShareResultSheet from "@/components/results/share-result-sheet";
 import InteractionCheckerCard from "@/components/patients/interaction-checker-card";
 import FollowupCard from "@/components/patients/followup-card";
 import { useToast } from "@/components/ui/toast";
+import { SkeletonRows } from "@/components/ui/skeleton";
 
 function MedicationsCard({ patientId, medications }: { patientId: string; medications: string[] }) {
   const { t } = useLanguage();
@@ -276,7 +277,7 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
     },
   });
 
-  if (isLoading) return <div className="text-muted">{t("patientDetail.loading")}</div>;
+  if (isLoading) return <SkeletonRows rows={3} label={t("patientDetail.loading")} />;
   if (!patient) return <div className="card text-danger">{t("patientDetail.notFound")}</div>;
 
   return (
@@ -291,7 +292,9 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
             {patient.medical_record_number} · {patient.age}y · {patient.sex}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        {/* wraps as a group AND within itself: two pills plus a labelled button
+            is wider than 375px, so without this the button leaves the card. */}
+        <div className="flex flex-wrap items-center gap-2">
           {patient.risk_level && <StatusPill label={`${patient.risk_level} risk`} />}
           <StatusPill label={patient.status} />
           <button

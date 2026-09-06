@@ -36,7 +36,7 @@ describe("responsive guardrails", () => {
   /** A raw table has no card shape, so it either overflows a 375px screen or
    * gets a horizontal scrollbar nobody discovers. `DataList` renders both
    * shapes from one column definition. */
-  it("routes every table through DataList", () => {
+  it("AC-017-12 — routes every table through DataList", () => {
     const ALLOWED = new Set(["components/ui/data-list.tsx"]);
 
     const offenders = FILES.filter(
@@ -51,7 +51,7 @@ describe("responsive guardrails", () => {
   /** A fixed pixel width wider than the narrowest supported viewport (375px)
    * forces the whole page to scroll sideways unless it sits inside its own
    * scroll container. Each exception below names why. */
-  it("keeps fixed widths under the narrowest viewport", () => {
+  it("AC-017-13 — keeps fixed widths under the narrowest viewport", () => {
     const ALLOWED: Record<string, string> = {
       // The weekly grid is genuinely wide and lives in its own overflow-x
       // container; the phone gets a day view in the agenda rework.
@@ -70,7 +70,7 @@ describe("responsive guardrails", () => {
 
   /** The bottom navigation is fixed and 64px tall; a page whose content ends
    * flush with the viewport hides its last row underneath it. */
-  it("keeps the app shell clear of the fixed bottom bar", () => {
+  it("AC-017-14 — keeps the app shell clear of the fixed bottom bar", () => {
     const shell = FILES.find((f) => f.path === "components/app-shell.tsx")!;
     expect(shell.text).toMatch(/pb-24/);
   });

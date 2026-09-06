@@ -95,6 +95,20 @@ Five of these are ⚠️ for reasons recorded in SPEC-009 §11 rather than for m
 work: the substrate is live and tested, and each ⚠️ names a specific defect or
 deliberate deferral that a later phase closes.
 
+## Interface foundations (Phase 15)
+
+Specified in [SPEC-017](../specs/SPEC-017-interface-foundations.md). No new
+product capability — these are what the clinical-operating-system phases are
+built on, and they land first so no screen is built twice.
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-072 | Portal + focus trap for overlays | ✅ | `platform/frontend/components/ui/portal.tsx`, `lib/hooks/use-focus-trap.ts` | `components/__tests__/sheet.test.tsx` | — | SPEC-017 |
+| F-073 | `DataList` — one column set, table and card shapes | ✅ | `platform/frontend/components/ui/data-list.tsx` | `components/__tests__/data-list.test.tsx` | — | SPEC-017 |
+| F-074 | Mobile navigation (bottom bar + overflow drawer) | ✅ | `platform/frontend/components/mobile-nav.tsx`, `lib/nav.ts` | `components/__tests__/mobile-nav.test.tsx` | — | SPEC-017 |
+| F-075 | Overlay and control primitives (dialog, menu, segmented control, skeleton, toast action) | ✅ | `platform/frontend/components/ui/` | `components/__tests__/sheet.test.tsx` | — | SPEC-017 |
+| F-076 | Frontend CI gate (`tsc --noEmit`, eslint at zero warnings) | ✅ | `.github/workflows/ci.yml`, `platform/frontend/.eslintrc.json` | `lib/__tests__/responsive.test.ts` | — | SPEC-017 |
+
 ## Removed
 
 | ID | Feature | Status | Note |

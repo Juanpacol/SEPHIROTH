@@ -12,7 +12,7 @@ schema_version: 1
 project: SEPHIROTH
 version: 1.0.0
 updated: 2026-09-06
-phase_current: 14
+phase_current: 15
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
@@ -35,6 +35,9 @@ phases:
   "12": {name: "Patient follow-up (day 3/7/30) + draft_patient_message tool (SPEC-009)", status: done}
   "13": {name: "Operational memory — namespaced preferences, never clinical facts (SPEC-009)", status: done}
   "14": {name: "Automation observability — GET /api/dashboard/automation + frontend tab (SPEC-009)", status: done}
+  # Phase 15 opens the clinical-operating-system plan. New specs start at
+  # SPEC-017; see the note above for why 010-016 are unavailable.
+  "15": {name: "Interface foundations — portal, focus trap, DataList, mobile nav, frontend CI gate (SPEC-017)", status: done}
 
 components:
   legacy:

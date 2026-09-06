@@ -45,7 +45,7 @@ function renderList(props: Partial<React.ComponentProps<typeof DataList<Row>>> =
 }
 
 describe("DataList", () => {
-  it("renders every column in the table shape", () => {
+  it("AC-017-09 — renders every column in the table shape", () => {
     renderList();
     const table = screen.getByRole("table");
 
@@ -56,7 +56,7 @@ describe("DataList", () => {
     expect(within(table).getByText("long clinical note")).toBeInTheDocument();
   });
 
-  it("renders the same rows in the card shape, without the desktop-only columns", () => {
+  it("AC-017-09 — renders the same rows in the card shape, without the desktop-only columns", () => {
     const { container } = renderList();
     const cards = container.querySelector("ul")!;
 
@@ -69,7 +69,7 @@ describe("DataList", () => {
     expect(within(cards).queryByText("long clinical note")).toBeNull();
   });
 
-  it("labels every non-primary value on the card, so a bare value is never orphaned", () => {
+  it("AC-017-10 — labels every non-primary value on the card, so a bare value is never orphaned", () => {
     const { container } = renderList();
     const cards = container.querySelector("ul")!;
 
@@ -84,14 +84,14 @@ describe("DataList", () => {
     expect(link).toHaveAttribute("href", "/patients/1");
   });
 
-  it("shows a busy placeholder while loading, and no table", () => {
+  it("AC-017-11 — shows a busy placeholder while loading, and no table", () => {
     renderList({ isLoading: true });
 
     expect(screen.getByLabelText("Cargando")).toHaveAttribute("aria-busy", "true");
     expect(screen.queryByRole("table")).toBeNull();
   });
 
-  it("shows the empty message instead of an empty table", () => {
+  it("AC-017-11 — shows the empty message instead of an empty table", () => {
     renderList({ items: [] });
 
     expect(screen.getByRole("status")).toHaveTextContent("Sin resultados");
