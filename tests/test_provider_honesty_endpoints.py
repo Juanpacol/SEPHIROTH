@@ -135,14 +135,24 @@ class TestReadiness:
         self, provider, monkeypatch
     ):
         """Losing the model degrades features (B-10/B-11). The database is the
-        dependency this instance cannot serve without."""
+        dependency this instance cannot serve without.
+
+        Asserted by comparison rather than against a literal `"ready"`: whether
+        a database is reachable depends on where the suite runs, and the claim
+        here is about the model not entering the verdict at all.
+        """
         provider()
-        monkeypatch.setattr(factory_module.get_llm_client(), "health", _down)
+        client = factory_module.get_llm_client()
 
-        body = (await _get("/health/ready")).json()
+        monkeypatch.setattr(client, "health", _ok)
+        with_model = (await _get("/health/ready")).json()
 
-        assert body["checks"]["database"] == "ok"
-        assert body["status"] == "ready"
+        monkeypatch.setattr(client, "health", _down)
+        without_model = (await _get("/health/ready")).json()
+
+        assert without_model["checks"]["llm"] == "unreachable"
+        assert with_model["checks"]["llm"] == "ok"
+        assert without_model["status"] == with_model["status"]
 
 
 async def _ok() -> bool:
