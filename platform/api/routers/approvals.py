@@ -20,6 +20,7 @@ read does.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -32,10 +33,12 @@ from auth.deps import require_clinician
 from core.db import SYSTEM_WORKFLOW_USER_ID, get_session
 from data.schemas import Patient, PendingAction, User
 from sephiroth.models import LLMUnavailableError
+from sephiroth.models.factory import get_llm_client
 from sephiroth.safety import check_input
 
 from ..workflows.channels import get_channel
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -175,21 +178,30 @@ async def draft_pending_action(
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
-    """Generates `draft_text` on demand -- the LLM is never called from
-    the tick (SPEC-009); this is the one place drafting actually
-    happens, triggered by a clinician opening the queue. Idempotent: a
-    second call is a no-op returning the existing draft, so opening the
-    same item twice never burns quota twice."""
+    """*Upgrades* a draft on demand -- the LLM is never called from the tick
+    (SPEC-009); this is the one place drafting actually happens, triggered by a
+    clinician asking for it.
+
+    Since SPEC-020 every action already arrives with a deterministic template
+    draft, so this endpoint's job changed from "fill in the blank" to "rewrite
+    what is there". Two consequences follow:
+
+    - It accepts a `template` draft (it used to 409 unless `draft_source` was
+      already `llm`, which is backwards now that nothing starts as `llm`).
+    - An unreachable model is no longer a 503. There is a usable draft on the
+      row; returning it unchanged is the correct answer, and on a local-first
+      deployment the model being down is a normal Tuesday rather than an
+      incident."""
     from intelligence.mcp.patient_comms_server import draft_message
 
     action = await _get_action(session, action_id)
-    if action.draft_source != "llm":
-        raise HTTPException(status_code=409, detail="This action does not use an LLM-generated draft")
     if action.status != "pending":
         raise HTTPException(status_code=409, detail=f"Action is already {action.status}")
     patient = await session.get(Patient, action.patient_id)
     patient_name = patient.name if patient else None
-    if action.draft_text:
+    if action.draft_source == "llm":
+        # Already upgraded. Idempotent, so opening the same item twice never
+        # burns quota twice.
         return _action_out(action, patient_name)
 
     first_name = patient.name.split(" ")[0] if patient and patient.name else "there"
@@ -211,13 +223,19 @@ async def draft_pending_action(
 
     try:
         draft = await draft_message(purpose=action.action_type, patient_first_name=first_name, facts=facts)
-    except LLMUnavailableError as exc:
-        raise HTTPException(status_code=503, detail=f"Draft generation unavailable: {exc}")
+    except LLMUnavailableError:
+        # Keep the template. The clinician can send what is on the row; a 503
+        # here would tell them the feature is broken when in fact they already
+        # have something to review.
+        logger.info("draft upgrade unavailable for %s; keeping the template", action.id)
+        return _action_out(action, patient_name)
 
-    from core.config import settings
-
+    client = get_llm_client()
     action.draft_text = draft
-    action.draft_model = settings.gemini_model
+    action.draft_source = "llm"
+    # The model that actually wrote it, not whatever `gemini_model` happens to
+    # say -- this row is the audit trail for a message sent to a patient.
+    action.draft_model = getattr(client, "model", None)
     await session.commit()
     return _action_out(action, patient_name)
 

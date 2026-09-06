@@ -84,16 +84,16 @@ see its §11 for the defects this substrate ships with.
 | F-063 | Notification channel seam | ⚠️ | `platform/api/workflows/channels.py` | `test_workflow_channels.py` | — | SPEC-009 NG-4 (in-app only; no email/SMS/push) |
 | F-064 | Alert lifecycle API (review → resolve) | ✅ | `platform/api/routers/alerts.py` | `test_alert_lifecycle_api.py` | — | SPEC-009 |
 | F-065 | Alert escalation workflow (window by severity) | ⚠️ | `platform/api/workflows/alert_escalation.py` | `test_alert_escalation_workflow.py`, `_end_to_end` | — | SPEC-009 (single tier; notifies every active clinician, no assignment) |
-| F-066 | Appointment reminder + unconfirmed escalation | ⚠️ | `platform/api/workflows/appointment_reminder.py` | `test_appointment_reminder_workflow.py`, `_end_to_end` | — | SPEC-009 §11 risks 3–4 (lead time hard-coded; reschedule loses the reminder) |
+| F-066 | Appointment reminder + unconfirmed escalation | ✅ | `platform/api/workflows/appointment_reminder.py` | `test_appointment_reminder_workflow.py`, `_end_to_end` | — | SPEC-009; SPEC-009 §11 risks 3–4 closed by SPEC-020 |
 | F-067 | Patient appointment confirmation | ✅ | `platform/api/routers/scheduling.py` | `test_api_appointment_confirm.py` | — | SPEC-009 |
-| F-068 | Human-in-the-loop approval gate | ⚠️ | `platform/api/routers/approvals.py` | `test_approvals_api.py`, `test_approval_send_path.py` | — | SPEC-009 §11 risk 6 (a draft can be empty) |
+| F-068 | Human-in-the-loop approval gate | ✅ | `platform/api/routers/approvals.py` | `test_approvals_api.py`, `test_approval_send_path.py` | — | SPEC-009; the empty-draft defect (§11 risk 6) closed by SPEC-020 |
 | F-069 | Patient follow-up plan (day 3/7/30) | ✅ | `platform/api/workflows/patient_followup.py` | `test_patient_followup_workflow.py`, `test_api_followups.py` | — | SPEC-009 |
-| F-070 | Operational memory (namespaced preferences) | ⚠️ | `platform/api/workflows/memory.py` | `test_automation_memory.py`, `test_api_automation_memory.py` | — | SPEC-009 §11 risk 4 (stored and validated, read by nothing) |
+| F-070 | Operational memory (namespaced preferences) | ✅ | `platform/api/workflows/memory.py` | `test_automation_memory.py`, `test_quiet_hours.py` | — | SPEC-009; read for the first time by SPEC-020 |
 | F-071 | Automation observability + ops notifications | ✅ | `platform/api/routers/dashboard.py`, `workflows/ops_notify.py` | `test_dashboard_automation.py`, `test_ops_notify.py`, `test_clinical_notify.py` | — | SPEC-009 |
 
-Five of these are ⚠️ for reasons recorded in SPEC-009 §11 rather than for missing
-work: the substrate is live and tested, and each ⚠️ names a specific defect or
-deliberate deferral that a later phase closes.
+Three of these were ⚠️ against a defect SPEC-009 §11 recorded rather than against
+missing work; SPEC-020 closed those defects and they are ✅ above. `F-063`
+(in-app only) and `F-065` (single-tier escalation) remain deliberate deferrals.
 
 ## Interface foundations (Phase 15)
 
@@ -133,6 +133,21 @@ names work rather than subsystems; nothing was removed from the product.
 | F-082 | Flat, work-ordered navigation with redirects for every old URL | ✅ | `platform/frontend/lib/nav.ts`, `lib/routes.ts`, the six redirect stubs | `lib/__tests__/route-restructure.test.ts` | — | SPEC-019 |
 | F-083 | `/work` — today first, three counters instead of four | ✅ | `platform/frontend/app/work/`, `components/work/agenda-today-card.tsx` | `components/__tests__/agenda-today-card.test.tsx` | — | SPEC-019 |
 | F-084 | Panel-wide `/results` and `/followups` over endpoints that already existed | ✅ | `platform/frontend/app/results/`, `app/followups/` | (covered by the route/nav correspondence test) | — | SPEC-019 |
+
+## Automation correctness (Phase 18)
+
+Specified in [SPEC-020](../specs/SPEC-020-automation-correctness.md). Closes the
+defects [SPEC-009](../specs/SPEC-009-automation-substrate.md) §11 recorded.
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-085 | `deferred` step outcome — "not now, ask me again at T" | ✅ | `platform/api/workflows/engine.py`, `registry.py` | `test_workflow_deferral.py` | — | SPEC-020 |
+| F-086 | Quiet hours and reminder lead time actually applied | ✅ | `platform/api/workflows/quiet_hours.py`, `appointment_reminder.py` | `test_quiet_hours.py` | — | SPEC-020 |
+| F-087 | No-show detection, and a reschedule that keeps its reminder | ✅ | `platform/api/workflows/no_show.py`, `routers/scheduling.py` | `test_no_show_sweep.py` | — | SPEC-020 |
+| F-088 | Never an empty draft; a failed automation becomes a task | ✅ | `src/sephiroth/workflows/templates.py`, `workflows/failure_task.py` | `test_approval_draft_endpoint.py`, `test_workflow_deferral.py` | — | SPEC-020 |
+
+Five of the ⚠️ rows in the automation-substrate table above are closed by this
+phase; `F-063` (in-app only, no push channel) remains open until SPEC-025.
 
 ## Removed
 

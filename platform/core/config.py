@@ -265,6 +265,17 @@ class Settings(BaseSettings):
     # show a clinician an empty inbox and call it "nothing to do".
     enable_task_inbox: bool = False
 
+    # SPEC-020: quiet hours are wall-clock ("no messages between 22:00 and
+    # 08:00" means the patient's evening), and every datetime in this schema is
+    # naive UTC -- so honouring them needs to know which wall. An IANA name,
+    # not an offset, because an offset is wrong for half the year.
+    clinic_timezone: str = "America/Bogota"
+
+    # SPEC-020: how long after an appointment ends before an untouched booking
+    # is called a no-show. A day, so a clinician who marks it `completed` the
+    # next morning still wins the race against the sweep.
+    no_show_grace_hours: int = 24
+
     # Optional ops monitoring: a tick posts a health summary to this Slack
     # incoming-webhook URL when set, and stays silent (no notifier, no
     # error) when unset -- same degrade-gracefully posture as

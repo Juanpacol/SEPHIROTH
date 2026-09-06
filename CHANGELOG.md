@@ -5,6 +5,26 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+### Phase 18 — automation correctness (SPEC-020)
+
+Closes the defects SPEC-009 §11 recorded, and the deferral gap that made three of them unfixable.
+
+#### Added
+- A **`deferred`** step outcome — "not now, ask me again at T". A deferral is a decision, not a failure: it does not consume a retry and does not complete the parent workflow. `workflows/memory.py`'s docstring had named this exact gap as the blocker for `quiet_hours`, and it was right.
+- `quiet_hours` is honoured by patient-facing steps, in wall-clock time, with the midnight-wrapping case treated as the normal one. **Deliberately not applied to alert escalation or clinical notification**: an unresolved critical alert at 03:00 is precisely what escalation is for, and applying a comfort setting there would let it silence an emergency.
+- `reminder_lead_hours` is resolved at enrolment and recorded on the workflow, with an execution-time deferral for the case where the preference later becomes *shorter*.
+- No-show detection (`workflows/no_show.py`), giving `MISSED_APPOINTMENT` a producer for the first time. The grace period is the design: a booking that ended twenty minutes ago is an appointment whose notes are not written yet.
+- A terminally failed step files a task. A counter on a page nobody opens is not how anyone finds out a patient's reminder never went.
+- `render_followup_draft` — a deterministic, sendable draft, enforced by `ck_pending_action_draft_nonempty`.
+
+#### Fixed
+- `execute_step` ignored `WorkflowStep.max_lateness_seconds`, reading the step *type*'s value instead — so the per-row column `on_new_appointment` and `enroll_plan` populate was dead.
+- `alert_refresh` ran **exactly once, ever**: it returned `succeeded`, no steps remained, the engine completed the parent, and nothing rescheduled it.
+- Rescheduling an appointment silently lost its reminder. Nothing fired against stale data, but no replacement was ever enrolled and nothing indicated it.
+
+#### Changed
+- `POST /api/approvals/{id}/draft` upgrades a template draft rather than filling a blank one, and an unreachable model keeps the usable text instead of returning 503 — on a local-first deployment the model being down is a normal Tuesday.
+
 ### Phase 17 — work center and information architecture (SPEC-019)
 
 The primary navigation listed the system's parts. "Clinical" and "Intelligence" as group labels were the tell, and the second group was the proof: `/imaging`, `/evidence` and `/agents` were top-level destinations because they are interesting features, not because anyone starts a day by opening them.
