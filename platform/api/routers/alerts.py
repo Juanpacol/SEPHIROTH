@@ -9,6 +9,14 @@ metric's numerator.
 Resolving an alert also cancels any still-active `alert_escalation`
 workflow anchored to it (`Workflow.alert_id`) -- a resolved alert has
 nothing left to escalate.
+
+Since SPEC-018 the resolve body itself lives in
+`api.services.task_adapters._resolve_alert`, and this router calls it.
+The same code has to run whether a clinician resolves the alert here or
+completes the task that represents it; two implementations of "resolve an
+alert" would agree exactly until one of them was edited. Resolving also
+closes the alert's task immediately -- not on the next tick -- because
+the clinician is looking at the inbox when they do it.
 """
 
 from __future__ import annotations
@@ -22,9 +30,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.deps import require_clinician
 from core.db import get_session
-from data.schemas import Alert, User, Workflow
+from data.schemas import Alert, User
 
-from ..workflows.instantiate import cancel_workflow
+from ..services import task_service
+from ..services.task_adapters import _resolve_alert
 
 router = APIRouter()
 
@@ -100,16 +109,10 @@ async def resolve_alert(
     if alert.reviewed_at is None:
         raise HTTPException(status_code=409, detail="Alert must be reviewed before it can be resolved")
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    alert.status = "resolved"
-    alert.resolved_at = now
-
-    active_workflows = (
-        await session.scalars(
-            select(Workflow).where(Workflow.alert_id == alert.id, Workflow.status == "active")
-        )
-    ).all()
-    for wf in active_workflows:
-        await cancel_workflow(session, wf, now)
+    await _resolve_alert(session, alert, clinician, now)
+    await task_service.close_tasks_for_source(
+        session, "alert", alert.id, status="done", actor=clinician, now=now
+    )
 
     await session.commit()
     return _alert_out(alert)

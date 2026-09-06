@@ -264,10 +264,38 @@ async def transition(
     previous = task.status
 
     if action == "claim":
-        if task.assigned_to_user_id not in (None, actor.id if actor else None):
+        # Claiming is the one transition two people race for, so the guard has
+        # to live in the WHERE clause rather than in Python: a read-then-write
+        # would let both requests read "unassigned" and both write themselves
+        # in, and each clinician would walk away believing they own the work.
+        # Same optimistic shape as `engine.py::claim_step`.
+        claimed = await session.execute(
+            update(Task)
+            .where(
+                Task.id == task.id,
+                Task.status == previous,
+                or_(Task.assigned_to_user_id.is_(None), Task.assigned_to_user_id == actor.id),
+            )
+            .values(
+                status=target,
+                assigned_to_user_id=actor.id,
+                snoozed_until=None,
+                updated_at=moment,
+            )
+        )
+        if (claimed.rowcount or 0) != 1:
             raise TaskTransitionError("task is already claimed by someone else")
-        task.assigned_to_user_id = actor.id if actor else None
-        task.snoozed_until = None
+        # Bring the in-memory object in line with what the UPDATE actually did.
+        await session.refresh(task)
+        _record(
+            session,
+            task,
+            EVENT_FOR_ACTION["claim"],
+            actor=actor,
+            from_status=previous,
+            to_status=target,
+        )
+        return task
 
     elif action == "assign":
         if not assignee_id:

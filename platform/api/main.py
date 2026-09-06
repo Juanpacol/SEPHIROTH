@@ -24,6 +24,7 @@ from api.routers import (
     approvals,
     audit,
     automation_memory,
+    badges,
     dashboard,
     followups,
     internal,
@@ -34,6 +35,7 @@ from api.routers import (
     rag,
     results,
     scheduling,
+    tasks,
 )
 from api.workflows.subscriptions import register_subscriptions
 from auth import router as auth_router_module
@@ -143,6 +145,7 @@ app.include_router(
 )
 app.include_router(audit.router, prefix="/api/audit", tags=["audit"], dependencies=_clinician_only)
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"], dependencies=_clinician_only)
+app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"], dependencies=_clinician_only)
 app.include_router(
     approvals.router, prefix="/api/approvals", tags=["approvals"], dependencies=_clinician_only
 )
@@ -164,6 +167,10 @@ app.include_router(results.router, prefix="/api/results", tags=["results"])
 # (`get_current_user`), so it mixes roles per-route like the three above
 # rather than carrying a blanket clinician-only guard.
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
+# Badges: counters only, no PHI, and a patient legitimately has an unread
+# count — so it carries `get_current_user` per route rather than a blanket
+# clinician guard, like notifications above.
+app.include_router(badges.router, prefix="/api/badges", tags=["badges"])
 # The workflow tick: no /api prefix, no JWT-based dependency — see
 # internal.py's docstring for why. Guarded by its own shared-secret check.
 app.include_router(internal.router, tags=["internal"])
