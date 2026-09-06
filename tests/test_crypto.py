@@ -38,7 +38,8 @@ def test_encrypted_text_treats_non_token_as_legacy_plaintext(monkeypatch):
     crypto_module._fernet.cache_clear()
 
     col = EncryptedText()
-    assert col.process_result_value("a pre-encryption plaintext note", None) == "a pre-encryption plaintext note"
+    plaintext = "a pre-encryption plaintext note"
+    assert col.process_result_value(plaintext, None) == plaintext
 
 
 def test_encrypted_json_treats_legacy_json_text_as_plaintext(monkeypatch):

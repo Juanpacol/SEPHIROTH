@@ -64,7 +64,8 @@ def img_dir(tmp_path, monkeypatch):
     from api.routers import medical as medical_module
 
     monkeypatch.setattr(medical_module, "_UPLOAD_DIR", tmp_path)
-    monkeypatch.setattr(medical_module, "_ALLOWED_IMAGE_DIRS", [tmp_path.resolve()] + medical_module._ALLOWED_IMAGE_DIRS[1:])
+    allowed_dirs = [tmp_path.resolve()] + medical_module._ALLOWED_IMAGE_DIRS[1:]
+    monkeypatch.setattr(medical_module, "_ALLOWED_IMAGE_DIRS", allowed_dirs)
     return tmp_path
 
 
