@@ -128,6 +128,16 @@ class Settings(BaseSettings):
     # encounter windows, so a clinician meets one number rather than three.
     result_reopen_window_days: int = 30
 
+    # Web push (SPEC-025). Empty keys disable push entirely and every path
+    # degrades to the in-app notification that already existed -- the state
+    # every deployment starts in. Generate a pair with
+    # `scripts/generate_vapid_keys.py`.
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    vapid_subject: str = "mailto:ops@sephiroth.local"
+    push_max_attempts: int = 3
+    push_batch_size: int = 50
+
     # Fallback LLM — Groq (OpenAI-compatible API), free tier. Used only for
     # text/tool-calling when Gemini is unavailable (rate-limited or its
     # daily request quota is exhausted — a real constraint observed on

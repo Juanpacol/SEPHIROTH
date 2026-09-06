@@ -108,6 +108,9 @@ FRONTEND_ACCEPTANCE_CRITERIA = {
     "AC-019-02": "lib/__tests__/route-restructure.test.ts",
     "AC-019-03": "components/__tests__/agenda-today-card.test.tsx",
     "AC-019-04": "components/__tests__/agenda-today-card.test.tsx",
+    # SPEC-025 — PWA and Web Push
+    "AC-025-10": "lib/__tests__/service-worker-policy.test.ts",
+    "AC-025-11": "components/__tests__/push-toggle.test.tsx",
 }
 
 

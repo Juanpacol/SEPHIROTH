@@ -13,8 +13,9 @@ import { useLanguage } from "@/lib/language";
 import SegmentedControl from "@/components/ui/segmented-control";
 import ProfileSection from "@/components/settings/profile-section";
 import AutomationSection from "@/components/settings/automation-section";
+import PushToggle from "@/components/settings/push-toggle";
 
-type Section = "profile" | "automation";
+type Section = "profile" | "automation" | "notifications";
 
 export default function SettingsPage() {
   const { t } = useLanguage();
@@ -36,10 +37,13 @@ export default function SettingsPage() {
         options={[
           { value: "profile", label: t("settings.section.profile") },
           { value: "automation", label: t("settings.section.automation") },
+          { value: "notifications", label: t("settings.section.notifications") },
         ]}
       />
 
-      {section === "profile" ? <ProfileSection /> : <AutomationSection />}
+      {section === "profile" ? <ProfileSection /> : null}
+      {section === "automation" ? <AutomationSection /> : null}
+      {section === "notifications" ? <PushToggle /> : null}
     </div>
   );
 }

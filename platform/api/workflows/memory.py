@@ -44,9 +44,36 @@ def _validate_reminder_lead_hours(value: Any) -> None:
         raise InvalidMemoryKey("reminder_lead_hours must be an int between 1 and 168 (one week)")
 
 
+#: Channels that exist. `web_push` joined the list in SPEC-025; the key had
+#: been validated against a single legal value since phase 8, described in
+#: this file as "reserved for 'email'/'sms'".
+_CONTACT_PREFERENCES = ("in_app", "web_push", "both")
+
+
 def _validate_contact_preference(value: Any) -> None:
-    if value != "in_app":
-        raise InvalidMemoryKey("contact_preference must be 'in_app' -- the only channel that exists")
+    if value not in _CONTACT_PREFERENCES:
+        raise InvalidMemoryKey(f"contact_preference must be one of {_CONTACT_PREFERENCES}")
+
+
+def _validate_push_enabled(value: Any) -> None:
+    if not isinstance(value, bool):
+        raise InvalidMemoryKey("push_enabled must be a boolean")
+
+
+def _validate_notify_types(value: Any) -> None:
+    """A list of notification types, checked against the copy table.
+
+    A type with no safe copy would push the generic fallback, which is not
+    wrong but is not what the person choosing it meant -- so the choice is
+    bounded by what can actually be said.
+    """
+    from .push_payload import SAFE_COPY
+
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise InvalidMemoryKey("notify_types must be a list of notification type strings")
+    unknown = sorted(set(value) - set(SAFE_COPY))
+    if unknown:
+        raise InvalidMemoryKey(f"unknown notification type(s): {', '.join(unknown)}")
 
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -71,8 +98,16 @@ _KEY_SPECS: Dict[str, tuple] = {
         _validate_reminder_lead_hours,
     ),
     "contact_preference": (
-        "'in_app' -- the only channel that exists (Phase 8); reserved for 'email'/'sms'",
+        "'in_app' | 'web_push' | 'both' -- which channels reach this user",
         _validate_contact_preference,
+    ),
+    "push_enabled": (
+        "bool -- the switch a person flips; absent means on for a user with a subscription",
+        _validate_push_enabled,
+    ),
+    "notify_types": (
+        "list[str] of notification types to push -- absent or empty means all of them",
+        _validate_notify_types,
     ),
     "last_digest_sent_date": (
         "'YYYY-MM-DD' -- last calendar date the clinical Slack daily digest was sent (scope='clinic')",

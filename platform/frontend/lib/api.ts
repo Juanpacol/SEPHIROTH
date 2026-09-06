@@ -294,6 +294,19 @@ export interface ResultReview {
   created?: boolean;
 }
 
+// --- Web push (SPEC-025) ----------------------------------------------------
+
+export interface PushDevice {
+  id: string;
+  /** The tail of the endpoint only — the full URL is a capability. */
+  endpoint_hint: string;
+  user_agent: string;
+  enabled: boolean;
+  failure_count: number;
+  last_success_at: string | null;
+  created_at: string;
+}
+
 export interface TaskCounts {
   /** The `open` status alone. Sum the statuses with `total_open`, not by hand. */
   open: number;
@@ -837,6 +850,23 @@ async function del(path: string): Promise<void> {
   if (!res.ok) throw new ApiError(res.status, await res.text());
 }
 
+/** DELETE with a body. The subscription is identified by its endpoint, which
+ *  is a 400-character capability URL and does not belong in a path segment or
+ *  a query string that proxies and access logs will record. */
+async function delWithBody(path: string, body: unknown): Promise<void> {
+  const res = await fetch(path, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401) {
+    redirectToLogin();
+    throw new ApiError(401, "Not authenticated");
+  }
+  if (res.status === 403) throw new ApiError(403, "This isn't available for your account.");
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+}
+
 /** POST expecting a 204 No Content response (no JSON body to parse). */
 async function postNoContent(path: string, body: unknown): Promise<void> {
   const res = await fetch(path, {
@@ -1117,6 +1147,14 @@ export const api = {
     post<ResultReview>(`/api/results/reviews/${id}/communicate`, body),
   closeResult: (id: string) => post<ResultReview>(`/api/results/reviews/${id}/close`, {}),
   reopenResult: (id: string) => post<ResultReview>(`/api/results/reviews/${id}/reopen`, {}),
+
+  // --- Web push -----------------------------------------------------------
+  pushKey: () => get<{ enabled: boolean; public_key: string | null }>("/api/push/key"),
+  pushDevices: () => get<{ items: PushDevice[] }>("/api/push/subscriptions"),
+  subscribeToPush: (body: { endpoint: string; p256dh: string; auth: string }) =>
+    post<PushDevice>("/api/push/subscriptions", body),
+  unsubscribeFromPush: (endpoint: string) =>
+    delWithBody("/api/push/subscriptions", { endpoint }),
 
   taskCounts: () => get<TaskCounts>("/api/tasks/count"),
   task: (taskId: string) => get<ClinicalTask & { events: TaskEvent[] }>(`/api/tasks/${taskId}`),

@@ -837,6 +837,22 @@ const EN: Record<string, string> = {
   "results.communicate": "Tell the patient",
   "results.close": "Close",
   "results.reopen": "Reopen",
+
+  // --- Web push (SPEC-025) ---
+  "push.title": "Notifications on this device",
+  "push.help": "Get told about escalations and reminders when the app is closed.",
+  "push.enable": "Turn on",
+  "push.disable": "Turn off",
+  "push.unsupported": "This browser cannot show notifications. On iPhone, add the app to your home screen first.",
+  "push.notConfigured": "This deployment has no push keys configured. An administrator sets VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.",
+  "push.denied":
+    "You blocked notifications for this site. Only the browser's own site settings can undo that — this page cannot ask again.",
+  "push.failed": "Could not turn notifications on.",
+  "push.devices": "Registered devices",
+  "push.unknownDevice": "Unknown device",
+  "push.deviceInactive": "inactive",
+  "push.noPhi": "Notifications never contain patient information — they say something needs attention, and the app shows what.",
+  "settings.section.notifications": "Notifications",
 };
 
 export default EN;

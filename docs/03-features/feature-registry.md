@@ -192,6 +192,17 @@ Specified in [SPEC-024](../specs/SPEC-024-results-loop.md).
 | F-102 | The loop: received → reviewed → communicated → closed, and it cannot be short-circuited | ✅ | `platform/api/services/result_service.py` | `test_result_loop.py` | — | SPEC-024 |
 | F-103 | Every abnormal result becomes work, not only a critical one | ✅ | `platform/api/services/result_service.py`, `app/results/page.tsx` | `test_result_intake.py::TestWorkCreated`, `result-review-card.test.tsx` | — | SPEC-024 |
 
+## PWA and web push (Phase 23)
+
+Specified in [SPEC-025](../specs/SPEC-025-pwa-push.md).
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-104 | Web push, enqueued in the transaction and sent from the tick | ✅ | `platform/api/workflows/push.py`, `channels.py` | `test_push_channel.py`, `test_push_dispatch.py` | — | SPEC-025 |
+| F-105 | Payloads carry fixed copy, never patient content | ✅ | `platform/api/workflows/push_payload.py` | `test_push_payload.py` | — | SPEC-025 / ADR-018 |
+| F-106 | Per-device subscriptions a person can see and turn off | ✅ | `platform/api/routers/push.py`, `components/settings/push-toggle.tsx` | `test_push_router.py`, `push-toggle.test.tsx` | — | SPEC-025 |
+| F-107 | Installable PWA whose worker never caches an API response | ⚠️ | `app/manifest.ts`, `app/sw.ts`, `lib/service-worker-policy.ts` | `service-worker-policy.test.ts` | — | SPEC-025 NG-2 (no offline writes, no background sync) |
+
 ## Removed
 
 | ID | Feature | Status | Note |

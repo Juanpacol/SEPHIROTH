@@ -33,6 +33,7 @@ from api.routers import (
     notifications,
     patients,
     portal,
+    push,
     rag,
     result_reviews,
     results,
@@ -214,6 +215,9 @@ app.include_router(
 # (`get_current_user`), so it mixes roles per-route like the three above
 # rather than carrying a blanket clinician-only guard.
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
+# Every authenticated user, not only clinicians: a subscription belongs to
+# whoever is signed in, and no handler here takes a user id.
+app.include_router(push.router, prefix="/api/push", tags=["push"])
 # Badges: counters only, no PHI, and a patient legitimately has an unread
 # count — so it carries `get_current_user` per route rather than a blanket
 # clinician guard, like notifications above.
