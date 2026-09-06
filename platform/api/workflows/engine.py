@@ -45,6 +45,12 @@ class TickSummary:
     skipped: int = 0
     remaining: int = 0
     events_dispatched: int = 0
+    # Task upkeep (SPEC-018). Counted but deliberately absent from to_dict():
+    # the tick's HTTP response shape is what an external cron consumes, and
+    # SPEC-009 §6.5 fixed it.
+    tasks_reopened: int = 0
+    tasks_superseded: int = 0
+    tasks_created: int = 0
     # Not included in to_dict() -- the HTTP response shape to the cron
     # caller never changes. Only read by internal.py to compose an
     # ops_notify.py Slack payload (workflow_id/step_id only, never
@@ -232,6 +238,33 @@ async def run_tick(session: AsyncSession, tick_id: str) -> TickSummary:
         or 0
     )
     summary.events_dispatched = await dispatch_pending(session)
+
+    # Task upkeep, after dispatch so a task created by this tick's events is
+    # already visible to the reconciliation below.
+    #
+    # `reconcile_tasks` is not belt-and-braces for the service path: it is the
+    # only thing that catches sources closed by a bulk UPDATE, which
+    # `approvals.py::_expire_due_pending` performs by construction and which
+    # therefore bypasses every Python hook.
+    from ..services.task_adapters import reconcile_tasks
+    from ..services.task_service import reopen_due_snoozed
+
+    summary.tasks_reopened = await reopen_due_snoozed(session, now)
+    summary.tasks_superseded = await reconcile_tasks(session, now)
+
+    if settings.enable_task_inbox:
+        # Behind the flag because this is the half that REPLACES the dashboard's
+        # read-time derivation. The adapter-driven writes above are not gated:
+        # the table has to be warm before anyone switches the inbox on, or the
+        # first thing a clinician sees is an empty list described as "nothing
+        # to do".
+        from ..services.task_derivation import sync_derived_tasks
+
+        derived = await sync_derived_tasks(session, now)
+        summary.tasks_created = derived["created"]
+        summary.tasks_superseded += derived["superseded"]
+
+    await session.commit()
     return summary
 
 

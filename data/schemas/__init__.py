@@ -866,6 +866,132 @@ class WorkflowEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
 
 
+class Task(Base):
+    """One piece of clinical work somebody has to do (SPEC-018).
+
+    Alerts, approvals, follow-ups, results to review and appointment chores
+    were five separate inboxes, and `GET /api/dashboard/action-items` derived
+    a sixth, read-only view over them with no row identity -- so nothing on
+    it could be claimed, snoozed, commented on, or tracked to closure. This
+    table is the one place that work lives.
+
+    **It does not replace those entities.** Each keeps its own domain state;
+    a task owns the *workflow* state around it (who has it, when it is due,
+    what has happened to it) and is kept in step with its source by
+    `platform/api/services/task_service.py`, which both sides call.
+
+    The link to the source is `source_type` + `source_id` rather than a
+    nullable FK per source. Two reasons, and the second is the load-bearing
+    one: the sources have incompatible primary-key types (`LabResult.id` and
+    `TimelineEvent.id` are integers, the rest are String(36)), and two
+    categories -- a deteriorating trend, a drug interaction -- have no source
+    row at all, so there is nothing for a foreign key to point at. The cost
+    is no referential integrity to the source; `ck_task_source_type` bounds
+    the values and `task_service.reconcile_tasks` sweeps for orphans.
+
+    `escalated_at`/`escalation_level` are a timestamp and a counter, not a
+    status, for the same reason `Appointment.confirmed_at` is orthogonal to
+    `Appointment.status`: an escalated task is still open work, and folding
+    it into the status would make "show me everything open" wrong.
+    """
+
+    __tablename__ = "tasks"
+    __table_args__ = (
+        UniqueConstraint("dedupe_key", name="uq_task_dedupe_key"),
+        CheckConstraint(
+            "source_type IN ('alert','approval','followup','result','appointment',"
+            "'automation','consultation','deteriorating','interaction')",
+            name="ck_task_source_type",
+        ),
+        CheckConstraint("severity IN ('critical','high','medium','low')", name="ck_task_severity"),
+        CheckConstraint(
+            "status IN ('open','in_progress','snoozed','done','dismissed','superseded')",
+            name="ck_task_status",
+        ),
+        # Same trick as `ck_pending_action_requires_reviewer`: a closed task
+        # with nobody recorded against it makes the audit query lie, so the
+        # database refuses it rather than trusting every write path.
+        CheckConstraint(
+            "status NOT IN ('done','dismissed') OR closed_by IS NOT NULL",
+            name="ck_task_closed_requires_actor",
+        ),
+        Index("ix_tasks_status_due", "status", "due_at"),
+        Index("ix_tasks_assigned_status", "assigned_to_user_id", "status"),
+        Index("ix_tasks_source", "source_type", "source_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    #: Stable identity of the work, not of the row. Re-deriving the same task
+    #: on every 5-minute tick must not create a second one, which is what the
+    #: unique constraint above enforces -- for a derived task this is a
+    #: content key, since there is no source row to key on.
+    dedupe_key: Mapped[str] = mapped_column(String(160))
+    source_type: Mapped[str] = mapped_column(String(30), index=True)
+    source_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    category: Mapped[str] = mapped_column(String(20), index=True)
+    patient_id: Mapped[Optional[str]] = mapped_column(ForeignKey("patients.id"), nullable=True, index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    #: Free clinical text, so it goes through the PHI column types (ADR-014)
+    #: exactly like `ClinicalNote.content`.
+    detail: Mapped[str] = mapped_column(EncryptedText, default="")
+    context: Mapped[Dict[str, Any]] = mapped_column(EncryptedJSON, default=dict)
+    severity: Mapped[str] = mapped_column(String(10), index=True)
+    status: Mapped[str] = mapped_column(String(12), default="open", server_default="open", index=True)
+    assigned_to_user_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("users.id"), nullable=True, index=True
+    )
+    due_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    snoozed_until: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    escalated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    escalation_level: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    dismiss_reason: Mapped[str] = mapped_column(String(300), default="")
+    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    closed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    patient: Mapped[Optional["Patient"]] = relationship()
+
+
+class TaskEvent(Base):
+    """What happened to a task, and who did it.
+
+    A child table rather than a JSON column on `Task`, because the questions
+    this has to answer are queries -- "what did the team do with overdue
+    critical tasks last month", "how long from raised to claimed" -- and a
+    JSON array can be neither indexed nor joined.
+
+    It does not replace `PhiAccessLog` and is not a substitute for it: this
+    records *work provenance*, that records *PHI reads*. A task read that
+    touches a patient still writes a `PhiAccessLog` row.
+
+    Append-only by convention, like `PhiAccessLog` -- no route updates or
+    deletes a row here.
+    """
+
+    __tablename__ = "task_events"
+    __table_args__ = (
+        CheckConstraint(
+            "event_type IN ('created','claimed','assigned','snoozed','resumed','escalated',"
+            "'completed','dismissed','superseded','reopened','commented')",
+            name="ck_task_event_type",
+        ),
+        Index("ix_task_events_task_created", "task_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    task_id: Mapped[str] = mapped_column(ForeignKey("tasks.id"), index=True)
+    event_type: Mapped[str] = mapped_column(String(20))
+    #: NULL means the system did it (the tick, a source adapter) -- the same
+    #: convention `PhiAccessLog` uses for `SYSTEM_WORKFLOW_USER_ID` work.
+    actor_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    from_status: Mapped[Optional[str]] = mapped_column(String(12), nullable=True)
+    to_status: Mapped[Optional[str]] = mapped_column(String(12), nullable=True)
+    note: Mapped[str] = mapped_column(EncryptedText, default="")
+    data: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+
+
 __all__ = [
     "Base",
     "User",
@@ -897,4 +1023,6 @@ __all__ = [
     "PendingAction",
     "FollowupPlan",
     "AutomationMemory",
+    "Task",
+    "TaskEvent",
 ]

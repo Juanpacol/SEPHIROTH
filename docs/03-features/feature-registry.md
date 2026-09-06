@@ -109,6 +109,20 @@ built on, and they land first so no screen is built twice.
 | F-075 | Overlay and control primitives (dialog, menu, segmented control, skeleton, toast action) | ✅ | `platform/frontend/components/ui/` | `components/__tests__/sheet.test.tsx` | — | SPEC-017 |
 | F-076 | Frontend CI gate (`tsc --noEmit`, eslint at zero warnings) | ✅ | `.github/workflows/ci.yml`, `platform/frontend/.eslintrc.json` | `lib/__tests__/responsive.test.ts` | — | SPEC-017 |
 
+## The clinical task inbox (Phase 16)
+
+Specified in [SPEC-018](../specs/SPEC-018-unified-tasks.md). One inbox for
+everything a clinician has to do, replacing five separate surfaces plus a
+read-only derived list that nothing could act on.
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-077 | `Task`/`TaskEvent` with an auditable state machine | ✅ | `data/schemas/__init__.py`, `platform/api/services/task_service.py` | `test_task_service_transitions.py` | — | SPEC-018 |
+| F-078 | Two-way consistency between a task and its source | ✅ | `platform/api/services/task_adapters.py` | `test_tasks_router.py::TestSourceConsistency` | — | SPEC-018 |
+| F-079 | Derivation of unfiled work, with retirement | ✅ | `platform/api/services/task_derivation.py` | `test_task_derivation.py` | — | SPEC-018 |
+| F-080 | Task inbox API with filters and offset paging | ✅ | `platform/api/routers/tasks.py` | `test_tasks_router.py` | — | SPEC-018 (the first paginated endpoint in the codebase) |
+| F-081 | The inbox UI, with optimistic actions and undo | ✅ | `platform/frontend/app/tasks/`, `lib/hooks/use-task-actions.ts` | `app/tasks/__tests__/page.test.tsx` | — | SPEC-018 |
+
 ## Removed
 
 | ID | Feature | Status | Note |

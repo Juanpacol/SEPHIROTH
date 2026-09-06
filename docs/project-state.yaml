@@ -12,7 +12,7 @@ schema_version: 1
 project: SEPHIROTH
 version: 1.0.0
 updated: 2026-09-06
-phase_current: 15
+phase_current: 16
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
@@ -38,6 +38,7 @@ phases:
   # Phase 15 opens the clinical-operating-system plan. New specs start at
   # SPEC-017; see the note above for why 010-016 are unavailable.
   "15": {name: "Interface foundations — portal, focus trap, DataList, mobile nav, frontend CI gate (SPEC-017)", status: done}
+  "16": {name: "Unified clinical tasks — one inbox, source adapters, derivation with retirement (SPEC-018)", status: done}
 
 components:
   legacy:
@@ -74,6 +75,19 @@ components:
     platform/api:
       status: implemented
       tests: [tests/test_api_agents.py, tests/test_api_patients_rag.py, tests/test_main_health.py]
+    platform/api/services:
+      status: implemented
+      spec: SPEC-018
+      description: >-
+        The service layer, which did not exist before phase 16 -- business
+        logic lived inline in routers (dashboard.py is 749 lines,
+        scheduling.py 1004). task_service owns the task state machine,
+        task_adapters keeps a task and its source in step from both
+        directions, task_derivation creates and retires the work that has
+        no source row. Nothing here commits: routers do, and the tick does
+        once at the end.
+      tests: [tests/test_task_service_transitions.py, tests/test_task_derivation.py,
+              tests/test_tasks_router.py, tests/test_action_items_compatibility.py]
     platform/api/workflows:
       status: partial
       spec: SPEC-009

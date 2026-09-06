@@ -100,6 +100,9 @@ FRONTEND_ACCEPTANCE_CRITERIA = {
     "AC-017-12": "lib/__tests__/responsive.test.ts",
     "AC-017-13": "lib/__tests__/responsive.test.ts",
     "AC-017-14": "lib/__tests__/responsive.test.ts",
+    # SPEC-018 — Unified Clinical Tasks
+    "AC-018-17": "app/tasks/__tests__/page.test.tsx",
+    "AC-018-18": "app/tasks/__tests__/page.test.tsx",
 }
 
 

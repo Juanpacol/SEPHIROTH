@@ -256,6 +256,15 @@ class Settings(BaseSettings):
     workflow_tick_budget_seconds: float = 20.0
     workflow_step_lease_seconds: int = 120
 
+    # SPEC-018: the unified task inbox. This flag gates only the two places
+    # where tasks REPLACE something that already works -- the derivation sweep
+    # in the tick, and `/api/dashboard/action-items` reading from `tasks`
+    # instead of re-deriving. Task *writes* from source adapters are
+    # deliberately unconditional, so the table is already warm and correct
+    # before anyone flips this on; turning it on against an empty table would
+    # show a clinician an empty inbox and call it "nothing to do".
+    enable_task_inbox: bool = False
+
     # Optional ops monitoring: a tick posts a health summary to this Slack
     # incoming-webhook URL when set, and stays silent (no notifier, no
     # error) when unset -- same degrade-gracefully posture as

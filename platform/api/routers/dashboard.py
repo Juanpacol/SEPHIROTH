@@ -20,6 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.deps import require_clinician
+from core.config import settings
 from core.db import get_session
 from data.schemas import (
     AIEvaluation,
@@ -31,6 +32,7 @@ from data.schemas import (
     Notification,
     Patient,
     PendingAction,
+    Task,
     User,
     Workflow,
     WorkflowEvent,
@@ -540,7 +542,60 @@ async def dashboard_action_items(session: AsyncSession = Depends(get_session)) -
     return await _cached("action_items", lambda: _dashboard_action_items(session))
 
 
+async def _action_items_from_tasks(session: AsyncSession) -> Dict[str, Any]:
+    """The same list, read from `tasks` instead of re-derived (SPEC-018).
+
+    The response shape is byte-identical to `_dashboard_action_items` below —
+    the frontend's `DashboardActionItem` keeps working untouched — with three
+    optional fields added. `task_id` is the important one: with it, a row on
+    the dashboard becomes something a clinician can act on rather than a
+    sentence they have to go and find somewhere else.
+
+    `context` is spread into the item because that is where the per-category
+    fields the frontend already reads (`test_name`, `drug_a`, `days_late`, …)
+    now live.
+    """
+    from api.services.task_service import OPEN_STATUSES
+
+    names: Dict[str, str] = dict(
+        (await session.execute(select(Patient.id, Patient.name))).all()  # type: ignore[arg-type]
+    )
+    tasks = (
+        await session.scalars(
+            select(Task).where(Task.status.in_(OPEN_STATUSES)).order_by(Task.created_at.desc())
+        )
+    ).all()
+
+    items: List[Dict[str, Any]] = []
+    per_category: Dict[str, int] = {}
+    for task in tasks:
+        # Same per-category cap the derived version applied, so one noisy
+        # category still cannot crowd the others off the page.
+        seen = per_category.get(task.category, 0)
+        if seen >= _ACTION_ITEM_LIMIT_PER_CATEGORY:
+            continue
+        per_category[task.category] = seen + 1
+        items.append(
+            {
+                "category": task.category,
+                "severity": task.severity,
+                "patient_id": task.patient_id,
+                "patient_name": names.get(task.patient_id or ""),
+                **(task.context or {}),
+                "task_id": task.id,
+                "status": task.status,
+                "due_at": task.due_at.isoformat() if task.due_at else None,
+            }
+        )
+
+    items.sort(key=lambda item: _SEVERITY_RANK.get(item["severity"], len(_SEVERITY_RANK)))
+    return {"items": items, "total_count": len(items)}
+
+
 async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
+    if settings.enable_task_inbox:
+        return await _action_items_from_tasks(session)
+
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     names: Dict[str, str] = dict(
         (await session.execute(select(Patient.id, Patient.name))).all()  # type: ignore[arg-type]
