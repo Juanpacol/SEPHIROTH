@@ -12,7 +12,7 @@ schema_version: 1
 project: SEPHIROTH
 version: 1.0.0
 updated: 2026-09-06
-phase_current: 17
+phase_current: 18
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
@@ -40,6 +40,7 @@ phases:
   "15": {name: "Interface foundations — portal, focus trap, DataList, mobile nav, frontend CI gate (SPEC-017)", status: done}
   "16": {name: "Unified clinical tasks — one inbox, source adapters, derivation with retirement (SPEC-018)", status: done}
   "17": {name: "Work center + information architecture — flat nav, redirects, /work leads with today (SPEC-019)", status: done}
+  "18": {name: "Automation correctness — deferred outcome, quiet hours, periodic refresh, no-show detection (SPEC-020)", status: done}
 
 components:
   legacy:
@@ -90,15 +91,17 @@ components:
       tests: [tests/test_task_service_transitions.py, tests/test_task_derivation.py,
               tests/test_tasks_router.py, tests/test_action_items_compatibility.py]
     platform/api/workflows:
-      status: partial
-      spec: SPEC-009
+      status: implemented
+      spec: SPEC-020
       description: >-
         The DB-touching half of the automation substrate — tick engine,
-        step-type registry, notification channel, and the seven workflow
-        definitions. Partial rather than implemented because SPEC-009 §11
-        records three live defects (per-row max_lateness ignored,
-        alert_refresh runs once, rescheduling loses its reminder) and two
-        stored-but-unread settings (quiet_hours, reminder_lead_hours).
+        step-type registry, notification channel, and the workflow
+        definitions. The three defects SPEC-009 §11 recorded (per-row
+        max_lateness ignored, alert_refresh ran once, rescheduling lost its
+        reminder) and the two stored-but-unread settings (quiet_hours,
+        reminder_lead_hours) are closed by SPEC-020. What remains deferred is
+        deliberate: one escalation tier, and in-app as the only channel until
+        SPEC-025.
       tests: [tests/test_workflow_engine_tick.py, tests/test_workflow_channels.py,
               tests/test_workflow_alert_refresh.py, tests/test_alert_escalation_workflow.py,
               tests/test_appointment_reminder_workflow.py, tests/test_patient_followup_workflow.py,

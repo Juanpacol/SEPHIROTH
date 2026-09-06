@@ -279,6 +279,9 @@ class Appointment(Base):
         CheckConstraint("start_at < end_at", name="ck_appointment_time_order"),
         Index("ix_appointments_clinician_start", "clinician_id", "start_at"),
         Index("ix_appointments_patient_start", "patient_id", "start_at"),
+        # The no-show sweep (SPEC-020) selects on `status` first, and neither
+        # index above leads with it.
+        Index("ix_appointments_status_end", "status", "end_at"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -751,6 +754,13 @@ class WorkflowStep(Base):
     max_lateness_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     max_attempts: Mapped[int] = mapped_column(Integer, default=3, server_default="3")
+    #: Times this step said "not now" (SPEC-020). Counted separately from
+    #: `attempts` because a deferral is a decision, not a failure -- charging it
+    #: a retry would mean three quiet nights in a row permanently kill a
+    #: reminder. It still needs a ceiling: a quiet-hours window misconfigured to
+    #: cover the whole day would otherwise defer forever, and a notification
+    #: that never sends and never errors is the worst of both.
+    deferred_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     lease_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     claimed_by: Mapped[str] = mapped_column(String(40), default="", server_default="")
     last_error: Mapped[str] = mapped_column(String(300), default="", server_default="")
@@ -787,6 +797,11 @@ class PendingAction(Base):
             "status NOT IN ('approved','rejected') OR reviewed_by IS NOT NULL",
             name="ck_pending_action_requires_reviewer",
         ),
+        # Same reasoning as the constraint above, applied to the draft itself
+        # (SPEC-020): a rule that lives only in a router is a comment. An empty
+        # draft in the approvals inbox is a row that asks the clinician to
+        # babysit the automation before they can review its output.
+        CheckConstraint("draft_text <> ''", name="ck_pending_action_draft_nonempty"),
         Index("ix_pending_actions_status_created", "status", "created_at"),
     )
 

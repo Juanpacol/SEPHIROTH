@@ -7,7 +7,7 @@ entry point lands here without disturbing `engine.py`.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -42,9 +42,12 @@ async def seed_alert_refresh_workflows(session: AsyncSession) -> int:
     """Ensures every patient has exactly one active `alert_refresh`
     workflow with one due-now step. Idempotent: a patient that already
     has an active `alert_refresh` workflow is skipped. Returns the
-    number of workflows created. Not run automatically -- called by hand
-    or a one-off script, same convention as `real_data/`'s fetch/import
-    scripts."""
+    number of workflows created.
+
+    Called once a day from the tick via `maybe_seed_alert_refresh` (SPEC-020).
+    It used to be manual, which meant a patient registered after the last
+    hand-run never got alert refresh at all -- an operational step nobody would
+    remember, silently degrading over time."""
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     spec = STEP_TYPES["alert_refresh"]
 
@@ -92,4 +95,25 @@ async def seed_alert_refresh_workflows(session: AsyncSession) -> int:
     return created
 
 
-__all__ = ["seed_alert_refresh_workflows", "cancel_workflow"]
+async def maybe_seed_alert_refresh(session: AsyncSession) -> int:
+    """Enrol any patient who does not yet have an alert-refresh workflow.
+
+    Once per calendar day, tracked in `automation_memory` -- the exact pattern
+    `daily_digest.py` uses, and for the same reason: this is clinic-wide
+    operational timing state with no single patient to anchor a `Workflow` row
+    to. Running it every tick instead would mean scanning every patient every
+    five minutes to discover nothing new nearly always.
+    """
+    from .memory import get_memory, set_memory
+
+    today = date.today().isoformat()
+    if await get_memory(session, "clinic", "default", "last_alert_seed_date") == today:
+        return 0
+
+    created = await seed_alert_refresh_workflows(session)
+    await set_memory(session, "clinic", "default", "last_alert_seed_date", today)
+    await session.commit()
+    return created
+
+
+__all__ = ["seed_alert_refresh_workflows", "maybe_seed_alert_refresh", "cancel_workflow"]

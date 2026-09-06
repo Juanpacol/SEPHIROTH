@@ -23,7 +23,8 @@ from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from data.schemas import FollowupPlan, PendingAction, Workflow, WorkflowStep
+from data.schemas import FollowupPlan, Patient, PendingAction, Workflow, WorkflowStep
+from sephiroth.workflows.templates import render_followup_draft
 
 from .registry import StepContext, StepResult, StepTypeSpec, register_step_type
 
@@ -82,13 +83,25 @@ async def followup_check_due(ctx: StepContext) -> StepResult:
         return StepResult(outcome="superseded", detail="plan no longer active")
 
     check_name = ctx.step.payload.get("check", ctx.step.step_key)
+
+    # A real, sendable draft, written deterministically (SPEC-020). This used
+    # to be `draft_text=""` with `draft_source="llm"`, which put a row in the
+    # approvals inbox with nothing in it and asked the clinician to press
+    # "generate draft" before they could review anything. The template is the
+    # floor, not a placeholder: `approvals.py` still upgrades it to a drafted
+    # version on request, and it is what survives the model being unreachable.
+    #
+    # No LLM call here on purpose -- SPEC-009's rule that a tick never invokes
+    # a model still holds.
+    patient = await ctx.session.get(Patient, plan.patient_id)
+    first_name = patient.name.split(" ")[0] if patient and patient.name else ""
     action = PendingAction(
         id=str(uuid4()),
         workflow_step_id=ctx.step.id,
         patient_id=plan.patient_id,
         action_type=f"followup_{check_name}",
-        draft_text="",
-        draft_source="llm",
+        draft_text=render_followup_draft(check_name, plan.instructions, first_name),
+        draft_source="template",
         proposed_payload={
             "followup_plan_id": plan.id,
             "check": check_name,

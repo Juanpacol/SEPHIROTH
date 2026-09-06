@@ -619,6 +619,28 @@ async def update_appointment(
             )
         appt.start_at = new_start
         appt.end_at = new_end
+
+        # Re-enrol (SPEC-020). Before this, rescheduling silently lost the
+        # reminder: `_load_live_appointment` compares `start_at` against the
+        # workflow's snapshot and correctly returns `superseded`, so nothing
+        # fired against stale data -- but the workflow stayed `active`, and
+        # `on_new_appointment`'s idempotency guard would then refuse to enrol a
+        # replacement even if an event were emitted, and none was. The result
+        # was an appointment with no reminder and nothing to indicate it.
+        for workflow in (
+            await session.scalars(
+                select(Workflow).where(Workflow.appointment_id == appt.id, Workflow.status == "active")
+            )
+        ).all():
+            await cancel_workflow(session, workflow, datetime.now(timezone.utc).replace(tzinfo=None))
+        if appt.status == "booked":
+            workflow_events.emit(
+                session,
+                workflow_events.NEW_APPOINTMENT,
+                "appointment",
+                appt.id,
+                patient_id=appt.patient_id,
+            )
     if body.status is not None:
         appt.status = body.status
         if body.status == "no_show":

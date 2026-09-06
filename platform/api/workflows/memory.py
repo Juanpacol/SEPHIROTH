@@ -8,12 +8,11 @@ and, per the security review, that used to mean the *key* only: the
 here" was a comment, not a control. `_KEY_SPECS` closes that: each
 allowed key also has a value shape it must satisfy.
 
-No automation phase reads this yet -- Phase 10's reminder handler does
-not check quiet hours. Wiring that in requires a `StepResult` outcome
-meaning "not done, try again later" that the engine (SPEC-009) doesn't
-have today; adding one is real work, not something to bolt on here
-just to make this table feel used. This phase ships the store and its
-API, proven standalone.
+Since SPEC-020 these are read. `quiet_hours` is honoured by patient-facing
+steps (`quiet_hours.py`) and `reminder_lead_hours` is resolved at appointment
+enrolment (`appointment_reminder.py`). Both waited on the engine gaining a
+`deferred` outcome -- a "not now, ask me later" decision -- which is what this
+module's previous docstring said was the blocker, and it was right.
 """
 
 from __future__ import annotations
@@ -77,6 +76,10 @@ _KEY_SPECS: Dict[str, tuple] = {
     ),
     "last_digest_sent_date": (
         "'YYYY-MM-DD' -- last calendar date the clinical Slack daily digest was sent (scope='clinic')",
+        _validate_last_digest_sent_date,
+    ),
+    "last_alert_seed_date": (
+        "'YYYY-MM-DD' -- last calendar date alert-refresh workflows were seeded (scope='clinic')",
         _validate_last_digest_sent_date,
     ),
 }
