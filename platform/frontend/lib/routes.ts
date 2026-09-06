@@ -17,6 +17,10 @@ export const CLINICIAN_PREFIXES = [
   "/work",
   "/tasks",
   "/patients",
+  // Reached from a patient or from today's agenda, not from primary nav: an
+  // encounter belongs to a visit, and a list of them is a record rather than a
+  // place work starts.
+  "/encounters",
   "/agenda",
   "/alerts",
   "/approvals",

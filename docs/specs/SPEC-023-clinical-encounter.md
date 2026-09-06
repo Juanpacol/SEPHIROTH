@@ -290,7 +290,7 @@ for lab thresholds.
 | HTTP | lifecycle, guards, audit, amendment | `tests/test_encounters_router.py` |
 | Degradation | model down, PHI refused | `tests/test_encounter_note_drafting.py` |
 | Read model | the brief | `tests/test_pre_visit_brief.py` |
-| Frontend | the encounter page's three states | `components/__tests__/encounter-*.test.tsx` |
+| Frontend | the draft panel's two promises, and blood pressure as one field | `components/__tests__/encounter-note-draft.test.tsx`, `encounter-vitals-form.test.tsx` |
 
 ## 10. Migration & Compatibility
 
