@@ -23,7 +23,7 @@ describe("AUTH_GATE_SCRIPT", () => {
   it("does nothing when not on the landing page", () => {
     Object.defineProperty(window, "location", {
       configurable: true,
-      value: { ...window.location, pathname: "/dashboard" },
+      value: { ...window.location, pathname: "/work" },
     });
     localStorage.setItem("cac_token", "tok");
 
@@ -36,7 +36,7 @@ describe("AUTH_GATE_SCRIPT", () => {
     expect(document.documentElement.hasAttribute("data-auth-redirect")).toBe(false);
   });
 
-  it("redirects a logged-in clinician to /dashboard", () => {
+  it("redirects a logged-in clinician to /work", () => {
     localStorage.setItem("cac_token", "tok");
     localStorage.setItem("cac_user", JSON.stringify({ role: "clinician" }));
     let redirectedTo = "";
@@ -53,7 +53,7 @@ describe("AUTH_GATE_SCRIPT", () => {
 
     runGateScript();
 
-    expect(redirectedTo).toBe("/dashboard");
+    expect(redirectedTo).toBe("/work");
     expect(document.documentElement.hasAttribute("data-auth-redirect")).toBe(true);
   });
 

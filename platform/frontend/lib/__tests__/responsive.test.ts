@@ -55,7 +55,7 @@ describe("responsive guardrails", () => {
     const ALLOWED: Record<string, string> = {
       // The weekly grid is genuinely wide and lives in its own overflow-x
       // container; the phone gets a day view in the agenda rework.
-      "app/schedule/page.tsx": "week grid, inside its own horizontal scroller",
+      "app/agenda/page.tsx": "week grid, inside its own horizontal scroller",
     };
 
     const offenders = FILES.flatMap((f) => {

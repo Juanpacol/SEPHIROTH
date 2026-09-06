@@ -86,7 +86,12 @@ describe("MobileNav", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /more/i }));
     const drawer = screen.getByRole("dialog");
-    expect(within(drawer).getByRole("link", { name: /imaging/i })).toBeInTheDocument();
+    // Whatever did not fit in the bar — asserted against the config rather
+    // than a hardcoded destination, so reordering the nav does not break it.
+    const firstOverflow = flatNav(CLINICIAN_NAV).find((i) => !i.mobile)!;
+    expect(
+      within(drawer).getByRole("link", { name: new RegExp(firstOverflow.id, "i") }),
+    ).toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();

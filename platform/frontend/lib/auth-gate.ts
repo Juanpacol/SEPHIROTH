@@ -15,7 +15,7 @@ export const AUTH_GATE_SCRIPT = `
     if (!localStorage.getItem("cac_token")) return;
     document.documentElement.setAttribute("data-auth-redirect", "");
     var user = JSON.parse(localStorage.getItem("cac_user") || "null");
-    location.replace(user && user.role === "patient" ? "/portal" : "/dashboard");
+    location.replace(user && user.role === "patient" ? "/portal" : "/work");
   } catch (e) {}
 })();
 `;

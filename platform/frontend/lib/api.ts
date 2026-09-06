@@ -501,6 +501,7 @@ export interface Attachment {
 
 export interface ResultShare {
   id: string;
+  patient_id: string;
   status: "sent" | "revoked";
   message: string;
   shared_at: string;
@@ -707,17 +708,6 @@ export const api = {
     get<{ stats: DashboardStats; agenda: TodayAgenda; action_items: DashboardActionItems }>(
       "/api/dashboard/bootstrap"
     ),
-  dashboardActionItems: () => get<DashboardActionItems>("/api/dashboard/action-items"),
-  dashboardEvolution: () => get<DashboardEvolution>("/api/dashboard/evolution"),
-  dashboardAlerts: () => get<DashboardAlerts>("/api/dashboard/alerts"),
-  dashboardMedications: () => get<DashboardMedications>("/api/dashboard/medications"),
-  dashboardLabs: () => get<DashboardLabs>("/api/dashboard/labs"),
-  dashboardImaging: () => get<DashboardImaging>("/api/dashboard/imaging"),
-  dashboardAI: () => get<DashboardAI>("/api/dashboard/ai"),
-  dashboardEvidence: () => get<DashboardEvidence>("/api/dashboard/evidence"),
-  dashboardPending: () => get<DashboardPending>("/api/dashboard/pending"),
-  dashboardPerformance: () => get<DashboardPerformance>("/api/dashboard/performance"),
-  dashboardAutomation: () => get<DashboardAutomation>("/api/dashboard/automation"),
   agentsStatus: () => get<AgentsStatus>("/api/agents/status"),
   patients: (sort?: "risk") => get<PatientSummary[]>(`/api/patients${sort ? `?sort=${sort}` : ""}`),
   patient: (id: string) => get<Patient>(`/api/patients/${id}`),

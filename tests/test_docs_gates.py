@@ -103,6 +103,11 @@ FRONTEND_ACCEPTANCE_CRITERIA = {
     # SPEC-018 — Unified Clinical Tasks
     "AC-018-17": "app/tasks/__tests__/page.test.tsx",
     "AC-018-18": "app/tasks/__tests__/page.test.tsx",
+    # SPEC-019 — Work Center and Information Architecture
+    "AC-019-01": "lib/__tests__/route-restructure.test.ts",
+    "AC-019-02": "lib/__tests__/route-restructure.test.ts",
+    "AC-019-03": "components/__tests__/agenda-today-card.test.tsx",
+    "AC-019-04": "components/__tests__/agenda-today-card.test.tsx",
 }
 
 

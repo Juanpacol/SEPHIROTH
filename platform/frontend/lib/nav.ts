@@ -11,16 +11,16 @@
  */
 
 import {
-  Activity,
   Bell,
-  BookOpenCheck,
   CalendarDays,
   CheckSquare,
   ClipboardCheck,
   ClipboardList,
   FileText,
+  FlaskConical,
   LayoutDashboard,
-  ScanEye,
+  Repeat,
+  Settings,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -42,30 +42,33 @@ export interface NavGroup {
   items: NavItem[];
 }
 
+/** Flat, in the order a day runs: what is happening, what is waiting, who it
+ * concerns, what came back, when it happens.
+ *
+ * The groups are gone. "Clinical" and "Intelligence" described how the system
+ * is built rather than what a clinician is doing, and the second group was the
+ * tell — `/imaging`, `/evidence` and `/agents` were top-level destinations
+ * because they were interesting features, not because anyone starts their day
+ * by opening them. They now live where they are used: imaging inside a
+ * patient, evidence from an alert or a medication, agent activity under
+ * `/admin`. Nothing was deleted; the URLs still work.
+ */
 export const CLINICIAN_NAV: NavGroup[] = [
   {
     groupId: null,
-    items: [{ href: "/dashboard", id: "dashboard", icon: LayoutDashboard, mobile: true }],
-  },
-  {
-    groupId: "groupClinical",
     items: [
+      { href: "/work", id: "work", icon: LayoutDashboard, mobile: true },
       // Tasks displaces /alerts on the phone bar: an alert is one source of
       // work and this is all of them, so a clinician who can only reach four
       // destinations should reach the superset.
       { href: "/tasks", id: "tasks", icon: CheckSquare, mobile: true, badge: "tasks_open" },
       { href: "/patients", id: "patients", icon: Users, mobile: true },
-      { href: "/schedule", id: "schedule", icon: CalendarDays, mobile: true },
-      { href: "/approvals", id: "approvals", icon: ClipboardCheck },
+      { href: "/agenda", id: "agenda", icon: CalendarDays, mobile: true },
       { href: "/alerts", id: "alerts", icon: Bell, badge: "alerts_active" },
-    ],
-  },
-  {
-    groupId: "groupIntelligence",
-    items: [
-      { href: "/imaging", id: "imaging", icon: ScanEye },
-      { href: "/evidence", id: "evidence", icon: BookOpenCheck },
-      { href: "/agents", id: "agents", icon: Activity },
+      { href: "/approvals", id: "approvals", icon: ClipboardCheck },
+      { href: "/results", id: "results", icon: FlaskConical },
+      { href: "/followups", id: "followups", icon: Repeat },
+      { href: "/settings", id: "settings", icon: Settings },
     ],
   },
 ];
