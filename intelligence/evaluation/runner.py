@@ -44,6 +44,27 @@ def sha256_transcripts(transcripts_dir: Path = TRANSCRIPTS_DIR) -> str:
     return digest.hexdigest()
 
 
+def sha256_replayed_cases(dataset_path: Path = DATASET_PATH, transcripts_dir: Path = TRANSCRIPTS_DIR) -> str:
+    """Stable hash over only the dataset cases a transcript exists for.
+
+    The two frozen metrics -- `faithfulness_llm_judge` and `abstention_recall`
+    -- are replayed from transcripts. A case with no transcript contributes to
+    neither: `faithfulness` iterates transcripts, and `replay_abstention` skips
+    any case missing one. Hashing the whole dataset therefore declared the
+    baseline stale whenever a *retrieval-only* case was added, which is what
+    happened when 13 guideline cases landed in dce1365 and left the `eval` gate
+    red on every branch afterwards, for numbers that had not moved by a digit.
+
+    Hashing the replayed subset says what the check actually means: has
+    anything the frozen numbers were computed from changed. Editing or removing
+    a replayed case still invalidates it, which is the case that matters.
+    """
+    raw = json.loads(dataset_path.read_text())
+    ids = {path.stem for path in transcripts_dir.glob("*.json")}
+    replayed = [case for case in raw.get("cases", []) if case.get("id") in ids]
+    return hashlib.sha256(json.dumps(replayed, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
 def load_transcripts(transcripts_dir: Path = TRANSCRIPTS_DIR) -> List[Dict[str, Any]]:
     return [json.loads(p.read_text()) for p in sorted(transcripts_dir.glob("*.json"))]
 
@@ -151,12 +172,16 @@ def run_ci_mode(
     if results_path.exists():
         results_data = json.loads(results_path.read_text())
         run_meta = results_data.get("run", {})
-        current_dataset_hash = sha256_file(dataset_path)
         current_transcripts_hash = sha256_transcripts(transcripts_dir)
-        stale = (
-            run_meta.get("dataset_sha256") != current_dataset_hash
-            or run_meta.get("transcripts_sha256") != current_transcripts_hash
-        )
+        # Falls back to the whole-dataset hash for a baseline recorded before
+        # `replayed_cases_sha256` existed: an older file is treated by the
+        # stricter rule it was written under rather than waved through.
+        recorded_subset = run_meta.get("replayed_cases_sha256")
+        if recorded_subset is None:
+            dataset_matches = run_meta.get("dataset_sha256") == sha256_file(dataset_path)
+        else:
+            dataset_matches = recorded_subset == sha256_replayed_cases(dataset_path, transcripts_dir)
+        stale = not dataset_matches or run_meta.get("transcripts_sha256") != current_transcripts_hash
         if not stale:
             observed["faithfulness_llm_judge"] = results_data.get("faithfulness", {}).get("llm_judge")
             observed["abstention_recall"] = results_data.get("abstention", {}).get("abstention_recall")
@@ -308,6 +333,7 @@ async def run_full_mode(
             "git_sha": git_sha,
             "n_cases": len(cases),
             "dataset_sha256": sha256_file(dataset_path),
+            "replayed_cases_sha256": sha256_replayed_cases(dataset_path, transcripts_dir),
             "transcripts_sha256": sha256_transcripts(transcripts_dir) if record else "",
         },
         "retrieval": retrieval,
