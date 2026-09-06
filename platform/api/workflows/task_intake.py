@@ -48,7 +48,11 @@ async def on_clinical_alert(session: AsyncSession, event: WorkflowEvent) -> None
         # Keyed on the alert row, so re-dispatching the same event — or a
         # second event for an alert that already has a task — is a no-op.
         dedupe_key=f"alert:{alert.id}",
-        context={"alert_category": alert.category, "source": alert.source},
+        context={
+            "alert_category": alert.category,
+            "alert_kind": alert.kind,
+            "source": alert.source,
+        },
         now=alert.created_at,
     )
 

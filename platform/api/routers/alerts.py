@@ -45,9 +45,13 @@ def _alert_out(alert: Alert) -> Dict[str, Any]:
         "category": alert.category,
         "severity": alert.severity,
         "status": alert.status,
+        "kind": alert.kind,
         "title": alert.title,
         "detail": alert.detail,
+        # The rule and its threshold, not just the engine that owns it -- a
+        # warning a clinician cannot audit is one they have to take on faith.
         "source": alert.source,
+        "rule_key": alert.rule_key,
         "assigned_to_user_id": alert.assigned_to_user_id,
         "due_at": alert.due_at.isoformat() if alert.due_at else None,
         "reviewed_at": alert.reviewed_at.isoformat() if alert.reviewed_at else None,
@@ -62,6 +66,7 @@ def _alert_out(alert: Alert) -> Dict[str, Any]:
 async def list_alerts(
     status_filter: Optional[str] = Query(None, alias="status"),
     severity: Optional[str] = None,
+    kind: Optional[str] = Query(None, description="clinical | administrative"),
     patient_id: Optional[str] = None,
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
@@ -71,6 +76,8 @@ async def list_alerts(
         stmt = stmt.where(Alert.status == status_filter)
     if severity is not None:
         stmt = stmt.where(Alert.severity == severity)
+    if kind is not None:
+        stmt = stmt.where(Alert.kind == kind)
     if patient_id is not None:
         stmt = stmt.where(Alert.patient_id == patient_id)
     alerts = (await session.scalars(stmt)).all()

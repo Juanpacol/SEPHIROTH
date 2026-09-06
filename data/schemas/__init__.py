@@ -532,6 +532,13 @@ class Alert(Base):
         ),
         CheckConstraint("severity IN ('critical','high','medium','low')", name="ck_alert_severity"),
         CheckConstraint("status IN ('active','reviewed','resolved')", name="ck_alert_status"),
+        CheckConstraint("kind IN ('clinical','administrative')", name="ck_alert_kind"),
+        # One open alert per rule per patient. A partial index would be the
+        # precise expression of that, but SQLite (the test database) does not
+        # support the `WHERE status <> 'resolved'` clause portably, so the
+        # invariant is enforced in `generate_alerts_for_patient` and this
+        # index exists to make that check cheap.
+        Index("ix_alerts_patient_rule", "patient_id", "rule_key", "status"),
         Index("ix_alerts_status_severity", "status", "severity"),
     )
 
@@ -543,6 +550,19 @@ class Alert(Base):
     title: Mapped[str] = mapped_column(String(200))
     detail: Mapped[str] = mapped_column(Text, default="")
     source: Mapped[str] = mapped_column(String(60))  # which engine/rule raised it
+    #: Stable identity of the *rule*, independent of what it is called on
+    #: screen (SPEC-021). Deduplication keys on this rather than on `title`,
+    #: which is display copy -- rewording a label would otherwise duplicate
+    #: every open alert. Nullable because alerts predating this column have
+    #: none, and backfilling display strings into a machine key would invent
+    #: identities that were never real.
+    rule_key: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, index=True)
+    #: `clinical` (a finding about the patient) or `administrative` (a finding
+    #: about the process -- an unconfirmed appointment, a failed automation).
+    #: They deserve different urgency and different filters: treating "critical
+    #: potassium" and "nobody confirmed a booking" as one queue is how the
+    #: second teaches people to skim past the first.
+    kind: Mapped[str] = mapped_column(String(20), default="clinical", server_default="clinical", index=True)
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     reviewed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)

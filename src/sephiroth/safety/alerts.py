@@ -36,20 +36,34 @@ async def generate_alerts_for_patient(session: AsyncSession, patient: Patient) -
     """Creates any `Alert` rows this patient's current risk flags call for
     and don't already have an open one. Returns the newly created rows
     (empty if nothing new)."""
-    flags = assess_patient_risk(patient.lab_results, patient.medications)
+    flags = assess_patient_risk(patient.lab_results, patient.medications, patient.allergies)
     if not flags:
         return []
 
-    existing_active = (
-        await session.scalars(select(Alert).where(Alert.patient_id == patient.id, Alert.status == "active"))
+    # Everything not yet resolved, not just `active` (SPEC-021).
+    #
+    # This was the duplication defect: an alert a clinician had marked
+    # `reviewed` but not resolved was absent from the set, so the next sweep
+    # filed it again. It used to surface once per deploy, because
+    # `generate_alerts_for_all_patients` only ran at boot. Since SPEC-020 made
+    # `alert_refresh` genuinely periodic it would recur every six hours, which
+    # is how a real inbox fills with copies of work somebody is already doing.
+    existing_open = (
+        await session.scalars(select(Alert).where(Alert.patient_id == patient.id, Alert.status != "resolved"))
     ).all()
-    already_open = {(a.category, a.title) for a in existing_active}
+    # Keyed on the rule, not the title. A title is display copy: rewording
+    # "Hypokalemia" to "Low potassium" would otherwise duplicate every open
+    # alert in the system at once. Pre-SPEC-021 rows have no `rule_key`, so
+    # they fall back to the old key rather than being treated as absent.
+    already_open = {a.rule_key for a in existing_open if a.rule_key}
+    legacy_open = {(a.category, a.title) for a in existing_open if not a.rule_key}
 
     created: List[Alert] = []
     for flag in flags:
         category = _CATEGORY_BY_FLAG_SOURCE.get(flag["source"], "clinical")
         title = flag["label"]
-        if (category, title) in already_open:
+        rule_key = flag.get("rule_key") or f"legacy:{category}:{title}"
+        if rule_key in already_open or (category, title) in legacy_open:
             continue
         alert = Alert(
             id=str(uuid.uuid4()),
@@ -58,7 +72,12 @@ async def generate_alerts_for_patient(session: AsyncSession, patient: Patient) -
             severity=flag["severity"],
             title=title,
             detail=flag["detail"],
-            source="risk_engine",
+            # The rule that fired, not just the engine that owns it -- a
+            # warning a clinician cannot trace back to its threshold is one
+            # they have to take on faith.
+            source=flag.get("rule_source") or "risk_engine",
+            rule_key=rule_key,
+            kind=flag.get("kind", "clinical"),
         )
         session.add(alert)
         # SPEC-010: recorded in the same transaction as the Alert itself,
@@ -68,7 +87,7 @@ async def generate_alerts_for_patient(session: AsyncSession, patient: Patient) -
         # records it as `no_subscriber` rather than dropping it.
         emit(session, CLINICAL_ALERT, "alert", alert.id, patient_id=patient.id)
         created.append(alert)
-        already_open.add((category, title))  # guards duplicate flags within this same call
+        already_open.add(rule_key)  # guards duplicate flags within this same call
 
     return created
 

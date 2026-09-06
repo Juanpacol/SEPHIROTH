@@ -212,6 +212,12 @@ async def escalate_if_unconfirmed(ctx: StepContext) -> StepResult:
         title="Unconfirmed appointment",
         detail=f"Appointment at {appt.start_at.isoformat()} has not been confirmed by the patient.",
         source="appointment_engine",
+        rule_key=f"appointment.unconfirmed.{appt.id}",
+        # Administrative, not clinical (SPEC-021). Nobody having confirmed a
+        # booking is a fact about the process; filing it beside "critical
+        # potassium" in one undifferentiated queue is how the second teaches
+        # people to skim past the first.
+        kind="administrative",
     )
     ctx.session.add(alert)
 

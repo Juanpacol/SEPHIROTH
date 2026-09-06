@@ -149,6 +149,15 @@ defects [SPEC-009](../specs/SPEC-009-automation-substrate.md) §11 recorded.
 Five of the ⚠️ rows in the automation-substrate table above are closed by this
 phase; `F-063` (in-app only, no push channel) remains open until SPEC-025.
 
+## Deterministic clinical rules (Phase 19)
+
+Specified in [SPEC-021](../specs/SPEC-021-clinical-rules.md).
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-089 | Stable rule identity, auditable thresholds, no repeat alerts | ✅ | `src/sephiroth/safety/risk.py`, `safety/alerts.py` | `test_clinical_rules.py` | — | SPEC-021 |
+| F-090 | Allergy-conflict and duplicate-medication rules; clinical vs administrative | ⚠️ | `src/sephiroth/safety/risk.py` | `test_clinical_rules.py::TestNewRules` | — | SPEC-021 NG-2 (no cross-class inference — no drug-class table exists) |
+
 ## Removed
 
 | ID | Feature | Status | Note |
