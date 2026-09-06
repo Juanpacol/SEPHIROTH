@@ -22,8 +22,8 @@ describe("homeFor", () => {
     expect(homeFor("patient")).toBe("/portal");
   });
 
-  it("sends a clinician to /dashboard", () => {
-    expect(homeFor("clinician")).toBe("/dashboard");
+  it("sends a clinician to /work", () => {
+    expect(homeFor("clinician")).toBe("/work");
   });
 });
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Search } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { clearAuth, useUser } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import { flatNav, isActive, navFor } from "@/lib/nav";
@@ -17,7 +17,7 @@ export default function Sidebar() {
   const groups = navFor(user?.role);
   const allHrefs = flatNav(groups).map((i) => i.href);
   const { data: counts } = useBadgeCounts();
-  const homeHref = user?.role === "patient" ? "/portal" : "/dashboard";
+  const homeHref = user?.role === "patient" ? "/portal" : "/work";
   const profileHref = user?.role === "patient" ? "/portal" : "/profile";
 
   const initials = user
@@ -43,13 +43,6 @@ export default function Sidebar() {
         </span>
         <span className="text-[15px] font-bold tracking-tight">SEPHIROTH</span>
       </Link>
-
-      {user?.role !== "patient" && (
-        <div className="mt-5 flex items-center gap-2 rounded-2xl border border-line/70 px-3 py-2 text-sm text-muted">
-          <Search size={15} />
-          <span>{t("nav.search")}</span>
-        </div>
-      )}
 
       <nav className="mt-2 flex-1">
         {groups.map((group) => (

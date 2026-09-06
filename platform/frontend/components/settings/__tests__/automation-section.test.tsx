@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import PreferencesPage from "@/app/preferences/page";
+import AutomationSection from "@/components/settings/automation-section";
 import { api } from "@/lib/api";
 import { LanguageProvider } from "@/lib/language";
 
@@ -14,7 +14,7 @@ vi.mock("@/lib/api", () => ({
 function renderPage() {
   return render(
     <LanguageProvider>
-      <PreferencesPage />
+      <AutomationSection />
     </LanguageProvider>
   );
 }

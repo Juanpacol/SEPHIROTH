@@ -74,6 +74,11 @@ def _attachment_out(att: ResultAttachment) -> Dict[str, Any]:
 def _share_out(share: ResultShare) -> Dict[str, Any]:
     return {
         "id": share.id,
+        # Added for the clinician-facing shares list (SPEC-019), which shows
+        # rows from many patients at once and cannot name them otherwise.
+        # Harmless on the patient side: the portal already derives the patient
+        # from the token, so this tells them nothing they did not send.
+        "patient_id": share.patient_id,
         "status": share.status,
         "message": share.message,
         "shared_at": share.shared_at.isoformat(),
