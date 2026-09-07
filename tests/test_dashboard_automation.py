@@ -1,7 +1,4 @@
-"""`GET /api/dashboard/automation`.
-
-Verifies AC-009-26 (docs/specs/SPEC-009-automation-substrate.md).
-Written under the never-issued SPEC-016; that number is retired."""
+"""`GET /api/dashboard/automation` (SPEC-016)."""
 
 from datetime import datetime
 

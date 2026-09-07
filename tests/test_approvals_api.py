@@ -1,7 +1,4 @@
-"""`/api/approvals` — the human-in-the-loop gate.
-
-Verifies AC-009-20 (docs/specs/SPEC-009-automation-substrate.md).
-Written under the never-issued SPEC-013; that number is retired."""
+"""`/api/approvals` — the human-in-the-loop gate (SPEC-013)."""
 
 from datetime import datetime, timedelta
 

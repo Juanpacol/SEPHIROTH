@@ -5,17 +5,10 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
-
 from data.schemas import Patient
 from sephiroth.safety.alerts import generate_alerts_for_patient
-from sephiroth.workflows.policy import jittered
 
 from .registry import StepContext, StepResult, StepTypeSpec, register_step_type
-
-#: How often a patient's alerts are re-derived. Six hours because the inputs
-#: (labs, medications) change on a clinical cadence, not a machine one.
-ALERT_REFRESH_INTERVAL = timedelta(hours=6)
 
 
 async def alert_refresh(ctx: StepContext) -> StepResult:
@@ -34,22 +27,8 @@ async def alert_refresh(ctx: StepContext) -> StepResult:
         return StepResult(outcome="superseded", detail="patient no longer exists")
 
     created = await generate_alerts_for_patient(ctx.session, patient)
-
-    # `deferred`, not `succeeded` (SPEC-020). Returning success here meant no
-    # steps remained, the engine completed the parent workflow, and nothing
-    # ever rescheduled it -- so "periodic" was aspirational and this ran
-    # exactly once per patient, ever. Deferring keeps the workflow `active`
-    # forever, which is the honest model for a standing job.
-    #
-    # Jittered because every patient is enrolled in one of these: without it
-    # they all come due in the same tick forever, and a clinic with more
-    # patients than `workflow_tick_batch_size` permanently starves the tail of
-    # the list.
     return StepResult(
-        outcome="deferred",
-        detail=f"{len(created)} new alert(s); next sweep in ~6h",
-        data={"created": len(created)},
-        retry_at=ctx.now + jittered(ALERT_REFRESH_INTERVAL),
+        outcome="succeeded", detail=f"{len(created)} new alert(s)", data={"created": len(created)}
     )
 
 
@@ -61,7 +40,6 @@ register_step_type(
         max_lateness_seconds=None,  # internal housekeeping -- always worth catching up
         timeout_seconds=10.0,
         reads_phi=False,  # lab/med data already visible to any clinician; not a per-patient PHI read
-        max_defers=None,  # a standing job defers forever by design
     )
 )
 

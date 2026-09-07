@@ -1,10 +1,5 @@
-"""Tests for get_llm_client()'s composition logic.
-
-The Gemini cases below now pass `llm_provider="gemini"` explicitly. They used
-to get it by omission, which is exactly what SPEC-022 removed: the default is
-`ollama`, so a deployment that says nothing sends nothing anywhere. Wanting a
-remote provider is something a configuration states out loud, and these tests
-state it.
+"""Tests for get_llm_client()'s composition logic: bare GeminiClient unless
+GROQ_API_KEY is configured, in which case it wraps a FallbackLLMClient.
 
 This module patches the factory's module-level `settings`/`_client` globals
 directly on `sephiroth.models.factory`, where `get_llm_client()` is defined and
@@ -28,18 +23,13 @@ def _reload_settings(monkeypatch, **overrides):
 
 
 def test_returns_bare_gemini_client_without_groq_key(monkeypatch):
-    _reload_settings(monkeypatch, llm_provider="gemini", gemini_api_key="fake-gemini-key", groq_api_key=None)
+    _reload_settings(monkeypatch, gemini_api_key="fake-gemini-key", groq_api_key=None)
     client = factory_module.get_llm_client()
     assert isinstance(client, GeminiClient)
 
 
 def test_returns_fallback_client_with_groq_key(monkeypatch):
-    _reload_settings(
-        monkeypatch,
-        llm_provider="gemini",
-        gemini_api_key="fake-gemini-key",
-        groq_api_key="fake-groq-key",
-    )
+    _reload_settings(monkeypatch, gemini_api_key="fake-gemini-key", groq_api_key="fake-groq-key")
     client = factory_module.get_llm_client()
     assert isinstance(client, FallbackLLMClient)
     assert isinstance(client.primary, GeminiClient)
@@ -47,11 +37,7 @@ def test_returns_fallback_client_with_groq_key(monkeypatch):
 
 def test_fallback_disabled_returns_bare_gemini_client(monkeypatch):
     _reload_settings(
-        monkeypatch,
-        llm_provider="gemini",
-        gemini_api_key="fake-gemini-key",
-        groq_api_key="fake-groq-key",
-        llm_enable_fallback=False,
+        monkeypatch, gemini_api_key="fake-gemini-key", groq_api_key="fake-groq-key", llm_enable_fallback=False
     )
     client = factory_module.get_llm_client()
     assert isinstance(client, GeminiClient)

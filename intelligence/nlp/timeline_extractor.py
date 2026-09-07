@@ -86,14 +86,7 @@ def _fallback_extract(note_text: str, note_date: str) -> List[ExtractedEvent]:
 
 async def extract_events(client: GeminiClient, note_text: str, note_date: str) -> List[ExtractedEvent]:
     """Extract timeline events from a clinical note (LLM-first, fallback-safe)."""
-    # A clinical note is patient content (SPEC-022 §6.5). The refusal raises
-    # `PHINotAllowedError`, a subclass of `LLMUnavailableError`, so it lands in
-    # the same `except` below as any other model failure and degrades to the
-    # deterministic lexicon rather than needing its own branch here.
-    from sephiroth.models.egress import assert_phi_egress_allowed
-
     try:
-        assert_phi_egress_allowed(client, "timeline extraction")
         payload = await client.generate_json(
             prompt=f"Note date: {note_date}\n\nClinical note:\n{note_text}",
             schema=EVENTS_SCHEMA,

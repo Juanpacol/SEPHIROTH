@@ -9,8 +9,6 @@ Verifies AC-000-01, AC-000-02, AC-000-03, AC-000-04 and AC-000-06
 (`docs/specs/SPEC-000-spec-process.md`).
 """
 
-from pathlib import Path
-
 import pytest
 
 from scripts.docs_check import (
@@ -64,58 +62,3 @@ def test_feature_references_resolve():
 def test_relative_documentation_links_resolve():
     """Offline only; external URL liveness is deliberately not checked."""
     assert not _run(check_relative_links).errors
-
-
-# --------------------------------------------------------------------------
-# Frontend acceptance criteria.
-#
-# `docs_check.check_acceptance_criteria` greps `tests/` — the pytest tree — for
-# every AC id in an Implemented spec. A spec whose behaviour is proven by vitest
-# instead would therefore fail the gate, and the tempting fix (point the grep at
-# the frontend too) would let an id "pass" by appearing in any file at all,
-# including a comment.
-#
-# This manifest is the honest version: each frontend AC names the exact suite
-# that proves it, and the test below asserts the file exists and really contains
-# the id. That satisfies the grep for the right reason, and a renamed or deleted
-# suite fails here rather than rotting silently.
-# --------------------------------------------------------------------------
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-FRONTEND = REPO_ROOT / "platform" / "frontend"
-
-FRONTEND_ACCEPTANCE_CRITERIA = {
-    # SPEC-017 — Interface Foundations
-    "AC-017-01": "components/__tests__/sheet.test.tsx",
-    "AC-017-02": "components/__tests__/sheet.test.tsx",
-    "AC-017-03": "components/__tests__/sheet.test.tsx",
-    "AC-017-04": "components/__tests__/sheet.test.tsx",
-    "AC-017-05": "components/__tests__/sheet.test.tsx",
-    "AC-017-06": "components/__tests__/mobile-nav.test.tsx",
-    "AC-017-07": "components/__tests__/mobile-nav.test.tsx",
-    "AC-017-08": "components/__tests__/mobile-nav.test.tsx",
-    "AC-017-09": "components/__tests__/data-list.test.tsx",
-    "AC-017-10": "components/__tests__/data-list.test.tsx",
-    "AC-017-11": "components/__tests__/data-list.test.tsx",
-    "AC-017-12": "lib/__tests__/responsive.test.ts",
-    "AC-017-13": "lib/__tests__/responsive.test.ts",
-    "AC-017-14": "lib/__tests__/responsive.test.ts",
-    # SPEC-018 — Unified Clinical Tasks
-    "AC-018-17": "app/tasks/__tests__/page.test.tsx",
-    "AC-018-18": "app/tasks/__tests__/page.test.tsx",
-    # SPEC-019 — Work Center and Information Architecture
-    "AC-019-01": "lib/__tests__/route-restructure.test.ts",
-    "AC-019-02": "lib/__tests__/route-restructure.test.ts",
-    "AC-019-03": "components/__tests__/agenda-today-card.test.tsx",
-    "AC-019-04": "components/__tests__/agenda-today-card.test.tsx",
-    # SPEC-025 — PWA and Web Push
-    "AC-025-10": "lib/__tests__/service-worker-policy.test.ts",
-    "AC-025-11": "components/__tests__/push-toggle.test.tsx",
-}
-
-
-@pytest.mark.parametrize("ac_id,suite", sorted(FRONTEND_ACCEPTANCE_CRITERIA.items()))
-def test_frontend_acceptance_criteria_name_a_real_suite(ac_id: str, suite: str):
-    path = FRONTEND / suite
-    assert path.exists(), f"{ac_id} names {suite}, which does not exist"
-    assert ac_id in path.read_text(), f"{suite} does not reference {ac_id}"

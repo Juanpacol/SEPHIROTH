@@ -19,7 +19,7 @@ export interface AuthUser {
  * lives, so the login page, the auth guard, and the post-logout redirect
  * all agree. */
 export function homeFor(role: AuthUser["role"]): string {
-  return role === "patient" ? "/portal" : "/work";
+  return role === "patient" ? "/portal" : "/dashboard";
 }
 
 export function getToken(): string | null {

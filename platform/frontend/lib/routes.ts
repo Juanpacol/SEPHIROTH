@@ -8,36 +8,17 @@ export function isChromelessRoute(pathname: string): boolean {
   return (CHROMELESS_ROUTES as readonly string[]).includes(pathname);
 }
 
-/** Every clinician-reachable prefix, including the ones that now only serve a
- * redirect. The stubs still have to pass `AuthGuard` — a route missing from
- * this list is treated as not-a-clinician-route and bounces a signed-in
- * clinician away before the redirect ever runs, which turns an old bookmark
- * into a logout rather than a forward. */
 export const CLINICIAN_PREFIXES = [
-  "/work",
-  "/tasks",
+  "/dashboard",
+  "/copilot",
   "/patients",
-  // Reached from a patient or from today's agenda, not from primary nav: an
-  // encounter belongs to a visit, and a list of them is a record rather than a
-  // place work starts.
-  "/encounters",
-  "/agenda",
-  "/alerts",
-  "/approvals",
-  "/results",
-  "/followups",
-  "/settings",
-  "/admin",
-  // Reachable, but no longer in the primary navigation: evidence opens from an
-  // alert or a medication, imaging from a patient.
   "/evidence",
   "/imaging",
-  // Redirect stubs kept for existing links and bookmarks.
-  "/dashboard",
-  "/schedule",
   "/agents",
-  "/copilot",
+  "/schedule",
   "/profile",
+  "/approvals",
+  "/alerts",
   "/preferences",
 ] as const;
 

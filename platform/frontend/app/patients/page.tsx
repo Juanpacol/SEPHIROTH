@@ -9,7 +9,6 @@ import { api, type PatientSummary } from "@/lib/api";
 import { plainCondition } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 import StatusPill from "@/components/status-pill";
-import DataList, { type Column } from "@/components/ui/data-list";
 
 type RiskFilter = "all" | "high" | "medium" | "low";
 
@@ -44,74 +43,6 @@ export default function PatientsPage() {
     }
     return c;
   }, [patients]);
-
-  // Declared once and rendered as both a table and a card stack by `DataList`;
-  // `primary` marks what survives on a phone card.
-  const columns: Column<PatientSummary>[] = useMemo(
-    () => [
-      {
-        key: "patient",
-        header: t("patients.table.patient"),
-        primary: true,
-        render: (p) => (
-          <Link href={`/patients/${p.id}`} className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary">
-              {p.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")}
-            </span>
-            <span className="font-semibold text-ink hover:text-primary">{p.name}</span>
-          </Link>
-        ),
-      },
-      {
-        key: "mrn",
-        header: t("patients.table.mrn"),
-        className: "text-muted",
-        render: (p) => p.medical_record_number,
-      },
-      {
-        key: "ageSex",
-        header: t("patients.table.ageSex"),
-        render: (p) => `${p.age} / ${p.sex}`,
-      },
-      {
-        key: "conditions",
-        header: t("patients.table.conditions"),
-        // Three truncated lines read fine in a table cell and badly in a
-        // two-column card grid, so the card shape drops them; the patient
-        // page is one tap away and shows all of them.
-        desktopOnly: true,
-        className: "max-w-xs text-sm text-muted",
-        render: (p) => (
-          <>
-            {p.conditions.slice(0, 3).map((c) => (
-              <div key={c} className="truncate">
-                {plainCondition(c)}
-              </div>
-            ))}
-            {p.conditions.length > 3 && (
-              <div className="text-xs">
-                {t("criticalPatients.moreFlags").replace("{count}", String(p.conditions.length - 3))}
-              </div>
-            )}
-          </>
-        ),
-      },
-      {
-        key: "risk",
-        header: t("patients.table.risk"),
-        render: (p) => (p.risk_level ? <StatusPill label={p.risk_level} /> : null),
-      },
-      {
-        key: "status",
-        header: t("patients.table.status"),
-        render: (p) => <StatusPill label={p.status} />,
-      },
-    ],
-    [t],
-  );
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -157,16 +88,70 @@ export default function PatientsPage() {
         </div>
       </div>
 
-      <DataList
-        items={filtered}
-        rowKey={(p) => p.id}
-        onRowHref={(p) => `/patients/${p.id}`}
-        isLoading={isLoading}
-        loadingLabel={t("patients.loading")}
-        emptyLabel={t("patients.filter.empty")}
-        caption={t("patients.title")}
-        columns={columns}
-      />
+      <div className="card overflow-x-auto !p-0">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead>
+            <tr className="border-b border-line/60 text-left text-xs uppercase tracking-wider text-muted">
+              <th className="px-5 py-3.5">{t("patients.table.patient")}</th>
+              <th className="px-5 py-3.5">{t("patients.table.mrn")}</th>
+              <th className="px-5 py-3.5">{t("patients.table.ageSex")}</th>
+              <th className="px-5 py-3.5">{t("patients.table.conditions")}</th>
+              <th className="px-5 py-3.5">{t("patients.table.risk")}</th>
+              <th className="px-5 py-3.5">{t("patients.table.status")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading && (
+              <tr>
+                <td colSpan={6} className="px-5 py-6 text-muted">
+                  {t("patients.loading")}
+                </td>
+              </tr>
+            )}
+            {!isLoading && filtered.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-5 py-6 text-muted">
+                  {t("patients.filter.empty")}
+                </td>
+              </tr>
+            )}
+            {filtered.map((patient) => (
+              <tr key={patient.id} className="border-b border-line/40 last:border-0 hover:bg-surface/60">
+                <td className="px-5 py-3.5">
+                  <Link href={`/patients/${patient.id}`} className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary">
+                      {patient.name.split(" ").map((n) => n[0]).join("")}
+                    </span>
+                    <span className="font-semibold text-ink hover:text-primary">{patient.name}</span>
+                  </Link>
+                </td>
+                <td className="px-5 py-3.5 text-muted">{patient.medical_record_number}</td>
+                <td className="px-5 py-3.5">
+                  {patient.age} / {patient.sex}
+                </td>
+                <td className="max-w-xs px-5 py-3.5 text-sm text-muted">
+                  {patient.conditions.slice(0, 3).map((c) => (
+                    <div key={c} className="truncate">
+                      {plainCondition(c)}
+                    </div>
+                  ))}
+                  {patient.conditions.length > 3 && (
+                    <div className="text-xs">
+                      {t("criticalPatients.moreFlags").replace("{count}", String(patient.conditions.length - 3))}
+                    </div>
+                  )}
+                </td>
+                <td className="px-5 py-3.5">
+                  {patient.risk_level && <StatusPill label={patient.risk_level} />}
+                </td>
+                <td className="px-5 py-3.5">
+                  <StatusPill label={patient.status} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

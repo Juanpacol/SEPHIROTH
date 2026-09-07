@@ -15,8 +15,6 @@ import inspect
 import pytest
 
 from sephiroth.models import FallbackLLMClient, GeminiClient, GroqClient, ModelProvider
-from sephiroth.models.ollama import OllamaClient
-from sephiroth.models.vision_split import VisionChatSplitClient
 from tests.conftest import FakeLLMClient
 
 pytestmark = pytest.mark.contract
@@ -28,18 +26,9 @@ PROVIDER_INSTANCES = [
         primary=GeminiClient(api_key=None, model="gemini-flash-latest"),
         secondary=GroqClient(api_key=None),
     ),
-    OllamaClient(model="qwen2.5:14b"),
-    VisionChatSplitClient(
-        chat_client=OllamaClient(model="qwen2.5:14b"),
-        vision_client=GeminiClient(api_key=None, model="gemini-flash-latest"),
-    ),
     FakeLLMClient(),
 ]
-PROVIDER_IDS = ["gemini", "groq", "fallback", "ollama", "split", "fake"]
-
-# AC-022-08: `OllamaClient` and `VisionChatSplitClient` were absent from this
-# matrix while both were shipping, so nothing checked that the two providers
-# a local-first deployment actually runs on satisfy the contract.
+PROVIDER_IDS = ["gemini", "groq", "fallback", "fake"]
 
 
 @pytest.mark.parametrize("provider", PROVIDER_INSTANCES, ids=PROVIDER_IDS)

@@ -7,7 +7,6 @@
     "git_sha": "1897d62",
     "n_cases": 88,
     "dataset_sha256": "55861f4a2c8fa2b690170fcac2bdc969482334d8319d3f82cc08f853212dadb9",
-    "replayed_cases_sha256": "c659e8b4c8ae09feecdb2a00a2f2e4637112527087fe0f3c698e889a321da185",
     "transcripts_sha256": "99ade06a8897df74c3cab1c1530c0c1ed5597ac334869aa1cd78cf0863b47271"
   },
   "retrieval": {

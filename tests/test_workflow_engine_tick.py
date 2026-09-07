@@ -1,9 +1,6 @@
 """Engine-level tests against SQLite in-memory (`db_session`) — the same
 claim-CAS SQL path runs against Postgres in production; see SPEC-009 for
-why no dialect branch exists.
-
-Verifies AC-009-01, AC-009-02, AC-009-03, AC-009-04, AC-009-05,
-AC-009-06, AC-009-07 (docs/specs/SPEC-009-automation-substrate.md)."""
+why no dialect branch exists."""
 
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4

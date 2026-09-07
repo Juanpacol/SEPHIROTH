@@ -53,11 +53,8 @@ async def detect_modality(image_bytes: bytes, mime_type: str) -> str:
     same posture as `describe_medical_image`'s own `LLMUnavailableError`
     handling, so a flaky vision call never blocks the upload flow — the
     clinician can always pick the modality by hand regardless."""
-    from sephiroth.models.egress import assert_phi_egress_allowed
-
     try:
         client = get_llm_client()
-        assert_phi_egress_allowed(client, "modality detection")
         raw = await client.describe_image(
             image_bytes=image_bytes, mime_type=mime_type, prompt=_MODALITY_PROMPT, max_output_tokens=8
         )
@@ -116,24 +113,9 @@ async def describe_medical_image(image_path: str, clinical_focus: str = "") -> D
     if clinical_focus:
         prompt += f"\nFocus especially on: {clinical_focus}."
 
-    # A medical image is patient content (SPEC-022 §6.5), and the refusal is a
-    # `LLMUnavailableError` subclass, so it lands in the existing handler
-    # below and reports `unavailable` -- the same degraded shape the caller
-    # already expects when vision is down.
-    from sephiroth.models.egress import assert_phi_egress_allowed
-
-    client = get_llm_client()
-    info = client.describe()
-    # The model that would actually run, not `settings.gemini_vision_model` --
-    # which named Gemini even on a stack serving vision from somewhere else.
-    model_name = info.vision_model or info.model
-    hint = (
-        f"Is `ollama serve` running at {info.endpoint}?"
-        if info.provider == "ollama"
-        else "Check the provider's credentials and quota."
-    )
+    model_name = settings.gemini_vision_model or settings.gemini_model
     try:
-        assert_phi_egress_allowed(client, "medical image description")
+        client = get_llm_client()
         description = await client.describe_image(
             image_bytes=image_bytes,
             mime_type=mime_type,
@@ -143,14 +125,14 @@ async def describe_medical_image(image_path: str, clinical_focus: str = "") -> D
     except LLMUnavailableError as exc:
         return {
             "status": "unavailable",
-            "message": f"Vision model '{model_name}' failed: {exc}. {hint}",
+            "message": f"Vision model '{model_name}' failed: {exc}. Check GEMINI_API_KEY and quota.",
             "description": None,
             "requires_professional_review": True,
         }
     except Exception as exc:
         return {
             "status": "unavailable",
-            "message": f"Vision model '{model_name}' failed: {exc}. {hint}",
+            "message": f"Vision model '{model_name}' failed: {exc}. Check GEMINI_API_KEY and quota.",
             "description": None,
             "requires_professional_review": True,
         }

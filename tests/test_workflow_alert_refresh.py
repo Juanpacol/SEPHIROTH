@@ -1,10 +1,6 @@
 """`alert_refresh` — the proof-of-life step type for SPEC-009. Exercises
 seeding + the handler end to end, and asserts running it twice creates
-no duplicate `Alert` (AC-009-09,
-docs/specs/SPEC-009-automation-substrate.md).
-
-Since SPEC-020 it also holds the periodic contract: the step re-arms itself
-rather than completing its workflow (AC-020-11)."""
+no duplicate `Alert` (AC-009-09)."""
 
 from datetime import datetime, timezone
 
@@ -60,31 +56,17 @@ async def test_alert_refresh_handler_runs_twice_without_duplicating_alerts(db_se
     won = await claim_step(db_session, step.id, "tick-1", now, lease_seconds=120)
     assert won is True
     outcome_1 = await execute_step(db_session, step.id, now)
-    # `deferred`, not `succeeded`, since SPEC-020: this is a standing job, and
-    # succeeding meant the engine completed the parent workflow and nothing
-    # ever ran it again.
-    assert outcome_1 == "deferred"
+    assert outcome_1 == "succeeded"
 
     alerts_after_first = (await db_session.scalars(select(Alert).where(Alert.patient_id == patient.id))).all()
 
-    # The step re-armed itself rather than needing to be re-armed by hand.
-    await db_session.refresh(step)
-    assert step.status == "pending"
-    assert step.run_after > now
-    assert step.deferred_count == 1
-    # A deferral is not an attempt -- otherwise three sweeps would exhaust the
-    # retry budget and the job would die of old age.
-    assert step.attempts == 0
-
-    workflow = await db_session.get(Workflow, step.workflow_id)
-    assert workflow.status == "active"
-
-    # Second sweep, due now.
+    # Re-arm the same step (simulating a second scheduled run) and execute again.
+    step.status = "pending"
     step.run_after = now
     await db_session.commit()
     await claim_step(db_session, step.id, "tick-2", now, lease_seconds=120)
     outcome_2 = await execute_step(db_session, step.id, now)
-    assert outcome_2 == "deferred"
+    assert outcome_2 == "succeeded"
 
     alerts_after_second = (
         await db_session.scalars(select(Alert).where(Alert.patient_id == patient.id))

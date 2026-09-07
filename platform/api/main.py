@@ -18,31 +18,23 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-# Grouped by domain (SPEC-028): clinical/ (patient-facing clinical work),
-# operations/ (the inbox, scheduling, automation), intelligence/ (the
-# multi-agent runtime and its supporting lookups), security/ (audit).
-from api.clinical.routers import (
+from api.routers import (
+    agents,
     alerts,
-    dashboard,
-    encounters,
-    patients,
-    portal,
-    result_reviews,
-    results,
-)
-from api.intelligence.routers import agents, medical, rag
-from api.operations.routers import (
     approvals,
+    audit,
     automation_memory,
-    badges,
+    dashboard,
     followups,
     internal,
+    medical,
     notifications,
-    push,
+    patients,
+    portal,
+    rag,
+    results,
     scheduling,
-    tasks,
 )
-from api.security.routers import audit
 from api.workflows.subscriptions import register_subscriptions
 from auth import router as auth_router_module
 from auth.deps import require_clinician
@@ -53,7 +45,6 @@ from core.rate_limit import limiter
 
 setup_logging(debug=settings.debug)
 request_logger = logging.getLogger("api.request")
-logger = logging.getLogger("api.startup")
 
 # Loud, unmissable at every boot — a local `uvicorn --reload` with
 # DATABASE_URL pointed at Supabase (easy to do by accident: `.env` is one
@@ -66,44 +57,9 @@ logging.getLogger("api.startup").warning("Connecting to database host: %s", _db_
 
 
 @asynccontextmanager
-def _log_ai_configuration() -> None:
-    """One line saying what this instance will do with patient content.
-
-    SPEC-022 flipped `llm_provider` to `ollama`, so a deployment that set
-    `GEMINI_API_KEY` and never set `LLM_PROVIDER` now gets a different model
-    than it did yesterday. That is the intended change, but it must not be
-    silent -- an operator who reads one line of the boot log should know which
-    provider is serving and whether patient data may leave the machine.
-    """
-    from sephiroth.models.factory import get_llm_client
-
-    info = get_llm_client().describe()
-    logger.info(
-        "AI provider: %s (model=%s, endpoint=%s, local=%s, phi_egress_allowed=%s)",
-        info.provider,
-        info.model,
-        info.endpoint or "n/a",
-        info.local,
-        settings.ai_allow_phi,
-    )
-    if settings.gemini_api_key and info.provider != "gemini":
-        logger.warning(
-            "GEMINI_API_KEY is set but LLM_PROVIDER is '%s'. Since SPEC-022 the default "
-            "provider is 'ollama'; set LLM_PROVIDER=gemini to restore the previous behaviour.",
-            info.provider,
-        )
-    if not info.local and settings.ai_allow_phi:
-        logger.warning(
-            "Patient content may be sent to %s (%s): AI_ALLOW_PHI is enabled with a non-local provider.",
-            info.provider,
-            info.endpoint or "unknown endpoint",
-        )
-
-
 async def lifespan(_: FastAPI):
     await init_db()
     register_subscriptions()
-    _log_ai_configuration()
     yield
 
 
@@ -187,10 +143,6 @@ app.include_router(
 )
 app.include_router(audit.router, prefix="/api/audit", tags=["audit"], dependencies=_clinician_only)
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"], dependencies=_clinician_only)
-app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"], dependencies=_clinician_only)
-app.include_router(
-    encounters.router, prefix="/api/encounters", tags=["encounters"], dependencies=_clinician_only
-)
 app.include_router(
     approvals.router, prefix="/api/approvals", tags=["approvals"], dependencies=_clinician_only
 )
@@ -208,23 +160,10 @@ app.include_router(
 app.include_router(portal.router, prefix="/api/portal", tags=["portal"])
 app.include_router(scheduling.router, prefix="/api/scheduling", tags=["scheduling"])
 app.include_router(results.router, prefix="/api/results", tags=["results"])
-# Beside the sharing endpoints above, not inside them: everything here is
-# clinician-only, while those are role-scoped per route because a patient
-# legitimately calls most of them.
-app.include_router(
-    result_reviews.router, prefix="/api/results", tags=["results"], dependencies=_clinician_only
-)
 # Notifications: every route is scoped to the caller's own identity
 # (`get_current_user`), so it mixes roles per-route like the three above
 # rather than carrying a blanket clinician-only guard.
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
-# Every authenticated user, not only clinicians: a subscription belongs to
-# whoever is signed in, and no handler here takes a user id.
-app.include_router(push.router, prefix="/api/push", tags=["push"])
-# Badges: counters only, no PHI, and a patient legitimately has an unread
-# count — so it carries `get_current_user` per route rather than a blanket
-# clinician guard, like notifications above.
-app.include_router(badges.router, prefix="/api/badges", tags=["badges"])
 # The workflow tick: no /api prefix, no JWT-based dependency — see
 # internal.py's docstring for why. Guarded by its own shared-secret check.
 app.include_router(internal.router, tags=["internal"])
@@ -235,19 +174,7 @@ async def health_check():
     """Liveness only — no I/O, never flaps. This is what Render's
     `healthCheckPath` polls; pointing it at a DB-touching endpoint would let
     a transient Supabase pooler blip trigger an unnecessary restart."""
-    # `describe()` is a pure attribute read, so naming the *running* model
-    # costs this probe nothing. It used to print `settings.gemini_model`
-    # unconditionally, which named a model that may not be in use at all.
-    from sephiroth.models.factory import get_llm_client
-
-    info = get_llm_client().describe()
-    return {
-        "status": "healthy",
-        "version": settings.api_version,
-        "model": info.model,
-        "provider": info.provider,
-        "local_only": info.local,
-    }
+    return {"status": "healthy", "version": settings.api_version, "model": settings.gemini_model}
 
 
 @app.get("/health/ready")
@@ -265,24 +192,8 @@ async def readiness_check(response: Response):
         checks["database"] = "ok"
     except Exception as exc:
         checks["database"] = f"error: {type(exc).__name__}"
-    # A real probe of whatever is configured. The old check asked whether
-    # `GEMINI_API_KEY` was set, which reports the local-first deployment --
-    # the default since SPEC-022 -- as unconfigured while it is serving
-    # requests correctly. A readiness probe that cries wolf gets ignored.
-    from sephiroth.models.factory import get_llm_client
+    checks["llm"] = "configured" if settings.gemini_api_key else "unconfigured"
 
-    client = get_llm_client()
-    info = client.describe()
-    try:
-        checks["llm"] = "ok" if await client.health() else "unreachable"
-    except Exception as exc:
-        checks["llm"] = f"error: {type(exc).__name__}"
-    checks["llm_provider"] = info.provider
-    checks["llm_model"] = info.model
-
-    # Deliberately not part of `ok`: the database is what this instance cannot
-    # serve without. A model that is down degrades features (SPEC-022 B-10/11)
-    # and must not take the instance out of rotation.
     ok = checks["database"] == "ok"
     if not ok:
         response.status_code = 503

@@ -44,19 +44,7 @@ class TickSummary:
     failed: int = 0
     skipped: int = 0
     remaining: int = 0
-    deferred: int = 0
     events_dispatched: int = 0
-    # Task upkeep (SPEC-018). Counted but deliberately absent from to_dict():
-    # the tick's HTTP response shape is what an external cron consumes, and
-    # SPEC-009 §6.5 fixed it.
-    tasks_reopened: int = 0
-    tasks_superseded: int = 0
-    tasks_created: int = 0
-    no_shows: int = 0
-    #: Push deliveries attempted this tick. Absent from `to_dict()` for the
-    #: same reason the counters above are: the cron response shape is frozen.
-    push_sent: int = 0
-    push_failed: int = 0
     # Not included in to_dict() -- the HTTP response shape to the cron
     # caller never changes. Only read by internal.py to compose an
     # ops_notify.py Slack payload (workflow_id/step_id only, never
@@ -116,66 +104,10 @@ async def claim_step(
     return (result.rowcount or 0) == 1
 
 
-#: A handler that asks to be reconsidered "now" would be re-claimed by the same
-#: tick's remaining budget and spin. One minute is below the 5-minute cron
-#: cadence, so it costs nothing real and bounds the pathological case.
-MIN_DEFER_SECONDS = 60
-
-#: Slack added on top of a deferral when `extend_lateness` is set, so a step
-#: that wakes up exactly at the window's edge is not immediately stale.
-DEFER_LATENESS_SLACK_SECONDS = 15 * 60
-
-
-async def _defer_step(
-    session: AsyncSession,
-    step: WorkflowStep,
-    spec: Any,
-    result: Any,
-    now: datetime,
-) -> str:
-    """Put a step back to sleep without charging it an attempt.
-
-    A deferral is a decision, not a failure: the handler looked, decided now is
-    the wrong moment, and said when to ask again. Consuming a retry for that
-    would mean three quiet nights in a row permanently kill a reminder.
-    """
-    retry_at = result.retry_at or (now + timedelta(seconds=MIN_DEFER_SECONDS))
-    retry_at = max(retry_at, now + timedelta(seconds=MIN_DEFER_SECONDS))
-
-    step.status = "pending"
-    step.run_after = retry_at
-    # `claim_step` already incremented this on the way in. Handing the attempt
-    # back is what makes "deferred is not an attempt" true rather than stated.
-    step.attempts = max(step.attempts - 1, 0)
-    step.deferred_count += 1
-    step.last_error = ""
-
-    if result.extend_lateness:
-        needed = int((retry_at - step.due_at).total_seconds()) + DEFER_LATENESS_SLACK_SECONDS
-        current = step.max_lateness_seconds
-        if current is None or needed > current:
-            step.max_lateness_seconds = needed
-
-    if spec.max_defers is not None and step.deferred_count > spec.max_defers:
-        # An unbounded defer loop is invisible: nothing errors, nothing sends.
-        # Failing loudly is the only way anyone finds out.
-        step.status = "failed"
-        step.last_error = f"defer limit exceeded ({step.deferred_count} > {spec.max_defers})"
-        logger.warning("workflow step %s exceeded its defer limit", step.id)
-        await session.commit()
-        return "failed"
-
-    await session.commit()
-    return "deferred"
-
-
 async def execute_step(session: AsyncSession, step_id: str, now: datetime) -> str:
     """Runs one already-claimed step to a terminal-for-this-attempt state.
-    Returns "succeeded" | "failed" | "skipped" | "superseded" | "deferred" |
-    "error" (unknown step type, terminal immediately).
-
-    "deferred" is the one outcome that is not terminal even for this attempt:
-    the step goes back to `pending` with its attempt handed back."""
+    Returns "succeeded" | "failed" | "skipped" | "error" (unknown step
+    type, terminal immediately)."""
     step = await session.get(WorkflowStep, step_id)
     if step is None:
         return "error"
@@ -193,15 +125,7 @@ async def execute_step(session: AsyncSession, step_id: str, now: datetime) -> st
         await session.commit()
         return "failed"
 
-    # The per-row budget wins when set. `on_new_appointment` and `enroll_plan`
-    # populate `WorkflowStep.max_lateness_seconds` per step and this code read
-    # only the step *type*'s value, so that column was dead -- and a deferral
-    # (below) needs to be able to widen one row's window without widening the
-    # type's for every other step.
-    lateness = (
-        step.max_lateness_seconds if step.max_lateness_seconds is not None else spec.max_lateness_seconds
-    )
-    if is_stale(step.due_at, now, lateness):
+    if is_stale(step.due_at, now, spec.max_lateness_seconds):
         step.status = "skipped"
         step.last_error = ""
         await session.commit()
@@ -245,18 +169,10 @@ async def execute_step(session: AsyncSession, step_id: str, now: datetime) -> st
         else:
             step.status = "failed"
             outcome = "failed"
-            # Terminal only: a step that retried and then succeeded is not work
-            # for a person. This one is never going to do what it was for.
-            from .failure_task import report_step_needs_attention
-
-            await report_step_needs_attention(session, step, workflow, now)
         await session.commit()
         logger.warning("workflow step %s failed (attempt %d): %s", step_id, step.attempts, failure.detail)
         return outcome
     else:
-        if result.outcome == "deferred":
-            return await _defer_step(session, step, spec, result, now)
-
         step.status = result.outcome
         step.executed_at = now
         step.result = result.data
@@ -280,21 +196,9 @@ async def run_tick(session: AsyncSession, tick_id: str) -> TickSummary:
     deadline = monotonic() + settings.workflow_tick_budget_seconds
 
     await reclaim_expired_leases(session, now)
-
-    # Before the batch, so a no-show's cancelled workflow is not also processed
-    # this tick, and so `MISSED_APPOINTMENT` is dispatched by the same tick that
-    # produced it rather than waiting five minutes.
-    from .instantiate import maybe_seed_alert_refresh
-    from .no_show import sweep_missed_appointments
-    from .push import dispatch_due
-
-    summary_no_shows = await sweep_missed_appointments(session, now)
-    await maybe_seed_alert_refresh(session)
-
     due_ids = await select_due_step_ids(session, now, settings.workflow_tick_batch_size)
 
     summary = TickSummary(tick_id=tick_id)
-    summary.no_shows = summary_no_shows
     for step_id in due_ids:
         if monotonic() > deadline:
             break
@@ -305,12 +209,6 @@ async def run_tick(session: AsyncSession, tick_id: str) -> TickSummary:
         outcome = await execute_step(session, step_id, now)
         if outcome == "succeeded":
             summary.succeeded += 1
-        elif outcome == "deferred":
-            # Counted apart from skipped: a skip means the moment passed and the
-            # work was dropped, a deferral means it is still coming. Reading
-            # them as one number would hide a quiet-hours misconfiguration as
-            # ordinary staleness.
-            summary.deferred += 1
         elif outcome in ("skipped", "superseded"):
             summary.skipped += 1
         else:
@@ -334,41 +232,6 @@ async def run_tick(session: AsyncSession, tick_id: str) -> TickSummary:
         or 0
     )
     summary.events_dispatched = await dispatch_pending(session)
-
-    # Task upkeep, after dispatch so a task created by this tick's events is
-    # already visible to the reconciliation below.
-    #
-    # `reconcile_tasks` is not belt-and-braces for the service path: it is the
-    # only thing that catches sources closed by a bulk UPDATE, which
-    # `approvals.py::_expire_due_pending` performs by construction and which
-    # therefore bypasses every Python hook.
-    from ..services.task_adapters import reconcile_tasks
-    from ..services.task_service import reopen_due_snoozed
-
-    summary.tasks_reopened = await reopen_due_snoozed(session, now)
-    summary.tasks_superseded = await reconcile_tasks(session, now)
-
-    if settings.enable_task_inbox:
-        # Behind the flag because this is the half that REPLACES the dashboard's
-        # read-time derivation. The adapter-driven writes above are not gated:
-        # the table has to be warm before anyone switches the inbox on, or the
-        # first thing a clinician sees is an empty list described as "nothing
-        # to do".
-        from ..services.task_derivation import sync_derived_tasks
-
-        derived = await sync_derived_tasks(session, now)
-        summary.tasks_created = derived["created"]
-        summary.tasks_superseded += derived["superseded"]
-
-    # Last, and after the commit-worthy work above: a push service having a bad
-    # afternoon must not stop appointments being reminded. `dispatch_due`
-    # catches every failure itself; this guard is for the one it cannot.
-    try:
-        summary.push_sent, summary.push_failed = await dispatch_due(session, now)
-    except Exception:  # pragma: no cover - defensive
-        logger.exception("push dispatch failed; the rest of the tick stands")
-
-    await session.commit()
     return summary
 
 

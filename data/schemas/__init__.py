@@ -28,7 +28,6 @@ from sqlalchemy import (
     Time,
     UniqueConstraint,
     func,
-    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -189,12 +188,6 @@ class TimelineEvent(Base):
     """One event on a patient's Intelligent Timeline."""
 
     __tablename__ = "timeline_events"
-    __table_args__ = (
-        # Every read of a timeline filters by patient and orders by date; only
-        # `patient_id` was indexed, so the ordering was a sort over the
-        # patient's whole history on each load.
-        Index("ix_timeline_events_patient_date", "patient_id", "date"),
-    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
@@ -286,9 +279,6 @@ class Appointment(Base):
         CheckConstraint("start_at < end_at", name="ck_appointment_time_order"),
         Index("ix_appointments_clinician_start", "clinician_id", "start_at"),
         Index("ix_appointments_patient_start", "patient_id", "start_at"),
-        # The no-show sweep (SPEC-020) selects on `status` first, and neither
-        # index above leads with it.
-        Index("ix_appointments_status_end", "status", "end_at"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -420,12 +410,6 @@ class ResultShare(Base):
     status: Mapped[str] = mapped_column(String(10), default="sent", server_default="sent")  # sent|revoked
     shared_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     viewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    #: Which result this share communicated, when it came from one (SPEC-024).
-    #: Nullable and additive: shares made before this existed point at a
-    #: timeline event and keep doing so, because rewriting them to point
-    #: somewhere else would rewrite what was actually shared.
-    result_type: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
-    result_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
 
     event: Mapped["TimelineEvent"] = relationship()
     attachments: Mapped[List["ResultAttachment"]] = relationship(
@@ -464,12 +448,6 @@ class Consultation(Base):
     """One multi-agent consultation, owned by the requesting clinician."""
 
     __tablename__ = "consultations"
-    __table_args__ = (
-        # `GET /api/agents/history` filters by user and orders by recency.
-        # `user_id` alone was indexed and `created_at` was not, so the ordering
-        # was a sort over every consultation a clinician has ever run.
-        Index("ix_consultations_user_created", "user_id", "created_at"),
-    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
@@ -551,13 +529,6 @@ class Alert(Base):
         ),
         CheckConstraint("severity IN ('critical','high','medium','low')", name="ck_alert_severity"),
         CheckConstraint("status IN ('active','reviewed','resolved')", name="ck_alert_status"),
-        CheckConstraint("kind IN ('clinical','administrative')", name="ck_alert_kind"),
-        # One open alert per rule per patient. A partial index would be the
-        # precise expression of that, but SQLite (the test database) does not
-        # support the `WHERE status <> 'resolved'` clause portably, so the
-        # invariant is enforced in `generate_alerts_for_patient` and this
-        # index exists to make that check cheap.
-        Index("ix_alerts_patient_rule", "patient_id", "rule_key", "status"),
         Index("ix_alerts_status_severity", "status", "severity"),
     )
 
@@ -569,19 +540,6 @@ class Alert(Base):
     title: Mapped[str] = mapped_column(String(200))
     detail: Mapped[str] = mapped_column(Text, default="")
     source: Mapped[str] = mapped_column(String(60))  # which engine/rule raised it
-    #: Stable identity of the *rule*, independent of what it is called on
-    #: screen (SPEC-021). Deduplication keys on this rather than on `title`,
-    #: which is display copy -- rewording a label would otherwise duplicate
-    #: every open alert. Nullable because alerts predating this column have
-    #: none, and backfilling display strings into a machine key would invent
-    #: identities that were never real.
-    rule_key: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, index=True)
-    #: `clinical` (a finding about the patient) or `administrative` (a finding
-    #: about the process -- an unconfirmed appointment, a failed automation).
-    #: They deserve different urgency and different filters: treating "critical
-    #: potassium" and "nobody confirmed a booking" as one queue is how the
-    #: second teaches people to skim past the first.
-    kind: Mapped[str] = mapped_column(String(20), default="clinical", server_default="clinical", index=True)
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     reviewed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
@@ -793,13 +751,6 @@ class WorkflowStep(Base):
     max_lateness_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     max_attempts: Mapped[int] = mapped_column(Integer, default=3, server_default="3")
-    #: Times this step said "not now" (SPEC-020). Counted separately from
-    #: `attempts` because a deferral is a decision, not a failure -- charging it
-    #: a retry would mean three quiet nights in a row permanently kill a
-    #: reminder. It still needs a ceiling: a quiet-hours window misconfigured to
-    #: cover the whole day would otherwise defer forever, and a notification
-    #: that never sends and never errors is the worst of both.
-    deferred_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     lease_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     claimed_by: Mapped[str] = mapped_column(String(40), default="", server_default="")
     last_error: Mapped[str] = mapped_column(String(300), default="", server_default="")
@@ -836,11 +787,6 @@ class PendingAction(Base):
             "status NOT IN ('approved','rejected') OR reviewed_by IS NOT NULL",
             name="ck_pending_action_requires_reviewer",
         ),
-        # Same reasoning as the constraint above, applied to the draft itself
-        # (SPEC-020): a rule that lives only in a router is a comment. An empty
-        # draft in the approvals inbox is a row that asks the clinician to
-        # babysit the automation before they can review its output.
-        CheckConstraint("draft_text <> ''", name="ck_pending_action_draft_nonempty"),
         Index("ix_pending_actions_status_created", "status", "created_at"),
     )
 
@@ -920,415 +866,6 @@ class WorkflowEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
 
 
-class Task(Base):
-    """One piece of clinical work somebody has to do (SPEC-018).
-
-    Alerts, approvals, follow-ups, results to review and appointment chores
-    were five separate inboxes, and `GET /api/dashboard/action-items` derived
-    a sixth, read-only view over them with no row identity -- so nothing on
-    it could be claimed, snoozed, commented on, or tracked to closure. This
-    table is the one place that work lives.
-
-    **It does not replace those entities.** Each keeps its own domain state;
-    a task owns the *workflow* state around it (who has it, when it is due,
-    what has happened to it) and is kept in step with its source by
-    `platform/api/services/task_service.py`, which both sides call.
-
-    The link to the source is `source_type` + `source_id` rather than a
-    nullable FK per source. Two reasons, and the second is the load-bearing
-    one: the sources have incompatible primary-key types (`LabResult.id` and
-    `TimelineEvent.id` are integers, the rest are String(36)), and two
-    categories -- a deteriorating trend, a drug interaction -- have no source
-    row at all, so there is nothing for a foreign key to point at. The cost
-    is no referential integrity to the source; `ck_task_source_type` bounds
-    the values and `task_service.reconcile_tasks` sweeps for orphans.
-
-    `escalated_at`/`escalation_level` are a timestamp and a counter, not a
-    status, for the same reason `Appointment.confirmed_at` is orthogonal to
-    `Appointment.status`: an escalated task is still open work, and folding
-    it into the status would make "show me everything open" wrong.
-    """
-
-    __tablename__ = "tasks"
-    __table_args__ = (
-        UniqueConstraint("dedupe_key", name="uq_task_dedupe_key"),
-        CheckConstraint(
-            "source_type IN ('alert','approval','followup','result','appointment',"
-            "'automation','consultation','deteriorating','interaction','encounter',"
-            "'result_review')",
-            name="ck_task_source_type",
-        ),
-        CheckConstraint("severity IN ('critical','high','medium','low')", name="ck_task_severity"),
-        CheckConstraint(
-            "status IN ('open','in_progress','snoozed','done','dismissed','superseded')",
-            name="ck_task_status",
-        ),
-        # Same trick as `ck_pending_action_requires_reviewer`: a closed task
-        # with nobody recorded against it makes the audit query lie, so the
-        # database refuses it rather than trusting every write path.
-        CheckConstraint(
-            "status NOT IN ('done','dismissed') OR closed_by IS NOT NULL",
-            name="ck_task_closed_requires_actor",
-        ),
-        Index("ix_tasks_status_due", "status", "due_at"),
-        Index("ix_tasks_assigned_status", "assigned_to_user_id", "status"),
-        Index("ix_tasks_source", "source_type", "source_id"),
-    )
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    #: Stable identity of the work, not of the row. Re-deriving the same task
-    #: on every 5-minute tick must not create a second one, which is what the
-    #: unique constraint above enforces -- for a derived task this is a
-    #: content key, since there is no source row to key on.
-    dedupe_key: Mapped[str] = mapped_column(String(160))
-    source_type: Mapped[str] = mapped_column(String(30), index=True)
-    source_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    category: Mapped[str] = mapped_column(String(20), index=True)
-    patient_id: Mapped[Optional[str]] = mapped_column(ForeignKey("patients.id"), nullable=True, index=True)
-    title: Mapped[str] = mapped_column(String(200))
-    #: Free clinical text, so it goes through the PHI column types (ADR-014)
-    #: exactly like `ClinicalNote.content`.
-    detail: Mapped[str] = mapped_column(EncryptedText, default="")
-    context: Mapped[Dict[str, Any]] = mapped_column(EncryptedJSON, default=dict)
-    severity: Mapped[str] = mapped_column(String(10), index=True)
-    status: Mapped[str] = mapped_column(String(12), default="open", server_default="open", index=True)
-    assigned_to_user_id: Mapped[Optional[str]] = mapped_column(
-        ForeignKey("users.id"), nullable=True, index=True
-    )
-    due_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    snoozed_until: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    escalated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    escalation_level: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
-    dismiss_reason: Mapped[str] = mapped_column(String(300), default="")
-    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    closed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
-
-    patient: Mapped[Optional["Patient"]] = relationship()
-
-
-class TaskEvent(Base):
-    """What happened to a task, and who did it.
-
-    A child table rather than a JSON column on `Task`, because the questions
-    this has to answer are queries -- "what did the team do with overdue
-    critical tasks last month", "how long from raised to claimed" -- and a
-    JSON array can be neither indexed nor joined.
-
-    It does not replace `PhiAccessLog` and is not a substitute for it: this
-    records *work provenance*, that records *PHI reads*. A task read that
-    touches a patient still writes a `PhiAccessLog` row.
-
-    Append-only by convention, like `PhiAccessLog` -- no route updates or
-    deletes a row here.
-    """
-
-    __tablename__ = "task_events"
-    __table_args__ = (
-        CheckConstraint(
-            "event_type IN ('created','claimed','assigned','snoozed','resumed','escalated',"
-            "'completed','dismissed','superseded','reopened','commented')",
-            name="ck_task_event_type",
-        ),
-        Index("ix_task_events_task_created", "task_id", "created_at"),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    task_id: Mapped[str] = mapped_column(ForeignKey("tasks.id"), index=True)
-    event_type: Mapped[str] = mapped_column(String(20))
-    #: NULL means the system did it (the tick, a source adapter) -- the same
-    #: convention `PhiAccessLog` uses for `SYSTEM_WORKFLOW_USER_ID` work.
-    actor_user_id: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
-    from_status: Mapped[Optional[str]] = mapped_column(String(12), nullable=True)
-    to_status: Mapped[Optional[str]] = mapped_column(String(12), nullable=True)
-    note: Mapped[str] = mapped_column(EncryptedText, default="")
-    data: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
-
-
-class Encounter(Base):
-    """One clinical visit: what was measured, what was said, what was decided.
-
-    `Appointment` said a visit was booked and `ClinicalNote` said something was
-    written afterwards; nothing joined them, so the work of a consultation
-    landed as a wall of free text or not at all (SPEC-023 §2).
-
-    Four narrative columns rather than one blob, because SOAP is what a
-    clinician already thinks in and what every template renders into -- and
-    because a single `note` field would make a model's draft and the
-    clinician's edit fight over the same column.
-
-    `draft` -> `signed` is the review gate for AI-drafted content (ADR-016):
-    an unsigned encounter has no `ClinicalNote`, contributes nothing to the
-    timeline, files no tasks and is invisible to the patient, so there is no
-    path by which unreviewed text reaches the chart.
-    """
-
-    __tablename__ = "encounters"
-    __table_args__ = (
-        CheckConstraint("status IN ('draft','signed','amended')", name="ck_encounter_status"),
-        CheckConstraint("note_source IN ('clinician','llm','template')", name="ck_encounter_note_source"),
-        # A signed record without a signer is a clinical record nobody stands
-        # behind. Same posture as `ck_pending_action_requires_reviewer` and
-        # `ck_task_closed_requires_actor`.
-        CheckConstraint(
-            "status = 'draft' OR (signed_at IS NOT NULL AND signed_by IS NOT NULL)",
-            name="ck_encounter_signed_requires_signer",
-        ),
-        CheckConstraint("amended_at IS NULL OR amendment_reason <> ''", name="ck_encounter_amendment_reason"),
-        # One encounter per booking. Nullable elsewhere, so a walk-in and a
-        # second unlinked encounter on the same day both stay possible.
-        Index(
-            "uq_encounter_appointment",
-            "appointment_id",
-            unique=True,
-            sqlite_where=text("appointment_id IS NOT NULL"),
-            postgresql_where=text("appointment_id IS NOT NULL"),
-        ),
-        Index("ix_encounters_patient_started", "patient_id", "started_at"),
-        Index("ix_encounters_clinician_status", "clinician_id", "status"),
-        Index("ix_encounters_status_started", "status", "started_at"),
-    )
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
-    clinician_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
-    appointment_id: Mapped[Optional[str]] = mapped_column(ForeignKey("appointments.id"), nullable=True)
-    #: Chooses a note template and nothing else -- no taxonomy, no routing.
-    specialty: Mapped[str] = mapped_column(String(40), default="general", server_default="general")
-    status: Mapped[str] = mapped_column(String(12), default="draft", server_default="draft", index=True)
-
-    chief_complaint: Mapped[str] = mapped_column(EncryptedText, default="")
-    #: Keys bounded by `sephiroth.clinical.vitals.VITAL_SPECS`. JSON rather
-    #: than columns for the same reason `Patient.lab_results` is: nothing
-    #: filters on a vital in SQL, and a trend view would want a normalised
-    #: table rather than nine columns nobody reads (SPEC-023 §11 risk 2).
-    vitals: Mapped[Dict[str, Any]] = mapped_column(EncryptedJSON, default=dict)
-
-    subjective: Mapped[str] = mapped_column(EncryptedText, default="")
-    objective: Mapped[str] = mapped_column(EncryptedText, default="")
-    assessment: Mapped[str] = mapped_column(EncryptedText, default="")
-    plan: Mapped[str] = mapped_column(EncryptedText, default="")
-    #: The one output the patient actually leaves with.
-    patient_instructions: Mapped[str] = mapped_column(EncryptedText, default="")
-
-    #: Whether the persisted narrative started as a model's draft. Kept on the
-    #: content itself so a later reader can see it without a join (ADR-016).
-    note_source: Mapped[str] = mapped_column(String(10), default="clinician", server_default="clinician")
-    note_model: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-
-    started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    signed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    signed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
-    amended_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    amendment_reason: Mapped[str] = mapped_column(String(300), default="", server_default="")
-    #: Written on signing. The note carries the narrative as it stood then, so
-    #: an amendment cannot erase what was originally committed (SPEC-023 NG-5).
-    clinical_note_id: Mapped[Optional[str]] = mapped_column(ForeignKey("clinical_notes.id"), nullable=True)
-
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
-
-    #: Declared so the cascade is the database's job rather than the
-    #: caller's. Application code reads orders through
-    #: `encounter_service.list_orders`, never through this attribute: touching
-    #: a lazy collection on a flushed instance issues IO from wherever it is
-    #: touched, which under asyncio surfaces as a `MissingGreenlet` far from
-    #: the cause.
-    orders: Mapped[List["EncounterOrder"]] = relationship(
-        back_populates="encounter", cascade="all, delete-orphan", lazy="raise"
-    )
-
-
-class EncounterOrder(Base):
-    """Something decided in the room that somebody has to do afterwards.
-
-    A child table rather than a JSON list on the encounter, for the same
-    reason `task_events` is one: "which orders were never acted on" has to be
-    answerable by query, not by loading every encounter and reading a blob.
-
-    It becomes a `Task` on signing, never before -- a task created from an
-    unsigned decision is work nobody committed to, and the inbox is only worth
-    reading because everything in it is real (SPEC-023 §11 risk 3).
-    """
-
-    __tablename__ = "encounter_orders"
-    __table_args__ = (
-        CheckConstraint(
-            "kind IN ('lab','imaging','referral','followup','medication')",
-            name="ck_encounter_order_kind",
-        ),
-        CheckConstraint("due_in_days IS NULL OR due_in_days > 0", name="ck_encounter_order_due"),
-    )
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    encounter_id: Mapped[str] = mapped_column(ForeignKey("encounters.id", ondelete="CASCADE"), index=True)
-    kind: Mapped[str] = mapped_column(String(20))
-    detail: Mapped[str] = mapped_column(EncryptedText)
-    due_in_days: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    #: Set on signing. Its presence is what makes signing idempotent.
-    task_id: Mapped[Optional[str]] = mapped_column(ForeignKey("tasks.id"), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-
-    encounter: Mapped["Encounter"] = relationship(back_populates="orders")
-
-
-class ResultReview(Base):
-    """What a human did about a result.
-
-    A separate row rather than columns on `lab_results` and `imaging_studies`
-    (ADR-017): those two have incompatible primary-key types, so the column
-    approach is two implementations of one concept from the first day, and
-    every "what is unreviewed" query would be written twice and unioned.
-
-    It also keeps the measurement and the judgement apart. A lab value is true
-    forever; a review is one clinician's decision on one day, in their own
-    words, and `note` carries PHI accordingly.
-
-    The state machine's one load-bearing guard is that a result whose
-    disposition was "tell the patient" cannot be closed until they have been
-    told. Without it the states are decoration.
-    """
-
-    __tablename__ = "result_reviews"
-    __table_args__ = (
-        UniqueConstraint("result_type", "result_id", name="uq_result_review_result"),
-        CheckConstraint("result_type IN ('lab','imaging')", name="ck_result_review_type"),
-        CheckConstraint(
-            "status IN ('received','reviewed','communicated','closed')",
-            name="ck_result_review_status",
-        ),
-        CheckConstraint(
-            "severity IN ('critical','abnormal','normal','unclassified')",
-            name="ck_result_review_severity",
-        ),
-        CheckConstraint(
-            "disposition IS NULL OR disposition IN "
-            "('normal','abnormal_expected','action_taken','needs_patient_contact')",
-            name="ck_result_review_disposition",
-        ),
-        # A reviewed result with no reviewer is a decision nobody made. Same
-        # posture as `ck_encounter_signed_requires_signer`.
-        CheckConstraint(
-            "status = 'received' OR (reviewed_at IS NOT NULL AND reviewed_by IS NOT NULL)",
-            name="ck_result_review_reviewed",
-        ),
-        CheckConstraint(
-            "status <> 'closed' OR (closed_at IS NOT NULL AND closed_by IS NOT NULL)",
-            name="ck_result_review_closed",
-        ),
-        Index("ix_result_reviews_status_severity", "status", "severity"),
-        Index("ix_result_reviews_patient_created", "patient_id", "created_at"),
-    )
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    result_type: Mapped[str] = mapped_column(String(10))
-    #: String even for a lab, whose own id is an integer -- one column has to
-    #: hold both key types, the same compromise `tasks.source_id` makes.
-    result_id: Mapped[str] = mapped_column(String(64))
-    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
-    status: Mapped[str] = mapped_column(String(14), default="received", server_default="received", index=True)
-    #: From `sephiroth.clinical.results`, computed once at intake. Stored rather
-    #: than derived on read because the reference range that produced it came
-    #: with the result and may not be the one in code tomorrow.
-    severity: Mapped[str] = mapped_column(String(12))
-    #: The one line explaining the severity, so a clinician can check the
-    #: judgement instead of trusting it.
-    classification_reason: Mapped[str] = mapped_column(String(300), default="", server_default="")
-
-    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    reviewed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
-    disposition: Mapped[Optional[str]] = mapped_column(String(24), nullable=True)
-    #: The clinician's own words. Free clinical text, so it goes through the
-    #: PHI column types (ADR-014).
-    note: Mapped[str] = mapped_column(EncryptedText, default="")
-
-    share_id: Mapped[Optional[str]] = mapped_column(ForeignKey("result_shares.id"), nullable=True)
-    task_id: Mapped[Optional[str]] = mapped_column(ForeignKey("tasks.id"), nullable=True)
-
-    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    closed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
-
-
-class PushSubscription(Base):
-    """One browser on one device, as the push service identifies it.
-
-    `endpoint` is the unique key rather than `(user_id, device)`: the push
-    service issues it, the browser can throw it away and get a new one at any
-    time, and the same endpoint moving between accounts on a shared machine is
-    something that has to be handled rather than refused.
-
-    A gone subscription is disabled, never deleted. `disabled_at` plus
-    `failure_count` is what lets a person look at their device list and see
-    that the phone they replaced stopped working in March, instead of finding
-    a row silently absent.
-    """
-
-    __tablename__ = "push_subscriptions"
-    __table_args__ = (
-        UniqueConstraint("endpoint", name="uq_push_subscription_endpoint"),
-        Index("ix_push_subscriptions_user_active", "user_id", "disabled_at"),
-    )
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
-    endpoint: Mapped[str] = mapped_column(String(500))
-    #: The browser's public key and shared secret. Not PHI and not a
-    #: credential for this system -- they authorise sending *to* one browser,
-    #: and are useless without the VAPID private key.
-    p256dh: Mapped[str] = mapped_column(String(200))
-    auth: Mapped[str] = mapped_column(String(100))
-    #: So a person can tell their own devices apart in the settings list.
-    user_agent: Mapped[str] = mapped_column(String(200), default="", server_default="")
-    failure_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
-    disabled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    last_success_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-
-
-class PushDelivery(Base):
-    """One attempt to reach one device with one notification.
-
-    A row per device rather than per notification, so a failure is attributable
-    to a phone rather than to a person: one dead subscription must not make a
-    clinician's other devices look broken.
-
-    Shaped like a workflow step on purpose -- `attempts`, `send_after`,
-    `last_error` -- because it is the same problem the engine already solved,
-    and a second retry vocabulary would be a second set of bugs.
-    """
-
-    __tablename__ = "push_deliveries"
-    __table_args__ = (
-        # One buzz per device per notification. A retried enqueue is a no-op
-        # rather than a phone vibrating twice.
-        UniqueConstraint("subscription_id", "notification_id", name="uq_push_delivery"),
-        CheckConstraint("status IN ('pending','sent','failed','dropped')", name="ck_push_delivery_status"),
-        Index("ix_push_deliveries_due", "status", "send_after"),
-    )
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    subscription_id: Mapped[str] = mapped_column(
-        ForeignKey("push_subscriptions.id", ondelete="CASCADE"), index=True
-    )
-    notification_id: Mapped[str] = mapped_column(ForeignKey("notifications.id"), index=True)
-    #: Where a tap should land. A route, never patient content -- and stored on
-    #: the row rather than held in a process dictionary, which would grow
-    #: without bound and lose every pending destination on restart.
-    url: Mapped[str] = mapped_column(String(200), default="", server_default="")
-    status: Mapped[str] = mapped_column(String(10), default="pending", server_default="pending", index=True)
-    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
-    send_after: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    #: Truncated deliberately: a push service's error body can be long, and
-    #: none of it is worth storing beyond the first line.
-    last_error: Mapped[str] = mapped_column(String(200), default="", server_default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
-
-
 __all__ = [
     "Base",
     "User",
@@ -1360,11 +897,4 @@ __all__ = [
     "PendingAction",
     "FollowupPlan",
     "AutomationMemory",
-    "Task",
-    "TaskEvent",
-    "Encounter",
-    "EncounterOrder",
-    "ResultReview",
-    "PushSubscription",
-    "PushDelivery",
 ]

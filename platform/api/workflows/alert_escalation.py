@@ -22,18 +22,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from data.schemas import Alert, User, Workflow, WorkflowStep
 from sephiroth.workflows.events import WorkflowEvent
 
-from ..services.sla import SLA_WINDOW_BY_SEVERITY
 from .registry import StepContext, StepResult, StepTypeSpec, register_step_type
 
 DEFINITION_KEY = "alert_escalation"
 STEP_TYPE = "alert_escalate_check"
 
-#: The same table `tasks` uses for `due_at`, under the name this module has
-#: always exported. It lives in `services/sla.py` and is re-exported here
-#: rather than restated: "when is an unreviewed alert late" and "when is a task
-#: late" are one clinical deadline, and two literals that drift apart are the
-#: kind of bug nobody notices until the wrong thing is overdue.
-ESCALATION_WINDOW_BY_SEVERITY: Dict[str, timedelta] = SLA_WINDOW_BY_SEVERITY
+ESCALATION_WINDOW_BY_SEVERITY: Dict[str, timedelta] = {
+    "critical": timedelta(hours=1),
+    "high": timedelta(hours=4),
+    "medium": timedelta(hours=24),
+    "low": timedelta(hours=72),
+}
 
 
 async def on_clinical_alert(session: AsyncSession, event: WorkflowEvent) -> None:

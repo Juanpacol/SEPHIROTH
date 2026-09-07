@@ -78,7 +78,7 @@ The executor (`src/sephiroth/runtime/executor.py`) fans out to the relevant spec
 
 ## API Layer
 
-FastAPI routers, grouped by domain since SPEC-028 (`platform/api/{clinical,operations,intelligence,security}/routers/`):
+FastAPI routers under `platform/api/routers/`:
 
 - `POST /api/agents/consult` — full multi-agent workflow
 - `POST /api/agents/ask` — single specialist directly

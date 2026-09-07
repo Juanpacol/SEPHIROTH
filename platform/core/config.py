@@ -90,53 +90,15 @@ class Settings(BaseSettings):
     # OpenAI API (for data generation, testing, etc.)
     openai_api_key: Optional[str] = None
 
-    # Which provider `get_llm_client()` builds as primary.
-    #
-    # "ollama" is the default as of SPEC-022: a fresh install runs against a
-    # local model and sends nothing anywhere. It used to be "gemini", which
-    # meant an operator who set no provider at all was shipping clinical text
-    # to a third party by omission -- the one default a clinical product must
-    # not have. Wanting Gemini is now something a deployment says out loud.
-    #
+    # Which provider `get_llm_client()` builds as primary. "gemini" (default)
+    # preserves all pre-Phase-1 behavior, including Groq fallback below.
     # "groq" returns a bare GroqClient, never wrapped the other way around.
-    # "gemini" restores the pre-SPEC-022 path, including the Groq fallback
-    # below. "split" routes vision to Gemini and chat/tool-calling to Ollama
-    # (`ollama_base_url`/`ollama_model`), falling back to Groq for chat --
+    # "ollama" returns a bare OllamaClient — local dev only, no fallback.
+    # "split" routes vision to Gemini only and chat/tool-calling to Ollama
+    # (nemotron via OpenRouter's OpenAI-compatible endpoint by default,
+    # `ollama_base_url`/`ollama_model`), falling back to Groq for chat —
     # see `VisionChatSplitClient` and the runtime audit's model comparison.
-    llm_provider: Literal["gemini", "groq", "ollama", "split"] = "ollama"
-
-    # May patient-derived content reach a provider outside the deployment?
-    #
-    # Off by default, and inert while the provider is local -- nothing leaves,
-    # so there is nothing to gate. It bites exactly when someone points the
-    # stack at a remote model without deciding, separately and explicitly, that
-    # patient data may go there.
-    #
-    # The gate is an enumerated list of call sites, not a payload classifier:
-    # a query reading "56-year-old on warfarin, INR 4.8, is the dose safe"
-    # carries no name and no identifier, and any detector tuned to catch it
-    # also refuses the guideline lookups that are fine to send. See
-    # `docs/08-decisions/ADR-015-phi-egress-enumerated-seams.md` and
-    # SPEC-022 section 6.5 for the list.
-    ai_allow_phi: bool = False
-
-    # How long a signed encounter may be amended (SPEC-023). Matches the task
-    # reopen window, so a clinician meets one number rather than two.
-    encounter_amend_window_days: int = 30
-
-    # How long a closed result may be reopened (SPEC-024). Matches the task and
-    # encounter windows, so a clinician meets one number rather than three.
-    result_reopen_window_days: int = 30
-
-    # Web push (SPEC-025). Empty keys disable push entirely and every path
-    # degrades to the in-app notification that already existed -- the state
-    # every deployment starts in. Generate a pair with
-    # `scripts/generate_vapid_keys.py`.
-    vapid_public_key: str = ""
-    vapid_private_key: str = ""
-    vapid_subject: str = "mailto:ops@sephiroth.local"
-    push_max_attempts: int = 3
-    push_batch_size: int = 50
+    llm_provider: Literal["gemini", "groq", "ollama", "split"] = "gemini"
 
     # Fallback LLM — Groq (OpenAI-compatible API), free tier. Used only for
     # text/tool-calling when Gemini is unavailable (rate-limited or its
@@ -293,26 +255,6 @@ class Settings(BaseSettings):
     workflow_step_timeout_seconds: float = 5.0
     workflow_tick_budget_seconds: float = 20.0
     workflow_step_lease_seconds: int = 120
-
-    # SPEC-018: the unified task inbox. This flag gates only the two places
-    # where tasks REPLACE something that already works -- the derivation sweep
-    # in the tick, and `/api/dashboard/action-items` reading from `tasks`
-    # instead of re-deriving. Task *writes* from source adapters are
-    # deliberately unconditional, so the table is already warm and correct
-    # before anyone flips this on; turning it on against an empty table would
-    # show a clinician an empty inbox and call it "nothing to do".
-    enable_task_inbox: bool = False
-
-    # SPEC-020: quiet hours are wall-clock ("no messages between 22:00 and
-    # 08:00" means the patient's evening), and every datetime in this schema is
-    # naive UTC -- so honouring them needs to know which wall. An IANA name,
-    # not an offset, because an offset is wrong for half the year.
-    clinic_timezone: str = "America/Bogota"
-
-    # SPEC-020: how long after an appointment ends before an untouched booking
-    # is called a no-show. A day, so a clinician who marks it `completed` the
-    # next morning still wins the race against the sweep.
-    no_show_grace_hours: int = 24
 
     # Optional ops monitoring: a tick posts a health summary to this Slack
     # incoming-webhook URL when set, and stays silent (no notifier, no

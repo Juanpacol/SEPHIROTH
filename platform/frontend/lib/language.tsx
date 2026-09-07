@@ -34,7 +34,7 @@ export function languageName(lang: Lang): string {
 interface LanguageContextValue {
   lang: Lang;
   setLang: (lang: Lang) => void;
-  t: (key: string, vars?: Record<string, string | number>) => string;
+  t: (key: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
@@ -51,7 +51,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLangState(next);
   };
 
-  const t = (key: string, vars?: Record<string, string | number>): string => {
+  const t = (key: string): string => {
     const value = DICTIONARIES[lang][key] ?? DICTIONARIES.en[key];
     if (value === undefined) {
       // A key missing from BOTH dictionaries renders as this raw string on
@@ -62,14 +62,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       }
       return key;
     }
-    // `{name}` substitution. Optional, so every existing call site is
-    // unchanged — this exists because several already hand-roll it
-    // (`ActionItemsList` does `.replace("{test}", …)` five times), and a
-    // convention repeated by hand is a convention that drifts.
-    if (!vars) return value;
-    return value.replace(/\{(\w+)\}/g, (match, name) =>
-      name in vars ? String(vars[name]) : match,
-    );
+    return value;
   };
 
   return (

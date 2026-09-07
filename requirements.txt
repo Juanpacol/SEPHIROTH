@@ -51,9 +51,3 @@ python-multipart>=0.0.9  # FastAPI multipart parsing (file uploads)
 python-dotenv>=1.0
 httpx>=0.27
 requests>=2.31
-
-# Web push (SPEC-025). Brings py-vapid and http-ece: the payload encryption is
-# exactly the thing not to write by hand. Synchronous, so sends run in
-# asyncio.to_thread -- acceptable because they only ever run from the tick.
-# A deployment with no VAPID keys never imports it at runtime.
-pywebpush>=2.0

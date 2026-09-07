@@ -11,11 +11,12 @@ dedicated `automation_memory` key is the honest fit -- it is exactly
 
 from __future__ import annotations
 
+from datetime import date
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import clinical_notify
 from .memory import get_memory, set_memory
-from .quiet_hours import clinic_today
 
 _SCOPE = "clinic"
 _SCOPE_ID = "default"  # single-tenant app -- see memory.py::_validate_scope_id
@@ -28,9 +29,7 @@ async def maybe_send_daily_digest(session: AsyncSession) -> bool:
     tick -- a day with no webhook configured still records the date
     (build_and_send_digest no-ops silently), so flipping the webhook on
     mid-day doesn't cause a burst of backfilled digests."""
-    # The clinic's calendar day, not the host's local one: a digest is a
-    # wall-clock event for the people reading it.
-    today_str = clinic_today().isoformat()
+    today_str = date.today().isoformat()
     last_sent = await get_memory(session, _SCOPE, _SCOPE_ID, _KEY)
     if last_sent == today_str:
         return False

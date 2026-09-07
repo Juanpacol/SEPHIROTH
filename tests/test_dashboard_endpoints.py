@@ -501,9 +501,7 @@ async def test_dashboard_action_items_covers_every_category_sorted_by_severity(c
             patient_id=carlos.id,
             action_type="followup_day7",
             status="pending",
-            # Non-empty since SPEC-020 -- `ck_pending_action_draft_nonempty`
-            # refuses a row the approvals inbox could show as blank.
-            draft_text="Hola, ¿cómo has seguido?",
+            draft_text="",
             draft_source="template",
         )
     )

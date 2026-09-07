@@ -2,22 +2,69 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import {
+  Activity,
+  Bell,
+  BookOpenCheck,
+  CalendarDays,
+  ClipboardCheck,
+  ClipboardList,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  ScanEye,
+  Search,
+  Users,
+} from "lucide-react";
 import { clearAuth, useUser } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
-import { flatNav, isActive, navFor } from "@/lib/nav";
-import { useBadgeCounts } from "@/lib/hooks/use-badge-counts";
 import WingMark from "@/components/brand/wing-mark";
+
+// `id` keys into the `nav.*`/`nav.group*` dictionary entries (see
+// `lib/i18n/dictionaries.{en,es}.ts`) — the label text itself lives only in
+// the dictionaries now, so adding a language never means touching this array.
+const CLINICIAN_NAV = [
+  {
+    groupId: null,
+    items: [{ href: "/dashboard", id: "dashboard", icon: LayoutDashboard }],
+  },
+  {
+    groupId: "groupClinical",
+    items: [
+      { href: "/patients", id: "patients", icon: Users },
+      { href: "/schedule", id: "schedule", icon: CalendarDays },
+      { href: "/approvals", id: "approvals", icon: ClipboardCheck },
+      { href: "/alerts", id: "alerts", icon: Bell },
+    ],
+  },
+  {
+    groupId: "groupIntelligence",
+    items: [
+      { href: "/imaging", id: "imaging", icon: ScanEye },
+      { href: "/evidence", id: "evidence", icon: BookOpenCheck },
+      { href: "/agents", id: "agents", icon: Activity },
+    ],
+  },
+];
+
+const PATIENT_NAV = [
+  {
+    groupId: null,
+    items: [
+      { href: "/portal", id: "portalHome", icon: LayoutDashboard },
+      { href: "/portal/appointments", id: "portalAppointments", icon: ClipboardList },
+      { href: "/portal/results", id: "portalResults", icon: FileText },
+    ],
+  },
+];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const user = useUser();
   const { t } = useLanguage();
-  const groups = navFor(user?.role);
-  const allHrefs = flatNav(groups).map((i) => i.href);
-  const { data: counts } = useBadgeCounts();
-  const homeHref = user?.role === "patient" ? "/portal" : "/work";
+  const groups = user?.role === "patient" ? PATIENT_NAV : CLINICIAN_NAV;
+  const homeHref = user?.role === "patient" ? "/portal" : "/dashboard";
   const profileHref = user?.role === "patient" ? "/portal" : "/profile";
 
   const initials = user
@@ -44,22 +91,27 @@ export default function Sidebar() {
         <span className="text-[15px] font-bold tracking-tight">SEPHIROTH</span>
       </Link>
 
+      {user?.role !== "patient" && (
+        <div className="mt-5 flex items-center gap-2 rounded-2xl border border-line/70 px-3 py-2 text-sm text-muted">
+          <Search size={15} />
+          <span>{t("nav.search")}</span>
+        </div>
+      )}
+
       <nav className="mt-2 flex-1">
         {groups.map((group) => (
           <div key={group.groupId ?? "root"}>
             {group.groupId && <div className="nav-group-label">{t(`nav.${group.groupId}`)}</div>}
-            {group.items.map(({ href, id, icon: Icon, badge }) => {
-              const active = isActive(pathname, href, allHrefs);
-              const count = badge ? (counts?.[badge] ?? 0) : 0;
+            {group.items.map(({ href, id, icon: Icon }) => {
+              const active = pathname === href || pathname.startsWith(href + "/");
               return (
-                <Link key={href} href={href} className={`nav-item ${active ? "nav-item-active" : ""}`}>
+                <Link
+                  key={href}
+                  href={href}
+                  className={`nav-item ${active ? "nav-item-active" : ""}`}
+                >
                   <Icon size={17} />
-                  <span className="flex-1">{t(`nav.${id}`)}</span>
-                  {count > 0 && (
-                    <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold text-white">
-                      {count > 99 ? "99+" : count}
-                    </span>
-                  )}
+                  {t(`nav.${id}`)}
                 </Link>
               );
             })}

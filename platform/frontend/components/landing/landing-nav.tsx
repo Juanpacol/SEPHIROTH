@@ -8,8 +8,6 @@ import { ShimmerButton } from "@/components/magicui/shimmer-button";
 import { useLanguage } from "@/lib/language";
 
 const LINKS = [
-  // Privacy first: it is the question a clinic asks before any of the others.
-  { href: "#privacy", labelKey: "marketing.nav.privacy" },
   { href: "#how-it-works", labelKey: "marketing.nav.howItWorks" },
   { href: "#safeguards", labelKey: "marketing.nav.safeguards" },
   { href: "#agents", labelKey: "marketing.nav.agents" },

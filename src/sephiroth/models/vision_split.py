@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from .base import ChatResult, ProviderInfo, ToolExecutor
+from .base import ChatResult, ToolExecutor
 
 
 class VisionChatSplitClient:
@@ -95,21 +95,6 @@ class VisionChatSplitClient:
             max_output_tokens=max_output_tokens,
         ):
             yield chunk
-
-    def describe(self) -> ProviderInfo:
-        """The vision half is the one that usually is not local -- this client
-        exists precisely to send images somewhere a local model cannot handle
-        them -- so the conjunction is what an operator needs to see."""
-        chat = self.chat_client.describe()
-        vision = self.vision_client.describe()
-        return ProviderInfo(
-            provider="split",
-            model=chat.model,
-            vision_model=vision.vision_model or vision.model,
-            local=chat.local and vision.local,
-            endpoint=chat.endpoint,
-            components=(chat, vision),
-        )
 
     async def health(self) -> bool:
         chat_ok = await self.chat_client.health()

@@ -12,16 +12,15 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from api.intelligence.routers import medical as medical_router_module
+from api.routers import medical as medical_router_module
 from auth import router as auth_router_module
 from core.db import get_session
 from sephiroth.models import LLMUnavailableError
-from tests.conftest import LocalProviderDouble
 
 CREDS = {"email": "medical-router@example.org", "name": "Dr. Router", "password": "password123"}
 
 
-class _UnavailableVisionClient(LocalProviderDouble):
+class _UnavailableVisionClient:
     """Deterministic stand-in for "Gemini has no API key configured" —
     used instead of relying on the real, unmonkeypatched `get_llm_client()`
     singleton, which is process-global and can end up holding a stale
@@ -62,7 +61,7 @@ def img_dir(tmp_path, monkeypatch):
     (see `_resolve_allowed_image_path`) — point the module's upload dir at a
     per-test tmp_path instead of the real scratch dir, so these tests still
     get an isolated, writable directory that also passes the allow-list."""
-    from api.intelligence.routers import medical as medical_module
+    from api.routers import medical as medical_module
 
     monkeypatch.setattr(medical_module, "_UPLOAD_DIR", tmp_path)
     allowed_dirs = [tmp_path.resolve()] + medical_module._ALLOWED_IMAGE_DIRS[1:]
@@ -214,7 +213,7 @@ async def test_describe_image_stream_unsupported_format(client, img_dir):
 
 @pytest.mark.asyncio
 async def test_describe_image_stream_oversized_image(client, img_dir, monkeypatch):
-    from api.intelligence.routers import medical as medical_module
+    from api.routers import medical as medical_module
 
     monkeypatch.setattr(medical_module, "MAX_IMAGE_BYTES", 4)
     img_path = img_dir / "x.png"
@@ -256,7 +255,7 @@ async def test_describe_image_stream_no_api_key_yields_error_event(client, img_d
 async def test_describe_image_stream_success_yields_chunks_then_final(client, img_dir, monkeypatch):
     import sephiroth.models.factory as factory_module
 
-    class _FakeVisionClient(LocalProviderDouble):
+    class _FakeVisionClient:
         model = "fake-vision-model"
 
         async def describe_image_stream(self, **kwargs):
@@ -318,7 +317,7 @@ async def test_detect_modality_unsupported_format(client, img_dir):
 
 @pytest.mark.asyncio
 async def test_detect_modality_oversized_image(client, img_dir, monkeypatch):
-    from api.intelligence.routers import medical as medical_module
+    from api.routers import medical as medical_module
 
     monkeypatch.setattr(medical_module, "MAX_IMAGE_BYTES", 4)
     img_path = img_dir / "x.png"
@@ -355,7 +354,7 @@ async def test_detect_modality_no_api_key_degrades_to_unknown(client, img_dir, m
 async def test_detect_modality_returns_guessed_modality(client, img_dir, monkeypatch):
     import sephiroth.models.factory as factory_module
 
-    class _FakeVisionClient(LocalProviderDouble):
+    class _FakeVisionClient:
         model = "fake-vision-model"
 
         async def describe_image(self, **kwargs):
@@ -436,7 +435,7 @@ async def test_upload_image_rejects_unsupported_extension(client):
 
 @pytest.mark.asyncio
 async def test_upload_image_rejects_oversized_file(client, monkeypatch):
-    from api.intelligence.routers import medical as medical_module
+    from api.routers import medical as medical_module
 
     monkeypatch.setattr(medical_module, "_MAX_UPLOAD_BYTES", 10)
     async with client:

@@ -4,7 +4,7 @@ import AuthGuard from "@/components/auth-guard";
 import { clearAuth, storeAuth, type AuthUser } from "@/lib/auth";
 
 const replace = vi.fn();
-let mockPathname = "/work";
+let mockPathname = "/dashboard";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
@@ -31,7 +31,7 @@ describe("AuthGuard", () => {
   beforeEach(() => {
     localStorage.clear();
     replace.mockClear();
-    mockPathname = "/work";
+    mockPathname = "/dashboard";
   });
 
   afterEach(() => {
@@ -40,7 +40,7 @@ describe("AuthGuard", () => {
 
   it("renders children once a correctly-roled user is found", async () => {
     storeAuth("tok", CLINICIAN);
-    mockPathname = "/work";
+    mockPathname = "/dashboard";
 
     render(
       <AuthGuard>
@@ -54,7 +54,7 @@ describe("AuthGuard", () => {
 
   it("redirects a patient away from a clinician route", async () => {
     storeAuth("tok", PATIENT);
-    mockPathname = "/work";
+    mockPathname = "/dashboard";
 
     render(
       <AuthGuard>
@@ -76,13 +76,13 @@ describe("AuthGuard", () => {
       </AuthGuard>
     );
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/work"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/dashboard"));
     expect(screen.queryByText("patient-only content")).not.toBeInTheDocument();
   });
 
   it("renders nothing and does not redirect via router when logged out", async () => {
     clearAuth();
-    mockPathname = "/work";
+    mockPathname = "/dashboard";
 
     const { container } = render(
       <AuthGuard>

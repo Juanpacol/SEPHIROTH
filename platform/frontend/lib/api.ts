@@ -53,291 +53,6 @@ export interface DashboardActionItem {
   action_type?: string;
   query_preview?: string;
   consultation_id?: string;
-  /** Present once the endpoint reads from `tasks` (SPEC-018). Optional on
-   * purpose: with the flag off the same rows arrive without one, so this
-   * component never needs to know which side of the flag it is on — it just
-   * offers actions when there is something to act on. */
-  task_id?: string;
-  status?: TaskStatus;
-  due_at?: string | null;
-}
-
-// --- Tasks (SPEC-018) -------------------------------------------------------
-
-export type TaskStatus = "open" | "in_progress" | "snoozed" | "done" | "dismissed" | "superseded";
-export type TaskSeverity = "critical" | "high" | "medium" | "low";
-
-/** Where the work came from. `kind` is what the inbox deep-links on — a task
- * is a handle on something that lives elsewhere, and a row nobody can follow
- * back to its origin is a dead end. */
-export interface TaskSource {
-  kind:
-    | "alert"
-    | "approval"
-    | "followup"
-    | "result"
-    | "appointment"
-    | "automation"
-    | "consultation"
-    | "deteriorating"
-    | "interaction";
-  id: string | null;
-}
-
-export interface ClinicalTask {
-  id: string;
-  source: TaskSource;
-  category: string;
-  severity: TaskSeverity;
-  status: TaskStatus;
-  title: string;
-  detail: string;
-  context: Record<string, unknown>;
-  patient_id: string | null;
-  patient_name: string | null;
-  assigned_to_user_id: string | null;
-  due_at: string | null;
-  snoozed_until: string | null;
-  escalation_level: number;
-  dismiss_reason: string;
-  closed_at: string | null;
-  created_at: string;
-  /** False when the source refuses to be closed from the inbox — an approval,
-   * for instance. Surfaced so the UI can omit the button rather than let
-   * someone press it and receive a 409. */
-  completable: boolean;
-  completable_refusal: string;
-}
-
-export interface TaskEvent {
-  id: number;
-  event_type: string;
-  actor_user_id: string | null;
-  from_status: string | null;
-  to_status: string | null;
-  note: string;
-  created_at: string;
-}
-
-export interface TaskPage {
-  items: ClinicalTask[];
-  total_count: number;
-  limit: number;
-  offset: number;
-  has_more: boolean;
-}
-
-// --- Encounters (SPEC-023) --------------------------------------------------
-
-export type EncounterStatus = "draft" | "signed" | "amended";
-export type OrderKind = "lab" | "imaging" | "referral" | "followup" | "medication";
-
-export interface EncounterOrder {
-  id: string;
-  kind: OrderKind;
-  detail: string;
-  due_in_days: number | null;
-  /** Set when the visit is signed. Until then the order has filed no work. */
-  task_id: string | null;
-}
-
-export interface VitalFinding {
-  key: string;
-  label: string;
-  display: string;
-  severity: "high" | "medium";
-  detail: string;
-}
-
-export interface Encounter {
-  id: string;
-  patient_id: string;
-  patient_name: string | null;
-  clinician_id: string;
-  appointment_id: string | null;
-  specialty: string;
-  status: EncounterStatus;
-  chief_complaint: string;
-  vitals: Record<string, number>;
-  /** Computed on read, never stored — a flag written at save time would still
-   *  say "normal" after the ranges were corrected. */
-  vital_findings: VitalFinding[];
-  subjective: string;
-  objective: string;
-  assessment: string;
-  plan: string;
-  patient_instructions: string;
-  note_source: "clinician" | "llm" | "template";
-  note_model: string | null;
-  editable: boolean;
-  signable: boolean;
-  started_at: string;
-  signed_at: string | null;
-  signed_by: string | null;
-  amended_at: string | null;
-  amendment_reason: string;
-  clinical_note_id: string | null;
-  orders: EncounterOrder[];
-  template: Record<"subjective" | "objective" | "assessment" | "plan", string>;
-  tasks_created?: string[];
-}
-
-export interface VitalSpecOut {
-  key: string;
-  label: string;
-  unit: string;
-  min: number;
-  max: number;
-  normal_low: number;
-  normal_high: number;
-  decimals: number;
-}
-
-export interface NoteDraft {
-  /** `llm` when the model organised the text; `template` for every degraded
-   *  path, so the UI never presents the clinician's own words as a draft. */
-  source: "llm" | "template";
-  model: string | null;
-  degraded_reason?: string;
-  /** Sections whose vocabulary is largely absent from the source. Read these
-   *  hardest — a local model does not reliably obey "do not add information". */
-  added_content?: string[];
-  subjective: string;
-  objective: string;
-  assessment: string;
-  plan: string;
-}
-
-export interface PreVisitBrief {
-  patient: { id: string; name: string; age: number; sex: string; medical_record_number: string };
-  reason: string;
-  next_appointment: { id: string; start_at: string; mode: string; confirmed: boolean } | null;
-  recent_encounters: {
-    id: string;
-    started_at: string;
-    status: EncounterStatus;
-    specialty: string;
-    chief_complaint: string;
-    assessment: string;
-    plan: string;
-    vitals: string;
-  }[];
-  open_tasks: {
-    id: string;
-    title: string;
-    category: string;
-    severity: string;
-    due_at: string | null;
-    overdue: boolean;
-  }[];
-  alerts: { id: string; title: string; severity: string; kind: string; status: string }[];
-  recent_results: {
-    kind: string;
-    name: string;
-    value: string;
-    date: string;
-    abnormal: boolean;
-    critical: boolean;
-  }[];
-  medications: string[];
-  allergies: string[];
-  conditions: string[];
-  risk_flags: { rule_key: string; label: string; severity: string; detail: string }[];
-}
-
-// --- The results loop (SPEC-024) --------------------------------------------
-
-export type ResultReviewStatus = "received" | "reviewed" | "communicated" | "closed";
-export type ResultSeverity = "critical" | "abnormal" | "normal" | "unclassified";
-export type Disposition =
-  | "normal"
-  | "abnormal_expected"
-  | "action_taken"
-  | "needs_patient_contact";
-
-export interface ResultReview {
-  id: string;
-  result_type: "lab" | "imaging";
-  result_id: string;
-  patient_id: string;
-  patient_name: string | null;
-  status: ResultReviewStatus;
-  severity: ResultSeverity;
-  /** One line a clinician can check the severity against, rather than trust. */
-  classification_reason: string;
-  disposition: Disposition | null;
-  note: string;
-  reviewed_at: string | null;
-  reviewed_by: string | null;
-  share_id: string | null;
-  task_id: string | null;
-  closed_at: string | null;
-  created_at: string;
-  /** Computed server-side so a button is never offered that would 409. */
-  needs_communication: boolean;
-  closable: boolean;
-  result: {
-    kind: string;
-    missing?: boolean;
-    test_name?: string;
-    value?: number;
-    unit?: string;
-    reference_low?: number | null;
-    reference_high?: number | null;
-    taken_at?: string;
-    modality?: string;
-    body_part?: string;
-    study_date?: string;
-    finding_summary?: string;
-    severity?: string;
-  };
-  created?: boolean;
-}
-
-// --- Web push (SPEC-025) ----------------------------------------------------
-
-export interface PushDevice {
-  id: string;
-  /** The tail of the endpoint only — the full URL is a capability. */
-  endpoint_hint: string;
-  user_agent: string;
-  enabled: boolean;
-  failure_count: number;
-  last_success_at: string | null;
-  created_at: string;
-}
-
-export interface TaskCounts {
-  /** The `open` status alone. Sum the statuses with `total_open`, not by hand. */
-  open: number;
-  total_open: number;
-  in_progress: number;
-  snoozed: number;
-  mine: number;
-  unassigned: number;
-  overdue: number;
-}
-
-export interface TaskFilters {
-  status?: TaskStatus[];
-  category?: string;
-  severity?: TaskSeverity;
-  assignee?: "me" | "unassigned" | string;
-  patient_id?: string;
-  overdue?: boolean;
-  q?: string;
-  sort?: "priority" | "due" | "created";
-  limit?: number;
-  offset?: number;
-}
-
-/** Every counter the chrome shows, in one request — see the backend router's
- * docstring for why this is not part of `/api/dashboard`. */
-export interface BadgeCounts {
-  tasks_open: number;
-  tasks_overdue: number;
-  alerts_active: number;
-  notifications_unread: number;
 }
 
 export interface DashboardActionItems {
@@ -683,7 +398,6 @@ export interface Attachment {
 
 export interface ResultShare {
   id: string;
-  patient_id: string;
   status: "sent" | "revoked";
   message: string;
   shared_at: string;
@@ -850,23 +564,6 @@ async function del(path: string): Promise<void> {
   if (!res.ok) throw new ApiError(res.status, await res.text());
 }
 
-/** DELETE with a body. The subscription is identified by its endpoint, which
- *  is a 400-character capability URL and does not belong in a path segment or
- *  a query string that proxies and access logs will record. */
-async function delWithBody(path: string, body: unknown): Promise<void> {
-  const res = await fetch(path, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify(body),
-  });
-  if (res.status === 401) {
-    redirectToLogin();
-    throw new ApiError(401, "Not authenticated");
-  }
-  if (res.status === 403) throw new ApiError(403, "This isn't available for your account.");
-  if (!res.ok) throw new ApiError(res.status, await res.text());
-}
-
 /** POST expecting a 204 No Content response (no JSON body to parse). */
 async function postNoContent(path: string, body: unknown): Promise<void> {
   const res = await fetch(path, {
@@ -907,6 +604,17 @@ export const api = {
     get<{ stats: DashboardStats; agenda: TodayAgenda; action_items: DashboardActionItems }>(
       "/api/dashboard/bootstrap"
     ),
+  dashboardActionItems: () => get<DashboardActionItems>("/api/dashboard/action-items"),
+  dashboardEvolution: () => get<DashboardEvolution>("/api/dashboard/evolution"),
+  dashboardAlerts: () => get<DashboardAlerts>("/api/dashboard/alerts"),
+  dashboardMedications: () => get<DashboardMedications>("/api/dashboard/medications"),
+  dashboardLabs: () => get<DashboardLabs>("/api/dashboard/labs"),
+  dashboardImaging: () => get<DashboardImaging>("/api/dashboard/imaging"),
+  dashboardAI: () => get<DashboardAI>("/api/dashboard/ai"),
+  dashboardEvidence: () => get<DashboardEvidence>("/api/dashboard/evidence"),
+  dashboardPending: () => get<DashboardPending>("/api/dashboard/pending"),
+  dashboardPerformance: () => get<DashboardPerformance>("/api/dashboard/performance"),
+  dashboardAutomation: () => get<DashboardAutomation>("/api/dashboard/automation"),
   agentsStatus: () => get<AgentsStatus>("/api/agents/status"),
   patients: (sort?: "risk") => get<PatientSummary[]>(`/api/patients${sort ? `?sort=${sort}` : ""}`),
   patient: (id: string) => get<Patient>(`/api/patients/${id}`),
@@ -1063,116 +771,6 @@ export const api = {
   createFollowupPlan: (body: { patient_id: string; consultation_id?: string; instructions?: string }) =>
     post<FollowupPlan>("/api/followups", body),
   cancelFollowupPlan: (planId: string) => post<FollowupPlan>(`/api/followups/${planId}/cancel`, {}),
-
-  // --- Tasks --------------------------------------------------------------
-  listTasks: (filters: TaskFilters = {}) => {
-    const qs = new URLSearchParams();
-    // `status` is repeatable rather than comma-joined, matching FastAPI's
-    // List[str] query binding.
-    for (const status of filters.status ?? []) qs.append("status", status);
-    for (const [key, value] of Object.entries(filters)) {
-      if (key === "status" || value === undefined || value === "") continue;
-      qs.set(key, String(value));
-    }
-    const query = qs.toString();
-    return get<TaskPage>(`/api/tasks${query ? `?${query}` : ""}`);
-  },
-  // --- Encounters ---------------------------------------------------------
-  startEncounter: (body: {
-    patient_id: string;
-    appointment_id?: string | null;
-    specialty?: string;
-    chief_complaint?: string;
-  }) => post<Encounter>("/api/encounters", body),
-  encounters: (params: { patient_id?: string; status?: EncounterStatus; mine?: boolean } = {}) => {
-    const qs = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-      if (value === undefined || value === "") continue;
-      qs.set(key, String(value));
-    }
-    const query = qs.toString();
-    return get<{ items: Encounter[] }>(`/api/encounters${query ? `?${query}` : ""}`);
-  },
-  encounter: (id: string) => get<Encounter>(`/api/encounters/${id}`),
-  updateEncounter: (id: string, body: Partial<Encounter>) =>
-    patch<Encounter>(`/api/encounters/${id}`, body),
-  addEncounterOrder: (
-    id: string,
-    body: { kind: OrderKind; detail: string; due_in_days?: number | null },
-  ) => post<Encounter>(`/api/encounters/${id}/orders`, body),
-  removeEncounterOrder: (id: string, orderId: string) =>
-    del(`/api/encounters/${id}/orders/${orderId}`),
-  draftEncounterNote: (id: string, transcript: string, specialty?: string) =>
-    post<NoteDraft>(`/api/encounters/${id}/draft-note`, { transcript, specialty }),
-  signEncounter: (id: string) => post<Encounter>(`/api/encounters/${id}/sign`, {}),
-  amendEncounter: (id: string, reason: string) =>
-    post<Encounter>(`/api/encounters/${id}/amend`, { reason }),
-  vitalsSpec: () =>
-    get<{ vitals: VitalSpecOut[]; specialties: string[] }>("/api/encounters/vitals/spec"),
-  preVisitBrief: (patientId: string) =>
-    get<PreVisitBrief>(`/api/patients/${patientId}/pre-visit`),
-
-  // --- The results loop ---------------------------------------------------
-  recordLab: (body: {
-    patient_id: string;
-    test_name: string;
-    value: number;
-    unit?: string;
-    taken_at?: string;
-    reference_low?: number | null;
-    reference_high?: number | null;
-  }) => post<ResultReview>("/api/results/labs", body),
-  recordImaging: (body: {
-    patient_id: string;
-    modality: string;
-    body_part: string;
-    study_date?: string;
-    severity?: "critical" | "review" | "none";
-    finding_summary?: string;
-  }) => post<ResultReview>("/api/results/imaging", body),
-  resultsInbox: (
-    params: { status?: ResultReviewStatus[]; severity?: ResultSeverity; patient_id?: string } = {},
-  ) => {
-    const qs = new URLSearchParams();
-    for (const status of params.status ?? []) qs.append("status", status);
-    if (params.severity) qs.set("severity", params.severity);
-    if (params.patient_id) qs.set("patient_id", params.patient_id);
-    const query = qs.toString();
-    return get<{ items: ResultReview[] }>(`/api/results/inbox${query ? `?${query}` : ""}`);
-  },
-  resultReview: (id: string) => get<ResultReview>(`/api/results/reviews/${id}`),
-  reviewResult: (id: string, body: { disposition: Disposition; note: string }) =>
-    post<ResultReview>(`/api/results/reviews/${id}/review`, body),
-  communicateResult: (id: string, body: { message: string; timeline_event_id: number }) =>
-    post<ResultReview>(`/api/results/reviews/${id}/communicate`, body),
-  closeResult: (id: string) => post<ResultReview>(`/api/results/reviews/${id}/close`, {}),
-  reopenResult: (id: string) => post<ResultReview>(`/api/results/reviews/${id}/reopen`, {}),
-
-  // --- Web push -----------------------------------------------------------
-  pushKey: () => get<{ enabled: boolean; public_key: string | null }>("/api/push/key"),
-  pushDevices: () => get<{ items: PushDevice[] }>("/api/push/subscriptions"),
-  subscribeToPush: (body: { endpoint: string; p256dh: string; auth: string }) =>
-    post<PushDevice>("/api/push/subscriptions", body),
-  unsubscribeFromPush: (endpoint: string) =>
-    delWithBody("/api/push/subscriptions", { endpoint }),
-
-  taskCounts: () => get<TaskCounts>("/api/tasks/count"),
-  task: (taskId: string) => get<ClinicalTask & { events: TaskEvent[] }>(`/api/tasks/${taskId}`),
-  claimTask: (taskId: string) => post<ClinicalTask>(`/api/tasks/${taskId}/claim`, {}),
-  assignTask: (taskId: string, assigneeId: string) =>
-    post<ClinicalTask>(`/api/tasks/${taskId}/assign`, { assignee_id: assigneeId }),
-  snoozeTask: (taskId: string, until: string) =>
-    post<ClinicalTask>(`/api/tasks/${taskId}/snooze`, { until }),
-  resumeTask: (taskId: string) => post<ClinicalTask>(`/api/tasks/${taskId}/resume`, {}),
-  completeTask: (taskId: string) => post<ClinicalTask>(`/api/tasks/${taskId}/complete`, {}),
-  dismissTask: (taskId: string, reason: string) =>
-    post<ClinicalTask>(`/api/tasks/${taskId}/dismiss`, { reason }),
-  reopenTask: (taskId: string) => post<ClinicalTask>(`/api/tasks/${taskId}/reopen`, {}),
-  commentOnTask: (taskId: string, body: string) =>
-    post<ClinicalTask>(`/api/tasks/${taskId}/comment`, { body }),
-
-  // --- Badges -------------------------------------------------------------
-  badges: () => get<BadgeCounts>("/api/badges"),
 
   // --- Automation memory / preferences ------------------------------------
   automationMemoryKeys: () => get<Record<string, string>>("/api/automation-memory/keys"),

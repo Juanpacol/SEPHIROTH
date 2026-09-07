@@ -1,7 +1,5 @@
 """`POST /internal/tick` — the auth gate. No JWT, no user; a shared
-secret header instead. See `platform/api/routers/internal.py`.
-
-Verifies AC-009-10 (docs/specs/SPEC-009-automation-substrate.md)."""
+secret header instead. See `platform/api/routers/internal.py`."""
 
 import pytest
 from httpx import ASGITransport, AsyncClient

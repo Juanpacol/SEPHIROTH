@@ -1,7 +1,4 @@
-"""`/api/alerts` — review/resolve lifecycle.
-
-Verifies AC-009-14, AC-009-15 (docs/specs/SPEC-009-automation-substrate.md).
-Written under the never-issued SPEC-011; that number is retired."""
+"""`/api/alerts` — review/resolve lifecycle (SPEC-011)."""
 
 import pytest
 from httpx import ASGITransport, AsyncClient

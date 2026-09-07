@@ -1,8 +1,5 @@
-"""Operational memory: allow-list enforcement + upsert semantics,
-unit-level.
-
-Verifies AC-009-24, AC-009-25 (docs/specs/SPEC-009-automation-substrate.md).
-Written under the never-issued SPEC-015; that number is retired."""
+"""Operational memory (SPEC-015): allow-list enforcement + upsert
+semantics, unit-level."""
 
 import pytest
 from sqlalchemy import select

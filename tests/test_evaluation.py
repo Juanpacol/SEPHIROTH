@@ -11,7 +11,6 @@ from intelligence.evaluation.faithfulness import heuristic_proxy
 from intelligence.evaluation.runner import (
     _check_embeddings_artifact_staleness,
     compare_thresholds,
-    sha256_replayed_cases,
     sha256_transcripts,
 )
 
@@ -166,42 +165,6 @@ def test_sha256_transcripts_changes_with_content(tmp_path):
     (tmp_path / "a.json").write_text('{"case_id": "a", "extra": true}')
     hash2 = sha256_transcripts(tmp_path)
     assert hash1 != hash2
-
-
-def _dataset(tmp_path, cases):
-    path = tmp_path / "golden.json"
-    path.write_text(json.dumps({"cases": cases}))
-    return path
-
-
-def test_adding_a_case_with_no_transcript_does_not_change_the_replay_hash(tmp_path):
-    """A retrieval-only case contributes to neither replayed metric, so it must
-    not declare the frozen baseline stale. Hashing the whole dataset did, which
-    left the `eval` gate red on every branch for numbers that had not moved."""
-    transcripts = tmp_path / "transcripts"
-    transcripts.mkdir()
-    (transcripts / "replayed.json").write_text("{}")
-
-    before = sha256_replayed_cases(_dataset(tmp_path, [{"id": "replayed", "query": "q"}]), transcripts)
-    after = sha256_replayed_cases(
-        _dataset(tmp_path, [{"id": "replayed", "query": "q"}, {"id": "new", "query": "q2"}]),
-        transcripts,
-    )
-
-    assert before == after
-
-
-def test_editing_a_replayed_case_does_change_the_replay_hash(tmp_path):
-    """The case the check exists for: the frozen numbers were computed against
-    this case's text, so changing it invalidates them."""
-    transcripts = tmp_path / "transcripts"
-    transcripts.mkdir()
-    (transcripts / "replayed.json").write_text("{}")
-
-    before = sha256_replayed_cases(_dataset(tmp_path, [{"id": "replayed", "query": "q"}]), transcripts)
-    after = sha256_replayed_cases(_dataset(tmp_path, [{"id": "replayed", "query": "reworded"}]), transcripts)
-
-    assert before != after
 
 
 def test_sha256_transcripts_order_independent(tmp_path):

@@ -1,7 +1,5 @@
 """`InAppChannel` — the one `NotificationChannel` implementation
-(SPEC-009 §6.2). A duplicate `dedupe_key` must be a no-op, not an error.
-
-Verifies AC-009-13 (docs/specs/SPEC-009-automation-substrate.md)."""
+(SPEC-009 §F). A duplicate `dedupe_key` must be a no-op, not an error."""
 
 from uuid import uuid4
 

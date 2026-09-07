@@ -20,19 +20,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from data.schemas import Alert, Appointment, User, Workflow, WorkflowStep
 from sephiroth.workflows.events import WorkflowEvent
 
-from .memory import get_memory
-from .quiet_hours import CLINIC_SCOPE_ID, defer_for_quiet_hours
 from .registry import StepContext, StepResult, StepTypeSpec, register_step_type
 
 DEFINITION_KEY = "appointment_reminder"
 REMINDER_STEP_TYPE = "appointment_reminder_t24"
 UNCONFIRMED_STEP_TYPE = "appointment_unconfirmed_check"
 
-#: The clinic-wide default when nobody has said otherwise. A patient's own
-#: `reminder_lead_hours` overrides it at enrolment (SPEC-020) -- that setting
-#: was validated, stored and read by nothing before this.
-DEFAULT_REMINDER_LEAD_HOURS = 24
-REMINDER_LEAD_TIME = timedelta(hours=DEFAULT_REMINDER_LEAD_HOURS)
+REMINDER_LEAD_TIME = timedelta(hours=24)
 REMINDER_MAX_LATENESS = timedelta(hours=6)
 UNCONFIRMED_LEAD_TIME = timedelta(hours=2)
 
@@ -53,30 +47,17 @@ async def on_new_appointment(session: AsyncSession, event: WorkflowEvent) -> Non
     if existing is not None:
         return  # idempotent: don't double-enroll the same appointment
 
-    # Resolved once, at enrolment, and recorded on the workflow.
-    #
-    # The alternative -- reading the preference at execution time -- would make
-    # `due_at` meaningless: the engine selects steps by due date, so a step that
-    # decides its own timing when it runs has to be woken constantly to ask. The
-    # cost of resolving here is that changing the preference does not re-anchor
-    # appointments already booked. The asymmetry is deliberate: wanting *less*
-    # notice is handled at execution time (`send_reminder_t24` defers when the
-    # live preference is shorter), and wanting *more* notice on an appointment
-    # already inside the old window is not something rescheduling can fix
-    # anyway. It self-corrects on the next booking.
-    lead_hours = await _resolve_lead_hours(session, appt.patient_id)
-
     workflow = Workflow(
         id=str(uuid4()),
         definition_key=DEFINITION_KEY,
         patient_id=appt.patient_id,
         appointment_id=appt.id,
         status="active",
-        context={"start_at": appt.start_at.isoformat(), "lead_hours": lead_hours},
+        context={"start_at": appt.start_at.isoformat()},
     )
     session.add(workflow)
 
-    reminder_due = appt.start_at - timedelta(hours=lead_hours)
+    reminder_due = appt.start_at - REMINDER_LEAD_TIME
     session.add(
         WorkflowStep(
             id=str(uuid4()),
@@ -105,15 +86,6 @@ async def on_new_appointment(session: AsyncSession, event: WorkflowEvent) -> Non
     )
 
 
-async def _resolve_lead_hours(session: AsyncSession, patient_id: str) -> int:
-    """This patient's preference, else the clinic's, else the default."""
-    for scope, scope_id in (("patient", patient_id), ("clinic", CLINIC_SCOPE_ID)):
-        value = await get_memory(session, scope, scope_id, "reminder_lead_hours")
-        if isinstance(value, int) and not isinstance(value, bool):
-            return value
-    return DEFAULT_REMINDER_LEAD_HOURS
-
-
 async def _load_live_appointment(ctx: StepContext) -> Optional[Appointment]:
     """Shared re-validation: the anchor snapshot
     (`workflow.context["start_at"]`) must still match the live row, or
@@ -137,38 +109,6 @@ async def send_reminder_t24(ctx: StepContext) -> StepResult:
     )
     if patient_login is None:
         return StepResult(outcome="skipped", detail="patient has no portal login")
-
-    # The preference got *shorter* after this step was anchored. Enrolment
-    # resolved the lead time (see `on_new_appointment`), so the only case that
-    # needs handling at execution time is the one where firing now would be
-    # earlier than the patient asked for.
-    live_lead = await _resolve_lead_hours(ctx.session, appt.patient_id)
-    anchored_lead = ctx.workflow.context.get("lead_hours", DEFAULT_REMINDER_LEAD_HOURS)
-    if live_lead < anchored_lead:
-        wanted = appt.start_at - timedelta(hours=live_lead)
-        if wanted > ctx.now:
-            return StepResult(
-                outcome="deferred",
-                detail=f"patient now wants {live_lead}h notice, not {anchored_lead}h",
-                retry_at=wanted,
-                extend_lateness=True,
-            )
-
-    # Quiet hours, last: there is no point deferring a message that was never
-    # going to be sent. `extend_lateness` is not optional here -- a reminder due
-    # at 23:00 and deferred to 08:00 would blow past its 6h lateness window and
-    # be silently skipped, so the deferral would look like it worked and nothing
-    # would arrive.
-    quiet_until = await defer_for_quiet_hours(
-        ctx.session, ctx.now, patient_id=appt.patient_id, user_id=patient_login.id
-    )
-    if quiet_until is not None:
-        return StepResult(
-            outcome="deferred",
-            detail="inside the patient's quiet hours",
-            retry_at=quiet_until,
-            extend_lateness=True,
-        )
 
     when = (
         appt.start_at.strftime("%A, %B %-d at %H:%M UTC")
@@ -212,12 +152,6 @@ async def escalate_if_unconfirmed(ctx: StepContext) -> StepResult:
         title="Unconfirmed appointment",
         detail=f"Appointment at {appt.start_at.isoformat()} has not been confirmed by the patient.",
         source="appointment_engine",
-        rule_key=f"appointment.unconfirmed.{appt.id}",
-        # Administrative, not clinical (SPEC-021). Nobody having confirmed a
-        # booking is a fact about the process; filing it beside "critical
-        # potassium" in one undifferentiated queue is how the second teaches
-        # people to skim past the first.
-        kind="administrative",
     )
     ctx.session.add(alert)
 

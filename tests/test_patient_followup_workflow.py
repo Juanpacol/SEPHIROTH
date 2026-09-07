@@ -1,10 +1,5 @@
-"""`patient_followup` workflow definition: enrollment + the day-3/7/30
-step handler creating a `PendingAction` with a real, sendable draft.
-
-Verifies AC-009-22, AC-009-23 (docs/specs/SPEC-009-automation-substrate.md)
-and AC-020-09 (docs/specs/SPEC-020-automation-correctness.md). Written under
-the never-issued SPEC-014; that number is retired. The empty draft was
-SPEC-009 §11 risk 6, closed by SPEC-020."""
+"""`patient_followup` workflow definition (SPEC-014): enrollment + the
+day-3/7/30 step handler creating an empty-draft PendingAction."""
 
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -70,7 +65,7 @@ async def test_enroll_plan_creates_three_steps_at_correct_offsets(db_session):
         assert steps[key].step_type == "followup_check_due"
 
 
-async def test_followup_check_due_creates_a_sendable_draft(db_session):
+async def test_followup_check_due_creates_empty_draft_pending_action(db_session):
     patient = await _patient(db_session)
     clinician = await _clinician(db_session)
     plan = FollowupPlan(
@@ -108,14 +103,8 @@ async def test_followup_check_due_creates_a_sendable_draft(db_session):
     action = (
         await db_session.scalars(select(PendingAction).where(PendingAction.patient_id == patient.id))
     ).one()
-    # Never empty (SPEC-020). An approvals row with nothing in it asks the
-    # clinician to babysit the automation before they can review its output,
-    # and it is what a clinician sees whenever the model is unreachable --
-    # which on a local-first deployment is a normal Tuesday.
-    assert action.draft_text.strip() != ""
-    assert action.draft_source == "template"
-    # Specific enough to send: it names what the clinician said to watch for.
-    assert plan.instructions in action.draft_text
+    assert action.draft_text == ""
+    assert action.draft_source == "llm"
     assert action.action_type == "followup_day3"
     assert action.workflow_step_id == step.id
 

@@ -52,7 +52,6 @@ source = [
     "src/sephiroth/runtime",
     "src/sephiroth/verification",
     "src/sephiroth/safety",
-    "src/sephiroth/clinical",
     "src/sephiroth/context",
     "src/sephiroth/telemetry",
     "src/sephiroth/workflows",

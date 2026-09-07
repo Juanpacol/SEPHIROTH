@@ -1,9 +1,6 @@
-"""`appointment_reminder` workflow definition: NEW_APPOINTMENT
+"""`appointment_reminder` workflow definition (SPEC-012): NEW_APPOINTMENT
 subscriber + T-24h reminder handler + T-2h unconfirmed-escalation
-handler.
-
-Verifies AC-009-17, AC-009-18 (docs/specs/SPEC-009-automation-substrate.md).
-Written under the never-issued SPEC-012; that number is retired."""
+handler."""
 
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
