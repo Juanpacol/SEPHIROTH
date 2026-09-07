@@ -3,7 +3,14 @@
 See `docs/specs/SPEC-001-model-provider.md`.
 """
 
-from .base import ChatResult, LLMUnavailableError, ModelProvider, PHINotAllowedError, ProviderInfo, ToolExecutor
+from .base import (
+    ChatResult,
+    LLMUnavailableError,
+    ModelProvider,
+    PHINotAllowedError,
+    ProviderInfo,
+    ToolExecutor,
+)
 from .factory import get_llm_client, reset_llm_client
 from .fallback import FallbackLLMClient
 from .gemini import GeminiClient

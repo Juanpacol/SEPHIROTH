@@ -55,7 +55,7 @@ class ChatResult:
 
 #: Hosts that mean "this machine". A `base_url` on one of these is local by
 #: construction; anything else is judged by `_is_private_host`.
-_LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "0.0.0.0", "host.docker.internal"})
+_LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "0.0.0.0", "host.docker.internal"})  # nosec B104 -- a hostname being compared against, not a bind address
 
 
 def _is_local_endpoint(base_url: str) -> bool:

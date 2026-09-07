@@ -608,9 +608,7 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
     for r in lab_results:
         latest_per_test[(r.patient_id, r.test_name)] = r
     critical_labs = [
-        r
-        for r in latest_per_test.values()
-        if r.is_critical and ("lab", str(r.id)) not in closed_reviews
+        r for r in latest_per_test.values() if r.is_critical and ("lab", str(r.id)) not in closed_reviews
     ]
     critical_labs.sort(key=lambda r: r.taken_at, reverse=True)
     for r in critical_labs[:_ACTION_ITEM_LIMIT_PER_CATEGORY]:

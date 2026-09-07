@@ -64,7 +64,10 @@ async def _ensure_llm() -> None:
                 "Check that `ollama serve` is running and the model is pulled."
             )
         elif provider == "groq":
-            detail = f"Groq is not reachable or model '{settings.groq_model}' is unavailable. Check GROQ_API_KEY and quota."
+            detail = (
+                f"Groq is not reachable or model '{settings.groq_model}' is unavailable. "
+                "Check GROQ_API_KEY and quota."
+            )
         else:
             detail = (
                 f"Gemini is not reachable or model '{settings.gemini_model}' is unavailable. "

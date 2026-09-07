@@ -149,7 +149,10 @@ async def get_patient(
 _LAB_HISTORY_LIMIT_PER_TEST = 20
 
 
-@router.get("/{patient_id}/labs", summary="Lab result history, grouped by test, for the trend behind the current value")
+@router.get(
+    "/{patient_id}/labs",
+    summary="Lab result history, grouped by test, for the trend behind the current value",
+)
 async def get_lab_history(
     patient_id: str,
     user: User = Depends(get_current_user),
@@ -166,9 +169,7 @@ async def get_lab_history(
 
     by_test: Dict[str, Dict[str, Any]] = {}
     for r in rows:
-        group = by_test.setdefault(
-            r.test_name, {"test_name": r.test_name, "unit": r.unit, "entries": []}
-        )
+        group = by_test.setdefault(r.test_name, {"test_name": r.test_name, "unit": r.unit, "entries": []})
         if len(group["entries"]) >= _LAB_HISTORY_LIMIT_PER_TEST:
             continue
         group["entries"].append(

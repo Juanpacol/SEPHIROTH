@@ -35,7 +35,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from data.schemas import ImagingStudy, LabResult, Patient, ResultReview, ResultShare, User
 from sephiroth.clinical.results import (
-    TASK_SEVERITY_BY_RESULT,
     Classification,
     classify_imaging,
     classify_lab,
