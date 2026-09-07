@@ -27,7 +27,7 @@ from google import genai
 from google.genai import errors, types
 
 from ._throttle import RateLimiter, backoff_delay
-from .base import ChatResult, LLMUnavailableError, ToolExecutor
+from .base import ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -431,6 +431,17 @@ class GeminiClient:
                     yield text
         except (errors.ClientError, errors.ServerError) as exc:
             raise LLMUnavailableError(str(exc)) from exc
+
+    def describe(self) -> ProviderInfo:
+        """Gemini is never local: the request leaves for Google's API by
+        definition, whatever the deployment looks like."""
+        return ProviderInfo(
+            provider="gemini",
+            model=self.model,
+            vision_model=self.vision_model,
+            local=False,
+            endpoint="generativelanguage.googleapis.com",
+        )
 
     async def health(self) -> bool:
         """Return True when Gemini is reachable, the API key is valid, and

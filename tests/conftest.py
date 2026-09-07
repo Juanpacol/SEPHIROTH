@@ -149,6 +149,11 @@ class FakeLLMClient:
     async def health(self) -> bool:
         return True
 
+    def describe(self):
+        from sephiroth.models import ProviderInfo
+
+        return ProviderInfo(provider="fake", model=self.model, local=True, endpoint="test")
+
 
 @pytest.fixture
 def fake_llm_client():
