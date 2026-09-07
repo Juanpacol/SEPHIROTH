@@ -25,6 +25,7 @@ from api.routers import (
     audit,
     automation_memory,
     dashboard,
+    encounters,
     followups,
     internal,
     medical,
@@ -32,6 +33,7 @@ from api.routers import (
     patients,
     portal,
     rag,
+    result_reviews,
     results,
     scheduling,
 )
@@ -137,6 +139,9 @@ app.include_router(auth_router_module.router, prefix="/api/auth", tags=["auth"])
 app.include_router(agents.router, prefix="/api/agents", tags=["agents"], dependencies=_clinician_only)
 app.include_router(patients.router, prefix="/api/patients", tags=["patients"], dependencies=_clinician_only)
 app.include_router(medical.router, prefix="/api/medical", tags=["medical"], dependencies=_clinician_only)
+app.include_router(
+    encounters.router, prefix="/api/encounters", tags=["encounters"], dependencies=_clinician_only
+)
 app.include_router(rag.router, prefix="/api/rag", tags=["rag"], dependencies=_clinician_only)
 app.include_router(
     dashboard.router, prefix="/api/dashboard", tags=["dashboard"], dependencies=_clinician_only
@@ -160,6 +165,9 @@ app.include_router(
 app.include_router(portal.router, prefix="/api/portal", tags=["portal"])
 app.include_router(scheduling.router, prefix="/api/scheduling", tags=["scheduling"])
 app.include_router(results.router, prefix="/api/results", tags=["results"])
+app.include_router(
+    result_reviews.router, prefix="/api/results", tags=["results"], dependencies=_clinician_only
+)
 # Notifications: every route is scoped to the caller's own identity
 # (`get_current_user`), so it mixes roles per-route like the three above
 # rather than carrying a blanket clinician-only guard.

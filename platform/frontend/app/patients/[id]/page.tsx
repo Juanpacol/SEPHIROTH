@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   CalendarDays,
@@ -23,6 +24,7 @@ import AgentBadge from "@/components/agent-badge";
 import ShareResultSheet from "@/components/results/share-result-sheet";
 import InteractionCheckerCard from "@/components/patients/interaction-checker-card";
 import FollowupCard from "@/components/patients/followup-card";
+import LabTrendCard from "@/components/patients/lab-trend-card";
 import { useToast } from "@/components/ui/toast";
 
 function MedicationsCard({ patientId, medications }: { patientId: string; medications: string[] }) {
@@ -254,11 +256,25 @@ const eventIcons: Record<string, typeof Pill> = {
 export default function PatientProfilePage({ params }: { params: { id: string } }) {
   const { id } = params;
   const { t } = useLanguage();
+  const router = useRouter();
   const showToast = useToast();
   const [shareOpen, setShareOpen] = useState(false);
   const { data: patient, isLoading } = useQuery({
     queryKey: ["patient", id],
     queryFn: () => api.patient(id),
+  });
+
+  // Starting a visit is the primary action on a patient during clinic hours,
+  // so it opens the encounter straight away rather than dropping the clinician
+  // on a list to find the one they just made.
+  const startEncounter = useMutation({
+    mutationFn: () => api.startEncounter({ patient_id: id }),
+    onSuccess: (encounter) => {
+      router.push(`/encounters/${encounter.id}`);
+    },
+    onError: (err) => {
+      showToast(err instanceof ApiError ? err.message : t("encounter.start"), "error");
+    },
   });
 
   const invitePatient = useMutation({
@@ -294,6 +310,13 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
         <div className="flex items-center gap-2">
           {patient.risk_level && <StatusPill label={`${patient.risk_level} risk`} />}
           <StatusPill label={patient.status} />
+          <button
+            onClick={() => startEncounter.mutate()}
+            disabled={startEncounter.isPending}
+            className="btn-primary"
+          >
+            <Stethoscope size={15} /> {t("encounter.start")}
+          </button>
           <button
             onClick={() => invitePatient.mutate()}
             disabled={invitePatient.isPending}
@@ -389,6 +412,8 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
           )}
 
           <InteractionCheckerCard medications={patient.medications} />
+
+          <LabTrendCard patientId={patient.id} />
 
           <div className="card">
             <h2 className="mb-1 font-bold">{t("patientDetail.labResults.title")}</h2>

@@ -35,7 +35,16 @@ export interface DashboardStats {
  * Fields beyond `category`/`severity`/`patient_*` are category-specific
  * (only the ones relevant to that item's `category` are populated). */
 export interface DashboardActionItem {
-  category: "alert" | "deteriorating" | "lab" | "interaction" | "imaging" | "followup" | "approval" | "decision";
+  category:
+    | "alert"
+    | "deteriorating"
+    | "lab"
+    | "interaction"
+    | "imaging"
+    | "order"
+    | "followup"
+    | "approval"
+    | "decision";
   severity: "critical" | "high" | "medium" | "low";
   patient_id: string | null;
   patient_name: string | null;
@@ -48,6 +57,7 @@ export interface DashboardActionItem {
   drug_b?: string;
   modality?: string;
   body_part?: string;
+  order_kind?: OrderKind;
   check_key?: string;
   days_late?: number;
   action_type?: string;
@@ -219,6 +229,24 @@ export interface Patient extends PatientSummary {
   timeline: TimelineEvent[];
   lab_results: Record<string, string>;
   risk_flags?: RiskFlag[];
+}
+
+export interface LabHistoryEntry {
+  value: number;
+  taken_at: string;
+  is_abnormal: boolean;
+  is_critical: boolean;
+}
+
+export interface LabHistoryTest {
+  test_name: string;
+  unit: string;
+  /** Newest first. */
+  entries: LabHistoryEntry[];
+}
+
+export interface PatientLabHistory {
+  tests: LabHistoryTest[];
 }
 
 export interface ToolCall {
@@ -398,6 +426,7 @@ export interface Attachment {
 
 export interface ResultShare {
   id: string;
+  patient_id: string;
   status: "sent" | "revoked";
   message: string;
   shared_at: string;
@@ -425,6 +454,132 @@ export interface DescribeImageResponse {
   message?: string;
   error?: string;
   requires_professional_review?: boolean;
+}
+
+// --- Encounters (SPEC-023) --------------------------------------------------
+
+export type EncounterStatus = "draft" | "signed" | "amended";
+export type OrderKind = "lab" | "imaging" | "referral" | "followup" | "medication";
+
+export interface EncounterOrder {
+  id: string;
+  kind: OrderKind;
+  detail: string;
+  due_in_days: number | null;
+  /** Set when the visit is signed. Until then the order has filed no work. */
+  task_id: string | null;
+}
+
+export interface VitalFinding {
+  key: string;
+  label: string;
+  display: string;
+  severity: "high" | "medium";
+  detail: string;
+}
+
+export interface Encounter {
+  id: string;
+  patient_id: string;
+  patient_name: string | null;
+  clinician_id: string;
+  appointment_id: string | null;
+  specialty: string;
+  status: EncounterStatus;
+  chief_complaint: string;
+  vitals: Record<string, number>;
+  /** Computed on read, never stored — a flag written at save time would still
+   *  say "normal" after the ranges were corrected. */
+  vital_findings: VitalFinding[];
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+  patient_instructions: string;
+  note_source: "clinician" | "llm" | "template";
+  note_model: string | null;
+  editable: boolean;
+  signable: boolean;
+  started_at: string;
+  signed_at: string | null;
+  signed_by: string | null;
+  amended_at: string | null;
+  amendment_reason: string;
+  clinical_note_id: string | null;
+  orders: EncounterOrder[];
+  template: Record<"subjective" | "objective" | "assessment" | "plan", string>;
+  tasks_created?: string[];
+}
+
+export interface VitalSpecOut {
+  key: string;
+  label: string;
+  unit: string;
+  min: number;
+  max: number;
+  normal_low: number;
+  normal_high: number;
+  decimals: number;
+}
+
+export interface NoteDraft {
+  /** `llm` when the model organised the text; `template` for every degraded
+   *  path, so the UI never presents the clinician's own words as a draft. */
+  source: "llm" | "template";
+  model: string | null;
+  degraded_reason?: string;
+  /** Sections whose vocabulary is largely absent from the source. Read these
+   *  hardest — a local model does not reliably obey "do not add information". */
+  added_content?: string[];
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+}
+
+// --- The results loop (SPEC-024) --------------------------------------------
+
+export type ResultReviewStatus = "received" | "reviewed" | "communicated" | "closed";
+export type ResultSeverity = "critical" | "abnormal" | "normal" | "unclassified";
+export type Disposition = "normal" | "abnormal_expected" | "action_taken" | "needs_patient_contact";
+
+export interface ResultReview {
+  id: string;
+  result_type: "lab" | "imaging";
+  result_id: string;
+  patient_id: string;
+  patient_name: string | null;
+  status: ResultReviewStatus;
+  severity: ResultSeverity;
+  /** One line a clinician can check the severity against, rather than trust. */
+  classification_reason: string;
+  disposition: Disposition | null;
+  note: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  share_id: string | null;
+  task_id: string | null;
+  closed_at: string | null;
+  created_at: string;
+  /** Computed server-side so a button is never offered that would 409. */
+  needs_communication: boolean;
+  closable: boolean;
+  result: {
+    kind: string;
+    missing?: boolean;
+    test_name?: string;
+    value?: number;
+    unit?: string;
+    reference_low?: number | null;
+    reference_high?: number | null;
+    taken_at?: string;
+    modality?: string;
+    body_part?: string;
+    study_date?: string;
+    finding_summary?: string;
+    severity?: string;
+  };
+  created?: boolean;
 }
 
 // --- Automation memory / preferences (SPEC-015) -----------------------------
@@ -618,6 +773,7 @@ export const api = {
   agentsStatus: () => get<AgentsStatus>("/api/agents/status"),
   patients: (sort?: "risk") => get<PatientSummary[]>(`/api/patients${sort ? `?sort=${sort}` : ""}`),
   patient: (id: string) => get<Patient>(`/api/patients/${id}`),
+  patientLabHistory: (id: string) => get<PatientLabHistory>(`/api/patients/${id}/labs`),
   markActedOn: (id: string, acted_on: boolean) =>
     patch<HistoryItem>(`/api/agents/history/${id}`, { acted_on }),
   checkDrugInteractions: (medications: string[]) =>
@@ -780,4 +936,73 @@ export const api = {
     ),
   writeAutomationMemory: (scope: string, scopeId: string, key: string, value: unknown) =>
     put<AutomationMemoryValue>("/api/automation-memory", { scope, scope_id: scopeId, key, value }),
+
+  // --- Encounters ---------------------------------------------------------
+  startEncounter: (body: {
+    patient_id: string;
+    appointment_id?: string | null;
+    specialty?: string;
+    chief_complaint?: string;
+  }) => post<Encounter>("/api/encounters", body),
+  encounters: (params: { patient_id?: string; status?: EncounterStatus; mine?: boolean } = {}) => {
+    const qs = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value === undefined || value === "") continue;
+      qs.set(key, String(value));
+    }
+    const query = qs.toString();
+    return get<{ items: Encounter[] }>(`/api/encounters${query ? `?${query}` : ""}`);
+  },
+  encounter: (id: string) => get<Encounter>(`/api/encounters/${id}`),
+  updateEncounter: (id: string, body: Partial<Encounter>) =>
+    patch<Encounter>(`/api/encounters/${id}`, body),
+  addEncounterOrder: (
+    id: string,
+    body: { kind: OrderKind; detail: string; due_in_days?: number | null },
+  ) => post<Encounter>(`/api/encounters/${id}/orders`, body),
+  removeEncounterOrder: (id: string, orderId: string) =>
+    del(`/api/encounters/${id}/orders/${orderId}`),
+  draftEncounterNote: (id: string, transcript: string, specialty?: string) =>
+    post<NoteDraft>(`/api/encounters/${id}/draft-note`, { transcript, specialty }),
+  signEncounter: (id: string) => post<Encounter>(`/api/encounters/${id}/sign`, {}),
+  amendEncounter: (id: string, reason: string) =>
+    post<Encounter>(`/api/encounters/${id}/amend`, { reason }),
+  vitalsSpec: () =>
+    get<{ vitals: VitalSpecOut[]; specialties: string[] }>("/api/encounters/vitals/spec"),
+
+  // --- The results loop -----------------------------------------------------
+  recordLab: (body: {
+    patient_id: string;
+    test_name: string;
+    value: number;
+    unit?: string;
+    taken_at?: string;
+    reference_low?: number | null;
+    reference_high?: number | null;
+  }) => post<ResultReview>("/api/results/labs", body),
+  recordImaging: (body: {
+    patient_id: string;
+    modality: string;
+    body_part: string;
+    study_date?: string;
+    severity?: "critical" | "review" | "none";
+    finding_summary?: string;
+  }) => post<ResultReview>("/api/results/imaging", body),
+  resultsInbox: (
+    params: { status?: ResultReviewStatus[]; severity?: ResultSeverity; patient_id?: string } = {},
+  ) => {
+    const qs = new URLSearchParams();
+    for (const status of params.status ?? []) qs.append("status", status);
+    if (params.severity) qs.set("severity", params.severity);
+    if (params.patient_id) qs.set("patient_id", params.patient_id);
+    const query = qs.toString();
+    return get<{ items: ResultReview[] }>(`/api/results/inbox${query ? `?${query}` : ""}`);
+  },
+  resultReview: (id: string) => get<ResultReview>(`/api/results/reviews/${id}`),
+  reviewResult: (id: string, body: { disposition: Disposition; note: string }) =>
+    post<ResultReview>(`/api/results/reviews/${id}/review`, body),
+  communicateResult: (id: string, body: { message: string; timeline_event_id: number }) =>
+    post<ResultReview>(`/api/results/reviews/${id}/communicate`, body),
+  closeResult: (id: string) => post<ResultReview>(`/api/results/reviews/${id}/close`, {}),
+  reopenResult: (id: string) => post<ResultReview>(`/api/results/reviews/${id}/reopen`, {}),
 };

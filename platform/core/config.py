@@ -100,6 +100,29 @@ class Settings(BaseSettings):
     # see `VisionChatSplitClient` and the runtime audit's model comparison.
     llm_provider: Literal["gemini", "groq", "ollama", "split"] = "gemini"
 
+    # May patient-derived content reach a provider outside the deployment?
+    #
+    # Off by default, and inert while the provider is local -- nothing leaves,
+    # so there is nothing to gate. It bites exactly when someone points the
+    # stack at a remote model without deciding, separately and explicitly, that
+    # patient data may go there.
+    #
+    # The gate is an enumerated list of call sites, not a payload classifier:
+    # a query reading "56-year-old on warfarin, INR 4.8, is the dose safe"
+    # carries no name and no identifier, and any detector tuned to catch it
+    # also refuses the guideline lookups that are fine to send. See
+    # `docs/08-decisions/ADR-015-phi-egress-enumerated-seams.md` and
+    # SPEC-022 section 6.5 for the list.
+    ai_allow_phi: bool = False
+
+    # How long a signed encounter may be amended (SPEC-023). Matches the task
+    # reopen window in later phases, so a clinician meets one number, not several.
+    encounter_amend_window_days: int = 30
+
+    # How long a closed result may be reopened (SPEC-024). Matches the
+    # encounter amend window, so a clinician meets one number, not two.
+    result_reopen_window_days: int = 30
+
     # Fallback LLM — Groq (OpenAI-compatible API), free tier. Used only for
     # text/tool-calling when Gemini is unavailable (rate-limited or its
     # daily request quota is exhausted — a real constraint observed on
