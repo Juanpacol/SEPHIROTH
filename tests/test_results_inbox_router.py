@@ -73,7 +73,7 @@ class TestIntake:
         assert body["result"]["test_name"] == "potassium"
 
     async def test_recording_it_again_reports_that_nothing_was_created(self, client, headers, patient):
-        taken = "2026-09-06T09:00:00"
+        taken = "2026-09-06T09:00:00+00:00"
         first = await _lab(client, headers, patient, taken_at=taken)
         second = await _lab(client, headers, patient, taken_at=taken)
 
@@ -124,9 +124,9 @@ class TestIntake:
 
 class TestInbox:
     async def test_it_lists_what_is_waiting(self, client, headers, patient):
-        await _lab(client, headers, patient, taken_at="2026-09-06T09:00:00")
+        await _lab(client, headers, patient, taken_at="2026-09-06T09:00:00+00:00")
         await _lab(
-            client, headers, patient, test_name="creatinine", value=2.4, taken_at="2026-09-06T10:00:00"
+            client, headers, patient, test_name="creatinine", value=2.4, taken_at="2026-09-06T10:00:00+00:00"
         )
 
         res = await client.get("/api/results/inbox", headers=headers)
@@ -143,9 +143,9 @@ class TestInbox:
         assert [item["severity"] for item in res.json()["items"]] == ["normal"]
 
     async def test_it_filters_by_severity(self, client, headers, patient):
-        await _lab(client, headers, patient, taken_at="2026-09-06T09:00:00")
+        await _lab(client, headers, patient, taken_at="2026-09-06T09:00:00+00:00")
         await _lab(
-            client, headers, patient, test_name="creatinine", value=2.4, taken_at="2026-09-06T10:00:00"
+            client, headers, patient, test_name="creatinine", value=2.4, taken_at="2026-09-06T10:00:00+00:00"
         )
 
         res = await client.get("/api/results/inbox?severity=critical", headers=headers)

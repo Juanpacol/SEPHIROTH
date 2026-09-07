@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +20,7 @@ from auth.deps import require_clinician
 from core.db import get_session
 from data.schemas import FollowupPlan, Patient, User, Workflow
 
+from ..paging import capped
 from ..workflows.instantiate import cancel_workflow
 from ..workflows.patient_followup import enroll_plan
 
@@ -51,6 +52,9 @@ class FollowupPlanCreate(BaseModel):
 async def list_followup_plans(
     patient_id: Optional[str] = None,
     status_filter: Optional[str] = Query(None, alias="status"),
+    limit: int = Query(200, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    response: Response = None,  # type: ignore[assignment]
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
 ) -> List[Dict[str, Any]]:
@@ -59,7 +63,7 @@ async def list_followup_plans(
         stmt = stmt.where(FollowupPlan.patient_id == patient_id)
     if status_filter is not None:
         stmt = stmt.where(FollowupPlan.status == status_filter)
-    plans = (await session.scalars(stmt)).all()
+    plans = await capped(session, stmt, response, limit=limit, offset=offset)
     return [_plan_out(p) for p in plans]
 
 

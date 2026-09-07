@@ -21,7 +21,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Literal, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
@@ -43,6 +43,8 @@ from data.schemas import (
 from sephiroth.workflows import events as workflow_events
 
 from .. import scheduling as slots_module  # platform/api/scheduling.py (pure expand_slots)
+from ..paging import capped
+from ..timeparse import require_aware
 from ..workflows.instantiate import cancel_workflow
 
 router = APIRouter()
@@ -332,13 +334,20 @@ async def create_exception(
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
-    if body.start_at >= body.end_at:
+    # Converted before the comparison, which is what fixes two defects at once:
+    # the stored hour was previously whatever the caller's clock said (so a
+    # surgeon blocking 09:00 in Bogotá blocked 04:00 their time, and
+    # `expand_slots` offered the theatre hours as free), and comparing an aware
+    # `start_at` against a naive `end_at` raised TypeError as a 500.
+    start_at = require_aware(body.start_at, "start_at")
+    end_at = require_aware(body.end_at, "end_at")
+    if start_at >= end_at:
         raise HTTPException(status_code=422, detail="start_at must be before end_at")
     exc = AvailabilityException(
         id=str(uuid4()),
         clinician_id=clinician.id,
-        start_at=body.start_at,
-        end_at=body.end_at,
+        start_at=start_at,
+        end_at=end_at,
         kind=body.kind,
         reason=body.reason,
     )
@@ -461,6 +470,9 @@ async def list_appointments(
     date_from: Optional[datetime] = Query(None, alias="from"),
     date_to: Optional[datetime] = Query(None, alias="to"),
     status_filter: Optional[str] = Query(None, alias="status"),
+    limit: int = Query(500, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    response: Response = None,  # type: ignore[assignment]
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> List[Dict[str, Any]]:
@@ -475,7 +487,9 @@ async def list_appointments(
         stmt = stmt.where(Appointment.start_at < date_to)
     if status_filter is not None:
         stmt = stmt.where(Appointment.status == status_filter)
-    appointments = (await session.scalars(stmt.order_by(Appointment.start_at))).all()
+    appointments = await capped(
+        session, stmt.order_by(Appointment.start_at), response, limit=limit, offset=offset
+    )
     return [_appointment_out(a, for_patient=user.role == "patient") for a in appointments]
 
 
@@ -503,9 +517,7 @@ async def book_appointment(
     # The API boundary requires an aware datetime — never assume a naive
     # value means UTC — and converts to UTC-naive for storage, matching
     # every other datetime column in this schema.
-    if body.start_at.tzinfo is None:
-        raise HTTPException(status_code=422, detail="start_at must be timezone-aware")
-    start_at = body.start_at.astimezone(timezone.utc).replace(tzinfo=None)
+    start_at = require_aware(body.start_at, "start_at")
     now = datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
 
     if start_at < now:
@@ -603,9 +615,7 @@ async def update_appointment(
     patient's only appointment-mutating action is cancel (`DELETE`)."""
     appt = await _get_own_appointment(session, clinician, appointment_id)
     if body.start_at is not None:
-        if body.start_at.tzinfo is None:
-            raise HTTPException(status_code=422, detail="start_at must be timezone-aware")
-        new_start = body.start_at.astimezone(timezone.utc).replace(tzinfo=None)
+        new_start = require_aware(body.start_at, "start_at")
         duration = appt.end_at - appt.start_at
         new_end = new_start + duration
         if appt.status == "booked":
@@ -819,9 +829,7 @@ async def create_series(
     if patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")
 
-    if body.start_at.tzinfo is None:
-        raise HTTPException(status_code=422, detail="start_at must be timezone-aware")
-    first_start = body.start_at.astimezone(timezone.utc).replace(tzinfo=None)
+    first_start = require_aware(body.start_at, "start_at")
     now = datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
     if first_start < now:
         raise HTTPException(status_code=422, detail="Cannot book an appointment in the past")
@@ -970,10 +978,8 @@ async def join_waitlist(
 ) -> Dict[str, Any]:
     if patient.role != "patient":
         raise HTTPException(status_code=403, detail="Only a patient may join a waitlist")
-    if body.window_start.tzinfo is None or body.window_end.tzinfo is None:
-        raise HTTPException(status_code=422, detail="window_start/window_end must be timezone-aware")
-    window_start = body.window_start.astimezone(timezone.utc).replace(tzinfo=None)
-    window_end = body.window_end.astimezone(timezone.utc).replace(tzinfo=None)
+    window_start = require_aware(body.window_start, "window_start")
+    window_end = require_aware(body.window_end, "window_end")
     if window_start >= window_end:
         raise HTTPException(status_code=422, detail="window_start must be before window_end")
 

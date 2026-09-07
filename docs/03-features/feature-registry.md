@@ -213,6 +213,17 @@ its components and its interactive demos are unchanged.
 | F-108 | The page describes the product that exists, privacy first | ✅ | `app/(marketing)/page.tsx`, `lib/i18n/dictionaries.*.ts` | `test_landing_claims.py` | — | SPEC-026 |
 | F-109 | Every claim is tied to code, and forbidden claims fail the build | ⚠️ | `tests/test_landing_claims.py` | `test_landing_claims.py` | — | SPEC-026 §11 risk 1 (catches false claims, not every kind of drift) |
 
+## Hardening (Phase 25)
+
+Specified in [SPEC-027](../specs/SPEC-027-hardening.md). An audit, and the
+three findings worth fixing.
+
+| ID | Feature | Status | Component | Test | Experiment | Docs |
+|---|---|---|---|---|---|---|
+| F-110 | One datetime contract: an offset, or a 422. Fixes a block stored at the wrong hour | ✅ | `platform/api/timeparse.py` | `test_datetime_contract.py` | — | SPEC-027 |
+| F-111 | The permission boundary (143 routes × 3 credentials) is a measured, enforced fact | ✅ | `tests/test_permission_matrix.py` | `test_permission_matrix.py` | — | SPEC-027 |
+| F-112 | Unbounded list endpoints capped, with the true total in a header | ✅ | `platform/api/paging.py` | `test_bounded_reads.py` | — | SPEC-027 |
+
 ## Removed
 
 | ID | Feature | Status | Note |

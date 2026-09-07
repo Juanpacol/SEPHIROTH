@@ -134,11 +134,18 @@ async def test_another_clinicians_rule_is_404_not_403(client):
 
 
 async def test_create_and_delete_exception(client):
+    """The offsets are new (SPEC-027). This test used to send bare local times
+    and assert a 201, which is how the endpoint's missing timezone handling
+    stayed invisible: it was storing whatever clock string arrived."""
     async with client:
         headers = await _clinician_headers(client)
         res = await client.post(
             "/api/scheduling/exceptions",
-            json={"start_at": "2026-02-01T09:00:00", "end_at": "2026-02-01T10:00:00", "kind": "block"},
+            json={
+                "start_at": "2026-02-01T09:00:00+00:00",
+                "end_at": "2026-02-01T10:00:00+00:00",
+                "kind": "block",
+            },
             headers=headers,
         )
         assert res.status_code == 201

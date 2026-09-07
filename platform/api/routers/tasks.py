@@ -30,6 +30,7 @@ from ..audit import add_phi_access
 from ..services import task_service as svc
 from ..services.task_adapters import can_complete, complete_task
 from ..services.task_adapters import reopen_task as _reopen_with_source
+from ..timeparse import require_aware
 
 router = APIRouter()
 
@@ -286,13 +287,12 @@ async def snooze_task(
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
-    # Every datetime column in this schema is naive UTC, so an aware input is
-    # *converted* rather than stripped: dropping the offset on
-    # `2026-09-06T09:00-05:00` would store 09:00 UTC and wake the task five
-    # hours early -- and a snooze that ends early is the one thing a snooze
-    # must not do. A naive input is trusted as UTC, which is what the API
-    # documents and what the frontend sends.
-    until = body.until.astimezone(timezone.utc).replace(tzinfo=None) if body.until.tzinfo else body.until
+    # A snooze that ends early is the one thing a snooze must not do, and a
+    # naive value read as the server's clock ends five hours early on the
+    # on-premise deployment. It used to be trusted as UTC here; it is now
+    # refused, which is the same contract every other datetime field keeps
+    # (SPEC-027 B-1).
+    until = require_aware(body.until, "until")
     return await _apply(session, await _get_task(session, task_id), "snooze", clinician, snooze_until=until)
 
 

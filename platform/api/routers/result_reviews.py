@@ -23,6 +23,7 @@ from data.schemas import Patient, ResultReview, TimelineEvent, User
 
 from ..audit import add_phi_access
 from ..services import result_service as svc
+from ..timeparse import optional_aware
 
 router = APIRouter(dependencies=[Depends(require_clinician)])
 
@@ -125,7 +126,10 @@ async def record_lab(
         test_name=body.test_name,
         value=body.value,
         unit=body.unit,
-        taken_at=body.taken_at,
+        # A lab draw time without an offset is ambiguous, and this one is the
+        # idempotency key: two feeds disagreeing by five hours about the same
+        # draw would produce two results and two inbox rows (SPEC-027 B-1).
+        taken_at=optional_aware(body.taken_at, "taken_at"),
         reference_low=body.reference_low,
         reference_high=body.reference_high,
         now=_now(),
