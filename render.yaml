@@ -21,6 +21,12 @@ services:
         value: "false" # this DB already has real clinicians; open self-registration is not a dev-only default anymore
       - key: JWT_SECRET
         sync: false # set manually in the Render dashboard — never committed
+      - key: PHI_ENCRYPTION_KEY
+        sync: false # set manually in the Render dashboard — never committed. Generate with:
+        # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+        # Settings._check_phi_encryption_key fails fast at boot in production if this is
+        # unset/still the dev default (core/config.py) — was never declared here, so Render
+        # never prompted for it and the service crash-looped on the built-in dev key.
       - key: DATABASE_URL
         sync: false # Supabase session-pooler connection string — never committed
       - key: GEMINI_API_KEY
