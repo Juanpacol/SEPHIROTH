@@ -33,7 +33,7 @@ PHI_SEAMS = (
     # rather than going through `vision_server`, which is precisely why the
     # enforcement test exists -- this seam was missing from the first draft of
     # this list and the test found it.
-    "api.routers.medical",
+    "api.intelligence.routers.medical",
 )
 
 #: Modules that handle patient content but are only reachable *through* a
@@ -45,9 +45,9 @@ PHI_DOWNSTREAM = {
     "sephiroth.verification.combined": "sephiroth.runtime.executor",
     "sephiroth.verification.verify": "sephiroth.runtime.executor",
     "sephiroth.runtime.agent": "sephiroth.runtime.executor",
-    "api.routers.patients": "intelligence.nlp.timeline_extractor",
-    "api.routers.agents": "sephiroth.runtime.executor",
-    "api.routers.approvals": "intelligence.mcp.patient_comms_server",
+    "api.clinical.routers.patients": "intelligence.nlp.timeline_extractor",
+    "api.intelligence.routers.agents": "sephiroth.runtime.executor",
+    "api.operations.routers.approvals": "intelligence.mcp.patient_comms_server",
 }
 
 #: Modules that reach a model with no patient content, and why. Kept next to

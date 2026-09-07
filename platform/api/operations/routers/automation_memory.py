@@ -12,11 +12,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.workflows.memory import ALLOWED_KEYS, InvalidMemoryKey, get_memory, set_memory
 from auth.deps import require_clinician
 from core.db import get_session
 from data.schemas import User
-
-from ..workflows.memory import ALLOWED_KEYS, InvalidMemoryKey, get_memory, set_memory
 
 router = APIRouter()
 

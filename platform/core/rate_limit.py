@@ -1,5 +1,5 @@
 """Shared slowapi `Limiter`, imported by `api.main` (global wiring) and any
-router applying a per-route limit (`auth.router`, `api.routers.agents`) — one
+router applying a per-route limit (`auth.router`, `api.intelligence.routers.agents`) — one
 instance so every limit shares the same in-memory bucket store."""
 
 from slowapi import Limiter

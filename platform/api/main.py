@@ -18,28 +18,31 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from api.routers import (
-    agents,
+# Grouped by domain (SPEC-028): clinical/ (patient-facing clinical work),
+# operations/ (the inbox, scheduling, automation), intelligence/ (the
+# multi-agent runtime and its supporting lookups), security/ (audit).
+from api.clinical.routers import (
     alerts,
-    approvals,
-    audit,
-    automation_memory,
-    badges,
     dashboard,
     encounters,
-    followups,
-    internal,
-    medical,
-    notifications,
     patients,
     portal,
-    push,
-    rag,
     result_reviews,
     results,
+)
+from api.intelligence.routers import agents, medical, rag
+from api.operations.routers import (
+    approvals,
+    automation_memory,
+    badges,
+    followups,
+    internal,
+    notifications,
+    push,
     scheduling,
     tasks,
 )
+from api.security.routers import audit
 from api.workflows.subscriptions import register_subscriptions
 from auth import router as auth_router_module
 from auth.deps import require_clinician

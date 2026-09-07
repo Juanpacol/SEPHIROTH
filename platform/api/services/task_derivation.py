@@ -81,7 +81,7 @@ async def _patient_names(session: AsyncSession) -> Dict[str, str]:
 async def _deteriorating(session: AsyncSession, names: Dict[str, str]) -> List[Dict[str, Any]]:
     # Imported here, not at module scope: dashboard.py imports this module's
     # siblings, and a top-level import would close the cycle.
-    from ..routers.dashboard import _evolution_deteriorating
+    from api.clinical.routers.dashboard import _evolution_deteriorating
 
     entries, _ = await _evolution_deteriorating(session)
     out = []

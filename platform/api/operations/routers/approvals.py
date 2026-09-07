@@ -29,14 +29,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.workflows.channels import get_channel
 from auth.deps import require_clinician
 from core.db import SYSTEM_WORKFLOW_USER_ID, get_session
 from data.schemas import Patient, PendingAction, User
 from sephiroth.models import LLMUnavailableError
 from sephiroth.models.factory import get_llm_client
 from sephiroth.safety import check_input
-
-from ..workflows.channels import get_channel
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

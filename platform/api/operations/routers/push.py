@@ -20,12 +20,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.workflows.push import push_enabled
 from auth.deps import get_current_user
 from core.config import settings
 from core.db import get_session
 from data.schemas import PushDelivery, PushSubscription, User
-
-from ..workflows.push import push_enabled
 
 router = APIRouter()
 

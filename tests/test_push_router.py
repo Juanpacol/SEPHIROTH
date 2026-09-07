@@ -16,7 +16,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 
 import api.workflows.push as push_module
-from api.routers import push as push_router_module
+from api.operations.routers import push as push_router_module
 from auth import router as auth_router_module
 from core.db import get_session
 from data.schemas import PushDelivery, PushSubscription

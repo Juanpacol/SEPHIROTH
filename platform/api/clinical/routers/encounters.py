@@ -19,16 +19,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.audit import add_phi_access
+from api.services import encounter_service as svc
+from api.services.encounter_drafting import draft_encounter_note
 from auth.deps import require_clinician
 from core.config import settings
 from core.db import get_session
 from data.schemas import Appointment, Encounter, EncounterOrder, Patient, User
 from sephiroth.clinical.templates import SPECIALTIES, encounter_template
 from sephiroth.clinical.vitals import VITAL_SPECS, VitalError, vital_findings
-
-from ..audit import add_phi_access
-from ..services import encounter_service as svc
-from ..services.encounter_drafting import draft_encounter_note
 
 router = APIRouter(dependencies=[Depends(require_clinician)])
 

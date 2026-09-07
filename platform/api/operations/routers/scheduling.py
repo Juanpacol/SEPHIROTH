@@ -27,6 +27,10 @@ from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api import scheduling as slots_module  # platform/api/scheduling.py (pure expand_slots)
+from api.paging import capped
+from api.timeparse import require_aware
+from api.workflows.instantiate import cancel_workflow
 from auth.deps import get_current_user, require_clinician, require_patient
 from core.db import get_session
 from data.schemas import (
@@ -41,11 +45,6 @@ from data.schemas import (
     Workflow,
 )
 from sephiroth.workflows import events as workflow_events
-
-from .. import scheduling as slots_module  # platform/api/scheduling.py (pure expand_slots)
-from ..paging import capped
-from ..timeparse import require_aware
-from ..workflows.instantiate import cancel_workflow
 
 router = APIRouter()
 

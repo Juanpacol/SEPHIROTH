@@ -14,9 +14,9 @@ import pytest
 from fastapi import Depends, FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from api.routers import dashboard as dashboard_router_module
-from api.routers import patients as patients_router_module
-from api.routers import rag as rag_router_module
+from api.clinical.routers import dashboard as dashboard_router_module
+from api.clinical.routers import patients as patients_router_module
+from api.intelligence.routers import rag as rag_router_module
 from auth import router as auth_router_module
 from auth.deps import get_current_user
 from core.db import get_session
