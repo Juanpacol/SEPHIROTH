@@ -10,6 +10,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   FileText,
+  FlaskConical,
   LayoutDashboard,
   LogOut,
   ScanEye,
@@ -33,6 +34,7 @@ const CLINICIAN_NAV = [
     items: [
       { href: "/patients", id: "patients", icon: Users },
       { href: "/schedule", id: "schedule", icon: CalendarDays },
+      { href: "/results", id: "results", icon: FlaskConical },
       { href: "/approvals", id: "approvals", icon: ClipboardCheck },
       { href: "/alerts", id: "alerts", icon: Bell },
     ],
