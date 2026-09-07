@@ -70,6 +70,27 @@ def _settings():
     return settings
 
 
+def _active_vision_model_name(settings: Any) -> str:
+    """Name of the vision model actually in use, matching `factory.get_llm_client()`'s
+    provider selection — `llm_provider="split"`/`"ollama"` route vision through
+    Ollama, not Gemini, and the reported model name must say so."""
+    provider = getattr(settings, "llm_provider", "gemini")
+    if provider in ("ollama", "split"):
+        return getattr(settings, "ollama_vision_model", None) or getattr(settings, "ollama_model", None)
+    if provider == "groq":
+        return settings.groq_vision_model or settings.groq_model
+    return settings.gemini_vision_model or settings.gemini_model
+
+
+def _provider_hint(settings: Any) -> str:
+    provider = getattr(settings, "llm_provider", "gemini")
+    if provider in ("ollama", "split"):
+        return f"Check that `ollama serve` is running and {_active_vision_model_name(settings)!r} is pulled."
+    if provider == "groq":
+        return "Check GROQ_API_KEY and quota."
+    return "Check GEMINI_API_KEY and quota."
+
+
 @mcp.tool
 async def describe_medical_image(image_path: str, clinical_focus: str = "") -> Dict[str, Any]:
     """Generate an AI clinical description of a medical image using a cloud
@@ -113,7 +134,7 @@ async def describe_medical_image(image_path: str, clinical_focus: str = "") -> D
     if clinical_focus:
         prompt += f"\nFocus especially on: {clinical_focus}."
 
-    model_name = settings.gemini_vision_model or settings.gemini_model
+    model_name = _active_vision_model_name(settings)
     try:
         client = get_llm_client()
         description = await client.describe_image(
@@ -125,14 +146,14 @@ async def describe_medical_image(image_path: str, clinical_focus: str = "") -> D
     except LLMUnavailableError as exc:
         return {
             "status": "unavailable",
-            "message": f"Vision model '{model_name}' failed: {exc}. Check GEMINI_API_KEY and quota.",
+            "message": f"Vision model '{model_name}' failed: {exc}. {_provider_hint(settings)}",
             "description": None,
             "requires_professional_review": True,
         }
     except Exception as exc:
         return {
             "status": "unavailable",
-            "message": f"Vision model '{model_name}' failed: {exc}. Check GEMINI_API_KEY and quota.",
+            "message": f"Vision model '{model_name}' failed: {exc}. {_provider_hint(settings)}",
             "description": None,
             "requires_professional_review": True,
         }

@@ -174,7 +174,13 @@ async def health_check():
     """Liveness only — no I/O, never flaps. This is what Render's
     `healthCheckPath` polls; pointing it at a DB-touching endpoint would let
     a transient Supabase pooler blip trigger an unnecessary restart."""
-    return {"status": "healthy", "version": settings.api_version, "model": settings.gemini_model}
+    model = {
+        "gemini": settings.gemini_model,
+        "groq": settings.groq_model,
+        "ollama": settings.ollama_model,
+        "split": settings.ollama_model,
+    }[settings.llm_provider]
+    return {"status": "healthy", "version": settings.api_version, "model": model}
 
 
 @app.get("/health/ready")

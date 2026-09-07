@@ -32,6 +32,8 @@ from intelligence.mcp.vision_server import (
     DESCRIPTION_PROMPT,
     MAX_IMAGE_BYTES,
     READABLE_FORMATS,
+    _active_vision_model_name,
+    _provider_hint,
     detect_modality,
 )
 from sephiroth.models import LLMUnavailableError, get_llm_client
@@ -161,7 +163,7 @@ async def describe_image_stream(
         prompt = DESCRIPTION_PROMPT
         if request.clinical_focus:
             prompt += f"\nFocus especially on: {request.clinical_focus}."
-        model_name = settings.gemini_vision_model or settings.gemini_model
+        model_name = _active_vision_model_name(settings)
 
         full_text = []
         try:
@@ -175,7 +177,7 @@ async def describe_image_stream(
                 full_text.append(chunk)
                 yield f"data: {json.dumps({'event': 'chunk', 'text': chunk})}\n\n"
         except LLMUnavailableError as exc:
-            detail = f"Vision model '{model_name}' failed: {exc}. Check GEMINI_API_KEY and quota."
+            detail = f"Vision model '{model_name}' failed: {exc}. {_provider_hint(settings)}"
             yield f"data: {json.dumps({'event': 'error', 'detail': detail})}\n\n"
             return
         except Exception as exc:

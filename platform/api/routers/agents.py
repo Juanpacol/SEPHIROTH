@@ -57,13 +57,20 @@ class ConsultResponse(BaseModel):
 
 async def _ensure_llm() -> None:
     if not await get_llm_client().health():
-        raise HTTPException(
-            status_code=503,
-            detail=(
+        provider = settings.llm_provider
+        if provider in ("ollama", "split"):
+            detail = (
+                f"Ollama is not reachable or model '{settings.ollama_model}' is unavailable. "
+                "Check that `ollama serve` is running and the model is pulled."
+            )
+        elif provider == "groq":
+            detail = f"Groq is not reachable or model '{settings.groq_model}' is unavailable. Check GROQ_API_KEY and quota."
+        else:
+            detail = (
                 f"Gemini is not reachable or model '{settings.gemini_model}' is unavailable. "
                 "Check GEMINI_API_KEY and quota."
-            ),
-        )
+            )
+        raise HTTPException(status_code=503, detail=detail)
 
 
 async def _persist(
@@ -343,6 +350,13 @@ async def agents_status(
     usage["Coordinator"] = 0 if settings.enable_single_agent_mode else consultation_count
 
     llm_ok = await get_llm_client().health()
+    provider = settings.llm_provider
+    model = {
+        "gemini": settings.gemini_model,
+        "groq": settings.groq_model,
+        "ollama": settings.ollama_model,
+        "split": settings.ollama_model,
+    }[provider]
     return {
         "agents": [
             {"name": name, "status": "ready" if llm_ok else "offline", "consultations": usage[name]}
@@ -350,9 +364,9 @@ async def agents_status(
         ],
         "system": {
             "llm": "online" if llm_ok else "offline",
-            "model": settings.gemini_model,
-            "provider": "gemini",
-            "local_only": False,
+            "model": model,
+            "provider": provider,
+            "local_only": provider in ("ollama", "split"),
         },
     }
 
