@@ -306,8 +306,10 @@ async def _insert_into_db(parsed: List[ParsedPatient]) -> None:
 
     from sqlalchemy import func, select  # noqa: PLC0415
 
+    from api.services.result_service import _create_review  # noqa: PLC0415
     from core.db import SessionLocal  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
     from data.schemas import LabResult, MedicationOrder, Patient, TimelineEvent  # noqa: PLC0415
+    from sephiroth.clinical.results import Classification  # noqa: PLC0415
     from sephiroth.safety.risk import bp_abnormality, lab_value_abnormality  # noqa: PLC0415
 
     async with SessionLocal() as session:
@@ -343,6 +345,7 @@ async def _insert_into_db(parsed: List[ParsedPatient]) -> None:
                 select(func.count()).select_from(LabResult).where(LabResult.patient_id == p.id)
             )
             if lab_count == 0:
+                imported_labs: List[LabResult] = []
                 systolic_by_date = {e["taken_at"]: e for e in p.lab_series if e["test_name"] == "bp_systolic"}
                 diastolic_by_date = {
                     e["taken_at"]: e for e in p.lab_series if e["test_name"] == "bp_diastolic"
@@ -358,16 +361,38 @@ async def _insert_into_db(parsed: List[ParsedPatient]) -> None:
                             is_abnormal = is_critical = False
                     else:
                         is_abnormal, is_critical = lab_value_abnormality(entry["test_name"], entry["value"])
-                    session.add(
-                        LabResult(
-                            patient_id=p.id,
-                            test_name=entry["test_name"],
-                            value=entry["value"],
-                            unit=entry["unit"],
-                            is_abnormal=is_abnormal,
-                            is_critical=is_critical,
-                            taken_at=datetime_cls.fromisoformat(entry["taken_at"]),
-                        )
+                    lab = LabResult(
+                        patient_id=p.id,
+                        test_name=entry["test_name"],
+                        value=entry["value"],
+                        unit=entry["unit"],
+                        is_abnormal=is_abnormal,
+                        is_critical=is_critical,
+                        taken_at=datetime_cls.fromisoformat(entry["taken_at"]),
+                    )
+                    session.add(lab)
+                    imported_labs.append(lab)
+
+                # `LabResult.id` (autoincrement) doesn't exist until flushed,
+                # and `ResultReview.result_id` needs it -- one flush for the
+                # whole batch rather than one per row.
+                await session.flush()
+                for lab in imported_labs:
+                    # Severity comes from the booleans this loop already
+                    # computed (including the BP-pair check `classify_lab`
+                    # can't do alone), not from re-classifying -- a backfilled
+                    # review must agree with the row it's about.
+                    severity = "critical" if lab.is_critical else "abnormal" if lab.is_abnormal else "normal"
+                    await _create_review(
+                        session,
+                        result_type="lab",
+                        result_id=str(lab.id),
+                        patient_id=lab.patient_id,
+                        classification=Classification(
+                            severity=severity,
+                            reason=f"{lab.test_name} {lab.value} {lab.unit}".strip(),
+                        ),
+                        now=lab.taken_at,
                     )
 
             med_count = await session.scalar(

@@ -18,7 +18,7 @@ from api.workflows.channels import get_channel
 from auth.deps import get_current_user
 from auth.security import hash_password
 from core.db import SessionLocal, get_session
-from data.schemas import ClinicalNote, Patient, PatientInvite, TimelineEvent, User
+from data.schemas import ClinicalNote, LabResult, Patient, PatientInvite, TimelineEvent, User
 from sephiroth.models import get_llm_client
 from sephiroth.safety.risk import RISK_ORDER, assess_patient_risk, assess_risk_level
 
@@ -141,6 +141,56 @@ async def get_patient(
     patient = await _get_patient(session, patient_id)
     await log_phi_access(session, user, patient_id, "/api/patients/{patient_id}", "GET")
     return _full(patient)
+
+
+#: Entries per test, newest first. `Patient.lab_results` already shows the
+#: current value; this is for the trend behind it, not an unbounded chart —
+#: a handful of points is what a clinician actually reads at a glance.
+_LAB_HISTORY_LIMIT_PER_TEST = 20
+
+
+@router.get("/{patient_id}/labs", summary="Lab result history, grouped by test, for the trend behind the current value")
+async def get_lab_history(
+    patient_id: str,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    await _get_patient(session, patient_id)  # 404s on a missing patient before touching lab rows
+    await log_phi_access(session, user, patient_id, "/api/patients/{patient_id}/labs", "GET")
+
+    rows = (
+        await session.scalars(
+            select(LabResult).where(LabResult.patient_id == patient_id).order_by(LabResult.taken_at.desc())
+        )
+    ).all()
+
+    by_test: Dict[str, Dict[str, Any]] = {}
+    for r in rows:
+        group = by_test.setdefault(
+            r.test_name, {"test_name": r.test_name, "unit": r.unit, "entries": []}
+        )
+        if len(group["entries"]) >= _LAB_HISTORY_LIMIT_PER_TEST:
+            continue
+        group["entries"].append(
+            {
+                "value": r.value,
+                "taken_at": r.taken_at.isoformat(),
+                "is_abnormal": r.is_abnormal,
+                "is_critical": r.is_critical,
+            }
+        )
+
+    # Tests with a recent abnormal/critical reading first -- the same
+    # "worst thing first" convention as the dashboard action items.
+    def _rank(group: Dict[str, Any]) -> tuple:
+        latest = group["entries"][0] if group["entries"] else {}
+        return (
+            0 if latest.get("is_critical") else 1 if latest.get("is_abnormal") else 2,
+            group["test_name"],
+        )
+
+    tests = sorted(by_test.values(), key=_rank)
+    return {"tests": tests}
 
 
 class NoteCreate(BaseModel):

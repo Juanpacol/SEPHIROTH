@@ -20,7 +20,7 @@ fetching more samples or importing more patients.
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import List
 
@@ -41,8 +41,10 @@ def _list_samples(samples_dir: Path) -> List[Path]:
 async def _link_samples_to_patients(samples_dir: Path) -> int:
     from sqlalchemy import select  # noqa: PLC0415
 
+    from api.services.result_service import _create_review  # noqa: PLC0415
     from core.db import SessionLocal  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
     from data.schemas import ImagingStudy, Patient, TimelineEvent  # noqa: PLC0415
+    from sephiroth.clinical.results import classify_imaging  # noqa: PLC0415
 
     samples = _list_samples(samples_dir)
     if not samples:
@@ -92,6 +94,17 @@ async def _link_samples_to_patients(samples_dir: Path) -> int:
                     detail=f"Linked sample file: {sample.name} — see real_data/imaging/README.md",
                     ai_generated=False,
                 )
+            )
+            # `ImagingStudy.id` is deterministic (uuid5, set above) rather
+            # than autoincrement, so it's already known -- no flush needed
+            # before `ResultReview.result_id` can reference it.
+            await _create_review(
+                session,
+                result_type="imaging",
+                result_id=study_id,
+                patient_id=patient.id,
+                classification=classify_imaging("none", ""),
+                now=datetime.combine(study_date, datetime.min.time()),
             )
             created += 1
 
