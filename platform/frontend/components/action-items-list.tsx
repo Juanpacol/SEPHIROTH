@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
+  ClipboardList,
   FileCheck2,
   FlaskConical,
   HelpCircle,
@@ -23,6 +24,7 @@ const CATEGORY_ICON: Record<DashboardActionItem["category"], LucideIcon> = {
   lab: FlaskConical,
   interaction: Pill,
   imaging: ScanLine,
+  order: ClipboardList,
   followup: CalendarClock,
   approval: FileCheck2,
   decision: HelpCircle,
@@ -64,6 +66,10 @@ export function itemText(item: DashboardActionItem, t: (key: string) => string):
             ? t("dashboard.actionItems.imagingCritical")
             : t("dashboard.actionItems.imagingReview")
         );
+    case "order":
+      return t("dashboard.actionItems.order")
+        .replace("{kind}", t(`encounter.orderKind.${item.order_kind}`))
+        .replace("{detail}", item.detail ?? "");
     case "followup": {
       const check = t(`dashboard.actionItems.followupCheck.${item.check_key}`);
       return t("dashboard.actionItems.followup")

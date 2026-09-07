@@ -25,12 +25,15 @@ from data.schemas import (
     AIEvaluation,
     Alert,
     Consultation,
+    Encounter,
+    EncounterOrder,
     ImagingStudy,
     LabResult,
     MedicationOrder,
     Notification,
     Patient,
     PendingAction,
+    ResultReview,
     User,
     Workflow,
     WorkflowEvent,
@@ -583,12 +586,32 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
             }
         )
 
-    # 3) Critical lab results (the single most recent per patient/test).
+    # A result closed via the /results review loop (SPEC-024) has already
+    # been acted on -- surfacing it here forever, unchanged by that review,
+    # would show a clinician work someone already finished. `(result_type,
+    # result_id)` is `ResultReview`'s own key, and only closed reviews are
+    # excluded: "received"/"reviewed"/"communicated" are still open work.
+    closed_reviews = set(
+        (
+            await session.execute(
+                select(ResultReview.result_type, ResultReview.result_id).where(
+                    ResultReview.status == "closed"
+                )
+            )
+        ).all()
+    )
+
+    # 3) Critical lab results (the single most recent per patient/test),
+    # excluding any already closed in the results review loop.
     lab_results = (await session.scalars(select(LabResult).order_by(LabResult.taken_at))).all()
     latest_per_test: Dict[tuple, LabResult] = {}
     for r in lab_results:
         latest_per_test[(r.patient_id, r.test_name)] = r
-    critical_labs = [r for r in latest_per_test.values() if r.is_critical]
+    critical_labs = [
+        r
+        for r in latest_per_test.values()
+        if r.is_critical and ("lab", str(r.id)) not in closed_reviews
+    ]
     critical_labs.sort(key=lambda r: r.taken_at, reverse=True)
     for r in critical_labs[:_ACTION_ITEM_LIMIT_PER_CATEGORY]:
         items.append(
@@ -627,15 +650,19 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
             )
             interaction_items += 1
 
-    # 5) Imaging studies flagged critical or needing review.
+    # 5) Imaging studies flagged critical or needing review, excluding any
+    # already closed in the results review loop (same reasoning as labs above).
     studies = (
         await session.scalars(
             select(ImagingStudy)
             .where(ImagingStudy.severity.in_(("critical", "review")))
             .order_by(ImagingStudy.severity.desc(), ImagingStudy.study_date.desc())
-            .limit(_ACTION_ITEM_LIMIT_PER_CATEGORY)
+            .limit(_ACTION_ITEM_LIMIT_PER_CATEGORY * 2)
         )
     ).all()
+    studies = [s for s in studies if ("imaging", s.id) not in closed_reviews][
+        :_ACTION_ITEM_LIMIT_PER_CATEGORY
+    ]
     for s in studies:
         items.append(
             {
@@ -645,6 +672,32 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                 "patient_name": _name(s.patient_id),
                 "modality": s.modality,
                 "body_part": s.body_part,
+            }
+        )
+
+    # 5b) Encounter orders (labs, imaging, referrals...) filed at a signed
+    # visit and never marked done. `task_id` is null for every order today
+    # (the unified task inbox that would set it is a later restoration
+    # phase — see `encounter_service._file_orders`), so "unfiled" here just
+    # means "still open" rather than a stale signal.
+    open_orders = (
+        await session.execute(
+            select(EncounterOrder, Encounter)
+            .join(Encounter, EncounterOrder.encounter_id == Encounter.id)
+            .where(EncounterOrder.task_id.is_(None))
+            .order_by(EncounterOrder.created_at)
+            .limit(_ACTION_ITEM_LIMIT_PER_CATEGORY)
+        )
+    ).all()
+    for order, encounter in open_orders:
+        items.append(
+            {
+                "category": "order",
+                "severity": "medium",
+                "patient_id": encounter.patient_id,
+                "patient_name": _name(encounter.patient_id),
+                "order_kind": order.kind,
+                "detail": order.detail,
             }
         )
 
