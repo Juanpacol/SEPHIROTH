@@ -304,6 +304,19 @@ async def test_build_and_send_digest_uses_ok_color_when_nothing_needs_attention(
 
 
 async def test_maybe_send_daily_digest_is_idempotent_per_day(db_session, monkeypatch):
+    """`maybe_send_daily_digest` stamps the *clinic's* calendar day
+    (`quiet_hours.clinic_today()`, America/Bogota by default — see
+    `platform/api/workflows/quiet_hours.py`'s own docstring on why a daily
+    digest is a wall-clock event for whoever reads it), not the host machine's.
+
+    This test used to assert against `date.today()` — the host clock, UTC in
+    CI — which only agrees with the clinic's day outside a five-hour window
+    every single day (00:00-05:00 UTC, while Bogota is still on the previous
+    date). It is not a rare edge case: any CI run landing in that window fails
+    deterministically, which is exactly what happened building SPEC-027/028.
+    """
+    from api.workflows.quiet_hours import clinic_today
+
     calls = {"n": 0}
 
     async def _spy_digest(session):
@@ -320,4 +333,4 @@ async def test_maybe_send_daily_digest_is_idempotent_per_day(db_session, monkeyp
     assert calls["n"] == 1
 
     stored = await get_memory(db_session, "clinic", "default", "last_digest_sent_date")
-    assert stored == date.today().isoformat()
+    assert stored == clinic_today().isoformat()
