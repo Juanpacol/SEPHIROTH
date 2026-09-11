@@ -470,8 +470,12 @@ async def list_appointments(
     else:
         stmt = stmt.where(Appointment.patient_id == user.patient_id)
     if date_from is not None:
+        if date_from.tzinfo is not None:
+            date_from = date_from.astimezone(timezone.utc).replace(tzinfo=None)
         stmt = stmt.where(Appointment.start_at >= date_from)
     if date_to is not None:
+        if date_to.tzinfo is not None:
+            date_to = date_to.astimezone(timezone.utc).replace(tzinfo=None)
         stmt = stmt.where(Appointment.start_at < date_to)
     if status_filter is not None:
         stmt = stmt.where(Appointment.status == status_filter)
