@@ -67,7 +67,7 @@ export default function NoteDraftPanel({ encounterId, specialty, disabled, onApp
         disabled={disabled}
         onChange={(event) => setTranscript(event.target.value)}
         placeholder={t("encounter.draft.placeholder")}
-        className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm disabled:opacity-60"
+        className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm disabled:opacity-60"
       />
 
       <button

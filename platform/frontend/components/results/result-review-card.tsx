@@ -16,6 +16,7 @@ import { useState } from "react";
 import { AlertTriangle, Check, Lock, MessageSquare } from "lucide-react";
 
 import { type Disposition, type ResultReview } from "@/lib/api";
+import { plainResultSummary } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 
 const DISPOSITIONS: Disposition[] = [
@@ -78,8 +79,8 @@ export default function ResultReviewCard({
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs text-ink/50">{review.patient_name ?? review.patient_id}</p>
-          <p className="text-sm font-medium">{resultLine(review)}</p>
-          <p className="text-xs text-ink/60">{review.classification_reason}</p>
+          <p className="text-sm font-medium">{plainResultSummary(review.result, review.severity, t)}</p>
+          <p className="text-xs text-ink/40">{resultLine(review)} · {review.classification_reason}</p>
         </div>
         <span
           className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${SEVERITY_TONE[review.severity]}`}
@@ -108,7 +109,7 @@ export default function ResultReviewCard({
             <select
               value={disposition}
               onChange={(event) => setDisposition(event.target.value as Disposition)}
-              className="tap rounded-lg border border-border bg-white px-3 py-2 text-sm"
+              className="tap rounded-lg border border-border bg-card px-3 py-2 text-sm"
             >
               {DISPOSITIONS.map((option) => (
                 <option key={option} value={option}>
@@ -125,7 +126,7 @@ export default function ResultReviewCard({
               rows={2}
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"
             />
           </label>
           <button

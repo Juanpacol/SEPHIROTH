@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api, type LabHistoryEntry } from "@/lib/api";
+import { friendlyTestName } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 
 const SPARK_WIDTH = 96;
@@ -86,7 +87,7 @@ export default function LabTrendCard({ patientId }: { patientId: string }) {
             return (
               <li key={test.test_name} className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold">{test.test_name}</div>
+                  <div className="truncate text-sm font-semibold">{friendlyTestName(test.test_name, t)}</div>
                   <div className="text-xs text-muted">
                     {new Date(latest.taken_at).toLocaleDateString()} · {test.entries.length}{" "}
                     {t("patientDetail.labTrend.readings")}

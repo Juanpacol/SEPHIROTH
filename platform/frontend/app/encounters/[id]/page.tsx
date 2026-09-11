@@ -229,7 +229,7 @@ export default function EncounterPage() {
               onChange={(event) =>
                 setDraft({ ...draft, chief_complaint: event.target.value })
               }
-              className="tap rounded-lg border border-border bg-white px-3 py-2 text-sm disabled:opacity-60"
+              className="tap rounded-lg border border-border bg-card px-3 py-2 text-sm disabled:opacity-60"
             />
           </label>
 
@@ -244,7 +244,7 @@ export default function EncounterPage() {
                 disabled={!editable}
                 placeholder={encounter.template[section]}
                 onChange={(event) => setDraft({ ...draft, [section]: event.target.value })}
-                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm disabled:opacity-60"
+                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm disabled:opacity-60"
               />
             </label>
           ))}
@@ -260,7 +260,7 @@ export default function EncounterPage() {
               onChange={(event) =>
                 setDraft({ ...draft, patient_instructions: event.target.value })
               }
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm disabled:opacity-60"
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm disabled:opacity-60"
             />
           </label>
 
@@ -300,7 +300,7 @@ export default function EncounterPage() {
         </div>
       </div>
 
-      <div className="safe-bottom fixed inset-x-0 bottom-16 z-30 border-t border-border bg-white/95 px-4 py-3 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
+      <div className="safe-bottom fixed inset-x-0 bottom-16 z-30 border-t border-border bg-card/95 px-4 py-3 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
         {editable ? (
           <button
             type="button"
@@ -332,7 +332,7 @@ export default function EncounterPage() {
             rows={3}
             value={amendReason}
             onChange={(event) => setAmendReason(event.target.value)}
-            className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"
           />
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => setAmending(false)} className="btn-secondary tap">

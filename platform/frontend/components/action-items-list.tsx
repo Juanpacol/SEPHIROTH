@@ -13,7 +13,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { api, type DashboardActionItem } from "@/lib/api";
-import { parseInteractionLabel } from "@/lib/clinical-text";
+import { friendlyTestName, parseInteractionLabel } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 import StatusPill from "@/components/status-pill";
 import { useToast } from "@/components/ui/toast";
@@ -49,7 +49,7 @@ export function itemText(item: DashboardActionItem, t: (key: string) => string):
       return t("dashboard.actionItems.deteriorating");
     case "lab":
       return t("dashboard.actionItems.lab")
-        .replace("{test}", item.test_name ?? "")
+        .replace("{test}", friendlyTestName(item.test_name, t))
         .replace("{value}", String(item.value ?? ""))
         .replace("{unit}", item.unit ?? "");
     case "interaction":

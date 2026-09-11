@@ -19,6 +19,41 @@ export default function DashboardPage() {
   });
   const data = bootstrap?.stats;
 
+  // Decision-driving KPIs only -- deliberately not one tile per dashboard
+  // endpoint. See conversation history: alert response time (is the team
+  // keeping up?), AI confidence + human-review rate (how much to trust
+  // today's answer), evidence coverage (is a recommendation actionable
+  // without checking its sources first). Risk distribution/meds/automation
+  // are already covered by the cards below, not duplicated here.
+  const { data: alertsData } = useQuery({
+    queryKey: ["dashboard", "alerts"],
+    queryFn: api.dashboardAlerts,
+    refetchInterval: 30_000,
+  });
+  const { data: aiData } = useQuery({
+    queryKey: ["dashboard", "ai"],
+    queryFn: api.dashboardAI,
+    refetchInterval: 30_000,
+  });
+  const { data: evidenceData } = useQuery({
+    queryKey: ["dashboard", "evidence"],
+    queryFn: api.dashboardEvidence,
+    refetchInterval: 30_000,
+  });
+
+  const alertResponseMinutes =
+    alertsData?.avg_review_seconds != null ? Math.round(alertsData.avg_review_seconds / 60) : null;
+  const aiConfidencePct =
+    aiData?.avg_confidence != null ? Math.round(aiData.avg_confidence * 100) : null;
+  const humanReviewRatePct =
+    aiData && aiData.evaluations_count > 0
+      ? Math.round((aiData.requires_human_review_count / aiData.evaluations_count) * 100)
+      : null;
+  const evidenceCoveragePct =
+    evidenceData?.avg_supported_claim_ratio != null
+      ? Math.round(evidenceData.avg_supported_claim_ratio * 100)
+      : null;
+
   if (isLoading) return <div className="text-muted">{t("dashboard.loading")}</div>;
   if (error || !data)
     return (
@@ -42,6 +77,30 @@ export default function DashboardPage() {
         <StatCard label={t("dashboard.stat.moderate")} value={data.moderate_count} tone="warning" />
         <StatCard label={t("dashboard.stat.stable")} value={data.stable_count} tone="success" />
         <StatCard label={t("dashboard.stat.maxPriority")} value={data.max_priority_score} tone="primary" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard
+          label={t("dashboard.stat.alertResponse")}
+          value={alertResponseMinutes != null ? `${alertResponseMinutes}m` : null}
+          tone="primary"
+        />
+        <div className="card">
+          <div className="text-sm text-muted">{t("dashboard.stat.aiConfidence")}</div>
+          <div className="mt-1 text-3xl font-extrabold text-primary">
+            {aiConfidencePct != null ? `${aiConfidencePct}%` : "—"}
+          </div>
+          {humanReviewRatePct != null && (
+            <div className="mt-0.5 text-xs text-muted">
+              {t("dashboard.stat.humanReviewRate").replace("{pct}", String(humanReviewRatePct))}
+            </div>
+          )}
+        </div>
+        <StatCard
+          label={t("dashboard.stat.evidenceCoverage")}
+          value={evidenceCoveragePct != null ? `${evidenceCoveragePct}%` : null}
+          tone="primary"
+        />
       </div>
 
       <div className="card !p-4">
