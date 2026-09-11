@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from datetime import datetime, timezone
 from typing import List
 
 from sqlalchemy import select
@@ -88,4 +89,63 @@ async def generate_alerts_for_all_patients(session: AsyncSession) -> int:
     return total
 
 
-__all__ = ["generate_alerts_for_patient", "generate_alerts_for_all_patients"]
+async def resolve_recovered_alerts_for_patient(session: AsyncSession, patient: Patient) -> int:
+    """Auto-resolves this patient's active, risk-engine-generated alerts
+    whose flag no longer applies under the patient's *current*
+    labs/medications -- the inverse of `generate_alerts_for_patient`.
+
+    Deliberately NOT wired into the boot-time `generate_alerts_for_all_patients`
+    path: auto-clearing an alert just because a value is transiently back in
+    range is a real clinical-safety call a clinician should make, not
+    something this app should do silently for real patients. Only called
+    from `sephiroth.safety.synthetic_daily` (every patient here is confirmed
+    synthetic) so day-over-day "recovery" in the synthetic-data pipeline is
+    reflected in the alert list too, not just in the underlying labs.
+
+    Only ever touches `source == "risk_engine"` rows -- an alert a clinician
+    or another engine raised is never auto-resolved here."""
+    still_open = {
+        (_CATEGORY_BY_FLAG_SOURCE.get(flag["source"], "clinical"), flag["label"])
+        for flag in assess_patient_risk(patient.lab_results, patient.medications)
+    }
+    existing_active = (
+        await session.scalars(
+            select(Alert).where(
+                Alert.patient_id == patient.id,
+                Alert.status == "active",
+                Alert.source == "risk_engine",
+            )
+        )
+    ).all()
+
+    resolved = 0
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    for alert in existing_active:
+        if (alert.category, alert.title) in still_open:
+            continue
+        alert.status = "resolved"
+        alert.resolved_at = now
+        resolved += 1
+    return resolved
+
+
+async def resolve_recovered_alerts_for_all_patients(session: AsyncSession) -> int:
+    """`resolve_recovered_alerts_for_patient` for every patient, commits,
+    returns the total resolved. See that function's docstring for why this
+    is not part of the boot-time alert path."""
+    patients = (await session.scalars(select(Patient))).all()
+    total = 0
+    for patient in patients:
+        total += await resolve_recovered_alerts_for_patient(session, patient)
+    if total:
+        await session.commit()
+        logger.info("Auto-resolved %d recovered alert(s)", total)
+    return total
+
+
+__all__ = [
+    "generate_alerts_for_patient",
+    "generate_alerts_for_all_patients",
+    "resolve_recovered_alerts_for_patient",
+    "resolve_recovered_alerts_for_all_patients",
+]

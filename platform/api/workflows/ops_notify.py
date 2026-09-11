@@ -50,6 +50,28 @@ ALLOWED_OPS_FIELDS = frozenset(
 #: (e.g. an accidental `patient_id`) can't slip through unnoticed.
 ALLOWED_FAILED_STEP_FIELDS = frozenset({"step_id", "workflow_id", "step_type"})
 
+#: Field names permitted in a daily-synthetic-simulation notification --
+#: same allow-list discipline as ALLOWED_OPS_FIELDS, counters only, never
+#: patient_id. Distinguished from a tick payload by the presence of
+#: "labs_inserted" (ticks never have it, simulation summaries always do).
+ALLOWED_SIMULATION_FIELDS = frozenset(
+    {
+        "patients_touched",
+        "labs_inserted",
+        "abnormal_count",
+        "critical_count",
+        "alerts_created",
+        "alerts_resolved",
+        "clinicians_touched",
+        "availability_rules_seeded",
+        "appointments_booked",
+        "appointments_completed",
+        "appointments_no_show",
+        "errors",
+        "duration_seconds",
+    }
+)
+
 _COLOR_OK = "#2EB67D"
 _COLOR_PARTIAL = "#ECB22E"
 _COLOR_FAILED = "#E01E5A"
@@ -139,6 +161,57 @@ def _format_blocks(fields: Dict[str, Any]) -> Tuple[str, List[Dict[str, Any]], s
     return fallback, blocks, color
 
 
+def _format_simulation_blocks(fields: Dict[str, Any]) -> Tuple[str, List[Dict[str, Any]], str]:
+    """Renders a daily synthetic-data-simulation summary -- same
+    counters-only, allow-listed shape as `_format_blocks`, distinct fields."""
+    disallowed = set(fields) - ALLOWED_SIMULATION_FIELDS
+    if disallowed:
+        raise ValueError(f"simulation notification fields are allow-listed; drop or rename: {sorted(disallowed)}")
+
+    patients_touched = fields.get("patients_touched", 0)
+    labs_inserted = fields.get("labs_inserted", 0)
+    abnormal_count = fields.get("abnormal_count", 0)
+    critical_count = fields.get("critical_count", 0)
+    alerts_created = fields.get("alerts_created", 0)
+    alerts_resolved = fields.get("alerts_resolved", 0)
+    appointments_booked = fields.get("appointments_booked", 0)
+    appointments_completed = fields.get("appointments_completed", 0)
+    appointments_no_show = fields.get("appointments_no_show", 0)
+    errors = fields.get("errors", [])
+
+    if errors:
+        emoji, color, status_word = "🔴", _COLOR_FAILED, "Failed"
+    else:
+        emoji, color, status_word = "✅", _COLOR_OK, "OK"
+
+    blocks: List[Dict[str, Any]] = [
+        _header(f"{emoji} Daily Synthetic Simulation — {status_word}"),
+        _fields_section(
+            [
+                ("Patients touched", str(patients_touched)),
+                ("Labs inserted", str(labs_inserted)),
+                ("Abnormal", str(abnormal_count)),
+                ("Critical", str(critical_count)),
+                ("Alerts created", str(alerts_created)),
+                ("Alerts resolved", str(alerts_resolved)),
+                ("Appointments booked", str(appointments_booked)),
+                ("Appointments completed", str(appointments_completed)),
+                ("No-shows", str(appointments_no_show)),
+            ]
+        ),
+    ]
+    if errors:
+        blocks.append({"type": "divider"})
+        shown = errors[:5]
+        lines = [f"• {e}" for e in shown]
+        if len(errors) > len(shown):
+            lines.append(f"…and {len(errors) - len(shown)} more")
+        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Errors:*\n" + "\n".join(lines)}})
+
+    fallback = f"{emoji} Daily simulation: {patients_touched} patients, {labs_inserted} labs, {alerts_created} alerts"
+    return fallback, blocks, color
+
+
 class SlackNotifier:
     """Fire-and-forget POST to a Slack incoming webhook -- same posture
     as `intelligence/mcp/rag_server.py`'s outbound call: a short-lived
@@ -149,7 +222,10 @@ class SlackNotifier:
         self._webhook_url = webhook_url
 
     async def notify(self, fields: Dict[str, Any]) -> bool:
-        fallback_text, blocks, color = _format_blocks(fields)
+        if "labs_inserted" in fields:
+            fallback_text, blocks, color = _format_simulation_blocks(fields)
+        else:
+            fallback_text, blocks, color = _format_blocks(fields)
         payload = {"text": fallback_text, "attachments": [{"color": color, "blocks": blocks}]}
         try:
             async with httpx.AsyncClient(timeout=5) as client:
@@ -171,4 +247,11 @@ def get_ops_notifier() -> OpsNotifier:
     return NullNotifier()
 
 
-__all__ = ["OpsNotifier", "SlackNotifier", "NullNotifier", "get_ops_notifier", "ALLOWED_OPS_FIELDS"]
+__all__ = [
+    "OpsNotifier",
+    "SlackNotifier",
+    "NullNotifier",
+    "get_ops_notifier",
+    "ALLOWED_OPS_FIELDS",
+    "ALLOWED_SIMULATION_FIELDS",
+]

@@ -587,6 +587,26 @@ class LabResult(Base):
     patient: Mapped["Patient"] = relationship()
 
 
+class SyntheticDataRun(Base):
+    """One row per calendar day the daily synthetic-data pipeline
+    (`sephiroth.safety.synthetic_daily`) has run — the once-per-day guard.
+    `completed_at` stays null until every downstream step (labs + snapshot +
+    alert generation) succeeds, so a row that exists but never completed
+    means "retry," not "already done" — a plain max(created_at) timestamp
+    can't tell those two cases apart."""
+
+    __tablename__ = "synthetic_data_runs"
+    __table_args__ = (UniqueConstraint("run_date", name="uq_synthetic_data_runs_run_date"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    run_date: Mapped[date] = mapped_column(Date)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    labs_inserted: Mapped[int] = mapped_column(default=0, server_default="0")
+    alerts_created: Mapped[int] = mapped_column(default=0, server_default="0")
+    patients_touched: Mapped[int] = mapped_column(default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class MedicationOrder(Base):
     """A structured medication order, gradually replacing
     `Patient.medications` (a flat name-only list) as the source for the

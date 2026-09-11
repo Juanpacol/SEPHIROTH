@@ -44,3 +44,12 @@ services:
         value: "true"
       - key: INTERNAL_TICK_TOKEN
         sync: false # set manually in the Render dashboard — never committed
+      # Daily synthetic-data pipeline (sephiroth.safety.synthetic_daily) --
+      # every patient in this DB is confirmed synthetic (portfolio MVP), so
+      # this nudges their labs forward each day to keep dashboard trend
+      # views from looking permanently frozen. Reuses INTERNAL_TICK_TOKEN
+      # above, no separate secret. Point a SECOND, once-a-day cron-job.org
+      # job at POST /internal/simulate-day with the same
+      # X-Internal-Token header -- separate from the 5-min tick job.
+      - key: ENABLE_DAILY_SIMULATION
+        value: "true"

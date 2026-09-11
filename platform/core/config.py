@@ -275,6 +275,15 @@ class Settings(BaseSettings):
     enable_workflow_engine: bool = False
     internal_tick_token: Optional[str] = None
     workflow_tick_batch_size: int = 25
+    # Daily synthetic-data pipeline (sephiroth.safety.synthetic_daily) --
+    # every patient in this database is confirmed synthetic (portfolio MVP),
+    # so this nudges their labs forward each day to keep dashboard trend
+    # views from looking permanently frozen. Same shared-secret trust model
+    # as the tick above -- reuses internal_tick_token rather than minting a
+    # second secret. Off by default; POST /internal/simulate-day returns a
+    # harmless {"status": "disabled"} rather than a 404 when unset, same
+    # "flip-off breaks nothing else" posture as enable_workflow_engine.
+    enable_daily_simulation: bool = False
     workflow_step_timeout_seconds: float = 5.0
     workflow_tick_budget_seconds: float = 20.0
     workflow_step_lease_seconds: int = 120
@@ -350,13 +359,14 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _check_tick_token(self) -> "Settings":
-        if not self.enable_workflow_engine or self.environment not in ("staging", "production"):
+        needs_token = self.enable_workflow_engine or self.enable_daily_simulation
+        if not needs_token or self.environment not in ("staging", "production"):
             return self
         if not self.internal_tick_token or len(self.internal_tick_token) < 32:
             raise ValueError(
                 "internal_tick_token must be set to a random value >=32 chars "
-                f"when enable_workflow_engine=True in environment={self.environment!r}, "
-                "e.g. `openssl rand -hex 32`."
+                f"when enable_workflow_engine or enable_daily_simulation is True in "
+                f"environment={self.environment!r}, e.g. `openssl rand -hex 32`."
             )
         return self
 

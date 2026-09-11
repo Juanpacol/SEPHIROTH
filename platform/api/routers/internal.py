@@ -25,6 +25,7 @@ from core.db import get_session
 from ..workflows.daily_digest import maybe_send_daily_digest
 from ..workflows.engine import TickSummary, run_tick
 from ..workflows.ops_notify import get_ops_notifier
+from sephiroth.safety.synthetic_daily import run_daily_simulation
 
 router = APIRouter()
 
@@ -84,6 +85,39 @@ async def tick(
     # channel (clinical_notify.py), checked/sent at most once per calendar
     # day regardless of whether this particular tick claimed any steps.
     await maybe_send_daily_digest(session)
+    return summary.to_dict()
+
+
+@router.post("/internal/simulate-day")
+async def simulate_day(
+    x_internal_token: str | None = Header(default=None),
+    force: bool = False,
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Daily synthetic-data pipeline (`sephiroth.safety.synthetic_daily`) --
+    every patient in this DB is confirmed synthetic (portfolio MVP); this
+    keeps dashboard trend views moving day over day instead of frozen at
+    the one-time seed. Same disabled-is-a-no-op and shared-secret posture
+    as `/internal/tick` above, on purpose -- see that route's docstring."""
+    if not settings.enable_daily_simulation:
+        return {"status": "disabled"}
+    _check_tick_token(x_internal_token)
+    summary = await run_daily_simulation(session, force=force)
+    if summary.labs_inserted or summary.errors:
+        await get_ops_notifier().notify(
+            {
+                "patients_touched": summary.patients_touched,
+                "labs_inserted": summary.labs_inserted,
+                "abnormal_count": summary.abnormal_count,
+                "critical_count": summary.critical_count,
+                "alerts_created": summary.alerts_created,
+                "alerts_resolved": summary.alerts_resolved,
+                "appointments_booked": summary.appointments_booked,
+                "appointments_completed": summary.appointments_completed,
+                "appointments_no_show": summary.appointments_no_show,
+                "errors": summary.errors,
+            }
+        )
     return summary.to_dict()
 
 
