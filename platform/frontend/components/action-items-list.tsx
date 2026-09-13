@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
@@ -45,8 +46,14 @@ export function itemText(item: DashboardActionItem, t: (key: string) => string):
       }
       return item.detail ? `${item.title} — ${item.detail}` : item.title ?? "";
     }
-    case "deteriorating":
-      return t("dashboard.actionItems.deteriorating");
+    case "deteriorating": {
+      if (!item.test_name) return t("dashboard.actionItems.deteriorating");
+      const test = friendlyTestName(item.test_name, t);
+      const extra = (item.worsened_test_count ?? 1) - 1;
+      return extra > 0
+        ? t("dashboard.actionItems.deterioratingTestMore").replace("{test}", test).replace("{count}", String(extra))
+        : t("dashboard.actionItems.deterioratingTest").replace("{test}", test);
+    }
     case "lab":
       return t("dashboard.actionItems.lab")
         .replace("{test}", friendlyTestName(item.test_name, t))
@@ -76,8 +83,14 @@ export function itemText(item: DashboardActionItem, t: (key: string) => string):
         .replace("{check}", check)
         .replace("{days}", String(item.days_late ?? 0));
     }
-    case "approval":
+    case "approval": {
+      const followupCheck = item.action_type?.match(/^followup_(.+)$/);
+      if (followupCheck) {
+        const check = t(`dashboard.actionItems.followupCheck.${followupCheck[1]}`);
+        return t("dashboard.actionItems.approvalFollowup").replace("{check}", check);
+      }
       return t("dashboard.actionItems.approval");
+    }
     case "decision":
       return t("dashboard.actionItems.decision").replace("{query}", item.query_preview ?? "");
     default:
@@ -124,11 +137,12 @@ export default function ActionItemsList({
   maxVisible?: number;
 }) {
   const { t } = useLanguage();
+  const [expanded, setExpanded] = useState(false);
 
   if (items.length === 0) {
     return <p className="text-sm text-muted">{t("dashboard.actionItems.empty")}</p>;
   }
-  const visible = maxVisible ? items.slice(0, maxVisible) : items;
+  const visible = maxVisible && !expanded ? items.slice(0, maxVisible) : items;
   const hiddenCount = items.length - visible.length;
 
   return (
@@ -176,7 +190,13 @@ export default function ActionItemsList({
         })}
       </ul>
       {hiddenCount > 0 && (
-        <p className="pt-1 text-xs text-muted">{t("criticalPatients.moreFlags").replace("{count}", String(hiddenCount))}</p>
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="pt-1 text-xs font-semibold text-primary hover:underline"
+        >
+          {t("dashboard.actionItems.showMore").replace("{count}", String(hiddenCount))}
+        </button>
       )}
     </>
   );

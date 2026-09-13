@@ -1,16 +1,5 @@
 /** Typed fetch helpers for the FastAPI backend (proxied via next.config rewrites). */
 
-export interface AgentStatus {
-  name: string;
-  status: string;
-  consultations: number;
-}
-
-export interface AgentsStatus {
-  agents: AgentStatus[];
-  system: { llm: string; model: string; provider: string; local_only: boolean };
-}
-
 export interface CriticalPatient {
   id: string;
   name: string;
@@ -60,6 +49,7 @@ export interface DashboardActionItem {
   order_kind?: OrderKind;
   check_key?: string;
   days_late?: number;
+  worsened_test_count?: number;
   action_type?: string;
   query_preview?: string;
   consultation_id?: string;
@@ -770,7 +760,6 @@ export const api = {
   dashboardPending: () => get<DashboardPending>("/api/dashboard/pending"),
   dashboardPerformance: () => get<DashboardPerformance>("/api/dashboard/performance"),
   dashboardAutomation: () => get<DashboardAutomation>("/api/dashboard/automation"),
-  agentsStatus: () => get<AgentsStatus>("/api/agents/status"),
   patients: (sort?: "risk") => get<PatientSummary[]>(`/api/patients${sort ? `?sort=${sort}` : ""}`),
   patient: (id: string) => get<Patient>(`/api/patients/${id}`),
   patientLabHistory: (id: string) => get<PatientLabHistory>(`/api/patients/${id}/labs`),

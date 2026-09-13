@@ -63,12 +63,12 @@ function EvidenceRow({ item }: { item: EvidenceItem }) {
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-block text-xs font-semibold text-primary underline underline-offset-2"
+              className="mt-2 inline-block text-xs font-semibold text-primary underline underline-offset-2 [overflow-wrap:anywhere]"
             >
               {item.citation} — {t("copilot.viewSource")}
             </a>
           ) : (
-            <p className="mt-2 text-xs font-semibold text-primary">{item.citation}</p>
+            <p className="mt-2 text-xs font-semibold text-primary [overflow-wrap:anywhere]">{item.citation}</p>
           )}
         </div>
       )}
@@ -127,12 +127,12 @@ export default function EvidencePage() {
                       href={result.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-2 inline-block text-xs font-semibold text-primary underline underline-offset-2"
+                      className="mt-2 inline-block text-xs font-semibold text-primary underline underline-offset-2 [overflow-wrap:anywhere]"
                     >
                       {result.citation} — {t("copilot.viewSource")}
                     </a>
                   ) : (
-                    <p className="mt-2 text-xs font-semibold text-primary">{result.citation}</p>
+                    <p className="mt-2 text-xs font-semibold text-primary [overflow-wrap:anywhere]">{result.citation}</p>
                   )}
                 </div>
               </div>

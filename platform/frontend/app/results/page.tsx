@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, type Disposition, type ResultReview } from "@/lib/api";
+import { Search } from "lucide-react";
 import { useLanguage } from "@/lib/language";
 import SegmentedControl from "@/components/ui/segmented-control";
 import ResultReviewCard from "@/components/results/result-review-card";
@@ -34,19 +35,25 @@ export default function ResultsPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("inbox");
   const [filter, setFilter] = useState<Filter>("open");
+  const [patientId, setPatientId] = useState("");
+  const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const params = useMemo(() => {
-    if (filter === "closed") return { status: ["closed"] as const };
-    if (filter === "critical") return { severity: "critical" as const };
-    return {};
-  }, [filter]);
+    const base: { status?: readonly ["closed"]; severity?: "critical"; patient_id?: string } = {};
+    if (filter === "closed") base.status = ["closed"] as const;
+    if (filter === "critical") base.severity = "critical";
+    if (patientId) base.patient_id = patientId;
+    return base;
+  }, [filter, patientId]);
 
   const inbox = useQuery({
-    queryKey: [...INBOX_QUERY_KEY, filter],
+    queryKey: [...INBOX_QUERY_KEY, filter, patientId],
     queryFn: () => api.resultsInbox({ ...params, status: params.status ? [...params.status] : undefined }),
     enabled: tab === "inbox",
   });
+
+  const patientsQuery = useQuery({ queryKey: ["patients"], queryFn: () => api.patients(), enabled: tab === "inbox" });
 
   function settle(updated: ResultReview) {
     queryClient.invalidateQueries({ queryKey: INBOX_QUERY_KEY });
@@ -76,7 +83,15 @@ export default function ResultsPage() {
   });
 
   const busy = review.isPending || close.isPending || reopen.isPending;
-  const items = inbox.data?.items ?? [];
+  const allItems = inbox.data?.items ?? [];
+  const query = search.trim().toLowerCase();
+  const items = query
+    ? allItems.filter((item) =>
+        [item.patient_name, item.result.test_name, item.classification_reason]
+          .filter(Boolean)
+          .some((field) => field!.toLowerCase().includes(query))
+      )
+    : allItems;
 
   return (
     <div className="space-y-5">
@@ -110,6 +125,31 @@ export default function ResultsPage() {
             ]}
           />
 
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="relative flex-1">
+              <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("results.search.placeholder")}
+                className="w-full rounded-lg border border-line bg-surface py-1.5 pl-8 pr-2.5 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <select
+              value={patientId}
+              onChange={(e) => setPatientId(e.target.value)}
+              className="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-primary sm:w-56"
+            >
+              <option value="">{t("results.filter.allPatients")}</option>
+              {(patientsQuery.data ?? []).map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {error ? (
             <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
               {error}
@@ -121,7 +161,7 @@ export default function ResultsPage() {
           ) : items.length === 0 ? (
             <p className="card text-sm text-muted">{t("results.inbox.empty")}</p>
           ) : (
-            <div className="grid gap-3 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               {items.map((item) => (
                 <ResultReviewCard
                   key={item.id}

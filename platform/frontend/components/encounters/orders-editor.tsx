@@ -78,12 +78,12 @@ export default function OrdersEditor({ orders, disabled, onAdd, onRemove }: Prop
       )}
 
       {!disabled ? (
-        <form onSubmit={submit} className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row">
+        <form onSubmit={submit} className="flex flex-col gap-2 border-t border-line/60 pt-3 sm:flex-row">
           <select
             value={kind}
             onChange={(event) => setKind(event.target.value as OrderKind)}
             aria-label={t("encounter.orders.kind")}
-            className="tap rounded-lg border border-border bg-card px-3 py-2 text-sm sm:w-40"
+            className="tap rounded-lg border border-line bg-card px-3 py-2 text-sm sm:w-40"
           >
             {KINDS.map((option) => (
               <option key={option} value={option}>
@@ -97,7 +97,7 @@ export default function OrdersEditor({ orders, disabled, onAdd, onRemove }: Prop
             onChange={(event) => setDetail(event.target.value)}
             placeholder={t("encounter.orders.detailPlaceholder")}
             aria-label={t("encounter.orders.detail")}
-            className="tap min-w-0 flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm"
+            className="tap min-w-0 flex-1 rounded-lg border border-line bg-card px-3 py-2 text-sm"
           />
           <input
             type="number"
@@ -107,7 +107,7 @@ export default function OrdersEditor({ orders, disabled, onAdd, onRemove }: Prop
             onChange={(event) => setDays(event.target.value)}
             placeholder={t("encounter.orders.daysPlaceholder")}
             aria-label={t("encounter.orders.days")}
-            className="tap rounded-lg border border-border bg-card px-3 py-2 text-sm sm:w-28"
+            className="tap rounded-lg border border-line bg-card px-3 py-2 text-sm sm:w-28"
           />
           <button type="submit" disabled={!detail.trim()} className="btn-secondary tap disabled:opacity-50">
             {t("encounter.orders.add")}

@@ -77,7 +77,7 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
           onClick={(e) => select(e, value)}
           aria-label={t(labelKey)}
           title={t(labelKey)}
-          className={`rounded-full p-1.5 transition-colors ${
+          className={`tap flex items-center justify-center rounded-full p-1.5 transition-colors ${
             theme === value ? "bg-card text-primary shadow-sm" : "text-muted hover:text-primary"
           }`}
         >
@@ -88,7 +88,7 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
         onClick={() => setLang(lang === "en" ? "es" : "en")}
         aria-label={t("common.toggleLanguage")}
         title={lang === "en" ? "English" : "Español"}
-        className="rounded-full px-1.5 py-1.5 text-[11px] font-bold text-muted transition-colors hover:text-primary"
+        className="tap rounded-full px-1.5 py-1.5 text-[11px] font-bold text-muted transition-colors hover:text-primary"
       >
         EN/ES
       </button>

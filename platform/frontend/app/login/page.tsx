@@ -41,7 +41,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface p-6">
+    <div className="flex min-h-dvh items-center justify-center bg-surface p-6">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex items-center justify-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-soft text-primary">

@@ -5,6 +5,7 @@ import AuthGuard from "@/components/auth-guard";
 import Sidebar from "@/components/sidebar";
 import Topbar from "@/components/topbar";
 import CopilotWidget from "@/components/copilot/copilot-widget";
+import MobileTabBar from "@/components/mobile-tab-bar";
 import { isChromelessRoute } from "@/lib/routes";
 import { useLanguage } from "@/lib/language";
 
@@ -16,14 +17,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthGuard>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-dvh">
         <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="pb-tabbar flex min-w-0 flex-1 flex-col">
           <Topbar />
-          <main className="flex-1 p-6">{children}</main>
-          <footer className="px-6 pb-4 text-center text-xs text-muted">{t("common.footerDisclaimer")}</footer>
+          <main className="flex-1 p-4 md:p-6">{children}</main>
+          <footer className="px-4 pb-4 text-center text-xs text-muted md:px-6">{t("common.footerDisclaimer")}</footer>
         </div>
       </div>
+      <MobileTabBar />
       <CopilotWidget />
     </AuthGuard>
   );

@@ -480,7 +480,21 @@ async def list_appointments(
     if status_filter is not None:
         stmt = stmt.where(Appointment.status == status_filter)
     appointments = (await session.scalars(stmt.order_by(Appointment.start_at))).all()
-    return [_appointment_out(a, for_patient=user.role == "patient") for a in appointments]
+    patient_names = dict(
+        (
+            await session.execute(
+                select(Patient.id, Patient.name).where(
+                    Patient.id.in_({a.patient_id for a in appointments})
+                )
+            )
+        ).all()
+    )
+    return [
+        _appointment_out(
+            a, for_patient=user.role == "patient", patient_name=patient_names.get(a.patient_id, "")
+        )
+        for a in appointments
+    ]
 
 
 @router.post("/appointments", status_code=201)
@@ -581,7 +595,7 @@ async def book_appointment(
             related_appointment_id=appt.id,
         )
         await session.commit()
-    return _appointment_out(appt, for_patient=user.role == "patient")
+    return _appointment_out(appt, for_patient=user.role == "patient", patient_name=patient.name)
 
 
 async def _get_own_appointment(session: AsyncSession, user: User, appointment_id: str) -> Appointment:
@@ -642,7 +656,8 @@ async def update_appointment(
     except IntegrityError:
         await session.rollback()
         raise HTTPException(status_code=409, detail="This slot was just booked by someone else")
-    return _appointment_out(appt, for_patient=False)
+    patient = await session.get(Patient, appt.patient_id)
+    return _appointment_out(appt, for_patient=False, patient_name=patient.name if patient else "")
 
 
 @router.post("/appointments/{appointment_id}/confirm")
@@ -663,7 +678,8 @@ async def confirm_appointment(
         appt.confirmed_at = datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
         appt.confirmed_by_user_id = user.id
         await session.commit()
-    return _appointment_out(appt, for_patient=True)
+    patient = await session.get(Patient, appt.patient_id)
+    return _appointment_out(appt, for_patient=True, patient_name=patient.name if patient else "")
 
 
 @router.delete("/appointments/{appointment_id}", status_code=204)

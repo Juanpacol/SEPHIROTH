@@ -51,9 +51,12 @@ export default function CriticalPatientsList({
         ))}
       </ul>
       {hiddenCount > 0 && (
-        <p className="pt-1 text-xs text-muted">
-          {t("criticalPatients.moreFlags").replace("{count}", String(hiddenCount))}
-        </p>
+        <Link
+          href="/patients?sort=risk"
+          className="block pt-1 text-xs font-semibold text-primary hover:underline"
+        >
+          {t("criticalPatients.showMore").replace("{count}", String(hiddenCount))}
+        </Link>
       )}
     </>
   );

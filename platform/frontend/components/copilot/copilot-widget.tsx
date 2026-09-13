@@ -49,7 +49,7 @@ export default function CopilotWidget() {
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? t("copilot.widget.closeChat") : t("copilot.widget.openChat")}
         aria-expanded={open}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-card-lg transition-all duration-200 ease-ios hover:-translate-y-0.5 hover:bg-primary-dark active:scale-95"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 md:bottom-6 md:right-6 items-center justify-center rounded-full bg-primary text-white shadow-card-lg transition-all duration-200 ease-ios hover:-translate-y-0.5 hover:bg-primary-dark active:scale-95"
       >
         {open ? <X size={22} /> : <WingMark size={22} />}
       </button>
@@ -58,7 +58,7 @@ export default function CopilotWidget() {
         <div
           role="dialog"
           aria-label={t("copilot.widget.title")}
-          className="fixed bottom-24 right-6 z-40 flex h-[min(680px,calc(100vh-140px))] w-[min(420px,calc(100vw-3rem))] flex-col overflow-hidden rounded-squircle border border-line/60 bg-surface shadow-card-lg"
+          className="fixed inset-0 z-50 flex flex-col overflow-hidden border-line/60 bg-surface shadow-card-lg md:inset-auto md:bottom-24 md:right-6 md:z-40 md:h-[min(680px,calc(100dvh-140px))] md:w-[min(420px,calc(100vw-3rem))] md:rounded-squircle md:border"
         >
           <div className="flex items-center justify-between border-b border-line/60 bg-card px-4 py-3">
             <div className="flex items-center gap-2">

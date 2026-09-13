@@ -14,7 +14,6 @@ export const CLINICIAN_PREFIXES = [
   "/patients",
   "/evidence",
   "/imaging",
-  "/agents",
   "/schedule",
   "/profile",
   "/approvals",

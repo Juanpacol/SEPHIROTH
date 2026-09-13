@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
@@ -9,6 +8,7 @@ import { api, type PatientSummary } from "@/lib/api";
 import { plainCondition } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 import StatusPill from "@/components/status-pill";
+import DataList, { type Column } from "@/components/ui/data-list";
 
 type RiskFilter = "all" | "high" | "medium" | "low";
 
@@ -56,6 +56,55 @@ export default function PatientsPage() {
     });
   }, [patients, search, riskFilter]);
 
+  // Declared once; DataList generates both the table and the phone cards from
+  // this, so a column can't exist in one shape and not the other.
+  const columns: Column<PatientSummary>[] = [
+    {
+      key: "patient",
+      header: t("patients.table.patient"),
+      primary: true,
+      render: (p) => (
+        <span className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary">
+            {p.name.split(" ").map((n) => n[0]).join("")}
+          </span>
+          <span className="min-w-0 font-semibold text-ink">{p.name}</span>
+        </span>
+      ),
+    },
+    {
+      key: "risk",
+      header: t("patients.table.risk"),
+      primary: true,
+      render: (p) => (p.risk_level ? <StatusPill label={p.risk_level} /> : null),
+    },
+    { key: "mrn", header: t("patients.table.mrn"), className: "text-muted", render: (p) => p.medical_record_number },
+    { key: "ageSex", header: t("patients.table.ageSex"), render: (p) => `${p.age} / ${p.sex}` },
+    { key: "status", header: t("patients.table.status"), render: (p) => <StatusPill label={p.status} /> },
+    {
+      // Three stacked lines of prose is what forced the old table's
+      // `min-w-[640px]`; a phone card has no room for it.
+      key: "conditions",
+      header: t("patients.table.conditions"),
+      desktopOnly: true,
+      className: "max-w-xs text-muted",
+      render: (p) => (
+        <>
+          {p.conditions.slice(0, 3).map((c) => (
+            <div key={c} className="truncate">
+              {plainCondition(c)}
+            </div>
+          ))}
+          {p.conditions.length > 3 && (
+            <div className="text-xs">
+              {t("criticalPatients.moreFlags").replace("{count}", String(p.conditions.length - 3))}
+            </div>
+          )}
+        </>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-5">
       <div>
@@ -63,8 +112,8 @@ export default function PatientsPage() {
         <p className="text-sm text-muted">{t("patients.subtitle")}</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[220px] flex-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative w-full sm:min-w-[220px] sm:flex-1">
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
             value={search}
@@ -73,12 +122,16 @@ export default function PatientsPage() {
             className="input pl-9"
           />
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        {/* A swipeable strip on a phone rather than a wrapping block: four
+            pills wrapping to two rows push the table down a third of the
+            screen. The negative margin lets it bleed to the screen edge so it
+            reads as scrollable. */}
+        <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
           {RISK_FILTERS.map((f) => (
             <button
               key={f.value}
               onClick={() => setRiskFilter(f.value)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+              className={`tap shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                 riskFilter === f.value ? RISK_PILL_ACTIVE[f.value] : "bg-surface text-muted hover:text-primary"
               }`}
             >
@@ -88,70 +141,16 @@ export default function PatientsPage() {
         </div>
       </div>
 
-      <div className="card overflow-x-auto !p-0">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead>
-            <tr className="border-b border-line/60 text-left text-xs uppercase tracking-wider text-muted">
-              <th className="px-5 py-3.5">{t("patients.table.patient")}</th>
-              <th className="px-5 py-3.5">{t("patients.table.mrn")}</th>
-              <th className="px-5 py-3.5">{t("patients.table.ageSex")}</th>
-              <th className="px-5 py-3.5">{t("patients.table.conditions")}</th>
-              <th className="px-5 py-3.5">{t("patients.table.risk")}</th>
-              <th className="px-5 py-3.5">{t("patients.table.status")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading && (
-              <tr>
-                <td colSpan={6} className="px-5 py-6 text-muted">
-                  {t("patients.loading")}
-                </td>
-              </tr>
-            )}
-            {!isLoading && filtered.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-5 py-6 text-muted">
-                  {t("patients.filter.empty")}
-                </td>
-              </tr>
-            )}
-            {filtered.map((patient) => (
-              <tr key={patient.id} className="border-b border-line/40 last:border-0 hover:bg-surface/60">
-                <td className="px-5 py-3.5">
-                  <Link href={`/patients/${patient.id}`} className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary">
-                      {patient.name.split(" ").map((n) => n[0]).join("")}
-                    </span>
-                    <span className="font-semibold text-ink hover:text-primary">{patient.name}</span>
-                  </Link>
-                </td>
-                <td className="px-5 py-3.5 text-muted">{patient.medical_record_number}</td>
-                <td className="px-5 py-3.5">
-                  {patient.age} / {patient.sex}
-                </td>
-                <td className="max-w-xs px-5 py-3.5 text-sm text-muted">
-                  {patient.conditions.slice(0, 3).map((c) => (
-                    <div key={c} className="truncate">
-                      {plainCondition(c)}
-                    </div>
-                  ))}
-                  {patient.conditions.length > 3 && (
-                    <div className="text-xs">
-                      {t("criticalPatients.moreFlags").replace("{count}", String(patient.conditions.length - 3))}
-                    </div>
-                  )}
-                </td>
-                <td className="px-5 py-3.5">
-                  {patient.risk_level && <StatusPill label={patient.risk_level} />}
-                </td>
-                <td className="px-5 py-3.5">
-                  <StatusPill label={patient.status} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataList
+        items={filtered}
+        columns={columns}
+        rowKey={(p) => p.id}
+        onRowHref={(p) => `/patients/${p.id}`}
+        isLoading={isLoading}
+        loadingLabel={t("patients.loading")}
+        emptyLabel={t("patients.filter.empty")}
+        caption={t("patients.title")}
+      />
     </div>
   );
 }

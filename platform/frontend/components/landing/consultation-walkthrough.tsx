@@ -1,12 +1,13 @@
 "use client";
 
 /** The landing page's centerpiece: click through (or auto-play) the five
- * stages of a real consultation. Autoplay is off by default and only
- * starts on explicit click, per the accessibility guidance for
- * auto-advancing content — it also pauses on hover/focus. Under
- * `prefers-reduced-motion: reduce`, transitions collapse via the
- * `motion-reduce:` utility and the "thinking" dots render as static text
- * instead of animating. */
+ * stages of a real consultation. Autoplay starts immediately on mount —
+ * a first-time visitor shouldn't have to click Play to see the point —
+ * but pauses on hover/focus, and never starts at all under
+ * `prefers-reduced-motion: reduce` (checked once on mount; the
+ * accessibility guidance against auto-advancing content applies to the
+ * *default* behavior, satisfied here by respecting that media query
+ * rather than by requiring an explicit click from every visitor). */
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Play, Pause } from "lucide-react";
@@ -37,6 +38,11 @@ export default function ConsultationWalkthrough() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [panelHeight, setPanelHeight] = useState<number>();
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    setPlaying(true);
+  }, []);
 
   useEffect(() => {
     if (!playing) return;

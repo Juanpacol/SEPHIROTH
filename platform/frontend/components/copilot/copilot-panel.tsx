@@ -135,7 +135,7 @@ function PdfPreviewModal({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-card shadow-card"
+        className="flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-card shadow-card"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-line/60 p-4">
@@ -155,7 +155,7 @@ function PdfPreviewModal({
         </div>
 
         <div className="flex-1 overflow-hidden bg-surface">
-          <iframe src={preview.url} title={t("copilot.pdfPreview")} className="h-[50vh] w-full" />
+          <iframe src={preview.url} title={t("copilot.pdfPreview")} className="h-[50dvh] w-full" />
         </div>
 
         <div className="border-t border-line/60 p-4">
@@ -474,8 +474,10 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
         ))}
       </div>
 
+      {/* `shrink-0`: the transcript above is `flex-1` and must give up the
+          space, never the composer. */}
       <div
-        className={`flex cursor-text flex-col rounded-squircle bg-card shadow-card ring-1 ring-line/70 transition-all duration-200 ${
+        className={`flex shrink-0 cursor-text flex-col rounded-squircle bg-card shadow-card ring-1 ring-line/70 transition-all duration-200 ${
           inputFocused ? "ring-primary/50" : ""
         }`}
         onClick={() => textareaRef.current?.focus()}
@@ -490,7 +492,14 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
               submit();
             }
           }}
-          onFocus={() => setInputFocused(true)}
+          onFocus={(e) => {
+            setInputFocused(true);
+            // iOS shrinks the visual viewport for the keyboard but leaves the
+            // layout viewport alone, so a composer pinned to the bottom of a
+            // full-screen panel ends up behind it. Scrolling the field into
+            // view is the part of that WebKit has no other answer for.
+            requestAnimationFrame(() => e.target.scrollIntoView({ block: "center" }));
+          }}
           onBlur={() => setInputFocused(false)}
           placeholder={t("copilot.placeholder")}
           rows={1}

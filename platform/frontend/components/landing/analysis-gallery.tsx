@@ -1,22 +1,30 @@
 "use client";
 
-/** Glassmorphism hover-card gallery — one real sample per imaging modality
- * the vision pipeline supports (`SUPPORTED_MODALITIES` in
- * intelligence/mcp/imaging_server.py). All five images are CC0/public-domain
+/** Animated masonry gallery — two real samples per imaging modality the
+ * vision pipeline supports (`SUPPORTED_MODALITIES` in
+ * intelligence/mcp/imaging_server.py). All ten images are CC0/public-domain
  * (Wikimedia Commons) — never the RSNA samples in real_data/, which are
- * academic/non-commercial and explicitly not redistributable. Card styling
- * adapted from a public-domain CSS pattern (backdrop-filter blur+saturate,
- * translateY lift on hover); backdrop uses primary/ink tokens, not the
- * sephiroth gradient reserved for AI-generated content (CLAUDE.md #4). */
+ * academic/non-commercial and explicitly not redistributable. Layout is
+ * reactbits.dev's Masonry component (see components/landing/masonry.tsx),
+ * replacing the earlier glassmorphism CSS-grid gallery. Backdrop uses
+ * primary/ink tokens, not the sephiroth gradient reserved for
+ * AI-generated content (CLAUDE.md #4). */
 
+import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/language";
+import Masonry, { type MasonryItem } from "./masonry";
 
 const ITEMS = [
-  { image: "/landing/analysis/xray.webp", titleKey: "marketing.analysisGallery.xray.title", captionKey: "marketing.analysisGallery.xray.caption" },
-  { image: "/landing/analysis/ct-brain.webp", titleKey: "marketing.analysisGallery.ct.title", captionKey: "marketing.analysisGallery.ct.caption" },
-  { image: "/landing/analysis/mri-brain.webp", titleKey: "marketing.analysisGallery.mri.title", captionKey: "marketing.analysisGallery.mri.caption" },
-  { image: "/landing/analysis/ultrasound.webp", titleKey: "marketing.analysisGallery.ultrasound.title", captionKey: "marketing.analysisGallery.ultrasound.caption" },
-  { image: "/landing/analysis/pathology.webp", titleKey: "marketing.analysisGallery.pathology.title", captionKey: "marketing.analysisGallery.pathology.caption" },
+  { id: "xray", image: "/landing/analysis/xray.webp", titleKey: "marketing.analysisGallery.xray.title", captionKey: "marketing.analysisGallery.xray.caption", height: 420 },
+  { id: "ct", image: "/landing/analysis/ct-brain.webp", titleKey: "marketing.analysisGallery.ct.title", captionKey: "marketing.analysisGallery.ct.caption", height: 560 },
+  { id: "mri", image: "/landing/analysis/mri-brain.webp", titleKey: "marketing.analysisGallery.mri.title", captionKey: "marketing.analysisGallery.mri.caption", height: 480 },
+  { id: "ultrasound", image: "/landing/analysis/ultrasound.webp", titleKey: "marketing.analysisGallery.ultrasound.title", captionKey: "marketing.analysisGallery.ultrasound.caption", height: 600 },
+  { id: "pathology", image: "/landing/analysis/pathology.webp", titleKey: "marketing.analysisGallery.pathology.title", captionKey: "marketing.analysisGallery.pathology.caption", height: 440 },
+  { id: "xray2", image: "/landing/analysis/xray-2.webp", titleKey: "marketing.analysisGallery.xray2.title", captionKey: "marketing.analysisGallery.xray2.caption", height: 540 },
+  { id: "ct2", image: "/landing/analysis/ct-abdomen.webp", titleKey: "marketing.analysisGallery.ct2.title", captionKey: "marketing.analysisGallery.ct2.caption", height: 460 },
+  { id: "mri2", image: "/landing/analysis/mri-spine.webp", titleKey: "marketing.analysisGallery.mri2.title", captionKey: "marketing.analysisGallery.mri2.caption", height: 620 },
+  { id: "ultrasound2", image: "/landing/analysis/ultrasound-2.webp", titleKey: "marketing.analysisGallery.ultrasound2.title", captionKey: "marketing.analysisGallery.ultrasound2.caption", height: 400 },
+  { id: "pathology2", image: "/landing/analysis/pathology-2.webp", titleKey: "marketing.analysisGallery.pathology2.title", captionKey: "marketing.analysisGallery.pathology2.caption", height: 500 },
 ];
 
 const BACKDROP = {
@@ -30,32 +38,38 @@ const BACKDROP = {
 
 export default function AnalysisGallery() {
   const { t } = useLanguage();
+  const [contentHeight, setContentHeight] = useState(640);
+
+  const items: MasonryItem[] = useMemo(
+    () =>
+      ITEMS.map((item) => ({
+        id: item.id,
+        img: item.image,
+        height: item.height,
+        title: t(item.titleKey),
+        caption: t(item.captionKey),
+      })),
+    [t]
+  );
+
+  const handleLayout = useCallback((height: number) => {
+    setContentHeight(Math.max(height, 320));
+  }, []);
+
   return (
-    <div
-      className="grid grid-cols-2 gap-5 rounded-squircle border border-line/60 p-6 sm:grid-cols-3 md:grid-cols-5 md:p-10"
-      style={BACKDROP}
-    >
-      {ITEMS.map((item) => (
-        <article
-          key={item.image}
-          className="group relative rounded-2xl border border-white/25 bg-white/10 p-3 shadow-[0_24px_50px_-26px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.4)] backdrop-blur-md backdrop-saturate-150 transition-all duration-300 hover:-translate-y-2 hover:border-white/45 hover:shadow-[0_36px_64px_-26px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.55)]"
-        >
-          <span className="pointer-events-none absolute inset-x-[14%] top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent" />
-          <div className="overflow-hidden rounded-xl border border-white/20 bg-white/10">
-            <img
-              src={item.image}
-              alt={t(item.titleKey)}
-              loading="lazy"
-              decoding="async"
-              className="aspect-[4/3] w-full object-cover"
-            />
-          </div>
-          <h3 className="mt-3 text-sm font-bold text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.25)]">
-            {t(item.titleKey)}
-          </h3>
-          <p className="mt-0.5 text-xs text-white/80">{t(item.captionKey)}</p>
-        </article>
-      ))}
+    <div className="rounded-squircle border border-line/60 p-6 md:p-10" style={BACKDROP}>
+      <div style={{ position: "relative", height: contentHeight, transition: "height 0.3s ease" }}>
+        <Masonry
+          items={items}
+          animateFrom="bottom"
+          blurToFocus
+          scaleOnHover
+          hoverScale={0.96}
+          duration={0.5}
+          stagger={0.08}
+          onLayout={handleLayout}
+        />
+      </div>
     </div>
   );
 }

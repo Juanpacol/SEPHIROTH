@@ -2,25 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { addDays, format, startOfWeek } from "date-fns";
+import { addDays, differenceInCalendarDays, format, isSameDay, startOfWeek } from "date-fns";
 import { CalendarClock } from "lucide-react";
 import { api, ApiError, type Appointment } from "@/lib/api";
 import { useUser } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import AvailabilitySheet from "@/components/schedule/availability-sheet";
 import BookAppointmentSheet from "@/components/schedule/book-appointment-sheet";
+import DayAgenda from "@/components/schedule/day-agenda";
+import DayStrip from "@/components/schedule/day-strip";
+import WeekGrid from "@/components/schedule/week-grid";
+import Dialog from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
-
-const START_HOUR = 7;
-const END_HOUR = 20;
-const ROW_MINUTES = 30;
-const ROW_HEIGHT_REM = 3;
-const ROWS = ((END_HOUR - START_HOUR) * 60) / ROW_MINUTES;
-
-function minutesFromDayStart(iso: string): number {
-  const d = new Date(iso + "Z");
-  return d.getUTCHours() * 60 + d.getUTCMinutes() - START_HOUR * 60;
-}
 
 export default function SchedulePage() {
   const user = useUser();
@@ -31,8 +24,23 @@ export default function SchedulePage() {
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
   const [bookDate, setBookDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  // Confirmation lives here, once, for both views. It used to be a native
+  // `window.confirm` inside the grid: that blocks the main thread, cannot be
+  // styled or translated, and on a phone throws the user out of the app's
+  // chrome entirely.
+  const [pendingCancel, setPendingCancel] = useState<Appointment | null>(null);
 
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(anchor, i)), [anchor]);
+  // Which day the phone agenda shows. Stored as an offset into the visible week
+  // rather than as a Date, so paging the week can never leave it pointing at a
+  // day that is no longer on screen — and paging keeps the weekday you were on.
+  //
+  // Opens on today, not on Monday: the first thing a clinician wants from a
+  // schedule on their phone is what is left of today.
+  const [dayOffset, setDayOffset] = useState(() =>
+    differenceInCalendarDays(new Date(), startOfWeek(new Date(), { weekStartsOn: 1 })),
+  );
+  const selectedDay = days[dayOffset] ?? days[0];
   const weekStartIso = format(anchor, "yyyy-MM-dd");
   const weekEndIso = format(addDays(anchor, 7), "yyyy-MM-dd");
 
@@ -74,20 +82,20 @@ export default function SchedulePage() {
           <div className="flex items-center gap-1">
             <button
               onClick={() => setAnchor(addDays(anchor, -7))}
-              className="btn-ghost px-2.5 py-1.5"
+              className="btn-ghost tap px-2.5 py-1.5"
               aria-label={t("schedule.previousWeek")}
             >
               ‹
             </button>
             <button
               onClick={() => setAnchor(startOfWeek(new Date(), { weekStartsOn: 1 }))}
-              className="btn-ghost px-2.5 py-1.5 text-sm"
+              className="btn-ghost tap px-2.5 py-1.5 text-sm"
             >
               {t("schedule.today")}
             </button>
             <button
               onClick={() => setAnchor(addDays(anchor, 7))}
-              className="btn-ghost px-2.5 py-1.5"
+              className="btn-ghost tap px-2.5 py-1.5"
               aria-label={t("schedule.nextWeek")}
             >
               ›
@@ -97,8 +105,8 @@ export default function SchedulePage() {
             {format(anchor, "MMM d")} – {format(addDays(anchor, 6), "MMM d, yyyy")}
           </span>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => setAvailabilityOpen(true)} className="btn-secondary">
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setAvailabilityOpen(true)} className="btn-secondary tap flex-1 sm:flex-none">
             <CalendarClock size={16} /> {t("schedule.workingHours")}
           </button>
           <button
@@ -106,94 +114,35 @@ export default function SchedulePage() {
               setBookDate(format(new Date(), "yyyy-MM-dd"));
               setBookOpen(true);
             }}
-            className="btn-primary"
+            className="btn-primary tap flex-1 sm:flex-none"
           >
             {t("schedule.newAppointment")}
           </button>
         </div>
       </div>
 
-      <div className="card overflow-x-auto p-0">
-        <div className="grid min-w-[900px] grid-cols-[4.5rem_repeat(7,1fr)]">
-          <div className="border-b border-line/60" />
-          {days.map((day) => {
-            const isToday = format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
-            return (
-              <div
-                key={day.toISOString()}
-                className="border-b border-l border-line/60 px-2 py-2 text-center"
-              >
-                <div className="text-xs font-semibold uppercase text-muted">{format(day, "EEE")}</div>
-                <div
-                  className={`mx-auto mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold ${
-                    isToday ? "bg-primary text-white" : ""
-                  }`}
-                >
-                  {format(day, "d")}
-                </div>
-              </div>
-            );
-          })}
+      {/* Phone: a day at a time. Tablet and up: the week grid. Both are fed by
+          the same weekly query — switching views costs no extra fetch. */}
+      <div className="space-y-4 md:hidden">
+        <DayStrip
+          days={days}
+          selected={selectedDay}
+          onSelect={(day) => setDayOffset(days.findIndex((d) => isSameDay(d, day)))}
+          countFor={(day) => (appointmentsByDay.get(format(day, "yyyy-MM-dd")) ?? []).length}
+        />
+        <DayAgenda
+          day={selectedDay}
+          appointments={appointmentsByDay.get(format(selectedDay, "yyyy-MM-dd")) ?? []}
+          onRequestCancel={setPendingCancel}
+          onBook={(dayIso) => {
+            setBookDate(dayIso);
+            setBookOpen(true);
+          }}
+        />
+      </div>
 
-          {Array.from({ length: ROWS }, (_, row) => {
-            const totalMinutes = START_HOUR * 60 + row * ROW_MINUTES;
-            const hour = Math.floor(totalMinutes / 60);
-            const minute = totalMinutes % 60;
-            return (
-              <div key={row} className="contents">
-                <div
-                  className="border-b border-line/40 pr-2 text-right text-[11px] text-muted"
-                  style={{ height: `${ROW_HEIGHT_REM}rem` }}
-                >
-                  {minute === 0 ? `${hour}:00` : ""}
-                </div>
-                {days.map((day) => {
-                  const dayKey = format(day, "yyyy-MM-dd");
-                  const dayAppointments = (appointmentsByDay.get(dayKey) ?? []).filter((appt) => {
-                    const m = minutesFromDayStart(appt.start_at);
-                    return m >= row * ROW_MINUTES && m < (row + 1) * ROW_MINUTES;
-                  });
-                  return (
-                    <div
-                      key={dayKey + row}
-                      className="relative border-b border-l border-line/40"
-                      style={{ height: `${ROW_HEIGHT_REM}rem` }}
-                    >
-                      {dayAppointments.map((appt) => {
-                        const durationMin =
-                          (new Date(appt.end_at + "Z").getTime() - new Date(appt.start_at + "Z").getTime()) /
-                          60000;
-                        const heightRem = (durationMin / ROW_MINUTES) * ROW_HEIGHT_REM;
-                        return (
-                          <button
-                            key={appt.id}
-                            onClick={() => {
-                              const name = appt.patient_name ?? t("schedule.patientFallback");
-                              if (
-                                appt.status === "booked" &&
-                                window.confirm(t("schedule.confirmCancel").replace("{name}", name))
-                              )
-                                cancel(appt.id);
-                            }}
-                            className={`absolute inset-x-0.5 top-0 z-10 overflow-hidden rounded-lg px-1.5 py-0.5 text-left text-[11px] font-semibold text-white shadow-sm ${
-                              appt.status === "completed" ? "bg-success" : "bg-primary"
-                            }`}
-                            style={{ height: `${heightRem}rem` }}
-                            title={`${appt.patient_name ?? t("schedule.patientFallback")} — ${
-                              appt.reason || t("schedule.noReason")
-                            }`}
-                          >
-                            {appt.patient_name ?? t("schedule.patientFallback")}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
+      <div className="card hidden overflow-x-auto p-0 md:block">
+        <WeekGrid days={days} appointmentsByDay={appointmentsByDay} onRequestCancel={setPendingCancel} />
       </div>
 
       {(!availability || availability.rules.length === 0) && (
@@ -204,6 +153,21 @@ export default function SchedulePage() {
           </button>
         </div>
       )}
+
+      <Dialog
+        open={pendingCancel !== null}
+        onClose={() => setPendingCancel(null)}
+        title={t("schedule.confirmCancel").replace(
+          "{name}",
+          pendingCancel?.patient_name ?? t("schedule.patientFallback"),
+        )}
+        confirmLabel={t("schedule.agenda.cancel")}
+        destructive
+        onConfirm={() => {
+          if (pendingCancel) cancel(pendingCancel.id);
+          setPendingCancel(null);
+        }}
+      />
 
       {user && (
         <AvailabilitySheet

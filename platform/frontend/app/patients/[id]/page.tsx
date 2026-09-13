@@ -307,20 +307,22 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
             {patient.medical_record_number} · {patient.age}y · {patient.sex}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {patient.risk_level && <StatusPill label={`${patient.risk_level} risk`} />}
-          <StatusPill label={patient.status} />
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <div className="flex flex-wrap items-center gap-2">
+            {patient.risk_level && <StatusPill label={`${patient.risk_level} risk`} />}
+            <StatusPill label={patient.status} />
+          </div>
           <button
             onClick={() => startEncounter.mutate()}
             disabled={startEncounter.isPending}
-            className="btn-primary"
+            className="btn-primary tap w-full sm:w-auto"
           >
             <Stethoscope size={15} /> {t("encounter.start")}
           </button>
           <button
             onClick={() => invitePatient.mutate()}
             disabled={invitePatient.isPending}
-            className="btn-secondary"
+            className="btn-secondary tap w-full sm:w-auto"
             title={t("patientDetail.inviteTooltip")}
           >
             <UserPlus size={15} /> {t("patientDetail.invitePortal")}
