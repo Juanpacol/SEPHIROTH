@@ -42,6 +42,30 @@ jobs:
           name: coverage-report
           path: coverage.xml
 
+  # Advisory: mypy has never gated this repo, so it surfaces a real 61-error
+  # baseline (DEBT-012, docs/project-state.yaml) across pre-existing code.
+  # continue-on-error, same as security-advisory below, until that baseline
+  # is worked down — flip to blocking once `mypy -p sephiroth -p api -p
+  # intelligence` is clean.
+  type-check:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - run: pip install -e .
+      - name: mypy (advisory)
+        run: |
+          mypy -p sephiroth -p api -p intelligence | tee mypy-report.txt || true
+          if [ -n "$GITHUB_STEP_SUMMARY" ]; then
+            { echo "## mypy (advisory)"; echo '```'; cat mypy-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   docs:
     runs-on: ubuntu-latest
     steps:
