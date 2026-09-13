@@ -328,3 +328,26 @@ known_debt:
       (shim-identity test, nothing left to check identity against).
     phase: 5
     status: resolved
+  - id: DEBT-011
+    item: >-
+      SPEC-028 "domain reorg" (merged 2026-09-06, PR #31) copied every router
+      into clinical/intelligence/operations/security domain dirs under
+      platform/api/, but never rewired main.py's imports (still `from
+      api.routers import ...`), never updated the ~10 test modules or
+      src/sephiroth/models/egress.py's module-path allowlist that key on
+      `api.routers.*`, and never copied encounters.py/result_reviews.py at
+      all. The new dirs were 100% dead code from the moment of merge. Six
+      days of live development continued only on the old flat
+      platform/api/routers/ tree, so by 2026-09-12 the two copies had
+      diverged 20-167 lines per file — reconciling them was no longer a
+      cutover, it would have meant redoing the reorg from scratch anyway.
+    action: >-
+      Deleted the stale clinical/intelligence/operations/security router
+      dirs (15 files) — no importers anywhere, confirmed by grep before
+      removal. Domain reorg is not attempted again mid-flight; if wanted,
+      redo it as a single dedicated pass (move current routers, rewire
+      main.py + tests + egress.py allowlist in the same commit, including
+      encounters.py/result_reviews.py this time) rather than a
+      partially-executed PR.
+    phase: null
+    status: resolved
