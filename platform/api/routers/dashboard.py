@@ -138,20 +138,23 @@ async def _dashboard_evolution(session: AsyncSession) -> Dict[str, Any]:
     for p in patients:
         tests = by_patient.get(p.id, {})
         worsened = improved = 0
-        for readings in tests.values():
+        worsened_tests: List[str] = []
+        for test_name, readings in tests.items():
             if len(readings) < 2:
                 continue
             prev, latest = readings[-2], readings[-1]
             if latest.is_critical and not prev.is_critical:
                 new_flags_total += 1
                 worsened += 1
+                worsened_tests.append(test_name)
             elif prev.is_critical and not latest.is_critical:
                 improved += 1
             elif latest.is_abnormal and not prev.is_abnormal:
                 worsened += 1
+                worsened_tests.append(test_name)
             elif prev.is_abnormal and not latest.is_abnormal:
                 improved += 1
-        entry = {"id": p.id, "name": p.name}
+        entry = {"id": p.id, "name": p.name, "worsened_tests": worsened_tests}
         if worsened > improved:
             deteriorating.append(entry)
         elif improved > worsened:
@@ -577,12 +580,15 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
     # 2) Patients clinically deteriorating (2+ readings per test, latest worse than previous).
     deteriorating, _detail = await _evolution_deteriorating(session)
     for entry in deteriorating[:_ACTION_ITEM_LIMIT_PER_CATEGORY]:
+        worsened_tests = entry.get("worsened_tests") or []
         items.append(
             {
                 "category": "deteriorating",
                 "severity": "high",
                 "patient_id": entry["id"],
                 "patient_name": entry["name"],
+                "test_name": worsened_tests[0] if worsened_tests else None,
+                "worsened_test_count": len(worsened_tests),
             }
         )
 

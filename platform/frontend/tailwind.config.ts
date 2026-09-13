@@ -39,6 +39,15 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-manrope)", "sans-serif"],
       },
+      spacing: {
+        // Height of MobileTabBar (`components/mobile-tab-bar.tsx`). Named so
+        // the pages that must clear it don't hardcode the same 4rem twice.
+        tabbar: "4rem",
+      },
+      // Apple HIG's minimum comfortable touch target (44pt). Backs the `.tap`
+      // utility in globals.css — see its comment for why it's size-only.
+      minHeight: { tap: "44px" },
+      minWidth: { tap: "44px" },
       borderRadius: {
         // iOS-style "continuous corner" scale — larger than Tailwind's defaults.
         xl2: "1.25rem",

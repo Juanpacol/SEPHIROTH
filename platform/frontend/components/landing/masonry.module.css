@@ -1,0 +1,54 @@
+.list {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.itemWrapper {
+  position: absolute;
+  will-change: transform, width, height, opacity;
+  padding: 12px;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+}
+
+.itemImg {
+  position: relative;
+  background-size: cover;
+  background-position: center center;
+  width: 100%;
+  height: 100%;
+  text-transform: uppercase;
+  font-size: 10px;
+  line-height: 10px;
+  border-radius: 10px;
+  box-shadow: 0px 10px 50px -10px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.caption {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 10px 12px;
+  background: linear-gradient(to top, rgba(6, 6, 6, 0.75), transparent);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.itemWrapper:hover .caption {
+  opacity: 1;
+}
+
+.captionTitle {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.captionText {
+  font-size: 11px;
+  opacity: 0.85;
+  margin: 2px 0 0;
+}

@@ -68,7 +68,11 @@ export default function ImageDropzone({
 
   if (previewUrl) {
     return (
-      <div className="relative h-full min-h-[220px] w-full">
+      <div className="relative h-full min-h-[150px] sm:min-h-[220px] w-full">
+        {/* `previewUrl` is a blob: object URL for a file the user just picked,
+            so there is no remote asset for next/image to optimize and no
+            dimensions known ahead of time. Plain <img> is correct here. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={previewUrl}
           alt={t("imageDropzone.alt")}

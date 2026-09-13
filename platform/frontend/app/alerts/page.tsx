@@ -35,25 +35,25 @@ function AlertRow({ alert }: { alert: ClinicalAlert }) {
 
   return (
     <div className="card space-y-2">
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+        <div className="min-w-0">
           <p className="font-semibold">{alert.title}</p>
           <p className="text-xs text-muted">
             Patient {alert.patient_id} · {alert.category}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <StatusPill label={alert.severity} />
           <StatusPill label={alert.status} />
         </div>
       </div>
       {alert.detail && <p className="text-sm text-ink/80">{alert.detail}</p>}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {alert.status === "active" && (
           <button
             onClick={() => review.mutate()}
             disabled={review.isPending}
-            className="btn-primary"
+            className="btn-primary tap w-full sm:w-auto"
           >
             {t("alerts.review")}
           </button>
@@ -62,7 +62,7 @@ function AlertRow({ alert }: { alert: ClinicalAlert }) {
           <button
             onClick={() => resolve.mutate()}
             disabled={resolve.isPending}
-            className="btn-primary"
+            className="btn-primary tap w-full sm:w-auto"
           >
             {t("alerts.resolve")}
           </button>
@@ -90,12 +90,12 @@ export default function AlertsPage() {
         <p className="text-sm text-muted">{t("alerts.subtitle")}</p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
         {STATUS_FILTERS.map((f) => (
           <button
             key={f}
             onClick={() => setStatus(f)}
-            className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+            className={`tap shrink-0 rounded-full px-3 py-1 text-xs font-semibold capitalize ${
               status === f ? "bg-primary text-white" : "bg-primary-soft text-primary"
             }`}
           >

@@ -21,6 +21,10 @@ import {
   Pill,
   BookOpen,
   Users,
+  LayoutDashboard,
+  CalendarClock,
+  UserCheck,
+  Share2,
 } from "lucide-react";
 import WingMark from "@/components/brand/wing-mark";
 import AuthRedirectGate from "@/components/landing/auth-redirect-gate";
@@ -85,6 +89,13 @@ const SOURCES = [
   "KDIGO",
   "USPSTF",
   "PubMed / NCBI",
+];
+
+const PLATFORM_FEATURES = [
+  { icon: LayoutDashboard, titleKey: "marketing.platform.dashboard.title", bodyKey: "marketing.platform.dashboard.body" },
+  { icon: CalendarClock, titleKey: "marketing.platform.scheduling.title", bodyKey: "marketing.platform.scheduling.body" },
+  { icon: UserCheck, titleKey: "marketing.platform.portal.title", bodyKey: "marketing.platform.portal.body" },
+  { icon: Share2, titleKey: "marketing.platform.results.title", bodyKey: "marketing.platform.results.body" },
 ];
 
 const FAQS = [
@@ -235,29 +246,25 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Trace showcase */}
-      <section className="mx-auto max-w-4xl px-6 py-24">
-        <h2 className="text-2xl font-extrabold md:text-3xl">{t("marketing.trace.title")}</h2>
-        <p className="mt-3 max-w-2xl text-muted">{t("marketing.trace.body")}</p>
-        <div className="card card-interactive mt-8 border-l-4 border-primary/40">
-          <ol className="space-y-3 text-sm">
-            <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-primary" /> {t("marketing.trace.step1")}
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-primary" /> {t("marketing.trace.step2Pre")}{" "}
-              <code className="rounded bg-surface px-1">search_clinical_guidelines</code>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-primary" /> {t("marketing.trace.step3")}
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-danger" /> {t("marketing.trace.step4")}
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-success" /> {t("marketing.trace.step5")}
-            </li>
-          </ol>
+      {/* Platform — the clinician's daily workflow around the AI consult:
+          patient dashboard/risk alerts, scheduling, patient portal, shared
+          results. Kept plain (card grid, no bento/magicui flourish) since
+          this is scope disclosure, not a hype section. */}
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <h2 className="text-2xl font-extrabold md:text-3xl">{t("marketing.platform.title")}</h2>
+        <p className="mt-3 max-w-2xl text-muted">{t("marketing.platform.subtitle")}</p>
+        <div className="mt-8 grid gap-5 sm:grid-cols-2">
+          {PLATFORM_FEATURES.map((f) => (
+            <div key={f.titleKey} className="card flex items-start gap-3">
+              <div className="inline-flex rounded-2xl bg-primary-soft p-2.5 text-primary">
+                <f.icon size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold">{t(f.titleKey)}</h3>
+                <p className="mt-1 text-sm text-muted">{t(f.bodyKey)}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Menu } from "lucide-react";
 import WingMark from "@/components/brand/wing-mark";
 import ThemeToggle from "@/components/theme-toggle";
+import Sheet from "@/components/ui/sheet";
 import { ShimmerButton } from "@/components/magicui/shimmer-button";
 import { useLanguage } from "@/lib/language";
 
@@ -17,6 +19,7 @@ const LINKS = [
 export default function LandingNav() {
   const { t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -45,13 +48,43 @@ export default function LandingNav() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* The toggle moves into the sheet on a phone: logo + toggle + CTA
+              together are wider than a 390px screen. */}
+          <ThemeToggle className="hidden md:inline-flex" />
           <ShimmerButton href="/login" className="!px-4 !py-2 !text-sm">
             {t("marketing.openApp")}
           </ShimmerButton>
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="tap -mr-2 rounded-full p-2 text-ink/70 hover:bg-primary-soft hover:text-primary md:hidden"
+            aria-label={t("nav.menu")}
+            aria-expanded={menuOpen}
+          >
+            <Menu size={20} />
+          </button>
         </div>
       </div>
+
+      {/* An action sheet rather than a side drawer: these are jumps within one
+          page, not navigation into a section of an app. */}
+      <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} side="bottom" title={t("nav.menu")}>
+        <nav className="flex flex-col gap-1">
+          {LINKS.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={() => setMenuOpen(false)}
+              className="nav-item tap"
+            >
+              {t(link.labelKey)}
+            </a>
+          ))}
+        </nav>
+        <div className="mt-4 flex justify-center border-t border-line/60 pt-4">
+          <ThemeToggle />
+        </div>
+      </Sheet>
     </header>
   );
 }

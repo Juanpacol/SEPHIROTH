@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/app-shell";
@@ -27,6 +27,27 @@ export const metadata: Metadata = {
     title: "SEPHIROTH — Clinical AI",
     description: "Clinical decisions, with the reasoning shown.",
   },
+};
+
+/**
+ * Next injects a default viewport when none is declared, so this exists for one
+ * reason: `viewportFit: "cover"`. Without it every `env(safe-area-inset-*)` in
+ * the stylesheet resolves to 0 and the bottom tab bar sits under the iOS home
+ * indicator.
+ *
+ * Deliberately no `maximumScale`/`userScalable` — blocking pinch-zoom is an
+ * accessibility failure, and in a clinical app it's not negotiable.
+ *
+ * Deliberately no `themeColor` either: Next can only condition it on
+ * `prefers-color-scheme`, but the theme here is class-based (lib/theme.ts +
+ * `.dark`), so a user with a light OS and a dark app would get the wrong
+ * browser chrome. The correct fix is a `<meta name="theme-color">` updated from
+ * wherever the class is toggled, not this export.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

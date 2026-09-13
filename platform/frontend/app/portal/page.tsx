@@ -51,7 +51,7 @@ export default function PortalHomePage() {
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="card">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
             <CalendarDays size={16} className="text-primary" /> {t("portal.home.upcomingTitle")}

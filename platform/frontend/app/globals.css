@@ -121,3 +121,36 @@ input:-webkit-autofill:focus {
     @apply bg-card/80 backdrop-blur-xl;
   }
 }
+
+@layer utilities {
+  /* Apple HIG's 44pt minimum touch target. Size only — deliberately no
+     `display`, because it's applied on top of `.btn*` (already inline-flex)
+     and on bare icon buttons that bring their own padding; forcing a display
+     here would fight both. */
+  .tap {
+    @apply min-h-tap min-w-tap;
+  }
+
+  /* Bars pinned to the bottom edge: clear the iOS home indicator without
+     collapsing to 0 on devices that have no notch — hence the max(). Needs
+     `viewportFit: "cover"` (app/layout.tsx) or env() resolves to 0. */
+  .safe-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  /* Reserves the strip MobileTabBar floats over, so page content is never
+     hidden behind it. Reset from `md:` up, where the tab bar isn't rendered.
+
+     Goes on the page's flex COLUMN, not on the last element inside it: that
+     column is stretched to the viewport height and its `<main>` is `flex-1`,
+     so a margin on the footer just overflows the bottom instead of moving the
+     footer up. Padding on the column shrinks the content box, which does. */
+  .pb-tabbar {
+    padding-bottom: calc(theme(spacing.tabbar) + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 768px) {
+    .pb-tabbar {
+      padding-bottom: 0;
+    }
+  }
+}

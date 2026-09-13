@@ -70,7 +70,7 @@ export default function PortalAppointmentsPage() {
                 {a.status === "booked" && !a.confirmed_at && (
                   <button
                     onClick={() => confirm(a.id)}
-                    className="text-xs font-semibold text-primary hover:underline"
+                    className="tap inline-flex items-center justify-center rounded-full px-2 text-xs font-semibold text-primary hover:underline"
                   >
                     {t("portal.appointments.confirm")}
                   </button>
@@ -78,7 +78,7 @@ export default function PortalAppointmentsPage() {
                 {a.status === "booked" && (
                   <button
                     onClick={() => cancel(a.id)}
-                    className="text-xs font-semibold text-danger hover:underline"
+                    className="tap inline-flex items-center justify-center rounded-full px-2 text-xs font-semibold text-danger hover:underline"
                   >
                     {t("portal.appointments.cancel")}
                   </button>

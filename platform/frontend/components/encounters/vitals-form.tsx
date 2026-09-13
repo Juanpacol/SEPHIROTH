@@ -77,7 +77,7 @@ export default function VitalsForm({ vitals, specs, findings, disabled, onChange
           onChange={(event) => setBp(event.target.value)}
           onBlur={(event) => commitBloodPressure(event.target.value)}
           className={`tap rounded-lg border px-3 py-2 text-sm ${
-            bpFinding ? "border-danger bg-danger/5" : "border-border bg-card"
+            bpFinding ? "border-danger bg-danger/5" : "border-line bg-card"
           } disabled:opacity-60`}
           aria-invalid={bpFinding ? true : undefined}
         />
@@ -112,7 +112,7 @@ export default function VitalsForm({ vitals, specs, findings, disabled, onChange
                 })
               }
               className={`tap rounded-lg border px-3 py-2 text-sm ${
-                finding ? "border-danger bg-danger/5" : "border-border bg-card"
+                finding ? "border-danger bg-danger/5" : "border-line bg-card"
               } disabled:opacity-60`}
               aria-invalid={finding ? true : undefined}
             />

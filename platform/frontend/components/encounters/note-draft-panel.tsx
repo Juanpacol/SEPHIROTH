@@ -67,7 +67,7 @@ export default function NoteDraftPanel({ encounterId, specialty, disabled, onApp
         disabled={disabled}
         onChange={(event) => setTranscript(event.target.value)}
         placeholder={t("encounter.draft.placeholder")}
-        className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm disabled:opacity-60"
+        className="w-full rounded-lg border border-line bg-card px-3 py-2 text-sm disabled:opacity-60"
       />
 
       <button
@@ -82,7 +82,7 @@ export default function NoteDraftPanel({ encounterId, specialty, disabled, onApp
       {error ? <p className="text-xs text-danger">{error}</p> : null}
 
       {draft ? (
-        <div className="flex flex-col gap-3 border-t border-border pt-3">
+        <div className="flex flex-col gap-3 border-t border-line/60 pt-3">
           {draft.source === "template" ? (
             // Never presented as a model draft: it is the clinician's own text
             // back under headings, and saying otherwise would be a small lie

@@ -220,8 +220,8 @@ export default function ImagingPage() {
       </div>
 
       <div className="card space-y-4">
-        <div className="flex gap-4">
-          <div className="flex-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <div className="min-w-0 flex-1">
             <label className="mb-1 block text-sm font-semibold">{t("imaging.patientOptional")}</label>
             <select
               value={patientId}
@@ -236,7 +236,7 @@ export default function ImagingPage() {
               ))}
             </select>
           </div>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <label className="mb-1 block text-sm font-semibold">{t("imaging.targetOptional")}</label>
             <input
               value={target}
@@ -246,11 +246,11 @@ export default function ImagingPage() {
             />
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={runDescribe}
             disabled={!imagePath || describing}
-            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+            className="tap flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40 sm:w-auto sm:justify-start"
             aria-label={t("imaging.describeAria")}
           >
             <Eye size={16} />
@@ -382,7 +382,7 @@ export default function ImagingPage() {
         )}
 
         {!recentLoading && recentAnalyses && recentAnalyses.length > 0 && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
             {recentAnalyses.map((a) => (
               <div key={a.id} className="card flex flex-col gap-3 !p-3">
                 <div className="aspect-square w-full overflow-hidden rounded-lg bg-surface">
@@ -434,7 +434,7 @@ export default function ImagingPage() {
           onClick={() => setExpandedAnalysis(null)}
         >
           <div
-            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-card p-5 shadow-xl"
+            className="max-h-[85dvh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-card p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-start justify-between gap-3">

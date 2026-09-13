@@ -9,7 +9,7 @@ export default function LandingFooter() {
   return (
     <footer className="border-t border-line/60">
       <div className="mx-auto max-w-6xl px-6 py-12">
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
           <div>
             <div className="flex items-center gap-2">
               <WingMark size={20} className="text-primary" />

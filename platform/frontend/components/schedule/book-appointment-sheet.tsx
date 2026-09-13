@@ -31,6 +31,8 @@ export default function BookAppointmentSheet({
     if (open) {
       setDate(defaultDate);
       setSelectedSlot(null);
+      setPatientId("");
+      setReason("");
     }
   }, [open, defaultDate]);
 

@@ -103,13 +103,13 @@ export default function ResultReviewCard({
       </ol>
 
       {review.status === "received" ? (
-        <div className="flex flex-col gap-2 border-t border-border pt-3">
+        <div className="flex flex-col gap-2 border-t border-line/60 pt-3">
           <label className="flex flex-col gap-1">
             <span className="text-xs font-medium text-ink/70">{t("results.decision")}</span>
             <select
               value={disposition}
               onChange={(event) => setDisposition(event.target.value as Disposition)}
-              className="tap rounded-lg border border-border bg-card px-3 py-2 text-sm"
+              className="tap rounded-lg border border-line bg-card px-3 py-2 text-sm"
             >
               {DISPOSITIONS.map((option) => (
                 <option key={option} value={option}>
@@ -126,7 +126,7 @@ export default function ResultReviewCard({
               rows={2}
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-line bg-card px-3 py-2 text-sm"
             />
           </label>
           <button
@@ -139,7 +139,7 @@ export default function ResultReviewCard({
           </button>
         </div>
       ) : (
-        <div className="border-t border-border pt-3 text-sm">
+        <div className="border-t border-line/60 pt-3 text-sm">
           <p>
             <span className="text-ink/60">{t("results.decision")}: </span>
             {review.disposition ? t(`results.disposition.${review.disposition}`) : "—"}

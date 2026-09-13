@@ -71,8 +71,20 @@ jobs:
           cache: npm
           cache-dependency-path: platform/frontend/package-lock.json
       - run: npm ci
+      - run: npm run lint
       - run: npm run test
       - run: npm run build
+      # WebKit as well as Chromium: safe-area insets, `dvh`, and `position:
+      # fixed` under the on-screen keyboard only misbehave in Safari, so a
+      # Chromium-only matrix would pass on every one of them.
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: platform/frontend/playwright-report/
+          retention-days: 7
 
   # Builds the real production Docker image and boots it against a real
   # Postgres — the only check that would have caught, e.g., a file missing
