@@ -115,14 +115,14 @@ See [ARCHITECTURE.md](ARCHITECTURE.md), [CLAUDE.md](CLAUDE.md), and [docs/](docs
 
 ## Evaluation
 
-The Evidence Agent's RAG pipeline is measured against an 88-question golden dataset (55 direct/"golden" clinical questions, 24 colloquial paraphrases, 9 adversarial questions — 5 out-of-scope, 4 with a plausible-but-wrong target to reject) over a 63-document corpus of clinical guideline excerpts (ADA, USPSTF, KDIGO, ACC/AHA, GINA, IDSA, WHO, MedlinePlus, and more).
+The Evidence Agent's RAG pipeline is measured against a 101-question golden dataset (68 direct/"golden" clinical questions, 24 colloquial paraphrases, 9 adversarial questions — 5 out-of-scope, 4 with a plausible-but-wrong target to reject) over a 63-document corpus of clinical guideline excerpts (ADA, USPSTF, KDIGO, ACC/AHA, GINA, IDSA, WHO, MedlinePlus, and more).
 
 | Metric | Value | Threshold | What it measures |
 |---|---|---|---|
-| Recall@1 | **0.93** | 0.90 | Correct guideline is the top retrieval hit |
-| Recall@3 | **0.97** | 0.95 | Correct guideline is in the top 3 |
+| Recall@1 | **0.89** | 0.87 | Correct guideline is the top retrieval hit |
+| Recall@3 | **0.95** | 0.94 | Correct guideline is in the top 3 |
 | Recall@5 | **0.97** | 0.95 | Correct guideline is in the top 5 |
-| MRR | **0.96** | 0.93 | Mean reciprocal rank of the correct guideline |
+| MRR | **0.93** | 0.90 | Mean reciprocal rank of the correct guideline |
 | Citation Precision | **0.82** | 0.60 | Fraction of citations in answers that are traceable to actual tool output (via [Citation Guard](src/sephiroth/verification/citation_guard.py)) |
 | Faithfulness (LLM judge) | **0.53** | 0.25 | Fraction of answer claims a judge model rates as supported by the retrieved evidence |
 | Faithfulness (heuristic proxy, informational) | 0.42 | — | Deterministic token-overlap stand-in; runs in CI, not gated |

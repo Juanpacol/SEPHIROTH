@@ -974,7 +974,12 @@ class RAGPipeline:
         seed: bool = True,
         embedding_provider: Optional[EmbeddingProvider] = None,
         vector_store: Optional[VectorStore] = None,
-        min_similarity: float = 0.60,
+        # Mirrors `settings.retrieval_min_similarity` (platform/core/config.py),
+        # which carries the calibration rationale. Duplicated rather than
+        # imported because this module must construct with zero configuration
+        # and no dependency on `platform/` — but the two have to move together,
+        # and `tests/test_embeddings_matching.py` fails if they drift.
+        min_similarity: float = 0.636,
     ):
         self.documents: List[Document] = list(SEED_GUIDELINES) if seed else []
         self._embedding_provider = embedding_provider

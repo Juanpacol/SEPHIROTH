@@ -172,14 +172,27 @@ class Settings(BaseSettings):
     # Cosine-similarity floor below which a dense hit is dropped entirely —
     # keeps adversarial/off-topic queries returning zero results, since
     # dense embeddings (unlike keyword overlap) almost never score exactly 0.
-    # 0.60, not 0.70: measured against the local nomic-embed-text artifact
-    # (2026-09-01, once Gemini quota was reserved for vision-only use —
-    # see data/embeddings/ollama.py), a genuinely relevant compound-query
-    # match scored as low as 0.638, while the one true off-topic case in
-    # tests/test_embeddings_matching.py (unrelated tax-filing question)
-    # topped out at 0.4737 — 0.70 was calibrated for Gemini's embedding
-    # score distribution and silently dropped real matches under Ollama's.
-    retrieval_min_similarity: float = 0.60
+    #
+    # 0.636, measured against the committed nomic-embed-text artifact
+    # (Gemini quota is reserved for vision here — see data/embeddings/ollama.py;
+    # 0.70 was calibrated for Gemini's distribution and silently dropped real
+    # matches under Ollama's). Two independent measurements put it there:
+    #
+    #   * Aggregate, over all 101 golden cases: recall@1 0.873 -> 0.895 and
+    #     MRR 0.917 -> 0.928 versus the previous 0.60, for recall@5
+    #     0.975 -> 0.967. All four eval gates still pass. The metrics are flat
+    #     across 0.63-0.6375, so this is a plateau, not a spike.
+    #   * The two bounds that pin it: the strongest off-topic adversarial hit
+    #     scores 0.6334 and must stay below the floor, and the weakest genuinely
+    #     relevant compound-query match (ada-2024-ckd) scores 0.6380 and must
+    #     stay above it. Both are asserted in tests/test_embeddings_matching.py.
+    #
+    # That second pair leaves a ~0.005 window, so this value is specific to the
+    # current artifact: rebuilding embeddings means re-measuring it. The two
+    # tests above fail loudly if it drifts, which is the point of pinning them.
+    #
+    # `RAGPipeline.__init__`'s default mirrors this; keep the two in step.
+    retrieval_min_similarity: float = 0.636
     retrieval_mode: Literal["hybrid", "keyword_only"] = "hybrid"
     # Floor for `api/fast_path.py`'s guideline branch, which skips citation
     # guard and verification entirely (see that module's docstring) — a weak
