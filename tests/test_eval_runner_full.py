@@ -123,6 +123,68 @@ def test_run_ci_mode_stale_when_dataset_changes_after_results_written(eval_fixtu
     assert result["stale_results"] is True
 
 
+def test_dataset_drift_ungates_baseline_metrics_without_failing_the_run(eval_fixtures):
+    """A grown golden set must not turn the whole gate red.
+
+    The baseline's faithfulness was judged over the old question set, so it
+    can't be gated — but the transcripts still match, so everything computed
+    live is still trustworthy and still gated. Collapsing the two hashes into
+    one flag meant a single added case made the gate permanently red until
+    someone spent API quota on a refresh."""
+    results_path = eval_fixtures["results_path"]
+    results_path.parent.mkdir(parents=True, exist_ok=True)
+    results_path.write_text(
+        json.dumps(
+            {
+                "run": {
+                    "dataset_sha256": sha256_file(eval_fixtures["dataset_path"]),
+                    "transcripts_sha256": sha256_transcripts(eval_fixtures["transcripts_dir"]),
+                },
+                "faithfulness": {"llm_judge": 0.5},
+            }
+        )
+    )
+    # The shared fixture gates only live metrics; this case is about a
+    # baseline-derived one, so it has to be in thresholds to have a row at all.
+    eval_fixtures["thresholds_path"].write_text(
+        json.dumps({"recall_at_1": 0.0, "citation_precision": 0.0, "faithfulness_llm_judge": 0.25})
+    )
+    eval_fixtures["dataset_path"].write_text(json.dumps({"cases": GOLDEN["cases"][:1]}))
+
+    result = run_ci_mode(**eval_fixtures)
+
+    assert result["dataset_stale"] is True
+    assert result["transcripts_stale"] is False
+    assert "faithfulness_llm_judge" in result["ungated_metrics"]
+    assert result["passed"] is True
+
+    row = next(r for r in result["threshold_rows"] if r["metric"] == "faithfulness_llm_judge")
+    assert row["gated"] is False
+    assert row["value"] is None, "still listed, so the gap stays visible"
+
+
+def test_transcript_drift_still_fails_the_run(eval_fixtures):
+    """The other half of the split: replayed metrics describing answers that no
+    longer exist are not trustworthy, so this stays a hard failure."""
+    results_path = eval_fixtures["results_path"]
+    results_path.parent.mkdir(parents=True, exist_ok=True)
+    results_path.write_text(
+        json.dumps(
+            {
+                "run": {
+                    "dataset_sha256": sha256_file(eval_fixtures["dataset_path"]),
+                    "transcripts_sha256": "stale-transcripts-hash",
+                },
+                "faithfulness": {"llm_judge": 0.5},
+            }
+        )
+    )
+    result = run_ci_mode(**eval_fixtures)
+
+    assert result["transcripts_stale"] is True
+    assert result["passed"] is False
+
+
 @pytest.mark.asyncio
 async def test_run_full_mode_runs_real_agent_and_writes_results(tmp_path):
     dataset_path = tmp_path / "golden.json"

@@ -33,7 +33,12 @@ def _print_table(rows) -> None:
     lines = ["| Metric | Value | Threshold | Status |", "|---|---|---|---|"]
     for row in rows:
         value = "n/a" if row["value"] is None else f"{row['value']:.4f}"
-        status = "PASS" if row["passed"] else "FAIL"
+        # SKIPPED, never PASS: a metric this run could not measure must not read
+        # as one that met its threshold.
+        if not row.get("gated", True):
+            status = "SKIPPED"
+        else:
+            status = "PASS" if row["passed"] else "FAIL"
         lines.append(f"| {row['metric']} | {value} | {row['threshold']:.4f} | {status} |")
     table = "\n".join(lines)
     print(table)
@@ -46,11 +51,22 @@ def _print_table(rows) -> None:
 def _run_ci() -> int:
     result = runner.run_ci_mode()
     print(f"Cases evaluated: {result['n_cases']}")
-    if result["stale_results"]:
+    if result["transcripts_stale"]:
         print(
             "WARNING: results/latest.json is missing or stale relative to "
-            "datasets/golden.json / transcripts/ — regenerate with "
+            "intelligence/evaluation/transcripts/ — the replayed metrics "
+            "describe answers that no longer exist. Regenerate with "
             "`--mode full --record` before merging.",
+            file=sys.stderr,
+        )
+    elif result["dataset_stale"]:
+        print(
+            "WARNING: results/latest.json was recorded against a different "
+            "datasets/golden.json, so "
+            f"{', '.join(result['ungated_metrics'])} are reported but NOT "
+            "gated this run — they were judged over a different set of "
+            "questions. Everything computed live is still gated. Refresh with "
+            "`--mode full --record` to restore them.",
             file=sys.stderr,
         )
     if result.get("embeddings_artifact_stale"):

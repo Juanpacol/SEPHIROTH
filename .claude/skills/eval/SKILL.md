@@ -16,7 +16,12 @@ PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ci
 
 Read the printed table. If it says `Overall: FAIL`, report which metric(s) dropped below threshold and by how much — check `git diff` on `data/rag/__init__.py`, `src/sephiroth/verification/citation_guard.py`, or `intelligence/agents/__init__.py` (EvidenceAgent prompt) for what likely caused it.
 
-If it warns `results/latest.json is missing or stale`, the dataset or transcripts changed since the last full run — offer to run `--mode full --record` (below) if `GEMINI_API_KEY` is set, or tell the user it needs a refresh before merging.
+A metric can also come back `SKIPPED` — reported with its threshold, but not gated this run because the harness knowingly could not measure it. Never read that as a pass; say which metric was skipped and why.
+
+Two different staleness warnings, which mean different things:
+
+- **transcripts stale** — the replayed metrics describe answers that no longer exist. This fails the run outright; nothing in it is trustworthy. Needs `--mode full --record`.
+- **dataset stale** — the golden set changed since the last full run, so the baseline's `faithfulness_llm_judge` / `abstention_recall` were judged over different questions. Those two go `SKIPPED`; everything computed live is still gated, and the run can still pass. Offer `--mode full --record` (below) if `GEMINI_API_KEY` is set, otherwise tell the user those two metrics are ungated until someone refreshes the baseline.
 
 ## 2. Full refresh (`--mode full --record`, needs GEMINI_API_KEY — burns free-tier quota)
 

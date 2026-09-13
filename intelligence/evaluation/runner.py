@@ -12,7 +12,7 @@ import hashlib
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from data.embeddings.cached import CachedEmbeddingProvider
 from data.embeddings.corpus_hash import compute_corpus_sha256
@@ -109,19 +109,34 @@ def compute_replay_metrics(cases: List[GoldenCase], transcripts: List[Dict[str, 
     }
 
 
-def compare_thresholds(observed: Dict[str, float], thresholds: Dict[str, float]) -> List[Dict[str, Any]]:
-    """Return one row per gated metric: pass/fail + the delta. A metric in
-    `thresholds` but absent from `observed` is treated as a failure."""
+def compare_thresholds(
+    observed: Dict[str, float],
+    thresholds: Dict[str, float],
+    ungated: Optional[Set[str]] = None,
+) -> List[Dict[str, Any]]:
+    """Return one row per gated metric: pass/fail + the delta.
+
+    A metric in `thresholds` but absent from `observed` is a failure — that is
+    what catches a renamed or silently-dropped metric.
+
+    `ungated` is the deliberate exception: metrics this run is knowingly unable
+    to measure. They are still reported, as `gated: False`, so they stay visible
+    instead of vanishing from the table — but they cannot fail the run. Only a
+    caller that knows *why* a metric is unavailable may put it here; leaving it
+    out keeps the strict absent-is-failure rule."""
+    ungated = ungated or set()
     rows = []
     for name, minimum in thresholds.items():
         value = observed.get(name)
-        passed = value is not None and value >= minimum
+        is_gated = name not in ungated
+        passed = (value is not None and value >= minimum) if is_gated else True
         rows.append(
             {
                 "metric": name,
                 "value": value,
                 "threshold": minimum,
                 "passed": passed,
+                "gated": is_gated,
             }
         )
     return rows
@@ -146,30 +161,48 @@ def run_ci_mode(
     replay = compute_replay_metrics(cases, transcripts)
     observed["citation_precision"] = replay["citation"]["precision"]
 
-    stale = True
+    # The baseline's two hashes go stale independently and mean different
+    # things, so they are tracked apart rather than OR-ed into one flag:
+    #
+    #   transcripts drift -> the replayed metrics (citation_precision) describe
+    #     answers that no longer exist. Nothing here is trustworthy; fail.
+    #   dataset drift     -> the transcripts still match, so replay is fine, but
+    #     the baseline's faithfulness/abstention were judged over a different
+    #     set of questions. Those two cannot be gated until a `--mode full
+    #     --record` refresh; everything this mode computes live still can.
+    #
+    # Collapsing them meant one added golden case turned the whole gate red
+    # until someone spent API quota, and a permanently-red gate is one nobody
+    # reads. Loud warning, narrowed gate, no silent pass.
+    dataset_stale = True
+    transcripts_stale = True
     results_data: Dict[str, Any] = {}
     if results_path.exists():
         results_data = json.loads(results_path.read_text())
         run_meta = results_data.get("run", {})
-        current_dataset_hash = sha256_file(dataset_path)
-        current_transcripts_hash = sha256_transcripts(transcripts_dir)
-        stale = (
-            run_meta.get("dataset_sha256") != current_dataset_hash
-            or run_meta.get("transcripts_sha256") != current_transcripts_hash
-        )
-        if not stale:
+        dataset_stale = run_meta.get("dataset_sha256") != sha256_file(dataset_path)
+        transcripts_stale = run_meta.get("transcripts_sha256") != sha256_transcripts(transcripts_dir)
+        if not dataset_stale:
             observed["faithfulness_llm_judge"] = results_data.get("faithfulness", {}).get("llm_judge")
             observed["abstention_recall"] = results_data.get("abstention", {}).get("abstention_recall")
 
+    # Named explicitly, not inferred from "absent": a metric that disappears for
+    # any other reason must still fail the run.
+    ungated = {"faithfulness_llm_judge", "abstention_recall"} if dataset_stale else set()
+
     embeddings_stale, embeddings_warning = _check_embeddings_artifact_staleness()
 
-    rows = compare_thresholds(observed, thresholds)
-    passed = all(row["passed"] for row in rows) and not stale and not embeddings_stale
+    rows = compare_thresholds(observed, thresholds, ungated=ungated)
+    passed = all(row["passed"] for row in rows) and not transcripts_stale and not embeddings_stale
 
     return {
         "mode": "ci",
         "passed": passed,
-        "stale_results": stale,
+        # Kept for callers that only asked "is the baseline current?"
+        "stale_results": dataset_stale or transcripts_stale,
+        "dataset_stale": dataset_stale,
+        "transcripts_stale": transcripts_stale,
+        "ungated_metrics": sorted(ungated),
         "embeddings_artifact_stale": embeddings_stale,
         "embeddings_artifact_warning": embeddings_warning,
         "observed": observed,

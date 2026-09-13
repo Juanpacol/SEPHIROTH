@@ -159,6 +159,38 @@ def test_compare_thresholds_missing_metric_fails():
     assert rows[0]["value"] is None
 
 
+def test_compare_thresholds_ungated_metric_is_reported_but_cannot_fail():
+    """A metric the run knowingly could not measure is reported, not failed.
+
+    The distinction from the test above matters: `abstention_recall` is absent
+    in both cases, and only the caller naming it as ungated separates "we chose
+    not to gate this" from "it silently vanished"."""
+    rows = compare_thresholds(
+        {"recall_at_1": 0.8},
+        {"recall_at_1": 0.75, "faithfulness_llm_judge": 0.25, "abstention_recall": 0.5},
+        ungated={"faithfulness_llm_judge"},
+    )
+    by_metric = {r["metric"]: r for r in rows}
+
+    assert by_metric["faithfulness_llm_judge"]["passed"] is True
+    assert by_metric["faithfulness_llm_judge"]["gated"] is False
+    assert by_metric["faithfulness_llm_judge"]["value"] is None, "must stay visible in the table"
+
+    # Absent and NOT named as ungated — still a failure.
+    assert by_metric["abstention_recall"]["passed"] is False
+    assert by_metric["abstention_recall"]["gated"] is True
+
+    assert by_metric["recall_at_1"]["passed"] is True
+    assert by_metric["recall_at_1"]["gated"] is True
+
+
+def test_compare_thresholds_gates_everything_by_default():
+    """Omitting `ungated` keeps the strict absent-is-failure rule."""
+    rows = compare_thresholds({}, {"faithfulness_llm_judge": 0.25})
+    assert rows[0]["passed"] is False
+    assert rows[0]["gated"] is True
+
+
 def test_sha256_transcripts_changes_with_content(tmp_path):
     (tmp_path / "a.json").write_text('{"case_id": "a"}')
     hash1 = sha256_transcripts(tmp_path)
