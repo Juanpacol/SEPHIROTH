@@ -32,15 +32,6 @@ markers = [
     "legacy: characterizes pre-migration behaviour; deleted with its shim",
 ]
 
-[tool.mypy]
-# Same three roots pytest and ruff already cover. explicit_package_bases lets
-# mypy resolve api.*/intelligence.* (no root __init__.py, per the "platform/
-# must not be a package" rule in CLAUDE.md) and sephiroth.* (src layout) in
-# one run instead of three.
-mypy_path = "src:.:platform"
-explicit_package_bases = true
-ignore_missing_imports = true
-
 [tool.coverage.run]
 # concurrency="greenlet": SQLAlchemy's async ORM runs its sync DBAPI calls
 # inside a greenlet switch (greenlet_spawn). Without this, coverage's tracer
