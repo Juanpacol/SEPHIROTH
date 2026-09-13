@@ -232,7 +232,7 @@ gaps:
 quality_gates:
   coverage_fail_under: 87
   eval_blocking: true
-  ci_jobs: [lint, test, eval, frontend, docker-build-smoke-test, security, security-advisory]
+  ci_jobs: [lint, test, eval, frontend, docker-build-smoke-test, security, security-advisory, type-check]
 
 known_debt:
   - id: DEBT-001
@@ -351,3 +351,26 @@ known_debt:
       partially-executed PR.
     phase: null
     status: resolved
+  - id: DEBT-012
+    item: >-
+      No Python type-check gate in CI — only ruff (lint/format), despite
+      type hints throughout (ModelProvider protocol, AgentCapability, etc).
+      mypy>=1.10 was already a requirements-dev.txt dependency with zero CI
+      wiring. Running it for the first time (`mypy -p sephiroth -p api -p
+      intelligence`) surfaces a real 61-error baseline across 25
+      pre-existing files (Optional-arithmetic in
+      src/sephiroth/safety/synthetic_daily.py, SQLAlchemy Result.rowcount
+      access in routers/approvals.py + workflows/engine.py, a handful of
+      Optional/union-attr and dict-inference gaps in routers/{scheduling,
+      dashboard,rag,agents}.py, one real signature mismatch in
+      services/result_service.py:163 passing an int where review_for_result
+      expects str).
+    action: >-
+      Added `[tool.mypy]` to pyproject.toml (mypy_path="src:.:platform",
+      explicit_package_bases=true, ignore_missing_imports=true) and a
+      `type-check` CI job, continue-on-error like security-advisory —
+      visible in every PR's job summary without blocking merges on the
+      61-error backlog. Next step (separate, not done here): work down the
+      baseline file by file, then flip continue-on-error off.
+    phase: null
+    status: open
