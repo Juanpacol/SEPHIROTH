@@ -232,6 +232,20 @@ async def test_run_full_mode_runs_real_agent_and_writes_results(tmp_path):
     assert results_path.exists()
     assert results["retrieval"]["recall_at_1"] == 1.0
 
+    # `skip_pubmed=True` above has to actually reach the agent. It used to be
+    # applied by assigning `agent.allowed_tools`, an attribute nothing reads, so
+    # PubMed kept being called and the recorded transcripts were not
+    # reproducible — with this test passing the whole time, because it asserted
+    # nothing about the flag it was setting.
+    offered = {
+        tool["function"]["name"]
+        for call in client.chat_calls
+        for tool in (call["tools"] or [])
+        if "function" in tool
+    }
+    assert "search_clinical_guidelines" in offered, "the agent lost the tool it needs"
+    assert "search_pubmed" not in offered, "--skip-pubmed did not reach the agent"
+
 
 @pytest.mark.asyncio
 async def test_run_full_mode_without_record_does_not_write_files(tmp_path):

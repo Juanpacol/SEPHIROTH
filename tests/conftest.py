@@ -111,7 +111,7 @@ class FakeLLMClient:
         tool_executor=None,
         think: Optional[bool] = False,
     ) -> ChatResult:
-        self.chat_calls.append({"system_prompt": system_prompt, "messages": messages})
+        self.chat_calls.append({"system_prompt": system_prompt, "messages": messages, "tools": tools})
         script = self._script_for(system_prompt)
         executed: List[Dict[str, Any]] = []
         content = ""

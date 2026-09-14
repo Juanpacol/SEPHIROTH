@@ -256,7 +256,15 @@ async def run_full_mode(
 
     agent = EvidenceAgent(client)
     if skip_pubmed:
-        agent.allowed_tools = ["search_clinical_guidelines"]
+        # `Agent.run` reads `self.capability.tools` (src/sephiroth/runtime/agent.py),
+        # never an `allowed_tools` attribute. Assigning one — which is what this
+        # did — creates a field nothing reads, so `--skip-pubmed` silently did
+        # nothing and every recorded transcript still had live PubMed responses
+        # in it. Which is the opposite of the flag's whole purpose: the skill
+        # documents it as what "keeps transcripts reproducible".
+        agent.capability = agent.capability.model_copy(
+            update={"tools": [t for t in agent.capability.tools if t != "search_pubmed"]}
+        )
 
     model_name = getattr(client, "model", "unknown")
     transcripts: List[Dict[str, Any]] = []

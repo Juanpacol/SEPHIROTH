@@ -222,9 +222,9 @@ async def extract_and_verify(
         # only path, which is exactly what the two-call version did here.
         from .claims import extract_claims
 
-        claims = await extract_claims(answer, client)
+        extracted = await extract_claims(answer, client)
         return VerificationReport(
-            claims=[c.model_copy(update={"status": VerificationStatus.UNKNOWN}) for c in claims]
+            claims=[c.model_copy(update={"status": VerificationStatus.UNKNOWN}) for c in extracted]
         )
 
     evidence_by_id = {e.id: e for e in evidence}

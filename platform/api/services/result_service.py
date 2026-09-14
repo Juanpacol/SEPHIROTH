@@ -80,7 +80,7 @@ async def _create_review(
     session: AsyncSession,
     *,
     result_type: str,
-    result_id: str,
+    result_id: str | int,
     patient_id: str,
     classification: Classification,
     now: datetime,
@@ -106,7 +106,7 @@ async def get_review(session: AsyncSession, review_id: str) -> Optional[ResultRe
 
 
 async def review_for_result(
-    session: AsyncSession, result_type: str, result_id: str
+    session: AsyncSession, result_type: str, result_id: str | int
 ) -> Optional[ResultReview]:
     return (
         await session.scalars(
