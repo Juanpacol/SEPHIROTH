@@ -40,7 +40,7 @@ _CATEGORY_LABELS = {
 @router.get("/categories", summary="Browse the evidence corpus by clinical category")
 async def evidence_categories(user: User = Depends(get_current_user)) -> List[Dict[str, Any]]:
     counts = list_evidence_categories()
-    categories = [
+    categories: List[Dict[str, Any]] = [
         {"slug": slug, "label": _CATEGORY_LABELS.get(slug, slug.replace("_", " ").title()), "count": count}
         for slug, count in counts.items()
     ]

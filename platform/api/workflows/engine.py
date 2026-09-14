@@ -73,7 +73,7 @@ async def reclaim_expired_leases(session: AsyncSession, now: datetime) -> int:
         .values(status="pending", claimed_by="")
     )
     await session.commit()
-    return result.rowcount or 0
+    return result.rowcount or 0  # type: ignore[attr-defined]  # CursorResult, see approvals.py
 
 
 async def select_due_step_ids(session: AsyncSession, now: datetime, batch_size: int) -> list[str]:
@@ -101,7 +101,7 @@ async def claim_step(
         )
     )
     await session.commit()
-    return (result.rowcount or 0) == 1
+    return (result.rowcount or 0) == 1  # type: ignore[attr-defined]  # CursorResult, see approvals.py
 
 
 async def execute_step(session: AsyncSession, step_id: str, now: datetime) -> str:

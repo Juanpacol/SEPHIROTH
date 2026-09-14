@@ -47,12 +47,13 @@ def _downscale_for_vision(image_bytes: bytes, mime_type: str) -> tuple[bytes, st
     """Shrink an image to fit comfortably in a small local VLM's context
     window. Re-encodes as JPEG regardless of input format — smaller than
     PNG for photographic/grayscale content and one predictable code path."""
-    with Image.open(io.BytesIO(image_bytes)) as im:
-        im = im.convert("RGB")
-        if max(im.size) > _VISION_MAX_DIMENSION:
-            im.thumbnail((_VISION_MAX_DIMENSION, _VISION_MAX_DIMENSION), Image.LANCZOS)
+    with Image.open(io.BytesIO(image_bytes)) as opened:
+        # Separate name: `Image.open` yields an ImageFile, `.convert` an Image.
+        rgb = opened.convert("RGB")
+        if max(rgb.size) > _VISION_MAX_DIMENSION:
+            rgb.thumbnail((_VISION_MAX_DIMENSION, _VISION_MAX_DIMENSION), Image.Resampling.LANCZOS)
         out = io.BytesIO()
-        im.save(out, format="JPEG", quality=85)
+        rgb.save(out, format="JPEG", quality=85)
         return out.getvalue(), "image/jpeg"
 
 

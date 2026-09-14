@@ -404,7 +404,11 @@ async def dashboard_performance(session: AsyncSession = Depends(get_session)) ->
         return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
     review_durations = [
-        (_naive_utc(a.reviewed_at) - _naive_utc(a.created_at)).total_seconds() for a in alerts
+        (_naive_utc(a.reviewed_at) - _naive_utc(a.created_at)).total_seconds()
+        for a in alerts
+        # The query above already filters on `reviewed_at IS NOT NULL`; this
+        # restates it for the type checker, which can't see through the SQL.
+        if a.reviewed_at is not None
     ]
     resolved = sum(1 for a in alerts if a.status == "resolved")
 

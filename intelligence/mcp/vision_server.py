@@ -76,7 +76,11 @@ def _active_vision_model_name(settings: Any) -> str:
     Ollama, not Gemini, and the reported model name must say so."""
     provider = getattr(settings, "llm_provider", "gemini")
     if provider in ("ollama", "split"):
-        return getattr(settings, "ollama_vision_model", None) or getattr(settings, "ollama_model", None)
+        return (
+            getattr(settings, "ollama_vision_model", None)
+            or getattr(settings, "ollama_model", None)
+            or "unknown"
+        )
     if provider == "groq":
         return settings.groq_vision_model or settings.groq_model
     return settings.gemini_vision_model or settings.gemini_model

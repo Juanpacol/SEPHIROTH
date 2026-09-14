@@ -333,6 +333,7 @@ def _final_answer(sanitized_answer: str, state: RunState) -> str:
     answer alongside a decline. Called only after `_verify_and_decide` has
     set `state.abstention`, so it is never `None` here."""
     abstention = state.abstention
+    assert abstention is not None, "_final_answer runs after _verify_and_decide"
     if abstention.status.value == "abstain":
         return abstention.message
     if abstention.status.value == "partial":

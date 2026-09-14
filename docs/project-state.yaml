@@ -370,7 +370,43 @@ known_debt:
       explicit_package_bases=true, ignore_missing_imports=true) and a
       `type-check` CI job, continue-on-error like security-advisory —
       visible in every PR's job summary without blocking merges on the
-      61-error backlog. Next step (separate, not done here): work down the
-      baseline file by file, then flip continue-on-error off.
+      backlog. The "61 errors in 25 files" above was already stale when it
+      was written: the measured baseline was 53 in 21 files.
+
+      The next step is now done, but NOT the way the note above planned it.
+      Waiting for the whole baseline to reach zero before flipping
+      continue-on-error off means gating nothing for as long as that takes,
+      and a permanently-advisory job is one nobody acts on. Instead the gate
+      is a ratchet: 12 files were taken to zero and listed in
+      `[tool.mypy-ratchet].files`, with a matching `[[tool.mypy.overrides]]`
+      block raising check_untyped_defs + warn_unused_ignores on exactly those
+      modules. `tests/test_mypy_clean_modules.py` runs mypy over the list and
+      fails if any regresses, and separately asserts the two lists have not
+      drifted — so the real gate lives in the `test` CI job, which already
+      blocks, and the whole-repo `type-check` job stays advisory.
+      Both halves were mutation-tested (inject a type error / desync the
+      lists; each fails as intended).
+
+      Remaining: 35 errors in 9 files. The expensive ones are
+      intelligence/nlp/__init__.py (9 — an unimplemented stub, so a product
+      decision rather than a typing one), src/sephiroth/models/gemini.py (6,
+      google-genai stubs), src/sephiroth/safety/synthetic_daily.py (6, a
+      narrowing false positive), intelligence/mcp/imaging_server.py (5,
+      nibabel/PIL). Add a file to the ratchet as it reaches zero; never
+      remove one to make a build pass.
+
+      Correction to the item text above: services/result_service.py:163 is
+      NOT a real signature mismatch. Both the read (`review_for_result`) and
+      the write (`_create_review`) coerce with `str(...)`, so the idempotency
+      lookup always matched; the signature was merely narrower than the
+      contract it honours, and is now `str | int`.
+
+      Two genuine bugs did surface from the baseline, both fixed:
+      `intelligence/evaluation/runner.py` set `agent.allowed_tools`, which
+      nothing reads (`Agent.run` uses `capability.tools`), so `--skip-pubmed`
+      was a no-op and every recorded transcript contains live PubMed
+      responses despite the flag being documented as what makes them
+      reproducible; and `verification/combined.py` bound `claims` twice in
+      one function.
     phase: null
     status: open

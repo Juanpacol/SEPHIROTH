@@ -41,6 +41,54 @@ mypy_path = "src:.:platform"
 explicit_package_bases = true
 ignore_missing_imports = true
 
+# The ratchet (DEBT-012). Whole-repo mypy is advisory — it still reports a real
+# backlog — but these files are clean *now*, and `tests/test_mypy_clean_modules.py`
+# reads this list and fails if any of them regresses. That is what makes the
+# gate real: one list, enforced by the suite the `test` CI job already runs,
+# rather than a second copy in a workflow that can drift.
+#
+# Its own table, not `[tool.mypy.clean]`: mypy parses every key under
+# `[tool.mypy]` and warns on ones it doesn't know.
+#
+# Move a file here only once `mypy <file>` is clean. Never remove one to make a
+# build pass — that is the ratchet slipping.
+[tool.mypy-ratchet]
+files = [
+  "platform/api/main.py",
+  "platform/api/routers/approvals.py",
+  "platform/api/routers/dashboard.py",
+  "platform/api/routers/rag.py",
+  "platform/api/services/result_service.py",
+  "platform/api/workflows/clinical_notify.py",
+  "platform/api/workflows/engine.py",
+  "src/sephiroth/models/ollama.py",
+  "src/sephiroth/runtime/executor.py",
+  "src/sephiroth/verification/combined.py",
+  "intelligence/evaluation/runner.py",
+  "intelligence/mcp/vision_server.py",
+]
+
+# Stricter inside the clean set. `warn_unused_ignores` is the half people forget:
+# it flags a `# type: ignore` that has stopped being necessary (a SQLAlchemy or
+# Pillow upgrade, say), so the ignores added to get here can't quietly fossilize.
+[[tool.mypy.overrides]]
+module = [
+  "api.main",
+  "api.routers.approvals",
+  "api.routers.dashboard",
+  "api.routers.rag",
+  "api.services.result_service",
+  "api.workflows.clinical_notify",
+  "api.workflows.engine",
+  "sephiroth.models.ollama",
+  "sephiroth.runtime.executor",
+  "sephiroth.verification.combined",
+  "intelligence.evaluation.runner",
+  "intelligence.mcp.vision_server",
+]
+check_untyped_defs = true
+warn_unused_ignores = true
+
 [tool.coverage.run]
 # concurrency="greenlet": SQLAlchemy's async ORM runs its sync DBAPI calls
 # inside a greenlet switch (greenlet_spawn). Without this, coverage's tracer

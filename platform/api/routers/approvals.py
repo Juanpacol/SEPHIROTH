@@ -108,9 +108,11 @@ async def _expire_due_pending(session: AsyncSession, now: datetime) -> int:
         )
         .values(status="expired")
     )
-    if result.rowcount:
+    # `session.execute(update(...))` returns a CursorResult at runtime, which
+    # does have `.rowcount`; the stub only promises the `Result[Any]` base.
+    if result.rowcount:  # type: ignore[attr-defined]
         await session.commit()
-    return result.rowcount or 0
+    return result.rowcount or 0  # type: ignore[attr-defined]
 
 
 @router.get("")

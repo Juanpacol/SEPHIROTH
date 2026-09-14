@@ -35,7 +35,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import httpx
 from sqlalchemy import func, select
@@ -218,7 +218,7 @@ def _category_block(
     return _text_section(f"*{header}*\n" + "\n".join(lines))
 
 
-async def _alert_action_items(session: AsyncSession, alerts: List[Alert]) -> List[ActionItem]:
+async def _alert_action_items(session: AsyncSession, alerts: Sequence[Alert]) -> List[ActionItem]:
     items = []
     for alert in alerts[:_MAX_DIGEST_ITEMS_PER_CATEGORY]:
         patient = await session.get(Patient, alert.patient_id)
