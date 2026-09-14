@@ -37,7 +37,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from data.schemas import LabResult, Patient, SyntheticDataRun
-from sephiroth.safety.alerts import generate_alerts_for_all_patients, resolve_recovered_alerts_for_all_patients
+from sephiroth.safety.alerts import (
+    generate_alerts_for_all_patients,
+    resolve_recovered_alerts_for_all_patients,
+)
 from sephiroth.safety.risk import bp_abnormality, lab_value_abnormality
 from sephiroth.safety.synthetic_schedule import run_daily_schedule_simulation
 
@@ -213,7 +216,9 @@ def _bp_schema(lab_results: dict) -> str:
     return "combined"  # matches the seed patients' "bp": "138/86" convention, and is the safe default
 
 
-async def _simulate_patient(session: AsyncSession, patient: Patient, taken_at: datetime) -> Tuple[int, int, int]:
+async def _simulate_patient(
+    session: AsyncSession, patient: Patient, taken_at: datetime
+) -> Tuple[int, int, int]:
     """Returns (labs_inserted, abnormal_count, critical_count) for this patient."""
     by_key_lower = {k.strip().lower(): v for k, v in (patient.lab_results or {}).items()}
     new_snapshot = dict(patient.lab_results or {})
@@ -259,7 +264,9 @@ async def _simulate_patient(session: AsyncSession, patient: Patient, taken_at: d
     if schema == "split":
         cur_systolic_raw = by_key_lower.get("bp_systolic")
         cur_diastolic_raw = by_key_lower.get("bp_diastolic")
-        cur_systolic = float("".join(ch for ch in str(cur_systolic_raw) if ch.isdigit())) if cur_systolic_raw else None
+        cur_systolic = (
+            float("".join(ch for ch in str(cur_systolic_raw) if ch.isdigit())) if cur_systolic_raw else None
+        )
         cur_diastolic = (
             float("".join(ch for ch in str(cur_diastolic_raw) if ch.isdigit())) if cur_diastolic_raw else None
         )

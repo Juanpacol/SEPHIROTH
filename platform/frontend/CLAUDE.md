@@ -40,6 +40,12 @@ expensive subtree. Reach for it last.
   expanded, so `90vh` hangs off the bottom of an iPhone.
 - A flex child that should truncate needs `min-w-0` on itself, not just
   `truncate` on the text.
+- Native controls — `input[type=time|date|datetime-local|color]`, `select` —
+  carry an intrinsic minimum width the browser decides, and `min-width: auto`
+  on a flex item floors the column at it. That floor **differs per platform**:
+  Chromium on Linux renders a time widget wider than WebKit on macOS, so a row
+  of them can pass the suite locally and overflow in CI. Always `min-w-0`, and
+  stack below `sm:` rather than sitting two of them side by side.
 - Anything pinned to the bottom edge needs `.safe-bottom`; anything the tab bar
   would cover needs `.pb-tabbar` on the page's flex **column** (a margin on the
   last child overflows instead of moving it — see the comment in `globals.css`).

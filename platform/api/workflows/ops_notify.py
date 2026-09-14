@@ -166,7 +166,9 @@ def _format_simulation_blocks(fields: Dict[str, Any]) -> Tuple[str, List[Dict[st
     counters-only, allow-listed shape as `_format_blocks`, distinct fields."""
     disallowed = set(fields) - ALLOWED_SIMULATION_FIELDS
     if disallowed:
-        raise ValueError(f"simulation notification fields are allow-listed; drop or rename: {sorted(disallowed)}")
+        raise ValueError(
+            f"simulation notification fields are allow-listed; drop or rename: {sorted(disallowed)}"
+        )
 
     patients_touched = fields.get("patients_touched", 0)
     labs_inserted = fields.get("labs_inserted", 0)
@@ -206,9 +208,14 @@ def _format_simulation_blocks(fields: Dict[str, Any]) -> Tuple[str, List[Dict[st
         lines = [f"• {e}" for e in shown]
         if len(errors) > len(shown):
             lines.append(f"…and {len(errors) - len(shown)} more")
-        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Errors:*\n" + "\n".join(lines)}})
+        blocks.append(
+            {"type": "section", "text": {"type": "mrkdwn", "text": "*Errors:*\n" + "\n".join(lines)}}
+        )
 
-    fallback = f"{emoji} Daily simulation: {patients_touched} patients, {labs_inserted} labs, {alerts_created} alerts"
+    fallback = (
+        f"{emoji} Daily simulation: {patients_touched} patients, "
+        f"{labs_inserted} labs, {alerts_created} alerts"
+    )
     return fallback, blocks, color
 
 

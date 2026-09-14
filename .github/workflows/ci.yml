@@ -18,9 +18,17 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: requirements.txt
-      - run: pip install ruff
-      - run: ruff check .
-      - run: ruff format --check .
+      # Pinned, not `pip install ruff`: the formatter's output is
+      # version-dependent, so an unpinned upgrade turns main red with no code
+      # change. Keep in step with requirements-dev.txt.
+      - run: pip install ruff==0.16.3
+      # `check` first is the useful order, but it aborts the job on failure and
+      # hides whatever `format --check` would have said — run both, then fail.
+      - run: |
+          status=0
+          ruff check . || status=1
+          ruff format --check . || status=1
+          exit $status
 
   test:
     runs-on: ubuntu-latest

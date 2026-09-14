@@ -101,8 +101,18 @@ export default function AvailabilitySheet({
             ))}
           </select>
           <div className="flex gap-2">
-            <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="input" />
-            <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="input" />
+            <input
+              type="time"
+              value={start}
+              onChange={(e) => setStart(e.target.value)}
+              className="input min-w-0"
+            />
+            <input
+              type="time"
+              value={end}
+              onChange={(e) => setEnd(e.target.value)}
+              className="input min-w-0"
+            />
           </div>
           <select
             value={slotMinutes}
