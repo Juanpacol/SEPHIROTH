@@ -86,7 +86,9 @@ async def ensure_default_availability(session: AsyncSession, clinicians: List[Us
     return seeded
 
 
-async def transition_past_appointments(session: AsyncSession, clinicians: List[User], now: datetime) -> Tuple[int, int]:
+async def transition_past_appointments(
+    session: AsyncSession, clinicians: List[User], now: datetime
+) -> Tuple[int, int]:
     """Any `booked` appointment whose end has already passed becomes
     `completed` (the common case) or occasionally `no_show` -- a clinic's
     booked-forever calendar is not realistic, and the Schedule week view
@@ -159,7 +161,9 @@ async def book_new_appointments(
         return 0
 
     horizon_end = today + timedelta(days=_LOOKAHEAD_DAYS)
-    rules, exceptions, appointments = await _load_clinician_schedule(session, clinician.id, today, horizon_end)
+    rules, exceptions, appointments = await _load_clinician_schedule(
+        session, clinician.id, today, horizon_end
+    )
     if not rules:
         return 0
 

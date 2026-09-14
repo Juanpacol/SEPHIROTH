@@ -119,8 +119,11 @@ export default function PreferencesPage() {
       <form onSubmit={saveQuietHours} className="card space-y-4">
         <h2 className="font-bold">{t("preferences.quietHours.title")}</h2>
         <p className="text-sm text-muted">{t("preferences.quietHours.subtitle")}</p>
-        <div className="flex gap-3">
-          <div className="flex-1">
+        {/* Stacked on a phone, and `min-w-0` so the time widget's intrinsic
+            width can't put a floor under the column — see the native-control
+            note in CLAUDE.md. */}
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="min-w-0 flex-1">
             <label className="mb-1 block text-sm font-semibold">{t("preferences.quietHours.start")}</label>
             <input
               type="time"
@@ -129,7 +132,7 @@ export default function PreferencesPage() {
               className="input"
             />
           </div>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <label className="mb-1 block text-sm font-semibold">{t("preferences.quietHours.end")}</label>
             <input
               type="time"

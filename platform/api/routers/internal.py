@@ -21,11 +21,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.db import get_session
+from sephiroth.safety.synthetic_daily import run_daily_simulation
 
 from ..workflows.daily_digest import maybe_send_daily_digest
 from ..workflows.engine import TickSummary, run_tick
 from ..workflows.ops_notify import get_ops_notifier
-from sephiroth.safety.synthetic_daily import run_daily_simulation
 
 router = APIRouter()
 

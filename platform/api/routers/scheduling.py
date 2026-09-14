@@ -483,9 +483,7 @@ async def list_appointments(
     patient_names = dict(
         (
             await session.execute(
-                select(Patient.id, Patient.name).where(
-                    Patient.id.in_({a.patient_id for a in appointments})
-                )
+                select(Patient.id, Patient.name).where(Patient.id.in_({a.patient_id for a in appointments}))
             )
         ).all()
     )
