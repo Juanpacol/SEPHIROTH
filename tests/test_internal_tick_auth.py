@@ -1,5 +1,6 @@
-"""`POST /internal/tick` — the auth gate. No JWT, no user; a shared
-secret header instead. See `platform/api/routers/internal.py`."""
+"""`POST /internal/tick` and `POST /internal/simulate-day` — the auth gate.
+No JWT, no user; a shared secret header instead. See
+`platform/api/routers/internal.py`."""
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -62,3 +63,36 @@ async def test_enabled_engine_accepts_correct_token_and_runs_a_tick(client, monk
     assert body["status"] == "ok"
     assert "tick_id" in body
     assert body["claimed"] == 0  # no steps seeded in this test's empty DB
+
+
+async def test_disabled_simulation_returns_disabled_with_no_auth(client, monkeypatch):
+    monkeypatch.setattr(settings, "enable_daily_simulation", False)
+
+    res = await client.post("/internal/simulate-day")
+
+    assert res.status_code == 200
+    assert res.json() == {"status": "disabled"}
+
+
+async def test_enabled_simulation_rejects_missing_token(client, monkeypatch):
+    monkeypatch.setattr(settings, "enable_daily_simulation", True)
+    monkeypatch.setattr(settings, "internal_tick_token", "a-real-secret-value-thats-long-enough")
+
+    res = await client.post("/internal/simulate-day")
+
+    assert res.status_code == 401
+
+
+async def test_enabled_simulation_accepts_correct_token_and_runs(client, monkeypatch):
+    """Same auth gate as /internal/tick, then the real pipeline against an
+    empty DB (0 synthetic patients seeded here) -- exercises the endpoint's
+    own success path without duplicating synthetic_daily's own test suite."""
+    monkeypatch.setattr(settings, "enable_daily_simulation", True)
+    monkeypatch.setattr(settings, "internal_tick_token", "a-real-secret-value-thats-long-enough")
+
+    res = await client.post(
+        "/internal/simulate-day", headers={"X-Internal-Token": "a-real-secret-value-thats-long-enough"}
+    )
+
+    assert res.status_code == 200
+    assert res.json()["ran"] is True

@@ -47,6 +47,10 @@ async def test_set_rejects_malformed_value_for_known_key(db_session):
     with pytest.raises(InvalidMemoryKey):
         await set_memory(db_session, "clinic", "default", "quiet_hours", {"start": "9am"})
     with pytest.raises(InvalidMemoryKey):
+        # Both keys present this time -- exercises the per-value HH:MM regex
+        # check, not the {"start", "end"} key-set check above it.
+        await set_memory(db_session, "clinic", "default", "quiet_hours", {"start": "9am", "end": "07:00"})
+    with pytest.raises(InvalidMemoryKey):
         await set_memory(db_session, "clinic", "default", "contact_preference", "sms")
 
 
