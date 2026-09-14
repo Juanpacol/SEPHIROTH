@@ -301,22 +301,6 @@ class Settings(BaseSettings):
     workflow_tick_budget_seconds: float = 20.0
     workflow_step_lease_seconds: int = 120
 
-    # Optional ops monitoring: a tick posts a health summary to this Slack
-    # incoming-webhook URL when set, and stays silent (no notifier, no
-    # error) when unset -- same degrade-gracefully posture as
-    # groq_api_key/s3_bucket above. No separate enable flag: the URL's
-    # presence IS the switch, see platform/api/workflows/ops_notify.py.
-    slack_webhook_url: Optional[str] = None
-
-    # Clinician-facing Slack channel -- deliberately a SEPARATE webhook
-    # from slack_webhook_url above. That one is engineering/ops (workflow
-    # health, PHI-free by contract); this one exists BECAUSE a clinician
-    # needs patient-identifying clinical signal (a new critical alert, an
-    # AI answer flagged for review, a daily digest). See
-    # platform/api/workflows/clinical_notify.py's module docstring for the
-    # privacy posture. Same degrade-gracefully pattern: unset = silent.
-    clinical_slack_webhook_url: Optional[str] = None
-
     class Config:
         env_file = ".env"
 

@@ -15,12 +15,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.fast_path import try_fast_path
 from api.pdf_export import render_consultation_pdf
-from api.workflows import clinical_notify
 from auth.deps import get_current_user
 from core.config import settings
 from core.db import SessionLocal, get_session
 from core.rate_limit import key_by_user_or_ip, limiter
-from data.schemas import AIEvaluation, Consultation, Patient, User
+from data.schemas import AIEvaluation, Consultation, User
 from sephiroth.context import recent_consultation_summaries
 from sephiroth.models import get_llm_client
 from sephiroth.runtime import run_consultation, stream_consultation
@@ -143,19 +142,6 @@ async def _persist(
         len(consultation.tool_calls),
         len((consultation.citation_report or {}).get("fabricated", [])),
     )
-
-    # Clinician-facing Slack signal — fires only on "partial"/"abstain",
-    # never a plain "answer" (see notify_consultation_needs_review's
-    # docstring). Best-effort: a dead/unset webhook must never affect the
-    # response, same posture as ops_notify's tick summary.
-    if abstention_status != "answer":
-        patient_name = None
-        if consultation.patient_id:
-            patient = await session.get(Patient, consultation.patient_id)
-            patient_name = patient.name if patient else None
-        await clinical_notify.notify_consultation_needs_review(
-            patient_name, request.query, abstention_status, consultation.risk_level
-        )
 
     return consultation
 

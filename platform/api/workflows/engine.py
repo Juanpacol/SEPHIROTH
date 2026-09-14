@@ -13,10 +13,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from time import monotonic
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -45,11 +45,6 @@ class TickSummary:
     skipped: int = 0
     remaining: int = 0
     events_dispatched: int = 0
-    # Not included in to_dict() -- the HTTP response shape to the cron
-    # caller never changes. Only read by internal.py to compose an
-    # ops_notify.py Slack payload (workflow_id/step_id only, never
-    # patient_id -- see that module's docstring).
-    failed_steps: List[Dict[str, str]] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -213,15 +208,6 @@ async def run_tick(session: AsyncSession, tick_id: str) -> TickSummary:
             summary.skipped += 1
         else:
             summary.failed += 1
-            row = (
-                await session.execute(
-                    select(WorkflowStep.workflow_id, WorkflowStep.step_type).where(WorkflowStep.id == step_id)
-                )
-            ).first()
-            if row is not None:
-                summary.failed_steps.append(
-                    {"step_id": step_id, "workflow_id": row.workflow_id, "step_type": row.step_type}
-                )
 
     summary.remaining = (
         await session.scalar(

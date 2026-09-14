@@ -23,46 +23,15 @@ from core.config import settings
 from core.db import get_session
 from sephiroth.safety.synthetic_daily import run_daily_simulation
 
-from ..workflows.daily_digest import maybe_send_daily_digest
-from ..workflows.engine import TickSummary, run_tick
-from ..workflows.ops_notify import get_ops_notifier
+from ..workflows.engine import run_tick
 
 router = APIRouter()
-
-#: Cap on how many failed-step entries a single Slack message names --
-#: a batch of 25 failures shouldn't become a 25-line message.
-_MAX_NAMED_FAILURES = 5
 
 
 def _check_tick_token(x_internal_token: str | None) -> None:
     expected = settings.internal_tick_token or ""
     if not expected or not x_internal_token or not hmac.compare_digest(x_internal_token, expected):
         raise HTTPException(status_code=401, detail="Invalid tick token")
-
-
-def _ops_notify_fields(summary: TickSummary) -> dict:
-    """Builds the Slack payload from a `TickSummary` -- counters plus, on a
-    tick with failures, enough to look each one up (`workflow_id`/
-    `step_id`/`step_type`), never `patient_id`. `failed_steps` stays a
-    structured list (not flattened into comma-joined strings) so
-    `ops_notify._format_text` can render one bullet per step instead of
-    three parallel, hard-to-align columns."""
-    fields: dict = {
-        "tick_id": summary.tick_id,
-        "claimed": summary.claimed,
-        "succeeded": summary.succeeded,
-        "failed": summary.failed,
-        "skipped": summary.skipped,
-        "remaining": summary.remaining,
-        "events_dispatched": summary.events_dispatched,
-    }
-    if summary.failed_steps:
-        shown = summary.failed_steps[:_MAX_NAMED_FAILURES]
-        fields["failed_steps"] = shown
-        extra = len(summary.failed_steps) - len(shown)
-        if extra > 0:
-            fields["failed_steps_more"] = extra
-    return fields
 
 
 @router.post("/internal/tick")
@@ -74,17 +43,6 @@ async def tick(
         return {"status": "disabled"}
     _check_tick_token(x_internal_token)
     summary = await run_tick(session, tick_id=uuid4().hex[:12])
-    # Fires after run_tick returns, never inside it: run_tick has no
-    # try/except of its own, so a Slack outage must never be able to turn
-    # a healthy tick into a 500. Silent on an empty tick (nothing claimed,
-    # nothing failed) -- see ops_notify.py; at one tick per 5 minutes a
-    # "still alive, did nothing" message every time would drown real signal.
-    if summary.succeeded or summary.failed:
-        await get_ops_notifier().notify(_ops_notify_fields(summary))
-    # Independent of the ops summary above -- this is the clinician-facing
-    # channel (clinical_notify.py), checked/sent at most once per calendar
-    # day regardless of whether this particular tick claimed any steps.
-    await maybe_send_daily_digest(session)
     return summary.to_dict()
 
 
@@ -103,21 +61,6 @@ async def simulate_day(
         return {"status": "disabled"}
     _check_tick_token(x_internal_token)
     summary = await run_daily_simulation(session, force=force)
-    if summary.labs_inserted or summary.errors:
-        await get_ops_notifier().notify(
-            {
-                "patients_touched": summary.patients_touched,
-                "labs_inserted": summary.labs_inserted,
-                "abnormal_count": summary.abnormal_count,
-                "critical_count": summary.critical_count,
-                "alerts_created": summary.alerts_created,
-                "alerts_resolved": summary.alerts_resolved,
-                "appointments_booked": summary.appointments_booked,
-                "appointments_completed": summary.appointments_completed,
-                "appointments_no_show": summary.appointments_no_show,
-                "errors": summary.errors,
-            }
-        )
     return summary.to_dict()
 
 
