@@ -32,6 +32,125 @@ def test_print_table_handles_missing_value(capsys):
     assert "n/a" in capsys.readouterr().out
 
 
+def test_print_table_renders_ungated_metric_as_skipped(capsys):
+    """SKIPPED, never PASS. A metric the run could not measure must not read as
+    one that cleared its threshold — that would make the table actively
+    misleading, which is worse than omitting the row."""
+    rows = [
+        {"metric": "recall_at_1", "value": 0.9, "threshold": 0.87, "passed": True, "gated": True},
+        {
+            "metric": "faithfulness_llm_judge",
+            "value": None,
+            "threshold": 0.25,
+            "passed": True,
+            "gated": False,
+        },
+    ]
+    eval_run._print_table(rows)
+
+    out = capsys.readouterr().out
+    assert "| faithfulness_llm_judge | n/a | 0.2500 | SKIPPED |" in out
+    assert "| recall_at_1 | 0.9000 | 0.8700 | PASS |" in out
+
+
+def _ci_result(**overrides):
+    base = {
+        "passed": True,
+        "n_cases": 101,
+        "stale_results": False,
+        "dataset_stale": False,
+        "transcripts_stale": False,
+        "ungated_metrics": [],
+        "embeddings_artifact_stale": False,
+        "embeddings_artifact_warning": None,
+        "threshold_rows": [],
+    }
+    return {**base, **overrides}
+
+
+def test_run_ci_warns_loudly_when_transcripts_are_stale(monkeypatch, capsys):
+    """Transcript drift means the replayed metrics describe answers that no
+    longer exist, so nothing in the run is trustworthy: hard failure."""
+    monkeypatch.setattr(
+        eval_run.runner, "run_ci_mode", lambda: _ci_result(passed=False, transcripts_stale=True)
+    )
+    exit_code = eval_run._run_ci()
+
+    err = capsys.readouterr().err
+    assert exit_code == 1
+    assert "transcripts/" in err
+
+
+def test_run_ci_passes_with_a_stale_dataset_but_names_what_it_stopped_gating(monkeypatch, capsys):
+    """Dataset drift leaves the transcripts valid, so the live metrics still
+    gate and the run can pass — but the warning has to say which metrics went
+    ungated, or a green run quietly means less than it did yesterday."""
+    monkeypatch.setattr(
+        eval_run.runner,
+        "run_ci_mode",
+        lambda: _ci_result(dataset_stale=True, ungated_metrics=["faithfulness_llm_judge"]),
+    )
+    exit_code = eval_run._run_ci()
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "faithfulness_llm_judge" in captured.err
+    assert "NOT" in captured.err
+    assert "Overall: PASS" in captured.out
+
+
+def test_run_ci_surfaces_a_stale_embeddings_artifact(monkeypatch, capsys):
+    monkeypatch.setattr(
+        eval_run.runner,
+        "run_ci_mode",
+        lambda: _ci_result(
+            passed=False,
+            embeddings_artifact_stale=True,
+            embeddings_artifact_warning="corpus hash changed",
+        ),
+    )
+    exit_code = eval_run._run_ci()
+
+    assert exit_code == 1
+    assert "corpus hash changed" in capsys.readouterr().err
+
+
+def test_main_dispatches_ci_mode(monkeypatch):
+    """`main` is the only thing that turns argv into a mode, and a wiring
+    mistake there would silently run the wrong evaluation."""
+    monkeypatch.setattr("sys.argv", ["run", "--mode", "ci"])
+    monkeypatch.setattr(eval_run, "_run_ci", lambda: 0)
+    assert eval_run.main() == 0
+
+
+def test_main_passes_full_mode_flags_through(monkeypatch):
+    captured = {}
+
+    def fake_full(record, skip_pubmed, provider, model):
+        captured.update(record=record, skip_pubmed=skip_pubmed, provider=provider, model=model)
+        return 0
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["run", "--mode", "full", "--record", "--skip-pubmed", "--provider", "ollama", "--model", "m"],
+    )
+    monkeypatch.setattr(eval_run, "_run_full", fake_full)
+
+    assert eval_run.main() == 0
+    assert captured == {"record": True, "skip_pubmed": True, "provider": "ollama", "model": "m"}
+
+
+def test_git_sha_degrades_to_unknown_outside_a_repo(monkeypatch):
+    """Recorded in every baseline, so it must never raise — a missing git is a
+    label problem, not a reason to lose the run."""
+
+    def boom(*_args, **_kwargs):
+        raise OSError("no git here")
+
+    monkeypatch.setattr(eval_run.subprocess, "check_output", boom)
+    assert eval_run._git_sha() == "unknown"
+
+
 def test_run_full_uses_model_override(monkeypatch, tmp_path):
     from tests.conftest import FakeLLMClient
 

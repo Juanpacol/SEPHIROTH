@@ -99,7 +99,22 @@ def test_clean_files_have_no_mypy_errors():
     except FileNotFoundError:  # pragma: no cover - mypy is in requirements-dev
         pytest.skip("mypy not installed")
 
-    assert result.returncode == 0, (
+    # Filter to the listed files rather than trusting the exit code. Naming a
+    # file on mypy's command line also pulls in what it imports, and whether
+    # errors in *those* get reported varies with the environment — this test
+    # passed locally and failed in CI on exactly that difference, with errors
+    # from intelligence/nlp and data/rag that the ratchet never claimed to own.
+    # The advisory `type-check` job is what covers the rest; this one's contract
+    # is only ever "these files are clean".
+    owned = tuple(_clean_files())
+    offenders = [line for line in result.stdout.splitlines() if line.startswith(owned) and ": error:" in line]
+    assert offenders == [], (
         "a file in [tool.mypy-ratchet] regressed. Fix the type error — do not "
-        "remove the file from the list.\n\n" + result.stdout + result.stderr
+        "remove the file from the list.\n\n" + "\n".join(offenders)
     )
+
+    # A non-zero exit with nothing attributable to our files is usually mypy
+    # itself failing to run (bad config, crash). Silence there would make the
+    # whole gate vacuous, so surface it.
+    if result.returncode != 0 and not result.stdout.strip():
+        raise AssertionError("mypy did not run:\n" + result.stdout + result.stderr)
