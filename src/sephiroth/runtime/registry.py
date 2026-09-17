@@ -130,6 +130,7 @@ EVIDENCE = AgentCapability(
     capabilities=["evidence_retrieval"],
     tools=["search_clinical_guidelines", "search_pubmed"],
     context_fields=["conditions"],
+    require_tool_call=True,
 )
 
 COORDINATOR = AgentCapability(
