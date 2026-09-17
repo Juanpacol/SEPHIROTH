@@ -2,102 +2,122 @@
 
 ## Overview
 
-A clinical decision-support platform whose LLM reasoning runs on the Google Gemini API (AI Studio free tier); clinical capabilities are packaged as MCP tool servers; specialist agents are orchestrated by a purpose-built async executor (`src/sephiroth/runtime/`, replacing LangGraph as of Phase 3 — see [ADR-001](docs/08-decisions/ADR-001-remove-langgraph.md)) and always ground their answers in tool output and citations.
+Clinical decision-support platform. LLM reasoning runs on Google Gemini API (AI Studio free tier); clinical capabilities are FastMCP tool servers; specialist agents run through a purpose-built async executor (`src/sephiroth/runtime/`, replaced LangGraph — [ADR-001](docs/08-decisions/ADR-001-remove-langgraph.md)); answers ground in tool output + citations.
 
-⚠️ **Privacy:** clinical text and images are sent to Google's Gemini API. Not HIPAA/GDPR-compliant as-is — see README's privacy notice before using real patient data.
+⚠️ **Privacy:** clinical text/images go to Google's Gemini API. Not HIPAA/GDPR-compliant as-is — see README privacy notice before using real patient data.
 
 ## Directory Structure
 
 ```
 clinical-ai-copilot/
-├── platform/                 # Backend + frontend (NOT a Python package — see note below)
-│   ├── api/                  # FastAPI app: main.py + routers/ (agents, patients, medical, rag, dashboard)
-│   ├── core/                 # Settings (Gemini model/key, DB URLs, feature flags)
-│   ├── auth/                 # JWT auth: register/login, bcrypt hashing, get_current_user dependency
-│   └── frontend/             # Next.js 14 app (Nexura-derived design system)
+├── platform/                  # Backend + frontend (NOT a Python package — see note below)
+│   ├── api/                   # FastAPI app: main.py + routers/ + fast_path.py (0-LLM lookup tier)
+│   ├── core/                  # Settings (Gemini model/key, DB URLs, feature flags)
+│   ├── auth/                  # JWT auth: register/login, bcrypt hashing, get_current_user
+│   └── frontend/              # Next.js 14 app (Nexura-derived design system)
+│
+├── src/sephiroth/              # Model-agnostic runtime (strangler-fig target — see CLAUDE.md migration note)
+│   ├── models/                #   GeminiClient, GroqClient, FallbackLLMClient, factory.get_llm_client()
+│   ├── tools/                 #   ToolRuntime — MCP registry, capability tags, dispatch whitelist
+│   ├── runtime/                #   Agent, capability records, async executor (fan-out/merge/coordinate)
+│   ├── verification/          #   claim extraction + 5-state verification, citation_guard
+│   ├── safety/                #   abstention gating (answer/partial/abstain), prompt-injection heuristic
+│   ├── context/               #   per-agent context views, MMR rerank, per-patient memory
+│   └── telemetry/             #   build_trace, traced_span → persisted ExecutionTrace
 │
 ├── intelligence/
-│   ├── llm/                  # GeminiClient — chat + tool-call loop, structured output, vision
-│   │   └── factory.py        #   get_llm_client() lazy singleton, shared by agents/timeline/vision
-│   ├── mcp/                  # FastMCP servers + registry (the Gemini⇄MCP bridge)
-│   │   ├── registry.py       #   discovers tools, emits function-calling schemas + prompt summaries
-│   │   ├── nlp_server.py     #   entity extraction, note summarization
-│   │   ├── imaging_server.py #   DICOM/NIfTI inspection, MONAI analysis
-│   │   ├── rag_server.py     #   guideline search + PubMed (always cited)
-│   │   ├── drug_safety_server.py  # interaction screening
-│   │   └── vision_server.py  #   multimodal image description via GeminiClient.describe_image()
-│   ├── agents/               # thin Agent wrappers + citation guard + explainability (shims into src/sephiroth/runtime/)
-│   ├── medical-imaging/      # MONAI reference code (transforms, networks)
-│   ├── nlp/                  # MedCAT reference code (ner, pipeline, preprocessing)
-│   └── evaluation/           # RAG eval harness — Recall@k, MRR, Citation Precision, Faithfulness (see README § Evaluation)
+│   ├── mcp/                   # FastMCP servers (nlp, imaging, rag, drug_safety, vision)
+│   ├── agents/                # Thin Agent wrappers; shims into src/sephiroth/verification|telemetry|safety
+│   ├── nlp/                   # timeline_extractor.py only — vendored MedCAT tree deleted Phase 5 (DEBT-001)
+│   └── evaluation/            # RAG eval harness — Recall@k, MRR, Citation Precision, Faithfulness
 │
 ├── data/
-│   ├── rag/                  # Retrieval pipeline + seeded guideline corpus
-│   ├── schemas/              # SQLAlchemy models (Patient, ClinicalNote, ...)
-│   ├── embeddings/, vectors/ # hybrid dense+keyword retrieval (Gemini embeddings, in-memory vector store)
+│   ├── rag/                   # Retrieval pipeline + seeded guideline corpus
+│   ├── schemas/                # SQLAlchemy models (Patient, ClinicalNote, ...)
+│   └── embeddings/, vectors/   # hybrid dense+keyword retrieval (Gemini embeddings, in-memory vector store)
 │
-├── examples/                 # tools_example.py (no LLM), agents_example.py (full workflow)
-├── docs/                     # Integration guide
-└── references/               # Cloned upstream repos (read-only)
+├── migrations/                 # Alembic schema migrations (Postgres + Supabase)
+├── examples/                   # tools_example.py (no LLM), agents_example.py (full workflow)
+├── docs/                       # Migration charter, specs, ADRs, project-state.yaml
+└── references/                 # Cloned upstream repos (read-only)
 ```
 
 > **Python note:** `platform/` cannot be a package — the name would shadow the stdlib
-> `platform` module. It is added to `PYTHONPATH`, and its children are imported as
-> top-level packages: `from core.config import settings`, `uvicorn api.main:app`.
+> `platform` module. It's added to `PYTHONPATH`; children import as top-level packages
+> (`from core.config import settings`, `uvicorn api.main:app`).
 
 ## LLM Layer
 
 - **Runtime:** Google Gemini API (AI Studio free tier) — no local model, no GPU, just an API key.
-- **Model:** `gemini-flash-latest` — a Google-maintained alias for the current recommended flash model (native tool calling, JSON-Schema structured output, and multimodal vision), configurable via `GEMINI_MODEL`. Pinned version names (e.g. `gemini-2.5-flash`) get deprecated for new API keys over time; the alias avoids that churn.
-- **Thinking mode is off** (`thinking_budget=0`) — it multiplies latency and burns free-tier quota; the agents rely on tools rather than long hidden reasoning.
-- `GeminiClient.chat()` loops: send request → execute any `functionCall`s through the MCP registry → append the corresponding `functionResponse` parts → repeat until a plain answer (max `llm_max_tool_rounds`, default 6 — lower than a local model's slack because free-tier quota is finite).
-- A shared token-bucket rate limiter (`gemini_rpm_limit`) and retry/backoff on 429s keep a full multi-agent consultation (5 agents, several tool-call rounds each) inside the free tier's requests-per-minute budget.
+- **Model:** `gemini-flash-latest` (alias for current recommended flash model — native tool calling, JSON-Schema structured output, vision), configurable via `GEMINI_MODEL`.
+- **Thinking mode off** (`thinking_budget=0`) — saves latency and free-tier quota; agents rely on tools, not hidden reasoning.
+- `GeminiClient.chat()` (`src/sephiroth/models/gemini.py`) loops: send request → execute any `functionCall`s via `ToolRuntime` → append `functionResponse` parts → repeat until plain answer (max `llm_max_tool_rounds`, default 6).
+- Shared token-bucket rate limiter (`gemini_rpm_limit`) + 429 retry/backoff. Optional Groq fallback (`GROQ_API_KEY`) via `FallbackLLMClient` when Gemini errors out — text/tool-calling only by default; vision fallback opt-in (`GROQ_VISION_MODEL`).
 
 ## MCP Tool Layer
 
-Each clinical capability is a **FastMCP server** (`intelligence/mcp/*_server.py`). The registry (`registry.py`) discovers all tools once and exposes them two ways:
+Each clinical capability is a **FastMCP server** (`intelligence/mcp/*_server.py`). `ToolRuntime` (`src/sephiroth/tools/runtime.py`) discovers all servers (`SERVERS` in `src/sephiroth/tools/servers.py`) and exposes them two ways:
 
-1. **Structured:** `registry.llm_tools()` — OpenAI-style function schemas, converted to Gemini's `FunctionDeclaration` format inside `GeminiClient` (via `parameters_json_schema`, which accepts JSON Schema directly, including `$defs`/`$ref`/`additionalProperties`).
-2. **Prompted:** a natural-language tool catalog appended to each agent's system prompt, so the model reasons about *when* to use each tool.
+1. **Structured:** `llm_tools()` — OpenAI-style function schemas, converted to Gemini's `FunctionDeclaration` format.
+2. **Prompted:** natural-language tool catalog appended to each agent's system prompt.
 
-Execution is in-process via FastMCP's in-memory client — no subprocesses or sockets. Heavy dependencies (MedCAT, MONAI/torch) are imported lazily and degrade gracefully: NLP falls back to a deterministic lexicon, imaging returns a structured `model_not_configured` response until weights are set in `.env`.
+Execution is in-process via FastMCP's in-memory client — no subprocesses/sockets. Heavy deps (MedCAT, MONAI/torch) import lazily and degrade gracefully: NLP falls back to a deterministic lexicon; imaging returns `model_not_configured` until weights are set.
 
-## Agent Layer
+## Agent & Execution Layer
 
-`MCPAgent` (in `intelligence/agents/base.py`) = system prompt + MCP tool whitelist + `run(query, context)`. Every prompt embeds the medical disclaimer and the no-fabricated-citations rule.
+A consultation takes the cheapest matching path first:
 
-| Agent | Tools | Role |
+1. **`platform/api/fast_path.py`** — pure lookup (guideline search, drug interaction)? Tool result returned verbatim with its own citation. 0 LLM calls, ~4s.
+2. **`src/sephiroth/runtime/executor.py`** — otherwise:
+   - **Single-agent mode (default, `enable_single_agent_mode=True`)** — `intent_router` picks ONE specialist; its answer is final. 1 LLM call.
+   - **Multi-agent mode** (flag off) — `route_specialists` fans out to N specialists in parallel; a coordinator merges sections. N+1 LLM calls.
+3. Citation guard (deterministic) → claim verification (1 LLM call) → abstention gate (deterministic) → trace.
+
+| Agent | Tools | Runs when |
 |---|---|---|
-| EvidenceAgent | search_clinical_guidelines, search_pubmed | Cited evidence — always runs |
-| RadiologyAgent | describe_medical_image, inspect_medical_image, analyze_medical_image | Runs when `context.image_path` present |
-| LabAgent | (context only) | Runs when `context.lab_results` present |
-| DrugSafetyAgent | check_drug_interactions | Runs when `context.medications` present |
-| ClinicalCoordinator | extract_medical_entities, summarize_clinical_note | Synthesizes everything |
+| EvidenceAgent | search_clinical_guidelines, search_pubmed | Default / always eligible |
+| RadiologyAgent | describe_medical_image, analyze_medical_image | `context.image_path` present |
+| LabAgent | (context only) | `context.lab_results` present |
+| DrugSafetyAgent | check_drug_interactions | `context.medications` present |
+| (Coordinator) | extract_medical_entities, summarize_clinical_note | Multi-agent mode only |
 
-The executor (`src/sephiroth/runtime/executor.py`) fans out to the relevant specialists **in parallel**, then merges their outputs into the coordinator, which produces the final structured, cited answer.
+Each agent is an `Agent` (`src/sephiroth/runtime/agent.py`) bound to an `AgentCapability` record: system prompt + allowed-tool whitelist + `.run(query, context)`.
+
+## Verification, Safety & Telemetry
+
+- **`src/sephiroth/verification/`** — decomposes the answer into claims, classifies each against retrieved evidence (5-state `VerificationStatus`); `citation_guard` pre-filters fabricated citations before this runs.
+- **`src/sephiroth/safety/`** — abstention gate (`answer`/`partial`/`abstain`) on unsupported high-risk claims, contradictions, or low confidence; confidence is always derived, never self-reported.
+- **`src/sephiroth/context/`** — scopes each agent to only its declared `context_fields`; per-patient consultation memory reaches only the answering agent.
+- **`src/sephiroth/telemetry/`** — `build_trace` projects the executor's `RunState` into a persisted `ExecutionTrace` (real token/cost accounting); toggling it must not change a run's result.
 
 ## API Layer
 
 FastAPI routers under `platform/api/routers/`:
 
-- `POST /api/agents/consult` — full multi-agent workflow
+- `POST /api/agents/consult(/stream)` — full consultation (fast path → executor → SSE)
 - `POST /api/agents/ask` — single specialist directly
-- `GET /api/patients`, `/api/patients/{id}`, `/{id}/timeline` — patient data, backed by Postgres
+- `GET /api/patients`, `/{id}`, `/{id}/timeline` — patient data, Postgres-backed
 - `POST /api/medical/nlp/extract`, `/imaging/analyze`, `/drugs/check` — direct tool access
 - `GET /api/rag/search`, `/api/rag/pubmed` — evidence lookup
 - `GET /api/dashboard/stats` — KPIs + agent/system status
+- `platform/api/routers/scheduling.py`, `results.py` — appointment booking, exam-result sharing (role-scoped per route)
+- Auth: JWT, roles `clinician`/`patient`, no patient self-registration (claim-code redemption only)
 
 ## Frontend
 
-Next.js 14 (App Router) + TypeScript + Tailwind + React Query + Recharts. Dev server proxies `/api/*` to FastAPI (no CORS pain). Design tokens in `platform/frontend/tailwind.config.ts`:
+Next.js 14 (App Router) + TypeScript + Tailwind + React Query + Recharts. Dev server proxies `/api/*` to FastAPI. Design tokens in `platform/frontend/tailwind.config.ts`:
 
 - Nexura-derived palette: primary `#3683F8`, ink `#060606`, surface `#EBF3FE`, border `#D8D8D8`, font Manrope
-- **Sephiroth/Platino gradient** (`#8C92AC → #D1D5DB`): exclusively marks AI-generated content (agent badges, AI card borders, avatar ring)
+- **Sephiroth gradient** (`#8C92AC → #D1D5DB`): exclusively marks AI-generated content
 
-Pages: `/dashboard`, `/copilot` (chat with agent badges + tool traces), `/patients`, `/patients/[id]` (Intelligent Timeline), `/imaging`, `/evidence`, `/agents`.
+Pages: `/` (marketing, chromeless), `/dashboard`, `/copilot` (chat + agent badges + citation guard panel), `/patients`, `/patients/[id]` (timeline), `/imaging`, `/evidence`, `/agents`, `/portal` (patient view).
 
 ## Deployment
 
-`docker-compose up` starts Postgres (pgvector) + API. The API talks to Gemini over the internet — no host GPU or local model server required. `JWT_SECRET` and `GEMINI_API_KEY` are required environment variables (compose fails fast if `JWT_SECRET` is unset).
+`docker-compose up` starts Postgres (pgvector) + API. API talks to Gemini over the internet — no host GPU or local model server. `JWT_SECRET` and `GEMINI_API_KEY` required (compose fails fast if `JWT_SECRET` unset).
 
-**Cloud database (optional):** `DATABASE_URL` can point to a managed Postgres instead — e.g. [Supabase](https://supabase.com), which supports `pgvector` natively. `platform/core/db.py::init_db()` already handles this: it only runs `CREATE EXTENSION IF NOT EXISTS vector` when the dialect is `postgresql`, and `data/schemas.GuidelineDocument.embedding` uses the real `Vector` type there (JSON on SQLite). Use Supabase's **Session pooler** connection string (port 5432) — the Transaction pooler (6543) disables prepared statements, which asyncpg relies on by default. No other code changes needed; local `docker-compose` Postgres remains the default for development.
+**Cloud database (optional):** `DATABASE_URL` can point to managed Postgres (e.g. Supabase, native pgvector). `platform/core/db.py::init_db()` runs `alembic upgrade head` + enables `pgvector` on every boot when dialect is `postgresql`. Use Supabase's **Session pooler** (port 5432), not the Transaction pooler (6543 — disables prepared statements asyncpg needs). Local `docker-compose` Postgres remains the dev default.
+
+## Migration State
+
+Project is mid-migration from a clinical app into a model-agnostic agentic runtime (strangler-fig into `src/sephiroth/`). Current phase, implemented-vs-planned status, and tech debt items: `docs/project-state.yaml`. Frozen external contracts (SSE events, persistence shape): `docs/00-migration-charter.md`. Formal decisions: `docs/08-decisions/ADR-001` through `ADR-014`.
