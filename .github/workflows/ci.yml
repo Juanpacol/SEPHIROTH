@@ -30,6 +30,32 @@ jobs:
           ruff format --check . || status=1
           exit $status
 
+  # Required check on every PR (branch protection). Validates each commit's
+  # subject against the SF<NNN> <body> [<type>] format — see CONTRIBUTING.md
+  # "Commit message format" and ADR-015. Uses `git log` against the real
+  # merge-base rather than the pull_request event's commit list, which is
+  # capped/paginated for large PRs. Merge/revert commits are skipped by the
+  # validator itself. This check does NOT verify that <NNN> is globally
+  # unique across branches — that's an accepted, documented gap (ADR-015),
+  # not an oversight.
+  commit-lint:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate commit messages in this PR
+        run: |
+          status=0
+          while IFS= read -r subject; do
+            python3 scripts/validate_commit_msg.py --message "$subject" || status=1
+          done < <(git log --format=%s "origin/${{ github.base_ref }}..HEAD")
+          exit $status
+
   test:
     runs-on: ubuntu-latest
     steps:
