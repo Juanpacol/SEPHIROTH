@@ -34,12 +34,15 @@ SF<NNN> <body, max 50 words> [<type>]
 
 Example: `SF001 Add commit-msg validator script enforcing SF id, word cap, and type suffix [chore]`
 
-- **`SF<NNN>`** — sequential id. Run `scripts/next-sf-id.sh` before committing
-  for the suggested next number. This is advisory, not a strict guarantee:
-  two branches can independently pick the same number before either merges.
-  That gap is accepted and documented in
-  [ADR-015](docs/08-decisions/ADR-015-commit-message-format.md) — the format
-  is a greppable audit trail, not a strict primary key.
+- **`SF<NNN>`** — the user story/feature id, not a per-commit counter. **Every
+  commit that belongs to the same story shares the same id** (e.g. all
+  commits implementing story SF001 are `SF001 ... [chore]`, `SF001 ...
+  [docs]`, etc.). A new story gets the next id. Run `scripts/next-sf-id.sh`
+  before starting a new story for the suggested next number. This is
+  advisory, not a strict guarantee: two branches can independently start a
+  story with the same next id before either merges. That gap is accepted and
+  documented in [ADR-015](docs/08-decisions/ADR-015-commit-message-format.md)
+  — the format is a greppable audit trail, not a strict primary key.
 - **Body** — whitespace-split word count, excluding the `SF<NNN>` prefix and
   the `[<type>]` suffix, capped at 50. Describe what changed, directly.
 - **`[<type>]`** — exactly one of: `feat`, `fix`, `docs`, `chore`, `refactor`,
