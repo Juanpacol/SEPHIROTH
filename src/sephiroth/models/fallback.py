@@ -46,6 +46,7 @@ class FallbackLLMClient:
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_executor: Optional[ToolExecutor] = None,
         think: Optional[bool] = False,
+        tool_choice: Optional[str] = None,
     ) -> ChatResult:
         try:
             return await self.primary.chat(
@@ -54,6 +55,7 @@ class FallbackLLMClient:
                 tools=tools,
                 tool_executor=tool_executor,
                 think=think,
+                tool_choice=tool_choice,
             )
         except LLMUnavailableError as exc:
             logger.warning(
@@ -65,6 +67,7 @@ class FallbackLLMClient:
                 tools=tools,
                 tool_executor=tool_executor,
                 think=think,
+                tool_choice=tool_choice,
             )
 
     async def generate_json(

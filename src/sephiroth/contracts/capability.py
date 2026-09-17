@@ -62,6 +62,20 @@ class AgentCapability(BaseModel):
     risk: RiskSpec = Field(default_factory=RiskSpec)
     execution: ExecutionSpec = Field(default_factory=ExecutionSpec)
     model_hint: str | None = None
+    require_tool_call: bool = Field(
+        default=False,
+        description=(
+            "Force the model to call one of its tools on the first round "
+            "(ModelProvider.chat's tool_choice='required') instead of leaving "
+            "it 'auto'. A small local model reliably skips a genuinely "
+            "available tool and answers a factual question from parametric "
+            "memory instead — for an evidence-citing agent that fabricates a "
+            "citation Citation Guard then strips, forcing an abstain instead "
+            "of ever attempting the retrieval. Gemini/Groq call tools "
+            "reliably enough on 'auto' that this exists mainly for the local "
+            "Ollama dev path."
+        ),
+    )
     context_fields: list[str] = Field(
         default_factory=list,
         description=(

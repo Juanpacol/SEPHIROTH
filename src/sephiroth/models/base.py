@@ -141,6 +141,7 @@ class ModelProvider(Protocol):
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_executor: Optional[ToolExecutor] = None,
         think: Optional[bool] = False,
+        tool_choice: Optional[str] = None,
     ) -> ChatResult: ...
 
     async def generate_json(

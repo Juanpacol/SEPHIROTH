@@ -106,6 +106,12 @@
       "title": "Node Name",
       "type": "string"
     },
+    "require_tool_call": {
+      "default": false,
+      "description": "Force the model to call one of its tools on the first round (ModelProvider.chat's tool_choice='required') instead of leaving it 'auto'. A small local model reliably skips a genuinely available tool and answers a factual question from parametric memory instead \u2014 for an evidence-citing agent that fabricates a citation Citation Guard then strips, forcing an abstain instead of ever attempting the retrieval. Gemini/Groq call tools reliably enough on 'auto' that this exists mainly for the local Ollama dev path.",
+      "title": "Require Tool Call",
+      "type": "boolean"
+    },
     "risk": {
       "$ref": "#/$defs/RiskSpec"
     },

@@ -143,6 +143,7 @@ class GroqClient:
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_executor: Optional[ToolExecutor] = None,
         think: Optional[bool] = False,
+        tool_choice: Optional[str] = None,
     ) -> ChatResult:
         history = self._to_messages(messages, system_prompt)
         executed_calls: List[Dict[str, Any]] = []
@@ -158,7 +159,10 @@ class GroqClient:
             }
             if tools:
                 payload["tools"] = tools
-                payload["tool_choice"] = "auto"
+                # Only the first round: forcing every round would make the
+                # model call a tool forever instead of ever emitting a final
+                # answer (see OllamaClient.chat, same rationale).
+                payload["tool_choice"] = (tool_choice if round_idx == 0 else None) or "auto"
 
             try:
                 data = await self._post(payload)

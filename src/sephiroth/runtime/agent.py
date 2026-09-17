@@ -65,6 +65,7 @@ class Agent:
             # Scoped, not the raw dispatcher: advertising a filtered schema list
             # does not stop a model from naming a tool outside its whitelist.
             tool_executor=registry.scoped_executor(allowed_tools) if tools else None,
+            tool_choice="required" if (tools and self.capability.require_tool_call) else None,
         )
 
 
