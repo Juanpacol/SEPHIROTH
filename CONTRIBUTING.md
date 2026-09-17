@@ -52,9 +52,9 @@ This applies **going forward only** — commits before `SF001` keep their
 existing Conventional Commits style and are never rewritten.
 
 **This is enforced, not just documented.** A local `commit-msg` git hook
-gives fast feedback; the required `commit-lint` GitHub Actions check on every
-pull request is the real gate — a PR with a malformed commit cannot be
-merged. One-time setup per clone:
+gives fast feedback; the `commit-lint` job (part of the **Code Review** gate,
+see below) is the real gate — a PR with a malformed commit cannot be merged.
+One-time setup per clone:
 
 ```bash
 git config core.hooksPath .githooks
@@ -63,6 +63,27 @@ git config core.hooksPath .githooks
 See [`.githooks/README.md`](.githooks/README.md) and
 [ADR-015](docs/08-decisions/ADR-015-commit-message-format.md) for the full
 rationale.
+
+## Required PR gates
+
+`main` is branch-protected with exactly two required status checks — no
+approval requirement, since this is a solo-maintainer repo and GitHub refuses
+to count a PR author's own approval toward a required-review count:
+
+- **Security** (`.github/workflows/security.yml`, `security-gate`) —
+  gitleaks (secret scanning) + bandit HIGH-severity/HIGH-confidence findings.
+  Blocking. `dependency-audit` (pip-audit/npm audit) runs in the same
+  workflow but stays advisory — third-party CVEs with no available fix must
+  never turn `main` permanently red.
+- **Code Review** (`.github/workflows/code-review.yml`, `code-review-gate`)
+  — the automated stand-in for a human reviewer: lint, commit format,
+  tests + coverage gate, the SDD spec-conformance check (every `Implemented`
+  spec's acceptance criteria must exist in the test tree, contracts must not
+  have drifted — see [the migration charter](docs/00-migration-charter.md)),
+  frontend lint/test/build/e2e, and a real Docker build + boot smoke test
+  under both dev and prod config. `type-check` (mypy) runs alongside but is
+  excluded from this gate — see its job comment for the 61-error baseline
+  (DEBT-012) blocking that promotion.
 
 ## Before opening a pull request
 
