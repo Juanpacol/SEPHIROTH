@@ -14,7 +14,10 @@ documentation-only rule has no teeth.
 
 Every commit from `SF001` onward must match `SF<NNN> <body, max 50 words>
 [<type>]`, `<type>` one of `feat`, `fix`, `docs`, `chore`, `refactor`, `test`.
-Applies going forward only; prior history is not rewritten.
+`<NNN>` identifies the user story/feature, not the individual commit — every
+commit implementing that story shares the same id (`SF001 ... [chore]`,
+`SF001 ... [docs]`, etc.); a new story gets the next id. Applies going
+forward only; prior history is not rewritten.
 
 Two-layer enforcement, both calling the same `scripts/validate_commit_msg.py`
 (stdlib-only Python) so they cannot drift apart:
@@ -35,14 +38,16 @@ one-time GitHub configuration step — not something a commit can accomplish.
 **Explicitly accepted gap: `<NNN>` uniqueness is not enforced.** CI cannot
 rewrite a commit message after the fact without rewriting history, which
 this decision deliberately avoids. The validator checks *format* only
-(regex shape, word count, type enum) — it cannot see other developers'
-unmerged branches, so it cannot guarantee `<NNN>` is globally unique or
-strictly monotonic. `scripts/next-sf-id.sh` scans `main` and suggests the
-next id, but is advisory only. Two branches merging in quick succession can
-land duplicate or out-of-order ids in `main` history. This is tolerated: the
-format's purpose is a human-scannable trail, not a strict primary key. A
-future enhancement — a post-merge job that *warns* (never blocks) on
-duplicates — is possible but out of scope here.
+(regex shape, word count, type enum, and that all commits carry a valid
+`SF<NNN>` — not that the number is unique) — it cannot see other developers'
+unmerged branches, so it cannot guarantee a story id is globally unique.
+`scripts/next-sf-id.sh` scans `main` and suggests the next unused story id,
+but is advisory only. Two branches starting a new story at the same time can
+independently pick the same id; whichever merges second lands a duplicate
+story id in `main` history. This is tolerated: the format's purpose is a
+human-scannable trail grouping a story's commits together, not a strict
+primary key. A future enhancement — a post-merge job that *warns* (never
+blocks) on duplicates — is possible but out of scope here.
 
 ## Consequences
 

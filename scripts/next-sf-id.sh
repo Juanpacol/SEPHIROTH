@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Suggests the next SF<NNN> commit id by scanning history for the highest
-# existing one. Purely informational: never writes files, never fails the
-# build, and does NOT guarantee global uniqueness across unmerged branches
-# (see docs/08-decisions/ADR-015-commit-message-format.md).
+# Suggests the next SF<NNN> user-story id by scanning history for the
+# highest existing one (every commit belonging to a story shares its id).
+# Purely informational: never writes files, never fails the build, and does
+# NOT guarantee global uniqueness across unmerged branches (see
+# docs/08-decisions/ADR-015-commit-message-format.md).
 set -euo pipefail
 
 if git rev-parse --verify origin/main >/dev/null 2>&1; then
