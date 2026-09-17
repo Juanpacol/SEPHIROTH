@@ -46,23 +46,25 @@ interface Exchange {
 /** Suggested starter questions — kept in English regardless of UI locale,
  * matching the clinical literature/citations the agents cite.
  *
- * Ordered general reference first, then specialist decisions. Every one was
- * checked against the retrieval corpus (`data/rag`) before being listed: a
- * suggested question the corpus cannot answer abstains, which reads as the
- * product being broken rather than as it being careful. The last one routes
- * to the drug-safety agent rather than evidence, so the set exercises both
- * answering paths. */
+ * Kept to 3, one per answering path, rather than an exhaustive tour of the
+ * corpus — a long row of buttons read as "pick the right one" instead of
+ * "here's the kind of thing this can do". Every one was verified with
+ * `RAGPipeline().retrieve(query)` (keyword-only, no API key) to actually
+ * surface a corpus document with >=2 distinct shared tokens — the tokenizer
+ * does no stemming, so e.g. "dosing" vs "dose" or "recognized" vs
+ * "recognition" is enough to silently drop below the match floor even when
+ * the topic exists in the corpus. A suggested question the corpus can't
+ * answer abstains, which reads as the product being broken rather than as
+ * it being careful. `warfarinIbuprofen` routes to the drug-safety agent
+ * rather than RAG evidence, so the set still exercises both answering
+ * paths despite the smaller count. */
 /** The query text sent to the backend/RAG corpus always stays the English
  * original (`query`) regardless of UI language — the corpus match described
  * above was verified against these exact English strings. `labelKey` is
  * only what the button displays. */
 const SUGGESTED_QUESTIONS = [
   { query: "What blood pressure reading is considered high?", labelKey: "copilot.suggested.bloodPressure" },
-  { query: "What are the warning signs of a stroke?", labelKey: "copilot.suggested.strokeWarningSigns" },
   { query: "What is the A1C target for adults with type 2 diabetes?", labelKey: "copilot.suggested.a1cTarget" },
-  { query: "When should anticoagulation be started in atrial fibrillation?", labelKey: "copilot.suggested.anticoagulation" },
-  { query: "Which empiric antibiotics for outpatient community-acquired pneumonia?", labelKey: "copilot.suggested.antibiotics" },
-  { query: "Which patients with type 2 diabetes and CKD should get an SGLT2 inhibitor?", labelKey: "copilot.suggested.sglt2" },
   { query: "Do warfarin and ibuprofen interact?", labelKey: "copilot.suggested.warfarinIbuprofen" },
 ];
 
@@ -302,6 +304,23 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
       prev.map((e, i) => (i === prev.length - 1 ? { ...e, ...update } : e))
     );
 
+  /** The `final` SSE event carries the whole answer in one shot — there's no
+   * token-level streaming from the model to relay (see the module docstring
+   * on `consult_stream`). Revealing it word-by-word client-side is what gives
+   * the "the system is producing this" feel instead of a wall of text
+   * appearing instantly. Runs detached from the SSE read loop so it doesn't
+   * hold up later events (`persisted`). */
+  const revealAnswer = (fullAnswer: string) => {
+    const words = fullAnswer.split(" ");
+    let shown = 0;
+    const step = () => {
+      shown = Math.min(shown + 3, words.length);
+      patch({ answer: words.slice(0, shown).join(" ") });
+      if (shown < words.length) setTimeout(step, 30);
+    };
+    step();
+  };
+
   const submit = async (override?: string) => {
     const text = override ?? query;
     if (!text.trim() || streaming) return;
@@ -364,12 +383,13 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
           } else if (event.event === "final") {
             patch({
               pending: false,
-              answer: event.answer,
+              answer: "",
               agents: event.agents_involved,
               toolCalls: event.tool_calls,
               citations: event.citation_report,
               explanation: event.explanation,
             });
+            revealAnswer(event.answer as string);
           } else if (event.event === "persisted") {
             patch({ id: event.id });
           } else if (event.event === "error") {
