@@ -105,7 +105,7 @@ Checklist:
 - [ ] `docs/03-features/feature-registry.md` updated if a feature's status moved.
 - [ ] `docs/project-state.yaml` updated if a component's status moved.
 - [ ] `CHANGELOG.md` entry under `[Unreleased]`.
-- [ ] A dev-log entry in `docs/dev-log/YYYY-MM-DD.md`.
+- [ ] A dev-log entry in `docs/dev-log/YYYY-MM-DD.md` (older entries live under `docs/dev-log/archive/`).
 
 ## Things that will bite you
 
