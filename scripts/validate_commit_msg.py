@@ -24,9 +24,7 @@ ALLOWED_TYPES = ("feat", "fix", "docs", "chore", "refactor", "test")
 MAX_BODY_WORDS = 50
 
 _SKIP_PATTERN = re.compile(r'^(Merge\b|Revert ")')
-_SHAPE_PATTERN = re.compile(
-    r"^SF(\d{3,})\s+(.+)\s+\[(" + "|".join(ALLOWED_TYPES) + r")\]$"
-)
+_SHAPE_PATTERN = re.compile(r"^SF(\d{3,})\s+(.+)\s+\[(" + "|".join(ALLOWED_TYPES) + r")\]$")
 _HAS_PREFIX = re.compile(r"^SF\d{3,}\s")
 _HAS_SUFFIX = re.compile(r"\[([^\]]*)\]\s*$")
 
@@ -43,10 +41,7 @@ def validate(subject: str) -> list[str]:
         body = match.group(2)
         word_count = len(body.split())
         if word_count > MAX_BODY_WORDS:
-            return [
-                f"Commit body has {word_count} words, exceeds the "
-                f"{MAX_BODY_WORDS}-word limit: '{body}'"
-            ]
+            return [f"Commit body has {word_count} words, exceeds the {MAX_BODY_WORDS}-word limit: '{body}'"]
         return []
 
     errors: list[str] = []
@@ -58,20 +53,13 @@ def validate(subject: str) -> list[str]:
 
     suffix_match = _HAS_SUFFIX.search(subject)
     if not suffix_match:
-        errors.append(
-            "Missing trailing type suffix, e.g. '[chore]' at the very end "
-            "of the subject line."
-        )
+        errors.append("Missing trailing type suffix, e.g. '[chore]' at the very end of the subject line.")
     elif suffix_match.group(1) not in ALLOWED_TYPES:
-        errors.append(
-            f"Type suffix '[{suffix_match.group(1)}]' is not one of: "
-            f"{', '.join(ALLOWED_TYPES)}"
-        )
+        errors.append(f"Type suffix '[{suffix_match.group(1)}]' is not one of: {', '.join(ALLOWED_TYPES)}")
 
     if not errors:
         errors.append(
-            "Commit message does not match required format "
-            f"'SF<NNN> <body> [<type>]'. Got: '{subject}'"
+            f"Commit message does not match required format 'SF<NNN> <body> [<type>]'. Got: '{subject}'"
         )
 
     return errors
