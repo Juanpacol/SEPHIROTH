@@ -24,6 +24,43 @@ SEPHIROTH uses **Spec-Driven Development**. For anything that changes a contract
 Bug fixes, dependency bumps and anything that changes no contract skip this
 entirely. The ceremony is for contracts, not for every commit.
 
+## Commit message format
+
+Every commit from `SF001` onward must match:
+
+```
+SF<NNN> <body, max 50 words> [<type>]
+```
+
+Example: `SF001 Add commit-msg validator script enforcing SF id, word cap, and type suffix [chore]`
+
+- **`SF<NNN>`** — sequential id. Run `scripts/next-sf-id.sh` before committing
+  for the suggested next number. This is advisory, not a strict guarantee:
+  two branches can independently pick the same number before either merges.
+  That gap is accepted and documented in
+  [ADR-015](docs/08-decisions/ADR-015-commit-message-format.md) — the format
+  is a greppable audit trail, not a strict primary key.
+- **Body** — whitespace-split word count, excluding the `SF<NNN>` prefix and
+  the `[<type>]` suffix, capped at 50. Describe what changed, directly.
+- **`[<type>]`** — exactly one of: `feat`, `fix`, `docs`, `chore`, `refactor`,
+  `test`.
+
+This applies **going forward only** — commits before `SF001` keep their
+existing Conventional Commits style and are never rewritten.
+
+**This is enforced, not just documented.** A local `commit-msg` git hook
+gives fast feedback; the required `commit-lint` GitHub Actions check on every
+pull request is the real gate — a PR with a malformed commit cannot be
+merged. One-time setup per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+See [`.githooks/README.md`](.githooks/README.md) and
+[ADR-015](docs/08-decisions/ADR-015-commit-message-format.md) for the full
+rationale.
+
 ## Before opening a pull request
 
 Run the same gate CI runs:
