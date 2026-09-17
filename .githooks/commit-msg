@@ -1,0 +1,9 @@
+#!/bin/sh
+# Fast local feedback for the SF<NNN> commit-message format.
+# The real, unbypassable gate is the `commit-lint` job in
+# .github/workflows/ci.yml — this hook can be skipped with --no-verify or
+# simply never installed, so it is a convenience, not the enforcement.
+# See CONTRIBUTING.md "Commit message format" and
+# docs/08-decisions/ADR-015-commit-message-format.md.
+
+python3 scripts/validate_commit_msg.py "$1"
