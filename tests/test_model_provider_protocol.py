@@ -62,7 +62,7 @@ def test_protocol_chat_signature_is_keyword_only_after_messages():
         "the first two parameters must be self, messages (positional)"
     )
     keyword_only = [name for name, p in params.items() if p.kind is inspect.Parameter.KEYWORD_ONLY]
-    assert keyword_only == ["system_prompt", "tools", "tool_executor", "think"], (
+    assert keyword_only == ["system_prompt", "tools", "tool_executor", "think", "tool_choice"], (
         f"expected exactly these keyword-only params, got {keyword_only}"
     )
 

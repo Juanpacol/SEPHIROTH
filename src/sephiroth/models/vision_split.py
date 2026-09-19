@@ -49,6 +49,7 @@ class VisionChatSplitClient:
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_executor: Optional[ToolExecutor] = None,
         think: Optional[bool] = False,
+        tool_choice: Optional[str] = None,
     ) -> ChatResult:
         return await self.chat_client.chat(
             messages=messages,
@@ -56,6 +57,7 @@ class VisionChatSplitClient:
             tools=tools,
             tool_executor=tool_executor,
             think=think,
+            tool_choice=tool_choice,
         )
 
     async def generate_json(

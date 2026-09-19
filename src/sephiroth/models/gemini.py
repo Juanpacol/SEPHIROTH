@@ -224,6 +224,7 @@ class GeminiClient:
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_executor: Optional[ToolExecutor] = None,
         think: Optional[bool] = False,
+        tool_choice: Optional[str] = None,
     ) -> ChatResult:
         """Run a chat exchange, resolving tool calls until a final answer.
 
@@ -235,6 +236,10 @@ class GeminiClient:
             tool_executor: async callable that executes a named tool.
             think: extended-reasoning mode. Off by default — it multiplies
                 latency and token usage against the free-tier quota.
+            tool_choice: `"required"` maps to Gemini's `FunctionCallingConfig
+                (mode="ANY")` on the first round only — forcing every round
+                would make the model call a tool forever instead of ever
+                emitting a final answer.
         """
         contents = _to_contents(messages)
         gemini_tools = _to_gemini_tools(tools)
@@ -254,10 +259,6 @@ class GeminiClient:
                 )
             ],
         )
-        if gemini_tools:
-            config_kwargs["tool_config"] = types.ToolConfig(
-                function_calling_config=types.FunctionCallingConfig(mode="AUTO")
-            )
         if think:
             config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_budget=-1)
         else:
@@ -269,6 +270,11 @@ class GeminiClient:
         completion_tokens = 0
 
         for round_idx in range(self.max_tool_rounds):
+            if gemini_tools:
+                mode = "ANY" if (tool_choice == "required" and round_idx == 0) else "AUTO"
+                config_kwargs["tool_config"] = types.ToolConfig(
+                    function_calling_config=types.FunctionCallingConfig(mode=mode)
+                )
             try:
                 response = await self._generate(contents, types.GenerateContentConfig(**config_kwargs))
             except LLMUnavailableError:

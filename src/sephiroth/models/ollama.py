@@ -1,15 +1,24 @@
 """
 Ollama client — local model runtime for free, unlimited-iteration development
-(no API key, no rate limits, no free-tier quota to exhaust). Ollama exposes
-an OpenAI-compatible chat completions API (`/v1/chat/completions`), so this
-mirrors `GroqClient` almost verbatim; the difference is no `Authorization`
-header (Ollama doesn't require one) and a local `base_url` default.
+(no API key, no rate limits, no free-tier quota to exhaust).
 
-Same `ModelProvider` protocol as `GeminiClient`/`GroqClient` (`base.py`).
-Intended for local dev/prompt-iteration only — see `platform/core/config.py`'s
-`llm_provider` for how to select it. Production stays on Gemini/Groq/OpenRouter;
-`base_url` can point at OpenRouter's OpenAI-compatible endpoint instead if a
-hosted version of the same model is needed (same client, different host).
+Against a genuine local Ollama install (`_is_local_endpoint(base_url)`),
+`chat()`/`generate_json()` use Ollama's *native* `/api/chat` (same endpoint
+`describe_image`/`describe_image_stream` already used for vision) rather than
+the OpenAI-compatible `/v1/chat/completions` shim. That shim silently drops
+unknown top-level fields — `"think"` never reaches the model through it, so a
+hybrid-reasoning model (e.g. `qwen3:8b`) always ran its full internal
+reasoning pass even when the caller asked for `think=False`, ~30-50x slower
+for no answer-quality gain on straightforward tool-calling turns (measured:
+~28s/306 tokens with thinking vs ~0.5s/3 tokens without, same prompt). The
+native endpoint honors `think` and also returns tool-call arguments as an
+already-parsed dict instead of a JSON string.
+
+When `base_url` is retargeted at a *hosted* OpenAI-compatible endpoint
+(OpenRouter, to run this same model remotely) there is no Ollama-native
+`/api/...` to fall back to, so both methods keep using the original
+OpenAI-compatible request/response shape in that case — same protocol
+`GeminiClient`/`GroqClient` implement (`base.py`).
 """
 
 from __future__ import annotations
@@ -99,13 +108,13 @@ class OllamaClient:
             headers={"Authorization": f"Bearer {api_key}"} if api_key else {},
         )
 
-    async def _post(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def _post(self, payload: Dict[str, Any], *, endpoint: str = "/chat/completions") -> Dict[str, Any]:
         last_exc: Optional[Exception] = None
         for attempt in range(self.max_retries):
             if self._rate_limiter is not None:
                 await self._rate_limiter.acquire()
             try:
-                response = await self._client.post("/chat/completions", json=payload)
+                response = await self._client.post(endpoint, json=payload)
             except httpx.HTTPError as exc:
                 last_exc = exc
                 if attempt < self.max_retries - 1:
@@ -152,30 +161,54 @@ class OllamaClient:
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_executor: Optional[ToolExecutor] = None,
         think: Optional[bool] = False,
+        tool_choice: Optional[str] = None,
     ) -> ChatResult:
         history = self._to_messages(messages, system_prompt)
         executed_calls: List[Dict[str, Any]] = []
         started = time.perf_counter()
         prompt_tokens = 0
         completion_tokens = 0
+        native = _is_local_endpoint(self.base_url)
 
         for round_idx in range(self.max_tool_rounds):
-            payload: Dict[str, Any] = {
-                "model": self.model,
-                "messages": history,
-                "max_tokens": self.max_output_tokens,
-            }
-            if tools:
-                payload["tools"] = tools
-                payload["tool_choice"] = "auto"
+            # `tool_choice` (e.g. "required", from `AgentCapability.require_tool_call`
+            # — small local models answer from parametric memory and fabricate a
+            # citation rather than reliably calling a tool on "auto") only makes
+            # sense on the first round: forcing it every round would make the
+            # model call a tool forever and never emit a final answer, silently
+            # burning the whole `max_tool_rounds` budget.
+            round_tool_choice = tool_choice if (tools and round_idx == 0) else None
+            if native:
+                payload: Dict[str, Any] = {
+                    "model": self.model,
+                    "messages": history,
+                    "stream": False,
+                    "think": bool(think),
+                    "options": {"num_predict": self.max_output_tokens},
+                }
+                if tools:
+                    payload["tools"] = tools
+                    payload["tool_choice"] = round_tool_choice or "auto"
+                data = await self._post(payload, endpoint=self._native_api_url("/api/chat"))
+                message = data["message"]
+                prompt_tokens += data.get("prompt_eval_count") or 0
+                completion_tokens += data.get("eval_count") or 0
+            else:
+                payload = {
+                    "model": self.model,
+                    "messages": history,
+                    "max_tokens": self.max_output_tokens,
+                }
+                if tools:
+                    payload["tools"] = tools
+                    payload["tool_choice"] = round_tool_choice or "auto"
+                data = await self._post(payload)
+                message = data["choices"][0]["message"]
+                usage = data.get("usage") or {}
+                prompt_tokens += usage.get("prompt_tokens") or 0
+                completion_tokens += usage.get("completion_tokens") or 0
 
-            data = await self._post(payload)
-            message = data["choices"][0]["message"]
             tool_calls = message.get("tool_calls") or []
-
-            usage = data.get("usage") or {}
-            prompt_tokens += usage.get("prompt_tokens") or 0
-            completion_tokens += usage.get("completion_tokens") or 0
 
             if not tool_calls or tool_executor is None:
                 logger.info(
@@ -262,6 +295,27 @@ class OllamaClient:
             f"exactly (no prose, no markdown fences):\n{json.dumps(schema)}"
         )
         messages = self._to_messages([{"role": "user", "content": instructed_prompt}], system_prompt)
+        # Deterministic sampling (temperature 0): this is a classification/
+        # extraction call (claim verification, dynamic routing), not creative
+        # generation — the default sampling temperature let the same claim
+        # flip between "supported" and "unsupported" across otherwise-
+        # identical runs. `think: False` matters here too — the intent router
+        # and claim verifier both call this on every consultation, and a
+        # hybrid-reasoning model's default reasoning pass turns a one-shot
+        # classification into the slowest step in the pipeline (see module
+        # docstring); native `/api/chat` is the only endpoint that honors it.
+        if _is_local_endpoint(self.base_url):
+            payload = {
+                "model": self.model,
+                "messages": messages,
+                "stream": False,
+                "think": False,
+                "format": schema,
+                "options": {"temperature": 0, "num_predict": self.max_output_tokens},
+            }
+            data = await self._post(payload, endpoint=self._native_api_url("/api/chat"))
+            return json.loads(data["message"]["content"])
+
         payload = {
             "model": self.model,
             "messages": messages,
@@ -270,10 +324,6 @@ class OllamaClient:
                 "json_schema": {"name": "response", "schema": schema},
             },
             "max_tokens": self.max_output_tokens,
-            # Deterministic: this is a classification/extraction call (claim
-            # verification, dynamic routing), not creative generation — the
-            # default sampling temperature let the same claim flip between
-            # "supported" and "unsupported" across otherwise-identical runs.
             "temperature": 0,
         }
         data = await self._post(payload)

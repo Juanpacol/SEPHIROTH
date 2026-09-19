@@ -1,8 +1,16 @@
 """Tests for OllamaClient, mocking the HTTP transport with `httpx.MockTransport`
-— no real Ollama server needed. Mirrors test_groq_client.py since both clients
-implement the same OpenAI-compatible chat completions shape (text/tools).
-Vision goes through Ollama's native `/api/chat` instead — see
-`OllamaClient._native_api_url`'s docstring for why."""
+— no real Ollama server needed.
+
+Against a local base_url (the default, and the only realistic case — this
+client exists for local dev), `chat()`/`generate_json()` go through Ollama's
+*native* `/api/chat`, not the OpenAI-compatible `/v1/chat/completions` shim —
+see the module docstring for why (the shim silently drops `think`, which
+makes a hybrid-reasoning model like `qwen3:8b` run a full internal reasoning
+pass on every turn). Vision has always used the native endpoint; text/tools
+now match it. A non-local `base_url` (retargeted at a hosted OpenAI-compatible
+endpoint, e.g. OpenRouter) keeps the original OpenAI-compatible shape, since
+there's no Ollama-native `/api/...` to fall back to there.
+"""
 
 import base64
 import json as json_mod
@@ -25,7 +33,22 @@ async def _noop_sleep(_seconds):
     return None
 
 
+def _native_response(content=None, tool_calls=None, prompt_eval_count=None, eval_count=None):
+    """Shape of a non-streaming `/api/chat` response."""
+    message = {"role": "assistant", "content": content}
+    if tool_calls:
+        message["tool_calls"] = tool_calls
+    body = {"message": message, "done": True}
+    if prompt_eval_count is not None:
+        body["prompt_eval_count"] = prompt_eval_count
+    if eval_count is not None:
+        body["eval_count"] = eval_count
+    return body
+
+
 def _openai_response(content=None, tool_calls=None, usage=None):
+    """Shape of a `/v1/chat/completions` response — only reachable when
+    `base_url` points at a non-local, hosted OpenAI-compatible endpoint."""
     message = {"role": "assistant", "content": content}
     if tool_calls:
         message["tool_calls"] = tool_calls
@@ -35,10 +58,11 @@ def _openai_response(content=None, tool_calls=None, usage=None):
     return body
 
 
-def _make_client(handler, **kwargs):
+def _make_client(handler, base_url="http://localhost:11434/v1", **kwargs):
     client = OllamaClient(sleep=_noop_sleep, **kwargs)
+    client.base_url = base_url
     client._client = httpx.AsyncClient(
-        base_url="http://localhost:11434/v1",
+        base_url=base_url,
         transport=httpx.MockTransport(handler),
     )
     return client
@@ -47,7 +71,8 @@ def _make_client(handler, **kwargs):
 @pytest.mark.asyncio
 async def test_chat_no_tool_calls_returns_content():
     def handler(request):
-        return httpx.Response(200, json=_openai_response(content="Hello there"))
+        assert request.url.path == "/api/chat"
+        return httpx.Response(200, json=_native_response(content="Hello there"))
 
     client = _make_client(handler)
     result = await client.chat(messages=[{"role": "user", "content": "hi"}])
@@ -57,9 +82,25 @@ async def test_chat_no_tool_calls_returns_content():
 
 
 @pytest.mark.asyncio
+async def test_chat_sends_think_false_by_default():
+    captured = {}
+
+    def handler(request):
+        captured.update(json_mod.loads(request.content))
+        return httpx.Response(200, json=_native_response(content="ok"))
+
+    client = _make_client(handler)
+    await client.chat(messages=[{"role": "user", "content": "hi"}])
+    assert captured["think"] is False
+    assert captured["stream"] is False
+
+
+@pytest.mark.asyncio
 async def test_chat_reports_real_usage_when_present():
     def handler(request):
-        return httpx.Response(200, json=_openai_response(content="Hello there", usage=(12, 34)))
+        return httpx.Response(
+            200, json=_native_response(content="Hello there", prompt_eval_count=12, eval_count=34)
+        )
 
     client = _make_client(handler)
     result = await client.chat(messages=[{"role": "user", "content": "hi"}])
@@ -76,17 +117,11 @@ async def test_chat_executes_tool_call_and_appends_result():
         if calls["n"] == 1:
             return httpx.Response(
                 200,
-                json=_openai_response(
-                    tool_calls=[
-                        {
-                            "id": "call_1",
-                            "type": "function",
-                            "function": {"name": "my_tool", "arguments": json_mod.dumps({"q": "x"})},
-                        }
-                    ]
+                json=_native_response(
+                    tool_calls=[{"id": "call_1", "function": {"name": "my_tool", "arguments": {"q": "x"}}}]
                 ),
             )
-        return httpx.Response(200, json=_openai_response(content="Final answer"))
+        return httpx.Response(200, json=_native_response(content="Final answer"))
 
     client = _make_client(handler)
 
@@ -110,13 +145,11 @@ async def test_chat_tool_exception_surfaces_as_error_result():
         if calls["n"] == 1:
             return httpx.Response(
                 200,
-                json=_openai_response(
-                    tool_calls=[
-                        {"id": "call_1", "type": "function", "function": {"name": "boom", "arguments": "{}"}}
-                    ]
+                json=_native_response(
+                    tool_calls=[{"id": "call_1", "function": {"name": "boom", "arguments": {}}}]
                 ),
             )
-        return httpx.Response(200, json=_openai_response(content="recovered"))
+        return httpx.Response(200, json=_native_response(content="recovered"))
 
     client = _make_client(handler)
 
@@ -133,10 +166,8 @@ async def test_chat_hits_max_tool_rounds_cap():
     def handler(request):
         return httpx.Response(
             200,
-            json=_openai_response(
-                tool_calls=[
-                    {"id": "call_1", "type": "function", "function": {"name": "loop_tool", "arguments": "{}"}}
-                ]
+            json=_native_response(
+                tool_calls=[{"id": "call_1", "function": {"name": "loop_tool", "arguments": {}}}]
             ),
         )
 
@@ -158,7 +189,7 @@ async def test_chat_retries_on_429_then_succeeds():
         calls["n"] += 1
         if calls["n"] == 1:
             return httpx.Response(429, text="rate limited")
-        return httpx.Response(200, json=_openai_response(content="ok"))
+        return httpx.Response(200, json=_native_response(content="ok"))
 
     client = _make_client(handler, max_retries=2)
     result = await client.chat(messages=[{"role": "user", "content": "hi"}])
@@ -202,7 +233,7 @@ async def test_no_api_key_needed_locally():
 
     def handler(request):
         assert "Authorization" not in request.headers
-        return httpx.Response(200, json=_openai_response(content="ok"))
+        return httpx.Response(200, json=_native_response(content="ok"))
 
     client = _make_client(handler)
     result = await client.chat(messages=[{"role": "user", "content": "hi"}])
@@ -210,9 +241,27 @@ async def test_no_api_key_needed_locally():
 
 
 @pytest.mark.asyncio
+async def test_chat_against_hosted_endpoint_uses_openai_compat_shape():
+    """A non-local base_url (e.g. OpenRouter) has no Ollama-native `/api/...`
+    to call, so this is the one case that still speaks the OpenAI-compatible
+    shape — same protocol as GroqClient."""
+
+    def handler(request):
+        assert request.url.path.endswith("/chat/completions")
+        return httpx.Response(200, json=_openai_response(content="Hello there", usage=(12, 34)))
+
+    client = _make_client(handler, base_url="https://openrouter.ai/api/v1")
+    result = await client.chat(messages=[{"role": "user", "content": "hi"}])
+    assert result.content == "Hello there"
+    assert result.prompt_tokens == 12
+    assert result.completion_tokens == 34
+
+
+@pytest.mark.asyncio
 async def test_generate_json_parses_response():
     def handler(request):
-        return httpx.Response(200, json=_openai_response(content='{"supported": true}'))
+        assert request.url.path == "/api/chat"
+        return httpx.Response(200, json=_native_response(content='{"supported": true}'))
 
     client = _make_client(handler)
     result = await client.generate_json("prompt", schema={"type": "object"})
@@ -221,26 +270,39 @@ async def test_generate_json_parses_response():
 
 @pytest.mark.asyncio
 async def test_generate_json_constrains_decoding_to_the_schema():
-    """The schema must reach Ollama as a `json_schema` response_format, not as
-    prose in the prompt. Under the old prompt-embedded form, small models
-    echoed the schema envelope back instead of an instance, and verification
-    silently found zero claims in every answer."""
+    """The schema must reach Ollama as the native `format` constraint (or, on
+    a hosted endpoint, a `json_schema` response_format) — not as prose in the
+    prompt. Under the old prompt-embedded form, small models echoed the
+    schema envelope back instead of an instance, and verification silently
+    found zero claims in every answer."""
     seen = {}
 
     def handler(request):
         seen.update(json_mod.loads(request.content))
-        return httpx.Response(200, json=_openai_response(content='{"claims": []}'))
+        return httpx.Response(200, json=_native_response(content='{"claims": []}'))
 
     schema = {"type": "object", "properties": {"claims": {"type": "array"}}}
     client = _make_client(handler)
     await client.generate_json("prompt", schema=schema)
 
-    assert seen["response_format"]["type"] == "json_schema"
-    assert seen["response_format"]["json_schema"]["schema"] == schema
+    assert seen["format"] == schema
+    assert seen["think"] is False
     # It also stays in the prompt: constrained decoding fixes the shape, but
     # removing the schema from the prompt cost the model task context and
     # measurably worsened its routing choices.
     assert "claims" in seen["messages"][-1]["content"]
+
+
+@pytest.mark.asyncio
+async def test_generate_json_against_hosted_endpoint_uses_openai_compat_shape():
+    def handler(request):
+        seen = json_mod.loads(request.content)
+        assert seen["response_format"]["type"] == "json_schema"
+        return httpx.Response(200, json=_openai_response(content='{"claims": []}'))
+
+    client = _make_client(handler, base_url="https://openrouter.ai/api/v1")
+    result = await client.generate_json("prompt", schema={"type": "object"})
+    assert result == {"claims": []}
 
 
 @pytest.mark.asyncio
