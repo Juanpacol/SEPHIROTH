@@ -12,6 +12,12 @@ See docs/08-decisions/ADR-015-commit-message-format.md for the full
 rationale, including the accepted gap: this script validates *format* only —
 it does not, and cannot, guarantee that <NNN> is globally unique across
 branches.
+
+Dependabot-authored subjects (the `dependabot: ` prefix configured in
+`.github/dependabot.yml`) are exempt from the shape check, same as
+merge/revert commits — Dependabot cannot produce an `SF<NNN> ... [<type>]`
+subject. The prefix here and `commit-message.prefix` in
+`.github/dependabot.yml` are two literal strings that must change together.
 """
 
 from __future__ import annotations
@@ -23,7 +29,7 @@ import sys
 ALLOWED_TYPES = ("feat", "fix", "docs", "chore", "refactor", "test")
 MAX_BODY_WORDS = 50
 
-_SKIP_PATTERN = re.compile(r'^(Merge\b|Revert ")')
+_SKIP_PATTERN = re.compile(r'^(Merge\b|Revert "|dependabot(?:\([^)]*\))?: )')
 _SHAPE_PATTERN = re.compile(r"^SF(\d{3,})\s+(.+)\s+\[(" + "|".join(ALLOWED_TYPES) + r")\]$")
 _HAS_PREFIX = re.compile(r"^SF\d{3,}\s")
 _HAS_SUFFIX = re.compile(r"\[([^\]]*)\]\s*$")
