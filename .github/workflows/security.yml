@@ -73,6 +73,92 @@ jobs:
             { echo "## npm audit (advisory, high+)"; echo '```'; cat ../../npm-audit-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           fi
 
+  # Advisory *for now*: the Security tab has never received an analysis
+  # (code-scanning/alerts -> 404 "no analysis found"), so the baseline is
+  # unknown. Flip condition: promote to blocking, and add to security-gate's
+  # needs, once the baseline is triaged to zero.
+  codeql:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # javascript-typescript is the current single CodeQL pack name
+        # covering both JS and TS.
+        language: [python, javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+      # No autobuild/build-mode step and no `pip install`: both packs extract
+      # without a build here. The src/ layout and the platform/-on-PYTHONPATH
+      # rule (see CLAUDE.md) may degrade cross-file dataflow resolution for
+      # Python, not extraction itself. If a future run shows extraction
+      # failing, the repo's existing recipe is code-review.yml's `test` job
+      # (`pip install -r requirements-dev.txt` then `pip install -e .`) —
+      # not implemented pre-emptively here.
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+      # analyze@v3 uploads SARIF itself — no separate upload-sarif step.
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # Advisory *for now* — see the codeql job comment above for the flip
+  # condition. Frontend-only SAST: gitleaks already owns secrets (no
+  # p/secrets ruleset here).
+  semgrep:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - run: pip install semgrep
+      # OSS CLI entrypoint (`semgrep scan`), not `semgrep ci` — the latter is
+      # the cloud entrypoint and requires SEMGREP_APP_TOKEN. `|| true` keeps
+      # later steps in this job running even though a finding makes semgrep
+      # exit non-zero; p/nextjs is deliberately not used (existence
+      # unverified).
+      - name: semgrep scan (advisory, platform/frontend)
+        run: |
+          semgrep scan \
+            --config p/typescript --config p/react --config p/owasp-top-ten \
+            --metrics=off --sarif --output semgrep.sarif \
+            platform/frontend || true
+      - name: Semgrep summary (advisory)
+        run: |
+          if [ -n "$GITHUB_STEP_SUMMARY" ]; then
+            {
+              echo "## Semgrep (advisory, platform/frontend)"
+              if [ -s semgrep.sarif ]; then
+                total=$(jq '[.runs[].results[]] | length' semgrep.sarif)
+                echo "Total findings: $total"
+                echo
+                echo "| Rule | Count |"
+                echo "|---|---|"
+                jq -r '[.runs[].results[].ruleId] | group_by(.) | map("| \(.[0]) | \(length) |") | .[]' semgrep.sarif
+              else
+                echo "No semgrep.sarif produced."
+              fi
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
   # Single required status check for branch protection ("SEGURIDAD" gate).
   # Only secrets-sast gates the merge; dependency-audit stays advisory
   # (continue-on-error), so its failures never block this job.
