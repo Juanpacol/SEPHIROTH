@@ -5,6 +5,90 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+## SF036
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF035
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF034
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF033
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF032
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF031
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF030
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF029
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF028
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF027
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF026
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF025
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF024
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF023
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF022
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF021
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF020
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF019
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF018
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF017
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF016
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
 ## SF015
 
 - Auto-update CHANGELOG.md with entries grouped by story [chore]
