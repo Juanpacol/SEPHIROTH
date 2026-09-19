@@ -5,6 +5,14 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+## SF007
+
+- Auto-generate CHANGELOG.md entries grouped by SF<NNN> story on every push to main [chore]
+
+## SF008
+
+- Route the changelog bot through a PR with a PAT instead of pushing to main directly, since branch protection blocks the default GITHUB_TOKEN [fix]
+
 ### Phase E — landing page, brand icon, entry flow (landing/icon/portal/scheduling plan — final phase)
 
 #### Added
