@@ -5,6 +5,10 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+## SF031
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
 ## SF030
 
 - Auto-update CHANGELOG.md with entries grouped by story [chore]
