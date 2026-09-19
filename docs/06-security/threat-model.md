@@ -27,9 +27,11 @@ data. **Not** a deployment threat model for real patient data — see
 | T-7 | Secrets committed | `.env` gitignored; gitleaks blocking in CI | ✅ |
 | T-8 | Weak `JWT_SECRET` in a deployed environment | `Settings` refuses to start in staging/production with a default or short secret | ✅ |
 | T-9 | PHI leaking into logs or traces | Span attributes are an allow-list, enforced at construction | 🚧 contract done, emitters in phase 5 |
-| T-10 | Dependency CVEs | `pip-audit` + `npm audit`, advisory | ✅ |
+| T-10 | Dependency CVEs | `pip-audit` + `npm audit`, advisory; Dependabot version-update PRs for pip, npm, docker, and github-actions | ✅ |
 | T-11 | Quota exhaustion as denial of service | Rate limiter, bounded tool rounds, provider fallback | ✅ |
 | T-12 | Model outputs an unsafe recommendation | Output safety engine and abstention | 📋 phase 4 — **the largest open gap** |
+| T-13 | Container/OS-image CVEs in the deployed image | Trivy on the built image, CRITICAL OS packages, blocking in CI | ✅ |
+| T-14 | Frontend (TypeScript/Next.js) code has no SAST | Semgrep on platform/frontend + CodeQL javascript-typescript, advisory | ✅ |
 
 ## Trust boundaries
 
