@@ -19,7 +19,7 @@ services:
     environment:
       LLM_PROVIDER: split
       OLLAMA_BASE_URL: http://host.docker.internal:11434/v1
-      OLLAMA_MODEL: qwen2.5:3b-instruct
+      OLLAMA_MODEL: qwen3:8b
       OLLAMA_MAX_OUTPUT_TOKENS: "600"
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_MODEL: ${GROQ_MODEL:-}

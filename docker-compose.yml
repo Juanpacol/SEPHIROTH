@@ -40,5 +40,23 @@ services:
       postgres:
         condition: service_healthy
 
+  frontend:
+    build: platform/frontend
+    ports:
+      - "3100:3100"
+    environment:
+      # "api" is the compose service name, resolved on the compose network —
+      # not 127.0.0.1, which inside this container would mean itself.
+      NEXT_PUBLIC_API_URL: http://api:8000
+      WATCHPACK_POLLING: "true" # bind-mount file changes need polling on Docker Desktop for Mac
+    volumes:
+      - ./platform/frontend:/app
+      # Anonymous volumes so the host's node_modules/.next (different
+      # OS/arch, or absent) never shadows what the image installed.
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
+
 volumes:
   postgres_data:
