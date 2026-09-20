@@ -374,7 +374,8 @@ class OllamaClient:
         with `ollama pull`)."""
         if not self.vision_model:
             raise LLMUnavailableError(
-                "OllamaClient has no vision_model configured; use Gemini for image description."
+                "OllamaClient has no vision_model configured — set ollama_vision_model "
+                "and `ollama pull` a vision-capable model."
             )
         payload = {
             **self._vision_payload_native(image_bytes, mime_type, prompt, max_output_tokens),
@@ -404,7 +405,8 @@ class OllamaClient:
         sentinel) — each line is `{"message": {"content": "..."}, "done": bool}`."""
         if not self.vision_model:
             raise LLMUnavailableError(
-                "OllamaClient has no vision_model configured; use Gemini for image description."
+                "OllamaClient has no vision_model configured — set ollama_vision_model "
+                "and `ollama pull` a vision-capable model."
             )
         payload = {
             **self._vision_payload_native(image_bytes, mime_type, prompt, max_output_tokens),

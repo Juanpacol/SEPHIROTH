@@ -85,7 +85,12 @@ def test_supports_vision_proxies_vision_client_not_chat_client():
 
 
 @pytest.mark.asyncio
-async def test_health_requires_both_clients_healthy():
+async def test_health_reflects_chat_client_only():
+    """`health()` gates `/consult`, which only needs the conversational
+    path — a dead vision client must never flip it to unhealthy (see the
+    local-only isolation spec's Decision D3). Vision reachability is
+    `vision_health()`'s job instead."""
+
     class _UnhealthyClient(_RecordingClient):
         async def health(self):
             return False
@@ -93,4 +98,17 @@ async def test_health_requires_both_clients_healthy():
     chat_client = _RecordingClient()
     vision_client = _UnhealthyClient(supports_vision=True)
     split = VisionChatSplitClient(chat_client=chat_client, vision_client=vision_client)
-    assert await split.health() is False
+    assert await split.health() is True
+    assert await split.vision_health() is False
+
+
+@pytest.mark.asyncio
+async def test_vision_health_swallows_exceptions():
+    class _RaisingClient(_RecordingClient):
+        async def health(self):
+            raise RuntimeError("boom")
+
+    chat_client = _RecordingClient()
+    vision_client = _RaisingClient(supports_vision=True)
+    split = VisionChatSplitClient(chat_client=chat_client, vision_client=vision_client)
+    assert await split.vision_health() is False

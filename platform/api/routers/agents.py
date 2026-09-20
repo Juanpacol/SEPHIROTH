@@ -16,10 +16,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.fast_path import try_fast_path
 from api.pdf_export import render_consultation_pdf
 from auth.deps import get_current_user
-from core.config import settings
+from core.config import is_local_llm_provider, settings
 from core.db import SessionLocal, get_session
 from core.rate_limit import key_by_user_or_ip, limiter
 from data.schemas import AIEvaluation, Consultation, User
+from intelligence.mcp.vision_server import _active_vision_model_name
 from sephiroth.context import recent_consultation_summaries
 from sephiroth.models import get_llm_client
 from sephiroth.runtime import run_consultation, stream_consultation
@@ -57,7 +58,10 @@ class ConsultResponse(BaseModel):
 async def _ensure_llm() -> None:
     if not await get_llm_client().health():
         provider = settings.llm_provider
-        if provider in ("ollama", "split"):
+        if is_local_llm_provider(provider):
+            # `health()` now probes only the chat path (see
+            # `VisionChatSplitClient.health()`), so this message is
+            # guaranteed to name the dependency that was actually probed.
             detail = (
                 f"Ollama is not reachable or model '{settings.ollama_model}' is unavailable. "
                 "Check that `ollama serve` is running and the model is pulled."
@@ -338,7 +342,16 @@ async def agents_status(
     # loop above never counts it either.
     usage["Coordinator"] = 0 if settings.enable_single_agent_mode else consultation_count
 
-    llm_ok = await get_llm_client().health()
+    client = get_llm_client()
+    llm_ok = await client.health()
+    try:
+        vision_health = getattr(client, "vision_health", None)
+        if vision_health is not None:
+            vision_ok = await vision_health()
+        else:
+            vision_ok = bool(getattr(client, "supports_vision", False))
+    except Exception:
+        vision_ok = False
     provider = settings.llm_provider
     model = {
         "gemini": settings.gemini_model,
@@ -355,7 +368,9 @@ async def agents_status(
             "llm": "online" if llm_ok else "offline",
             "model": model,
             "provider": provider,
-            "local_only": provider in ("ollama", "split"),
+            "local_only": is_local_llm_provider(provider),
+            "vision": "online" if vision_ok else "offline",
+            "vision_model": _active_vision_model_name(settings),
         },
     }
 

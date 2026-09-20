@@ -1,12 +1,11 @@
 """Vision/chat split composition.
 
-Routes `describe_image`/`describe_image_stream` to one client (Gemini —
-the only provider in this codebase proven to do vision well; see the
-runtime audit's finding that smaller/free chat models fabricate citations
-more than Gemini) and `chat`/`generate_json` to a separate client (or
-`FallbackLLMClient` chain) for text/tool-calling. Unlike `FallbackLLMClient`,
-this is not about resilience — it's about sending each capability to the
-provider actually measured to be good at it.
+This is a *capability split*, not a "Gemini does vision" statement: it
+routes `describe_image`/`describe_image_stream` to `vision_client` and
+`chat`/`generate_json` to `chat_client` (which may itself be a
+`FallbackLLMClient` chain), so each capability can use a different model.
+Under `llm_provider="split"` both `chat_client` and `vision_client` are
+local Ollama clients, with Groq as a chat-only fallback.
 
 No fallback for vision by design (confirmed with the user): if the vision
 client is unavailable, `describe_image` raises `LLMUnavailableError` and
@@ -114,9 +113,21 @@ class VisionChatSplitClient:
         )
 
     async def health(self) -> bool:
-        chat_ok = await self.chat_client.health()
-        vision_ok = await self.vision_client.health()
-        return chat_ok and vision_ok
+        """Gates `/consult`, which only needs the conversational path — a
+        vision model that is missing or unreachable degrades to `status:
+        "unavailable"` at the call site and must never 503 the consultation
+        endpoint. See `vision_health()` for the (non-fatal) vision signal."""
+        return await self.chat_client.health()
+
+    async def vision_health(self) -> bool:
+        """Non-fatal operator signal, surfaced by `/api/agents/status`.
+        Never raises — any exception from the underlying client's health
+        check is treated as "unhealthy," and this is never ANDed into
+        `health()`."""
+        try:
+            return await self.vision_client.health()
+        except Exception:
+            return False
 
 
 __all__ = ["VisionChatSplitClient"]

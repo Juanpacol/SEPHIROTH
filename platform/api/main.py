@@ -183,14 +183,36 @@ app.include_router(internal.router, tags=["internal"])
 async def health_check():
     """Liveness only — no I/O, never flaps. This is what Render's
     `healthCheckPath` polls; pointing it at a DB-touching endpoint would let
-    a transient Supabase pooler blip trigger an unnecessary restart."""
+    a transient Supabase pooler blip trigger an unnecessary restart.
+
+    `model` is the *answering* model (chat, i.e. `ollama_model` for
+    `"split"`); `/api/agents/status` carries the vision model separately.
+    """
     model = {
         "gemini": settings.gemini_model,
         "groq": settings.groq_model,
         "ollama": settings.ollama_model,
         "split": settings.ollama_model,
     }[settings.llm_provider]
-    return {"status": "healthy", "version": settings.api_version, "model": model}
+    return {
+        "status": "healthy",
+        "version": settings.api_version,
+        "model": model,
+        "provider": settings.llm_provider,
+        "local_only": settings.is_local_provider,
+    }
+
+
+def _llm_configured() -> bool:
+    """Whether the configured provider has what it needs to answer, without
+    performing any model I/O (`/health/ready` does none today; this doesn't
+    add any). A local provider needs no API key — Ollama reachability is
+    deliberately not probed here."""
+    if settings.is_local_provider:
+        return True
+    if settings.llm_provider == "groq":
+        return bool(settings.groq_api_key)
+    return bool(settings.gemini_api_key)
 
 
 @app.get("/health/ready")
@@ -208,7 +230,8 @@ async def readiness_check(response: Response):
         checks["database"] = "ok"
     except Exception as exc:
         checks["database"] = f"error: {type(exc).__name__}"
-    checks["llm"] = "configured" if settings.gemini_api_key else "unconfigured"
+    checks["llm"] = "configured" if _llm_configured() else "unconfigured"
+    checks["llm_provider"] = settings.llm_provider
 
     ok = checks["database"] == "ok"
     if not ok:
