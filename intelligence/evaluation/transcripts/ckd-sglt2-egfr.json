@@ -1,15 +1,15 @@
 {
   "case_id": "ckd-sglt2-egfr",
-  "answer": "Based on the American Diabetes Association (ADA) guidelines, SGLT2 inhibitors are recommended for patients with type 2 diabetes and chronic kidney disease (CKD) when their estimated glomerular filtration rate (eGFR) is at least 20 mL/min/1.73m\u00b2. These recommendations aim to reduce the progression of CKD and cardiovascular risk.\n\nPlease note this recommendation applies to type 2 diabetic patients with CKD, regardless of whether they have albuminuria or hypertension. SGLT2 inhibitors are also part of the recommended class for slowing CKD progression in all stages when combined with ACE inhibitors (also known as angiotensin-converting enzyme inhibitors) or ARBs (angiotensin receptor blockers), especially in patients presenting with albuminuria and hypertension. \n\nFor more detailed information, you should consult the guidelines published by the American Diabetes Association [ADA Standard of Care in Diabetes, 2024].",
+  "answer": "SGLT2 inhibitors are recommended for patients with type 2 diabetes and chronic kidney disease when their estimated glomerular filtration rate (eGFR) is at least 20 mL/min/1.73m\u00b2 [ADA, 2024]. This recommendation aims to reduce the progression of chronic kidney disease and lower cardiovascular risk. ACE inhibitors or ARBs are typically the first-line treatment for patients with albuminuria and hypertension.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "SGLT2 inhibitors chronic kidney disease type 2 diabetes",
-        "top_k": 2
+        "top_k": 2,
+        "query": "SGLT2 inhibitor recommendation for chronic kidney disease in type 2 diabetes"
       },
       "result": {
-        "query": "SGLT2 inhibitors chronic kidney disease type 2 diabetes",
+        "query": "SGLT2 inhibitor recommendation for chronic kidney disease in type 2 diabetes",
         "results": [
           {
             "id": "ada-2024-ckd",
@@ -27,18 +27,18 @@
             }
           },
           {
-            "id": "kdigo-2024-ckd",
-            "content": "CKD staging is based on eGFR and albuminuria categories. SGLT2 inhibitors and ACE inhibitors or ARBs are recommended to slow progression in patients with albuminuric CKD, regardless of diabetes status.",
-            "source": "KDIGO Clinical Practice Guideline for CKD",
-            "citation": "Evaluation and Management of CKD, KDIGO, 2024",
-            "url": "https://kdigo.org/guidelines/ckd-evaluation-and-management/",
-            "score": 0.0479,
+            "id": "ada-2024-microvascular-screening",
+            "content": "Adults with type 2 diabetes should have an annual dilated eye exam for retinopathy, an annual urine albumin-to-creatinine ratio for nephropathy, and an annual comprehensive foot exam with monofilament testing for peripheral neuropathy, starting at diagnosis.",
+            "source": "ADA Standards of Care in Diabetes",
+            "citation": "Microvascular Complications Screening in Diabetes, American Diabetes Association, 2024",
+            "url": "https://diabetesjournals.org/care/issue/47/Supplement_1",
+            "score": 0.0469,
             "metadata": {
-              "category": "nephrology",
-              "organization": "KDIGO",
+              "category": "endocrinology",
+              "organization": "American Diabetes Association",
               "year": 2024,
-              "title": "Evaluation and Management of CKD",
-              "url": "https://kdigo.org/guidelines/ckd-evaluation-and-management/"
+              "title": "Microvascular Complications Screening in Diabetes",
+              "url": "https://diabetesjournals.org/care/issue/47/Supplement_1"
             }
           }
         ],
@@ -46,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 12708,
+  "latency_ms": 32911,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2185,
-  "completion_tokens": 236,
+  "prompt_tokens": 2056,
+  "completion_tokens": 137,
   "cost_usd": 0.0
 }

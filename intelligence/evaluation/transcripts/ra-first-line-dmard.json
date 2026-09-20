@@ -1,0 +1,11 @@
+{
+  "case_id": "ra-first-line-dmard",
+  "answer": "The first-line disease-modifying antirheumatic drug (DMARD) for rheumatoid arthritis is methotrexate. [American College of Rheumatology, 2023]",
+  "tool_calls": [],
+  "latency_ms": 5241,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 763,
+  "completion_tokens": 41,
+  "cost_usd": 0.0
+}

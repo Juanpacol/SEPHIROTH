@@ -1,15 +1,15 @@
 {
   "case_id": "sepsis-antibiotic-timing",
-  "answer": "Based on the guidelines from the Surviving Sepsis Campaign, for patients with septic shock or sepsis, broad-spectrum antibiotics should be administered within 1 hour of recognition. Additionally, along with this, 30 mL/kg of intravenous crystalloid fluid is recommended for those experiencing hypotension or elevated lactate levels.\n\n[citation]\n[Surviving Sepsis Campaign Guidelines, 2021] [https://www.sccm.org/SurvivingSepsisCampaign/Guidelines]\n[/citation]",
+  "answer": "Antibiotics should be given within 1 hour of recognizing septic shock. This recommendation is based on the Surviving Sepsis Campaign Guidelines [Surviving Sepsis Campaign, 2021].",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "septic shock treatment antibiotics timing",
+        "query": "antibiotics administration time in septic shock",
         "top_k": 2
       },
       "result": {
-        "query": "septic shock treatment antibiotics timing",
+        "query": "antibiotics administration time in septic shock",
         "results": [
           {
             "id": "sscm-2021-sepsis",
@@ -25,31 +25,16 @@
               "title": "Management of Sepsis and Septic Shock",
               "url": "https://www.sccm.org/SurvivingSepsisCampaign/Guidelines"
             }
-          },
-          {
-            "id": "idsa-2012-pharyngitis-centor",
-            "content": "The Centor criteria (fever, tonsillar exudate, tender anterior cervical adenopathy, absence of cough) estimate the likelihood of group A streptococcal pharyngitis; a score of 3-4 warrants rapid strep testing. Penicillin or amoxicillin is first-line treatment for confirmed strep throat; antibiotics are not indicated for a low Centor score.",
-            "source": "IDSA Clinical Practice Guideline",
-            "citation": "Diagnosis and Management of Group A Streptococcal Pharyngitis, IDSA, 2012",
-            "url": "https://academic.oup.com/cid/article/55/10/1279/300756",
-            "score": 0.0161,
-            "metadata": {
-              "category": "infectious_disease",
-              "organization": "IDSA",
-              "year": 2012,
-              "title": "Diagnosis and Management of Group A Streptococcal Pharyngitis",
-              "url": "https://academic.oup.com/cid/article/55/10/1279/300756"
-            }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
   ],
-  "latency_ms": 9200,
+  "latency_ms": 25129,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2227,
-  "completion_tokens": 146,
+  "prompt_tokens": 1809,
+  "completion_tokens": 83,
   "cost_usd": 0.0
 }

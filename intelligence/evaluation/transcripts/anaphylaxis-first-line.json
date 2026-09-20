@@ -1,0 +1,11 @@
+{
+  "case_id": "anaphylaxis-first-line",
+  "answer": "The first-line treatment for anaphylaxis is epinephrine, which should be administered intramuscularly (IM) in the thigh as soon as anaphylaxis is suspected [AHA, 2020]. This is the most effective intervention to reverse life-threatening symptoms such as airway obstruction, hypotension, and bronchospasm.",
+  "tool_calls": [],
+  "latency_ms": 12692,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 762,
+  "completion_tokens": 76,
+  "cost_usd": 0.0
+}

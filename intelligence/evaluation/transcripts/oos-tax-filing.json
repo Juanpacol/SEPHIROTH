@@ -1,11 +1,11 @@
 {
   "case_id": "oos-tax-filing",
-  "answer": "The provided guidelines or PubMed results do not contain information related to recommending practices for filing quarterly small-business tax returns. Let me know if you need further assistance with another topic.\n\nNone detected",
+  "answer": "The guidelines do not provide specific recommendations for filing quarterly small-business tax returns, as this is a tax-related topic rather than a clinical one. Tax return filings are governed by tax codes and regulations, not clinical guidelines. For accurate guidance on tax matters, consult a tax professional or the relevant tax authority.",
   "tool_calls": [],
-  "latency_ms": 1386,
+  "latency_ms": 13209,
   "tool_call_count": 0,
   "rounds": 1,
-  "prompt_tokens": 837,
-  "completion_tokens": 37,
+  "prompt_tokens": 763,
+  "completion_tokens": 61,
   "cost_usd": 0.0
 }

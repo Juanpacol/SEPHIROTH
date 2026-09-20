@@ -1,0 +1,55 @@
+{
+  "case_id": "dry-eye-first-line",
+  "answer": "The first-line treatment for dry eye is artificial tears and environmental modifications, such as reducing screen time and using a humidifier [National Eye Institute, 2022]. Prescription anti-inflammatory drops or punctal plugs are considered if the condition does not improve with lubrication alone.",
+  "tool_calls": [
+    {
+      "name": "search_clinical_guidelines",
+      "arguments": {
+        "query": "first-line treatment for dry eye",
+        "top_k": 2
+      },
+      "result": {
+        "query": "first-line treatment for dry eye",
+        "results": [
+          {
+            "id": "nei-dry-eye",
+            "content": "Dry eye disease is managed first-line with artificial tears and environmental modification (reducing screen time, using humidifiers). Prescription anti-inflammatory drops or punctal plugs are considered for moderate to severe cases unresponsive to lubrication alone.",
+            "source": "National Eye Institute Patient Guide: Dry Eye",
+            "citation": "Dry Eye, National Eye Institute, 2022",
+            "url": "https://www.nei.nih.gov/learn-about-eye-health/eye-conditions-and-diseases/dry-eye",
+            "score": 0.0484,
+            "metadata": {
+              "category": "ophthalmology",
+              "organization": "National Eye Institute",
+              "year": 2022,
+              "title": "Dry Eye",
+              "url": "https://www.nei.nih.gov/learn-about-eye-health/eye-conditions-and-diseases/dry-eye"
+            }
+          },
+          {
+            "id": "nei-diabetic-retinopathy",
+            "content": "Annual dilated eye exams are recommended for all patients with diabetes to screen for diabetic retinopathy, since early stages are often asymptomatic. Anti-VEGF injections are first-line treatment for diabetic macular edema and proliferative disease.",
+            "source": "National Eye Institute Patient Guide: Diabetic Retinopathy",
+            "citation": "Diabetic Retinopathy, National Eye Institute, 2022",
+            "url": "https://www.nei.nih.gov/learn-about-eye-health/eye-conditions-and-diseases/diabetic-retinopathy",
+            "score": 0.0481,
+            "metadata": {
+              "category": "ophthalmology",
+              "organization": "National Eye Institute",
+              "year": 2022,
+              "title": "Diabetic Retinopathy",
+              "url": "https://www.nei.nih.gov/learn-about-eye-health/eye-conditions-and-diseases/diabetic-retinopathy"
+            }
+          }
+        ],
+        "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
+      }
+    }
+  ],
+  "latency_ms": 24416,
+  "tool_call_count": 1,
+  "rounds": 2,
+  "prompt_tokens": 2000,
+  "completion_tokens": 93,
+  "cost_usd": 0.0
+}
