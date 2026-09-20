@@ -19,6 +19,7 @@ import { CheckCircle2, Lock } from "lucide-react";
 
 import { api, type Encounter, type NoteDraft, type OrderKind } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
+import { pickPriorVitals } from "@/lib/vitals-autofill";
 import Dialog from "@/components/ui/dialog";
 import NoteDraftPanel from "@/components/encounters/note-draft-panel";
 import OrdersEditor from "@/components/encounters/orders-editor";
@@ -124,11 +125,36 @@ export default function EncounterPage() {
     onError: (err: Error) => setError(err.message),
   });
 
+  // Declared above the early return below so hook order stays stable on the
+  // loading render; `enabled` gates the actual fetch on the encounter being
+  // loaded and editable.
+  const priorQuery = useQuery({
+    queryKey: ["prior-vitals", encounter?.patient_id],
+    enabled: Boolean(encounter?.patient_id) && Boolean(encounter?.editable),
+    queryFn: () => api.encounters({ patient_id: encounter!.patient_id, limit: 10 }),
+  });
+  const priorSource = useMemo(
+    () =>
+      priorQuery.data && encounter
+        ? pickPriorVitals(priorQuery.data.items, { excludeEncounterId: encounter.id })
+        : null,
+    [priorQuery.data, encounter],
+  );
+
   if (encounterQuery.isLoading || !encounter || !draft) {
     return <div className="h-40 animate-pulse rounded-xl bg-surface" aria-busy="true" />;
   }
 
   const editable = encounter.editable;
+
+  function applyVitals(changed: Record<string, number | "">): void {
+    const merged: Record<string, number> = { ...encounter!.vitals };
+    for (const [key, value] of Object.entries(changed)) {
+      if (value === "") delete merged[key];
+      else merged[key] = value as number;
+    }
+    save.mutate({ vitals: merged } as Partial<Encounter>);
+  }
 
   function applyDraft(drafted: NoteDraft) {
     setDraft((current) =>
@@ -207,13 +233,13 @@ export default function EncounterPage() {
           specs={specsQuery.data?.vitals ?? []}
           findings={encounter.vital_findings}
           disabled={!editable || save.isPending}
-          onChange={(changed) => {
-            const merged: Record<string, number> = { ...encounter.vitals };
-            for (const [key, value] of Object.entries(changed)) {
-              if (value === "") delete merged[key];
-              else merged[key] = value as number;
-            }
-            save.mutate({ vitals: merged } as Partial<Encounter>);
+          onChange={applyVitals}
+          autofill={{
+            loading: priorQuery.isLoading,
+            sourceDate: priorSource?.startedAt ?? null,
+            onApply: () => {
+              if (priorSource) applyVitals(priorSource.vitals);
+            },
           }}
         />
       </section>

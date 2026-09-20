@@ -5,17 +5,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
-  CalendarDays,
   FileUp,
-  FlaskConical,
-  Image as ImageIcon,
   NotebookPen,
   Pill,
   Share2,
   Stethoscope,
   UserPlus,
 } from "lucide-react";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, type TimelineEvent } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
 import { parseInteractionLabel } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
@@ -25,6 +22,7 @@ import ShareResultSheet from "@/components/results/share-result-sheet";
 import InteractionCheckerCard from "@/components/patients/interaction-checker-card";
 import FollowupCard from "@/components/patients/followup-card";
 import LabTrendCard from "@/components/patients/lab-trend-card";
+import TimelineEventSheet, { iconForEventType } from "@/components/patients/timeline-event-sheet";
 import { useToast } from "@/components/ui/toast";
 
 function MedicationsCard({ patientId, medications }: { patientId: string; medications: string[] }) {
@@ -247,20 +245,13 @@ function AddNoteCard({ patientId }: { patientId: string }) {
   );
 }
 
-const eventIcons: Record<string, typeof Pill> = {
-  diagnosis: Stethoscope,
-  medication: Pill,
-  lab: FlaskConical,
-  imaging: ImageIcon,
-  event: CalendarDays,
-};
-
 export default function PatientProfilePage({ params }: { params: { id: string } }) {
   const { id } = params;
   const { t } = useLanguage();
   const router = useRouter();
   const showToast = useToast();
   const [shareOpen, setShareOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null);
   const { data: patient, isLoading } = useQuery({
     queryKey: ["patient", id],
     queryFn: () => api.patient(id),
@@ -351,20 +342,26 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
             <p className="mb-4 text-xs text-muted">{t("patientDetail.timeline.subtitle")}</p>
             <ol className="relative ml-3 space-y-5 border-l-2 border-line/60 pl-6">
               {patient.timeline.map((event, i) => {
-                const Icon = eventIcons[event.type] ?? CalendarDays;
+                const Icon = iconForEventType(event.type);
                 return (
                   <li key={i} className="relative">
                     <span className="absolute -left-[31px] flex h-5 w-5 items-center justify-center rounded-full bg-primary-soft">
                       <Icon size={11} className="text-primary" />
                     </span>
-                    <div className="text-xs text-muted">{event.date}</div>
-                    <div className="flex items-center gap-2 font-semibold">
-                      {event.title}
-                      {event.ai_generated && (
-                        <AgentBadge name={t("patientDetail.timeline.aiExtracted")} />
-                      )}
-                    </div>
-                    {event.detail && <div className="text-sm text-muted">{event.detail}</div>}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEvent(event)}
+                      className="tap w-full rounded-lg text-left transition-colors hover:bg-surface"
+                    >
+                      <div className="text-xs text-muted">{event.date}</div>
+                      <div className="flex items-center gap-2 font-semibold">
+                        {event.title}
+                        {event.ai_generated && (
+                          <AgentBadge name={t("patientDetail.timeline.aiExtracted")} />
+                        )}
+                      </div>
+                      {event.detail && <div className="text-sm text-muted">{event.detail}</div>}
+                    </button>
                   </li>
                 );
               })}
@@ -456,6 +453,7 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
       </div>
 
       <ShareResultSheet open={shareOpen} onClose={() => setShareOpen(false)} patientId={patient.id} />
+      <TimelineEventSheet event={selectedEvent} onClose={() => setSelectedEvent(null)} />
     </div>
   );
 }

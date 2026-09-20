@@ -944,7 +944,9 @@ export const api = {
     specialty?: string;
     chief_complaint?: string;
   }) => post<Encounter>("/api/encounters", body),
-  encounters: (params: { patient_id?: string; status?: EncounterStatus; mine?: boolean } = {}) => {
+  encounters: (
+    params: { patient_id?: string; status?: EncounterStatus; mine?: boolean; limit?: number } = {}
+  ) => {
     const qs = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
       if (value === undefined || value === "") continue;

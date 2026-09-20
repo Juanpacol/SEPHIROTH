@@ -45,7 +45,11 @@ export default function DataList<T>({
   columns: Column<T>[];
   rowKey: (row: T) => string;
   /** Makes the whole card tappable on a phone, where a small link inside a row
-   * is a poor target. The table shape keeps whatever links the cells render. */
+   * is a poor target. On the table shape, the first column's cell gets a real
+   * stretched `<a>` (`after:absolute after:inset-0`) so the whole row navigates
+   * from one keyboard-reachable link — do not use this on a `DataList` whose
+   * columns render their own interactive content, since the row-wide overlay
+   * sits above the other cells. */
   onRowHref?: (row: T) => string;
   isLoading?: boolean;
   loadingLabel: string;
@@ -118,15 +122,27 @@ export default function DataList<T>({
             </tr>
           </thead>
           <tbody>
-            {items.map((row) => (
-              <tr key={rowKey(row)} className="border-b border-line/40 last:border-0 hover:bg-surface/60">
-                {columns.map((col) => (
-                  <td key={col.key} className={`px-5 py-3.5 ${col.className ?? ""}`}>
-                    {col.render(row)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {items.map((row) => {
+              const href = onRowHref?.(row);
+              return (
+                <tr
+                  key={rowKey(row)}
+                  className={`border-b border-line/40 last:border-0 hover:bg-surface/60 ${href ? "relative" : ""}`}
+                >
+                  {columns.map((col, index) => (
+                    <td key={col.key} className={`px-5 py-3.5 ${col.className ?? ""}`}>
+                      {href && index === 0 ? (
+                        <a href={href} className="after:absolute after:inset-0 after:content-['']">
+                          {col.render(row)}
+                        </a>
+                      ) : (
+                        col.render(row)
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

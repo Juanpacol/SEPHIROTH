@@ -16,12 +16,22 @@ import { useEffect, useMemo, useState } from "react";
 import { type Encounter, type VitalSpecOut } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 
+export interface VitalsAutofill {
+  /** Pressed → the page applies the prior values and saves. */
+  onApply: () => void;
+  /** The prior-encounter query is in flight. */
+  loading: boolean;
+  /** `started_at` of the source encounter, or null when none qualifies. */
+  sourceDate: string | null;
+}
+
 interface Props {
   vitals: Record<string, number>;
   specs: VitalSpecOut[];
   findings: Encounter["vital_findings"];
   disabled?: boolean;
   onChange: (vitals: Record<string, number | "">) => void;
+  autofill?: VitalsAutofill;
 }
 
 /** Rendered as one field even though it is stored as two columns. */
@@ -36,7 +46,7 @@ function parseBloodPressure(text: string): { systolic: number; diastolic: number
   return { systolic, diastolic };
 }
 
-export default function VitalsForm({ vitals, specs, findings, disabled, onChange }: Props) {
+export default function VitalsForm({ vitals, specs, findings, disabled, onChange, autofill }: Props) {
   const { t } = useLanguage();
   const [bp, setBp] = useState("");
 
@@ -62,70 +72,99 @@ export default function VitalsForm({ vitals, specs, findings, disabled, onChange
   }
 
   const bpFinding = flagged.get("systolic") ?? flagged.get("diastolic");
+  const showAutofill =
+    autofill !== undefined &&
+    !disabled &&
+    specs.some((s) => s.key === "weight" || s.key === "height");
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-      <label className="col-span-2 flex flex-col gap-1 sm:col-span-1">
-        <span className="text-xs font-medium text-ink/70">{t("encounter.vitals.bp")}</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          placeholder="120/80"
-          aria-label={t("encounter.vitals.bp")}
-          value={bp}
-          disabled={disabled}
-          onChange={(event) => setBp(event.target.value)}
-          onBlur={(event) => commitBloodPressure(event.target.value)}
-          className={`tap rounded-lg border px-3 py-2 text-sm ${
-            bpFinding ? "border-danger bg-danger/5" : "border-line bg-card"
-          } disabled:opacity-60`}
-          aria-invalid={bpFinding ? true : undefined}
-        />
-        {bpFinding ? (
-          <span className="text-xs text-danger">{bpFinding.detail}</span>
-        ) : (
-          <span className="text-xs text-ink/40">mmHg</span>
-        )}
-      </label>
+    <div className="flex flex-col gap-3">
+      {showAutofill && autofill ? (
+        <div className="flex flex-col gap-1">
+          <button
+            type="button"
+            onClick={autofill.onApply}
+            disabled={disabled || autofill.loading || autofill.sourceDate === null}
+            className="btn-secondary tap self-start"
+          >
+            {t("encounter.vitals.autofill")}
+          </button>
+          <span className="text-xs text-muted">
+            {autofill.loading
+              ? t("encounter.vitals.autofillLoading")
+              : autofill.sourceDate === null
+                ? t("encounter.vitals.autofillEmpty")
+                : t("encounter.vitals.autofillHint").replace(
+                    "{date}",
+                    new Date(autofill.sourceDate).toLocaleDateString()
+                  )}
+          </span>
+          <span className="text-xs text-muted">{t("encounter.vitals.autofillNote")}</span>
+        </div>
+      ) : null}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <label className="col-span-2 flex flex-col gap-1 sm:col-span-1">
+          <span className="text-xs font-medium text-ink/70">{t("encounter.vitals.bp")}</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="120/80"
+            aria-label={t("encounter.vitals.bp")}
+            value={bp}
+            disabled={disabled}
+            onChange={(event) => setBp(event.target.value)}
+            onBlur={(event) => commitBloodPressure(event.target.value)}
+            className={`tap rounded-lg border px-3 py-2 text-sm ${
+              bpFinding ? "border-danger bg-danger/5" : "border-line bg-card"
+            } disabled:opacity-60`}
+            aria-invalid={bpFinding ? true : undefined}
+          />
+          {bpFinding ? (
+            <span className="text-xs text-danger">{bpFinding.detail}</span>
+          ) : (
+            <span className="text-xs text-ink/40">mmHg</span>
+          )}
+        </label>
 
-      {others.map((spec) => {
-        const finding = flagged.get(spec.key);
-        const value = vitals[spec.key];
-        return (
-          <label key={spec.key} className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-ink/70">{spec.label}</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              step={spec.decimals > 0 ? 0.1 : 1}
-              min={spec.min}
-              max={spec.max}
-              value={value ?? ""}
-              disabled={disabled}
-              // Named explicitly: the wrapping label also holds the unit hint,
-              // and a screen reader announcing "Frecuencia cardíaca 60 a 100"
-              // as the field's name buries the name in the hint.
-              aria-label={spec.label}
-              onChange={(event) =>
-                onChange({
-                  [spec.key]: event.target.value === "" ? "" : Number(event.target.value),
-                })
-              }
-              className={`tap rounded-lg border px-3 py-2 text-sm ${
-                finding ? "border-danger bg-danger/5" : "border-line bg-card"
-              } disabled:opacity-60`}
-              aria-invalid={finding ? true : undefined}
-            />
-            {finding ? (
-              <span className="text-xs text-danger">{finding.detail}</span>
-            ) : (
-              <span className="text-xs text-ink/40">
-                {spec.unit || `${spec.normal_low}–${spec.normal_high}`}
-              </span>
-            )}
-          </label>
-        );
-      })}
+        {others.map((spec) => {
+          const finding = flagged.get(spec.key);
+          const value = vitals[spec.key];
+          return (
+            <label key={spec.key} className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-ink/70">{spec.label}</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                step={spec.decimals > 0 ? 0.1 : 1}
+                min={spec.min}
+                max={spec.max}
+                value={value ?? ""}
+                disabled={disabled}
+                // Named explicitly: the wrapping label also holds the unit hint,
+                // and a screen reader announcing "Frecuencia cardíaca 60 a 100"
+                // as the field's name buries the name in the hint.
+                aria-label={spec.label}
+                onChange={(event) =>
+                  onChange({
+                    [spec.key]: event.target.value === "" ? "" : Number(event.target.value),
+                  })
+                }
+                className={`tap rounded-lg border px-3 py-2 text-sm ${
+                  finding ? "border-danger bg-danger/5" : "border-line bg-card"
+                } disabled:opacity-60`}
+                aria-invalid={finding ? true : undefined}
+              />
+              {finding ? (
+                <span className="text-xs text-danger">{finding.detail}</span>
+              ) : (
+                <span className="text-xs text-ink/40">
+                  {spec.unit || `${spec.normal_low}–${spec.normal_high}`}
+                </span>
+              )}
+            </label>
+          );
+        })}
+      </div>
     </div>
   );
 }
