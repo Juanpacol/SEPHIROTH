@@ -34,6 +34,12 @@ jobs:
   # revert commits are skipped by the validator itself. This check does NOT
   # verify that <NNN> is globally unique across branches — that's an
   # accepted, documented gap (ADR-015), not an oversight.
+  #
+  # Dependabot-authored commits are skipped two ways: by subject prefix
+  # inside the validator (`dependabot: `), and by author email here. The
+  # second exists because Dependabot *security*-update PRs may open without
+  # matching a configured ecosystem entry, and therefore possibly without
+  # the prefix — the author-email check is a second, independent net.
   commit-lint:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
@@ -47,9 +53,13 @@ jobs:
       - name: Validate commit messages in this PR
         run: |
           status=0
-          while IFS= read -r subject; do
+          while IFS=$'\x1f' read -r author_email subject; do
+            if [[ "${author_email,,}" == *dependabot* ]]; then
+              echo "skipping $subject (Dependabot author)"
+              continue
+            fi
             python3 scripts/validate_commit_msg.py --message "$subject" || status=1
-          done < <(git log --format=%s "origin/${{ github.base_ref }}..HEAD")
+          done < <(git log --format=%ae%x1f%s "origin/${{ github.base_ref }}..HEAD")
           exit $status
 
   test:
@@ -186,6 +196,36 @@ jobs:
           echo "backend never became healthy"; docker logs sephiroth-api-ci; exit 1
       - name: Smoke test
         run: bash scripts/smoke_test.sh http://127.0.0.1:8000
+      # OS-only (scanners: vuln + vuln-type: os): the image also carries the
+      # resolved Python environment (Dockerfile:10-11 -> :26), which
+      # pip-audit (security.yml:58) already covers, and gitleaks owns
+      # secrets — this step would otherwise double-report both. CRITICAL
+      # only: this job is in code-review-gate's needs, so anything reported
+      # here must be 100% actionable (security.yml:12-13). ignore-unfixed:
+      # true: an unfixable CRITICAL in python:3.11-slim would otherwise red
+      # main permanently with no action the maintainer can take
+      # (security.yml:43-44). `severity:` filters both the report and the
+      # exit code, so HIGH findings are neither shown nor fatal, by design.
+      - name: Trivy (CRITICAL OS-package CVEs in the built image)
+        # No floating major tag for this action, unlike every other action in
+        # this repo — pin the exact release and re-verify its inputs when
+        # bumping (gh api repos/aquasecurity/trivy-action/releases/latest).
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          # Recent trivy-action pulls the vulnerability DB from GHCR, which is
+          # subject to anonymous pull rate limits; this job is on the
+          # required path, so a DB-fetch failure would red the gate for a
+          # non-security reason. The ECR mirror avoids that limit.
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:2
+        with:
+          scan-type: image
+          image-ref: sephiroth-api:ci
+          scanners: vuln
+          vuln-type: os
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
       - name: Container logs (always, for debugging)
         if: always()
         run: docker logs sephiroth-api-ci

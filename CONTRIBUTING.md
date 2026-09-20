@@ -51,6 +51,11 @@ Example: `SF001 Add commit-msg validator script enforcing SF id, word cap, and t
 This applies **going forward only** — commits before `SF001` keep their
 existing Conventional Commits style and are never rewritten.
 
+Dependabot's own commits are exempt from this format — it cannot produce an
+`SF<NNN> ... [<type>]` subject — via the `dependabot: ` prefix configured in
+`.github/dependabot.yml` and matched by the validator, plus an author-email
+check in the `commit-lint` job as a second, independent net.
+
 **This is enforced, not just documented.** A local `commit-msg` git hook
 gives fast feedback; the `commit-lint` job (part of the **Code Review** gate,
 see below) is the real gate — a PR with a malformed commit cannot be merged.
@@ -74,14 +79,18 @@ to count a PR author's own approval toward a required-review count:
   gitleaks (secret scanning) + bandit HIGH-severity/HIGH-confidence findings.
   Blocking. `dependency-audit` (pip-audit/npm audit) runs in the same
   workflow but stays advisory — third-party CVEs with no available fix must
-  never turn `main` permanently red.
+  never turn `main` permanently red. The same workflow also runs CodeQL
+  (Python, JavaScript/TypeScript) and Semgrep (`platform/frontend`),
+  advisory, both publishing SARIF to the repo's Security tab.
 - **Code Review** (`.github/workflows/code-review.yml`, `code-review-gate`)
   — the automated stand-in for a human reviewer: lint, commit format,
   tests + coverage gate, the SDD spec-conformance check (every `Implemented`
   spec's acceptance criteria must exist in the test tree, contracts must not
   have drifted — see [the migration charter](docs/00-migration-charter.md)),
   frontend lint/test/build/e2e, and a real Docker build + boot smoke test
-  under both dev and prod config. `type-check` (mypy) runs alongside but is
+  under both dev and prod config. `docker-build-smoke-test` also fails on a
+  CRITICAL OS-package CVE in the built image (Trivy, `vuln-type: os`,
+  `ignore-unfixed: true`). `type-check` (mypy) runs alongside but is
   excluded from this gate — see its job comment for the 61-error baseline
   (DEBT-012) blocking that promotion.
 
@@ -106,6 +115,11 @@ Checklist:
 - [ ] `docs/project-state.yaml` updated if a component's status moved.
 - [ ] `CHANGELOG.md` entry under `[Unreleased]`.
 - [ ] A dev-log entry in `docs/dev-log/YYYY-MM-DD.md` (older entries live under `docs/dev-log/archive/`).
+- [ ] After merging a Dependabot `pip` PR: re-run
+      `uv pip compile requirements.txt -o requirements.lock.txt` and commit
+      the result under the same `SF<NNN>` — Dependabot bumps
+      `requirements.txt` but the Dockerfile installs from
+      `requirements.lock.txt`, which it cannot regenerate.
 
 ## Things that will bite you
 

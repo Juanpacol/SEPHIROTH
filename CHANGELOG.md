@@ -5,6 +5,18 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+## SF047
+
+- Auto-update CHANGELOG.md with entries grouped by story [chore]
+
+## SF040
+
+- Stop the changelog bot from claiming a real SF<NNN> for its own commit, which had it self-trigger a loop that burned 29 story ids on near-duplicate "Auto-update" commits [fix]
+
+## SF017
+
+- Add Dependabot, CodeQL, Semgrep, and a CRITICAL-only Trivy image scan [chore]
+
 ## SF046
 
 - Auto-update CHANGELOG.md with entries grouped by story [chore]

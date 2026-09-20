@@ -13,13 +13,18 @@ rationale, including the accepted gap: this script validates *format* only —
 it does not, and cannot, guarantee that <NNN> is globally unique across
 branches.
 
-`changelog-bot: ` (the prefix `.github/workflows/changelog.yml` commits its
-CHANGELOG.md updates under) is exempt the same way merge/revert commits are —
-it cannot produce an `SF<NNN> ... [<type>]` subject, and MUST NOT be given a
-real SF<NNN> id: an earlier version claimed one via `next-sf-id.sh`, which
-made the bot's own commit look like a user story to the next run and caused
-a self-triggering loop (29 near-duplicate "Auto-update" commits before this
-was caught — see the changelog.yml header comment for the full story).
+Two automated authors are exempt from the shape check, same as merge/revert
+commits — neither can produce an `SF<NNN> ... [<type>]` subject:
+
+- Dependabot-authored subjects (the `dependabot: ` prefix configured in
+  `.github/dependabot.yml`). That prefix and `commit-message.prefix` in
+  `.github/dependabot.yml` are two literal strings that must change together.
+- `changelog-bot: ` (the prefix `.github/workflows/changelog.yml` commits its
+  CHANGELOG.md updates under) — it MUST NOT be given a real SF<NNN> id either:
+  an earlier version claimed one via `next-sf-id.sh`, which made the bot's own
+  commit look like a user story to the next run and caused a self-triggering
+  loop (29 near-duplicate "Auto-update" commits before this was caught — see
+  the changelog.yml header comment for the full story).
 """
 
 from __future__ import annotations
@@ -31,7 +36,7 @@ import sys
 ALLOWED_TYPES = ("feat", "fix", "docs", "chore", "refactor", "test")
 MAX_BODY_WORDS = 50
 
-_SKIP_PATTERN = re.compile(r'^(Merge\b|Revert "|changelog-bot: )')
+_SKIP_PATTERN = re.compile(r'^(Merge\b|Revert "|dependabot(?:\([^)]*\))?: |changelog-bot: )')
 _SHAPE_PATTERN = re.compile(r"^SF(\d{3,})\s+(.+)\s+\[(" + "|".join(ALLOWED_TYPES) + r")\]$")
 _HAS_PREFIX = re.compile(r"^SF\d{3,}\s")
 _HAS_SUFFIX = re.compile(r"\[([^\]]*)\]\s*$")

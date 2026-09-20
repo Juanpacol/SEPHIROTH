@@ -29,7 +29,8 @@ Two-layer enforcement, both calling the same `scripts/validate_commit_msg.py`
    branch protection on every pull request against `main` — the actual gate.
    It diffs `git log --format=%s origin/${{ github.base_ref }}..HEAD` rather
    than the PR event's commit list (capped/paginated on large PRs) and
-   validates every subject, skipping merge/revert commits.
+   validates every subject, skipping merge/revert **and Dependabot-authored**
+   commits.
 
 Branch protection on `main` (require PR before merging, require `commit-lint`
 to pass, no force-push/deletion, no bypass for admins) is a manual,
@@ -60,3 +61,7 @@ blocks) on duplicates — is possible but out of scope here.
   `scripts/validate_commit_msg.py` and the list in CONTRIBUTING.md together
   — they are two literal lists, not derived from one source, since the
   validator has no CONTRIBUTING.md-parsing logic.
+- `commit-message.prefix` in `.github/dependabot.yml` and `_SKIP_PATTERN` in
+  `scripts/validate_commit_msg.py` are two literal strings that must change
+  together — the same shape as the `ALLOWED_TYPES`/CONTRIBUTING.md coupling
+  above. Changing one without the other silently re-blocks Dependabot.
