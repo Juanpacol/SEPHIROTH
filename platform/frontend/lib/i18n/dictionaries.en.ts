@@ -484,6 +484,7 @@ const EN: Record<string, string> = {
   "patientDetail.notes.error.ocrUnsupported": "No text found — scanned PDFs (OCR) are not supported yet.",
   "patientDetail.notes.error.uploadFailed": "Upload failed — are you signed in?",
   "patientDetail.notes.error.addFailed": "Failed — are you signed in?",
+  "patientDetail.notes.error.tooLarge": "That file is too large — the limit is 20 MB.",
   "patientDetail.notes.uploadAria": "Upload a clinical note as PDF",
   "patientDetail.notes.readingPdf": "Reading PDF…",
   "patientDetail.notes.uploadPdf": "Upload PDF",
@@ -718,6 +719,9 @@ const EN: Record<string, string> = {
   "login.error.invalidCredentials": "Invalid email or password.",
   "login.error.validation": "Check your input (password ≥ 8 chars).",
   "login.error.serverUnreachable": "Could not reach the server. Is the backend running?",
+  "login.error.accountLocked": "Too many failed attempts — this account is temporarily locked. Try again later.",
+  "login.error.registrationRestricted": "Account creation is restricted. Ask a clinician to invite you.",
+  "login.error.tooManyAttempts": "Too many requests. Wait a minute and try again.",
 
   "profile.title": "Profile",
   "profile.subtitle": "Manage your account and appearance preferences.",

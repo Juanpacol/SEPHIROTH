@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bot } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { updateStoredUser, useUser } from "@/lib/auth";
 import ThemeToggle from "@/components/theme-toggle";
 import { useLanguage } from "@/lib/language";
@@ -41,8 +41,9 @@ export default function ProfilePage() {
       updateStoredUser(updated);
       setProfileSaved(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Request failed";
-      setProfileError(message.includes("409") ? t("profile.error.emailTaken") : t("profile.error.saveFailed"));
+      setProfileError(
+        err instanceof ApiError && err.status === 409 ? t("profile.error.emailTaken") : t("profile.error.saveFailed")
+      );
     } finally {
       setProfileBusy(false);
     }
@@ -64,10 +65,25 @@ export default function ProfilePage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Request failed";
-      setPasswordError(
-        message.includes("401") ? t("profile.error.currentPasswordIncorrect") : t("profile.error.passwordChangeFailed")
-      );
+      if (err instanceof ApiError && err.status === 401) {
+        // The backend returns 401 both for a dead session and for a wrong
+        // current password (`platform/auth/router.py:339`). Probe `/api/auth/me`
+        // to tell them apart: if the session is still alive, this 401 must
+        // have meant "wrong current password". If the probe itself 401s,
+        // `handle()` has already redirected — the session really was dead.
+        try {
+          await api.me();
+          setPasswordError(t("profile.error.currentPasswordIncorrect"));
+        } catch (probeErr) {
+          if (probeErr instanceof ApiError && probeErr.status === 401) {
+            // Session dead; handle() already redirected. No inline error.
+          } else {
+            setPasswordError(t("profile.error.passwordChangeFailed"));
+          }
+        }
+      } else {
+        setPasswordError(t("profile.error.passwordChangeFailed"));
+      }
     } finally {
       setPasswordBusy(false);
     }
