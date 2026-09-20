@@ -69,12 +69,21 @@ jobs:
       # to update a branch instead of `git rebase origin/main`), and a merge
       # commit there can replay strangely — or fail outright — under
       # "Rebase and merge". Fail loudly instead of finding out at merge time.
+      #
+      # `actions/checkout@v4` on a `pull_request` event checks out GitHub's
+      # own synthetic test-merge commit (`refs/pull/<n>/merge`), whose
+      # subject is always exactly `Merge <head-sha> into <base-sha>` — that
+      # one is not something the author did and must not trip this check;
+      # everything else with 2+ parents is.
       - name: No merge commits in this branch (rebase, don't merge, to update it)
         run: |
-          merges=$(git log --merges --format=%H "origin/${{ github.base_ref }}..HEAD")
+          merges=$(
+            git log --merges --format=%H%x1f%s "origin/${{ github.base_ref }}..HEAD" \
+              | grep -Ev $'\x1fMerge [0-9a-f]{40} into [0-9a-f]{40}$'
+          ) || true
           if [ -n "$merges" ]; then
             echo "Found merge commit(s) in this branch's history:"
-            git log --merges --oneline "origin/${{ github.base_ref }}..HEAD"
+            echo "$merges"
             echo
             echo "This repo only allows 'Rebase and merge'. Update a branch with"
             echo "'git rebase origin/${{ github.base_ref }}' (then push --force-with-lease),"
