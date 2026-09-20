@@ -61,6 +61,26 @@ jobs:
             python3 scripts/validate_commit_msg.py --message "$subject" || status=1
           done < <(git log --format=%ae%x1f%s "origin/${{ github.base_ref }}..HEAD")
           exit $status
+      # This repo only allows "Rebase and merge" (allow_merge_commit: false,
+      # allow_squash_merge: false in the repo settings) — a linear-history
+      # policy. That setting only governs the button GitHub itself offers
+      # for landing the PR; it does nothing to stop a merge commit living
+      # *inside* a branch's own history (e.g. from `git merge origin/main`
+      # to update a branch instead of `git rebase origin/main`), and a merge
+      # commit there can replay strangely — or fail outright — under
+      # "Rebase and merge". Fail loudly instead of finding out at merge time.
+      - name: No merge commits in this branch (rebase, don't merge, to update it)
+        run: |
+          merges=$(git log --merges --format=%H "origin/${{ github.base_ref }}..HEAD")
+          if [ -n "$merges" ]; then
+            echo "Found merge commit(s) in this branch's history:"
+            git log --merges --oneline "origin/${{ github.base_ref }}..HEAD"
+            echo
+            echo "This repo only allows 'Rebase and merge'. Update a branch with"
+            echo "'git rebase origin/${{ github.base_ref }}' (then push --force-with-lease),"
+            echo "never 'git merge origin/${{ github.base_ref }}'."
+            exit 1
+          fi
 
   test:
     runs-on: ubuntu-latest
