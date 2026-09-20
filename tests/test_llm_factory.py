@@ -60,24 +60,30 @@ def test_llm_provider_groq_yields_a_bare_groq_primary_client(monkeypatch):
     assert not isinstance(client, FallbackLLMClient)
 
 
-def test_llm_provider_split_routes_vision_to_gemini_chat_to_ollama_with_groq_fallback(monkeypatch):
-    """AC (runtime audit, vision/chat split): llm_provider='split' sends
-    describe_image to a bare GeminiClient and chat/generate_json to a
-    FallbackLLMClient(primary=Ollama, secondary=Groq) — the architecture
-    decided after comparing providers with the eval harness."""
+def test_llm_provider_split_routes_vision_and_chat_to_ollama_with_groq_chat_fallback(monkeypatch):
+    """This reverses the earlier decision asserted here (llm_provider='split'
+    sending describe_image to a bare GeminiClient): a local-only run must
+    make no Gemini call of any kind, for any capability, even when
+    GEMINI_API_KEY is set. `llm_provider='split'` now routes both chat and
+    vision to local Ollama models, with Groq staying as a chat-only
+    fallback — see the local-only isolation spec."""
     _reload_settings(
         monkeypatch,
         gemini_api_key="fake-gemini-key",
         groq_api_key="fake-groq-key",
         ollama_api_key="fake-openrouter-key",
+        ollama_vision_model="qwen2.5vl:7b",
         llm_provider="split",
     )
     client = factory_module.get_llm_client()
     assert isinstance(client, VisionChatSplitClient)
-    assert isinstance(client.vision_client, GeminiClient)
+    assert isinstance(client.vision_client, OllamaClient)
+    assert not isinstance(client.vision_client, GeminiClient)
     assert isinstance(client.chat_client, FallbackLLMClient)
     assert isinstance(client.chat_client.primary, OllamaClient)
     assert isinstance(client.chat_client.secondary, GroqClient)
+    assert client.vision_client.vision_model == "qwen2.5vl:7b"
+    assert client.vision_client.supports_vision is True
 
 
 def test_llm_provider_split_without_groq_key_has_no_chat_fallback(monkeypatch):

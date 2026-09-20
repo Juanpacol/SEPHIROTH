@@ -1,10 +1,11 @@
 """FastMCP server exposing multimodal (vision) medical image description.
 
-Uses the shared Gemini client's one-shot ``describe_image()`` call — unlike
+Uses the shared LLM client's one-shot ``describe_image()`` call — unlike
 the chat/tool-calling loop in ``sephiroth/models/gemini.py``, vision
 description needs no tools. Sharing the client (rather than talking to the
 provider directly) means vision competes for the same rate-limit budget and
-retry/backoff logic as the agents.
+retry/backoff logic as the agents, whether that client talks to the
+configured vision model (cloud or local).
 """
 
 import mimetypes
@@ -74,22 +75,29 @@ def _active_vision_model_name(settings: Any) -> str:
     """Name of the vision model actually in use, matching `factory.get_llm_client()`'s
     provider selection — `llm_provider="split"`/`"ollama"` route vision through
     Ollama, not Gemini, and the reported model name must say so."""
+    from core.config import is_local_llm_provider  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
+
     provider = getattr(settings, "llm_provider", "gemini")
-    if provider in ("ollama", "split"):
-        return (
-            getattr(settings, "ollama_vision_model", None)
-            or getattr(settings, "ollama_model", None)
-            or "unknown"
-        )
+    if is_local_llm_provider(provider):
+        # No fallback to `ollama_model` here — that names the *chat* model,
+        # and reporting it as the vision model would be wrong in the exact
+        # case (no vision model configured) this function exists to report
+        # accurately.
+        return getattr(settings, "ollama_vision_model", None) or "<none configured>"
     if provider == "groq":
         return settings.groq_vision_model or settings.groq_model
     return settings.gemini_vision_model or settings.gemini_model
 
 
 def _provider_hint(settings: Any) -> str:
+    from core.config import is_local_llm_provider  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
+
     provider = getattr(settings, "llm_provider", "gemini")
-    if provider in ("ollama", "split"):
-        return f"Check that `ollama serve` is running and {_active_vision_model_name(settings)!r} is pulled."
+    if is_local_llm_provider(provider):
+        model_name = _active_vision_model_name(settings)
+        if model_name == "<none configured>":
+            return "Set ollama_vision_model and `ollama pull` a vision-capable model."
+        return f"Check that `ollama serve` is running and {model_name!r} is pulled."
     if provider == "groq":
         return "Check GROQ_API_KEY and quota."
     return "Check GEMINI_API_KEY and quota."

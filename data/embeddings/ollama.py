@@ -3,11 +3,14 @@
 embedding-side counterpart to `sephiroth.models.ollama.OllamaClient`, used
 when the Gemini free-tier quota for `embed_content` is unavailable.
 
-Not wired into `get_embedding_provider()` by default: Gemini stays the
-runtime default (see that function's docstring). Vectors from a different
-embedding model are not comparable to Gemini's — regenerating the
-committed artifact with this provider means every vector in it (all
-documents and golden queries) must come from the same model, never a mix.
+Selected by `get_embedding_provider()` (`data/embeddings/__init__.py`)
+whenever the committed artifact's own `model_id` names an Ollama-served
+model (e.g. the committed `nomic-embed-text` artifact) — see that
+function's docstring for the full artifact-driven selection rule. Vectors
+from a different embedding model are not comparable to this one's —
+regenerating the committed artifact with this provider means every vector
+in it (all documents and golden queries) must come from the same model,
+never a mix.
 """
 
 from __future__ import annotations

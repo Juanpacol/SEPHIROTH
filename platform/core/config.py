@@ -23,6 +23,21 @@ _INSECURE_JWT_SECRETS = {
 # anyone using it there would already have every other insecure default too.
 DEFAULT_PHI_ENCRYPTION_KEY = "unLzHmKnvSSq0IvsBYQHmAATciMLh7_30c7bVMCnoKk="
 
+# The single definition of "runs entirely on this machine / this
+# deployment's own Ollama; no third-party API call for any capability".
+# Adding a provider to the `llm_provider` Literal below requires deciding
+# membership here — every other site in the codebase that needs to answer
+# "is this provider local?" must go through `is_local_llm_provider()`
+# rather than re-testing membership itself.
+LOCAL_LLM_PROVIDERS: frozenset[str] = frozenset({"ollama", "split"})
+
+
+def is_local_llm_provider(provider: object) -> bool:
+    """True when `provider` is one of `LOCAL_LLM_PROVIDERS`. Takes `object`,
+    not `str`, so defensive `getattr(settings, "llm_provider", "gemini")`
+    call sites can pass whatever they read without a cast."""
+    return provider in LOCAL_LLM_PROVIDERS
+
 
 class Settings(BaseSettings):
     """Application settings (overridable via environment / .env)."""
@@ -94,10 +109,10 @@ class Settings(BaseSettings):
     # preserves all pre-Phase-1 behavior, including Groq fallback below.
     # "groq" returns a bare GroqClient, never wrapped the other way around.
     # "ollama" returns a bare OllamaClient — local dev only, no fallback.
-    # "split" routes vision to Gemini only and chat/tool-calling to Ollama
-    # (nemotron via OpenRouter's OpenAI-compatible endpoint by default,
-    # `ollama_base_url`/`ollama_model`), falling back to Groq for chat —
-    # see `VisionChatSplitClient` and the runtime audit's model comparison.
+    # "split" does chat/tool-calling on one local Ollama model, vision on
+    # another local Ollama model (`ollama_vision_model`), with an optional
+    # Groq fallback for chat only — see `VisionChatSplitClient` and the
+    # runtime audit's model comparison.
     llm_provider: Literal["gemini", "groq", "ollama", "split"] = "gemini"
 
     # May patient-derived content reach a provider outside the deployment?
@@ -192,6 +207,10 @@ class Settings(BaseSettings):
     # tests above fail loudly if it drifts, which is the point of pinning them.
     #
     # `RAGPipeline.__init__`'s default mirrors this; keep the two in step.
+    # The live cache-miss embedding provider (`data/embeddings/__init__.py::
+    # get_embedding_provider`) is now derived from the committed artifact's
+    # own `model_id`, never from `llm_provider`, so this calibration and the
+    # runtime model it was measured against can no longer drift apart.
     retrieval_min_similarity: float = 0.636
     retrieval_mode: Literal["hybrid", "keyword_only"] = "hybrid"
     # Floor for `api/fast_path.py`'s guideline branch, which skips citation
@@ -300,6 +319,12 @@ class Settings(BaseSettings):
     workflow_step_timeout_seconds: float = 5.0
     workflow_tick_budget_seconds: float = 20.0
     workflow_step_lease_seconds: int = 120
+
+    @property
+    def is_local_provider(self) -> bool:
+        """Derived from `llm_provider`, never a pydantic field — must never
+        be settable from the environment."""
+        return is_local_llm_provider(self.llm_provider)
 
     class Config:
         env_file = ".env"

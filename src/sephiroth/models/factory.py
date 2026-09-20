@@ -12,6 +12,11 @@ wrapping the other way around — there's no acceptance criterion requiring
 through Gemini -> Groq too, but only when `groq_vision_model` is explicitly
 set (opt-in, off by default — see config.py and GroqClient's docstrings on
 why vision fallback stays best-effort rather than always-on).
+
+`llm_provider="split"` composes two *local* Ollama clients (chat + vision),
+with Groq as a chat-only fallback — no Gemini object is constructed for
+`"ollama"` or `"split"` at all, even when `GEMINI_API_KEY` is set (see
+`docs/specs`/the local-only isolation spec).
 """
 
 from __future__ import annotations
@@ -35,15 +40,16 @@ def get_llm_client() -> Any:
     global _client
     if _client is None:
         if settings.llm_provider == "split":
-            vision_client = GeminiClient(
-                api_key=settings.gemini_api_key,
-                model=settings.gemini_model,
-                vision_model=settings.gemini_vision_model,
-                max_output_tokens=settings.gemini_max_output_tokens,
-                timeout_seconds=settings.gemini_timeout_seconds,
-                max_retries=settings.gemini_max_retries,
-                rpm_limit=settings.gemini_rpm_limit,
+            vision_client = OllamaClient(
+                model=settings.ollama_vision_model or settings.ollama_model,
+                vision_model=settings.ollama_vision_model,
+                base_url=settings.ollama_base_url,
+                api_key=settings.ollama_api_key,
+                max_output_tokens=settings.ollama_max_output_tokens,
+                timeout_seconds=settings.ollama_timeout_seconds,
+                max_retries=settings.ollama_max_retries,
                 max_tool_rounds=settings.llm_max_tool_rounds,
+                rpm_limit=settings.ollama_rpm_limit,
             )
             chat_primary = OllamaClient(
                 model=settings.ollama_model,

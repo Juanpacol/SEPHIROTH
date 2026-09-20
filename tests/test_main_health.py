@@ -16,3 +16,5 @@ async def test_health_endpoint():
         body = res.json()
         assert body["status"] == "healthy"
         assert "model" in body
+        assert "provider" in body
+        assert "local_only" in body

@@ -29,21 +29,35 @@ def _normalize(vector: List[float]) -> List[float]:
 
 
 class GeminiEmbeddingProvider:
-    """Synchronous wrapper around `genai.Client(...).models.embed_content`."""
+    """Synchronous wrapper around `genai.Client(...).models.embed_content`.
+
+    `max_retries` x `timeout_seconds` is the worst-case wall clock for one
+    `_embed` call.
+    """
 
     def __init__(
         self,
         api_key: Optional[str],
         model: str = "gemini-embedding-001",
         dimension: int = 768,
+        timeout_seconds: int = 60,
         max_retries: int = _MAX_RETRIES,
         sleep: Callable[[float], None] = time.sleep,
     ):
         self.model_id = model
         self.dimension = dimension
+        self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
         self._sleep = sleep
-        self._client: Optional[genai.Client] = genai.Client(api_key=api_key) if api_key else None
+        # Without an explicit timeout, the synchronous `embed_content` call
+        # (plus its `time.sleep` backoff) can block a FastMCP worker thread
+        # indefinitely — `ToolRuntime.execute`'s `asyncio.wait_for` cannot
+        # cancel a blocked synchronous call from the outside.
+        self._client: Optional[genai.Client] = (
+            genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=timeout_seconds * 1000))
+            if api_key
+            else None
+        )
 
     def _embed(self, texts: List[str], task_type: str) -> List[List[float]]:
         if self._client is None:
