@@ -69,6 +69,29 @@ See [`.githooks/README.md`](.githooks/README.md) and
 [ADR-015](docs/08-decisions/ADR-015-commit-message-format.md) for the full
 rationale.
 
+## Rebase, never merge
+
+This repo only has **"Rebase and merge"** enabled on GitHub (merge commits
+and squash are both turned off) — `main`'s history is linear by policy, one
+commit per PR commit, no merge bubbles.
+
+That repo setting only controls the button GitHub itself offers for landing
+a PR; it does nothing to stop a merge commit living *inside* a branch's own
+history. **Update a branch with the latest `main` using `git rebase origin/main`
+(then `git push --force-with-lease`), never `git merge origin/main`.** A merge
+commit inside a branch can replay strangely — or fail outright — when GitHub
+tries to "rebase and merge" it, and it defeats the whole point of keeping
+history linear even if the merge itself technically succeeds.
+
+`--force-with-lease` (not bare `--force`) is safe here specifically because
+it's your own unmerged feature branch — it refuses to overwrite anyone else's
+push you haven't seen, unlike `--force`, which overwrites blindly.
+
+**This is enforced, not just documented.** The `commit-lint` job (part of the
+Code Review gate) fails the PR if `git log --merges` finds anything in the
+branch's history — a PR with a merge commit cannot be merged, matching how
+the commit-format rule itself is enforced.
+
 ## Required PR gates
 
 `main` is branch-protected with exactly two required status checks — no
