@@ -14,7 +14,7 @@ jobs:
   secrets-sast:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # gitleaks diffs the PR's first commit's parent through its last
           # commit — a shallow checkout (depth 1 or a fixed small depth)
@@ -24,10 +24,10 @@ jobs:
           # this repo is small enough that the extra clone time is noise.
           fetch-depth: 0
       - name: gitleaks (secret scanning)
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -46,8 +46,8 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -59,7 +59,7 @@ jobs:
           if [ -n "$GITHUB_STEP_SUMMARY" ]; then
             { echo "## pip-audit (advisory)"; cat pip-audit-report.md; } >> "$GITHUB_STEP_SUMMARY"
           fi
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -91,7 +91,7 @@ jobs:
         # covering both JS and TS.
         language: [python, javascript-typescript]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # No autobuild/build-mode step and no `pip install`: both packs extract
       # without a build here. The src/ layout and the platform/-on-PYTHONPATH
       # rule (see CLAUDE.md) may degrade cross-file dataflow resolution for
@@ -118,8 +118,8 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
