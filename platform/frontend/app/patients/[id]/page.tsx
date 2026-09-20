@@ -190,9 +190,11 @@ function AddNoteCard({ patientId }: { patientId: string }) {
         : pollState === "none"
           ? t("patientDetail.notes.noEventsFound")
           : uploadPdf.isError
-            ? (uploadPdf.error as Error)?.message?.includes("422")
+            ? uploadPdf.error instanceof ApiError && uploadPdf.error.status === 422
               ? t("patientDetail.notes.error.ocrUnsupported")
-              : t("patientDetail.notes.error.uploadFailed")
+              : uploadPdf.error instanceof ApiError && uploadPdf.error.status === 413
+                ? t("patientDetail.notes.error.tooLarge")
+                : t("patientDetail.notes.error.uploadFailed")
             : addNote.isError
               ? t("patientDetail.notes.error.addFailed")
               : "";

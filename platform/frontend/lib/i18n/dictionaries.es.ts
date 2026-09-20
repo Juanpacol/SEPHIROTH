@@ -485,6 +485,7 @@ const ES: Record<string, string> = {
     "No se encontró texto — los PDF escaneados (OCR) aún no están soportados.",
   "patientDetail.notes.error.uploadFailed": "Falló la carga — ¿iniciaste sesión?",
   "patientDetail.notes.error.addFailed": "Falló — ¿iniciaste sesión?",
+  "patientDetail.notes.error.tooLarge": "El archivo es demasiado grande — el límite es 20 MB.",
   "patientDetail.notes.uploadAria": "Subir una nota clínica en PDF",
   "patientDetail.notes.readingPdf": "Leyendo PDF…",
   "patientDetail.notes.uploadPdf": "Subir PDF",
@@ -720,6 +721,9 @@ const ES: Record<string, string> = {
   "login.error.invalidCredentials": "Correo o contraseña inválidos.",
   "login.error.validation": "Revisa tus datos (contraseña ≥ 8 caracteres).",
   "login.error.serverUnreachable": "No se pudo conectar con el servidor. ¿Está corriendo el backend?",
+  "login.error.accountLocked": "Demasiados intentos fallidos — la cuenta está bloqueada temporalmente. Inténtalo más tarde.",
+  "login.error.registrationRestricted": "La creación de cuentas está restringida. Pide a un profesional que te invite.",
+  "login.error.tooManyAttempts": "Demasiadas solicitudes. Espera un minuto e inténtalo de nuevo.",
 
   "profile.title": "Perfil",
   "profile.subtitle": "Administra tu cuenta y preferencias de apariencia.",
