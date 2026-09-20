@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { homeFor, storeAuth } from "@/lib/auth";
 import WingMark from "@/components/brand/wing-mark";
 import { useLanguage } from "@/lib/language";
@@ -30,10 +30,12 @@ export default function LoginPage() {
       storeAuth(res.access_token, res.user);
       router.push(homeFor(res.user.role));
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Request failed";
-      if (message.includes("409")) setError(t("login.error.emailTaken"));
-      else if (message.includes("401")) setError(t("login.error.invalidCredentials"));
-      else if (message.includes("422")) setError(t("login.error.validation"));
+      if (err instanceof ApiError && err.status === 409) setError(t("login.error.emailTaken"));
+      else if (err instanceof ApiError && err.status === 401) setError(t("login.error.invalidCredentials"));
+      else if (err instanceof ApiError && err.status === 422) setError(t("login.error.validation"));
+      else if (err instanceof ApiError && err.status === 429) setError(t("login.error.tooManyAttempts"));
+      else if (err instanceof ApiError && err.status === 403)
+        setError(mode === "register" ? t("login.error.registrationRestricted") : t("login.error.accountLocked"));
       else setError(t("login.error.serverUnreachable"));
     } finally {
       setBusy(false);

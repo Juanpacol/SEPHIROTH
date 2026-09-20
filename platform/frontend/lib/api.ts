@@ -709,18 +709,28 @@ async function del(path: string): Promise<void> {
   if (!res.ok) throw new ApiError(res.status, await res.text());
 }
 
-/** POST expecting a 204 No Content response (no JSON body to parse). */
-async function postNoContent(path: string, body: unknown): Promise<void> {
+/** POST expecting a 204 No Content response (no JSON body to parse).
+ *
+ * `opts.redirectOn401` exists because the backend returns 401 both for a
+ * dead session and for a failed password re-check
+ * (`platform/auth/router.py:339`), and only the caller knows which one it
+ * asked for. */
+async function postNoContent(
+  path: string,
+  body: unknown,
+  opts?: { redirectOn401?: boolean }
+): Promise<void> {
+  const redirectOn401 = opts?.redirectOn401 ?? true;
   const res = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),
   });
   if (res.status === 401) {
-    redirectToLogin();
-    throw new Error("401: not authenticated");
+    if (redirectOn401) redirectToLogin();
+    throw new ApiError(401, "Not authenticated");
   }
-  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new ApiError(res.status, await res.text());
 }
 
 /** Multipart POST — the browser sets the Content-Type boundary itself. */
@@ -733,9 +743,9 @@ async function getBlob(path: string): Promise<Blob> {
   const res = await fetch(path, { headers: authHeaders() });
   if (res.status === 401) {
     redirectToLogin();
-    throw new Error("401: not authenticated");
+    throw new ApiError(401, "Not authenticated");
   }
-  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new ApiError(res.status, await res.text());
   return res.blob();
 }
 
@@ -804,8 +814,9 @@ export const api = {
   evidenceCategories: () => get<EvidenceCategory[]>("/api/rag/categories"),
   evidenceByCategory: (slug: string) => get<EvidenceItem[]>(`/api/rag/categories/${slug}`),
   updateProfile: (body: { email: string; name: string }) => patch<UserOut>("/api/auth/me", body),
+  me: () => get<UserOut>("/api/auth/me"),
   changePassword: (body: { current_password: string; new_password: string }) =>
-    postNoContent("/api/auth/change-password", body),
+    postNoContent("/api/auth/change-password", body, { redirectOn401: false }),
   createInvite: (patientId: string) =>
     post<{ invite_id: string; code: string; expires_at: string }>(
       `/api/patients/${patientId}/invites`,
