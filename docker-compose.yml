@@ -21,7 +21,18 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://clinical_ai:clinical_ai_password@postgres:5432/clinical_ai_db
+      # Defaults to the local postgres service below; set DATABASE_URL in
+      # .env (e.g. to a Supabase pooler URL) to point this container at a
+      # different database instead — see ARCHITECTURE.md's "Cloud database"
+      # note. Without this override the api and frontend containers see a
+      # separate, empty-by-default database from any bare-metal (non-docker)
+      # backend run using .env directly.
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://clinical_ai:clinical_ai_password@postgres:5432/clinical_ai_db}
+      # Must match whatever key encrypted the data at DATABASE_URL above —
+      # a mismatch fails closed with a clear error rather than returning
+      # garbage (see platform/core/crypto.py). Only needed here when
+      # DATABASE_URL is overridden to a database with real encrypted data.
+      PHI_ENCRYPTION_KEY: ${PHI_ENCRYPTION_KEY:-}
       ENVIRONMENT: ${ENVIRONMENT:-development}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required — generate one with `openssl rand -hex 32`}
       # LLM — Google Gemini API. PHI leaves the machine once this is set;
