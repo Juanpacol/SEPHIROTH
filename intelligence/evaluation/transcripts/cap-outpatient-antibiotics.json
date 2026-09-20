@@ -1,15 +1,15 @@
 {
   "case_id": "cap-outpatient-antibiotics",
-  "answer": "For outpatient community-acquired pneumonia in healthy adults, amoxicillin or doxycycline is recommended according to the guidelines from ATS/IDSA (Treatment of Community-Acquired Pneumonia, 2023) [ATS/IDSA, 2023]. These antibiotics are suitable for uncomplicated cases and would not require further adjunctive therapy. Please verify with a healthcare provider as every patient's case may vary.",
+  "answer": "Amoxicillin or doxycycline is recommended for outpatient community-acquired pneumonia in healthy adults [ATS/IDSA, 2023]. These antibiotics are typically used for mild cases and are considered first-line therapy. For inpatients, a combination of beta-lactam and macrolide antibiotics is standard.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "outpatient community-acquired pneumonia healthy adult antibiotic recommendation",
+        "query": "antibiotics for outpatient community-acquired pneumonia in healthy adults",
         "top_k": 2
       },
       "result": {
-        "query": "outpatient community-acquired pneumonia healthy adult antibiotic recommendation",
+        "query": "antibiotics for outpatient community-acquired pneumonia in healthy adults",
         "results": [
           {
             "id": "idsa-2023-cap",
@@ -25,16 +25,31 @@
               "title": "Treatment of Community-Acquired Pneumonia",
               "url": "https://doi.org/10.1164/rccm.201908-1581ST"
             }
+          },
+          {
+            "id": "aafp-earache-adults",
+            "content": "In adults, an earache with a red, bulging eardrum suggests acute otitis media and is treated with amoxicillin as first-line therapy, similar to pediatric management. Ear pain with normal exam findings is more often referred pain from the jaw, teeth, or throat, or otitis externa (swimmer's ear), which is treated with topical antibiotic drops rather than oral antibiotics.",
+            "source": "AAFP Clinical Review",
+            "citation": "Diagnosis and Treatment of Otitis Media and Otitis Externa, American Academy of Family Physicians, 2013",
+            "url": "https://www.aafp.org/pubs/afp/issues/2013/1201/p770.html",
+            "score": 0.0161,
+            "metadata": {
+              "category": "infectious_disease",
+              "organization": "American Academy of Family Physicians",
+              "year": 2013,
+              "title": "Diagnosis and Treatment of Otitis Media and Otitis Externa",
+              "url": "https://www.aafp.org/pubs/afp/issues/2013/1201/p770.html"
+            }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
   ],
-  "latency_ms": 7534,
+  "latency_ms": 34944,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 1989,
-  "completion_tokens": 132,
+  "prompt_tokens": 2111,
+  "completion_tokens": 109,
   "cost_usd": 0.0
 }

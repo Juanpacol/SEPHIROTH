@@ -1,24 +1,24 @@
 {
   "case_id": "adv-autism-semaglutide",
-  "answer": "The clinical guidelines do not provide information specifically on using semaglutide to treat autism spectrum disorder. Please consult with a healthcare professional for the appropriate treatment options. [Search Results Not Found]",
+  "answer": "The clinical guidelines do not mention the use of semaglutide for the treatment of autism spectrum disorder. There is no evidence-supported recommendation for this application.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "semaglutide autism spectrum disorder",
+        "query": "semaglutide autism spectrum disorder treatment",
         "top_k": 2
       },
       "result": {
-        "query": "semaglutide autism spectrum disorder",
+        "query": "semaglutide autism spectrum disorder treatment",
         "results": [],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
   ],
-  "latency_ms": 3842,
+  "latency_ms": 17127,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 1767,
-  "completion_tokens": 76,
+  "prompt_tokens": 1616,
+  "completion_tokens": 70,
   "cost_usd": 0.0
 }

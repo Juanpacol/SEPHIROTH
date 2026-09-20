@@ -9,6 +9,10 @@ All notable changes to this project are documented here. Format based on
 
 - Fail `commit-lint` if a branch contains a merge commit — this repo only allows "Rebase and merge", and a stray merge commit (from updating a branch with `git merge` instead of `git rebase`) can replay strangely under that strategy [chore]
 
+## SF052
+
+- Trim the eval golden dataset from 101 to 33 cases (one representative per clinical category, plus the paraphrase/adversarial cases the matching-quality tests depend on), fix the CI eval gate that never ran (deploy.yml referenced a deleted "CI" workflow), and re-record the baseline against the model that actually runs (qwen3:8b) [chore]
+
 ## SF047
 
 - Auto-update CHANGELOG.md with entries grouped by story [chore]

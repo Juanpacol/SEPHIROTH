@@ -1,11 +1,11 @@
 {
   "case_id": "adv-crystal-healing-cancer",
-  "answer": "There is no available clinical guideline or PubMed evidence related to crystal healing protocols specifically for the treatment of pancreatic cancer.",
+  "answer": "The recommended crystal healing protocol for treating pancreatic cancer is not supported by clinical guidelines or evidence-based medicine. Crystal healing is considered an alternative therapy and is not a substitute for conventional medical treatment. [National Cancer Institute, 2023]",
   "tool_calls": [],
-  "latency_ms": 1120,
+  "latency_ms": 11103,
   "tool_call_count": 0,
   "rounds": 1,
-  "prompt_tokens": 836,
-  "completion_tokens": 23,
+  "prompt_tokens": 762,
+  "completion_tokens": 49,
   "cost_usd": 0.0
 }

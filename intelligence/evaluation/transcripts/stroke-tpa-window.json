@@ -1,14 +1,15 @@
 {
   "case_id": "stroke-tpa-window",
-  "answer": "Intravenous alteplase, also known as tissue plasminogen activator (tPA), is recommended within 4.5 hours of symptom onset for eligible patients with acute ischemic stroke according to the AHA/ASA Acute Ischemic Stroke Guideline from 2021 [AHA/ASA Acute Ischemic Stroke Guideline, 2021]. This guideline provides evidence for the time window within which intravenous alteplase should be administered to patients experiencing acute ischemic stroke. It is important to note that patients who present with large vessel occlusion may also benefit from mechanical thrombectomy if treatment is initiated within a 24-hour window in selected cases. [AHA/ASA Acute Ischemic Stroke Guideline, 2021]",
+  "answer": "The time window for giving intravenous alteplase in acute ischemic stroke is within 4.5 hours of symptom onset [AHA/ASA, 2021]. This recommendation applies to eligible patients with acute ischemic stroke.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "acute ischemic stroke intravenous alteplase time window"
+        "query": "time window for intravenous alteplase in acute ischemic stroke",
+        "top_k": 2
       },
       "result": {
-        "query": "acute ischemic stroke intravenous alteplase time window",
+        "query": "time window for intravenous alteplase in acute ischemic stroke",
         "results": [
           {
             "id": "aha-asa-2021-stroke",
@@ -26,18 +27,18 @@
             }
           },
           {
-            "id": "cdc-stroke-warning-signs",
-            "content": "The F.A.S.T. warning signs of stroke are: Face drooping on one side, Arm weakness or drift when raised, Speech that is slurred or strange, and Time to call emergency services immediately if any of these signs appear, even if they resolve. Fast treatment significantly improves outcomes.",
-            "source": "CDC",
-            "citation": "Stroke Signs and Symptoms (F.A.S.T.), Centers for Disease Control and Prevention, 2023",
-            "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html",
-            "score": 0.0161,
+            "id": "acc-aha-2025-acs",
+            "content": "For ST-elevation myocardial infarction (STEMI), primary percutaneous coronary intervention within 90 minutes of first medical contact is preferred over fibrinolysis. Dual antiplatelet therapy (aspirin plus a P2Y12 inhibitor) is recommended for all acute coronary syndrome patients regardless of reperfusion strategy.",
+            "source": "ACC/AHA Acute Coronary Syndrome Guideline",
+            "citation": "Management of Acute Coronary Syndromes, ACC/AHA, 2025",
+            "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001168",
+            "score": 0.0323,
             "metadata": {
-              "category": "general_health",
-              "organization": "Centers for Disease Control and Prevention",
-              "year": 2023,
-              "title": "Stroke Signs and Symptoms (F.A.S.T.)",
-              "url": "https://www.cdc.gov/stroke/signs-symptoms/index.html"
+              "category": "cardiovascular",
+              "organization": "ACC/AHA",
+              "year": 2025,
+              "title": "Management of Acute Coronary Syndromes",
+              "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001168"
             }
           }
         ],
@@ -45,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 11142,
+  "latency_ms": 53383,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2221,
-  "completion_tokens": 199,
+  "prompt_tokens": 2137,
+  "completion_tokens": 93,
   "cost_usd": 0.0
 }

@@ -1,14 +1,15 @@
 {
   "case_id": "htn-bp-target",
-  "answer": "Based on the clinical guidelines from the ACC/AHA Hypertension Guideline (ACC/AHA, 2023), it is recommended that most adults with hypertension aim for a blood pressure target of <130/80 mmHg. The first-line agents in managing hypertension include thiazide diuretics, ACE inhibitors, ARBs, and calcium channel blockers. [ACC/AHA, 2023]",
+  "answer": "The recommended blood pressure target for most adults with hypertension is <130/80 mmHg [ACC/AHA Hypertension Guideline, 2023]. This target applies to adults without specific comorbidities that might require a different approach.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "hypertension treatment blood pressure, adult"
+        "query": "blood pressure target for most adults with hypertension",
+        "top_k": 2
       },
       "result": {
-        "query": "hypertension treatment blood pressure, adult",
+        "query": "blood pressure target for most adults with hypertension",
         "results": [
           {
             "id": "acc-aha-2023-htn",
@@ -16,7 +17,7 @@
             "source": "ACC/AHA Hypertension Guideline",
             "citation": "High Blood Pressure Management, ACC/AHA, 2023",
             "url": "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000065",
-            "score": 0.0487,
+            "score": 0.0489,
             "metadata": {
               "category": "cardiovascular",
               "organization": "ACC/AHA",
@@ -31,7 +32,7 @@
             "source": "MedlinePlus",
             "citation": "Understanding Blood Pressure Readings, MedlinePlus (U.S. National Library of Medicine), 2024",
             "url": "https://medlineplus.gov/highbloodpressure.html",
-            "score": 0.0164,
+            "score": 0.0476,
             "metadata": {
               "category": "general_health",
               "organization": "MedlinePlus (U.S. National Library of Medicine)",
@@ -45,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 9324,
+  "latency_ms": 38137,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2189,
-  "completion_tokens": 121,
+  "prompt_tokens": 2041,
+  "completion_tokens": 94,
   "cost_usd": 0.0
 }

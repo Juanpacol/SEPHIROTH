@@ -1,0 +1,11 @@
+{
+  "case_id": "acne-first-line-therapy",
+  "answer": "The first-line therapy for acne vulgaris is topical retinoids, such as adapalene, which help reduce comedones and inflammatory lesions [American Academy of Dermatology, 2021].",
+  "tool_calls": [],
+  "latency_ms": 5772,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 761,
+  "completion_tokens": 42,
+  "cost_usd": 0.0
+}

@@ -1,15 +1,15 @@
 {
   "case_id": "copd-laba-lama",
-  "answer": "For COPD patients with frequent exacerbations, the preferred inhaler therapy is LABA+LAMA combination therapy. Inhaled corticosteroids should be added if blood eosinophils are >=300 cells/uL or if continued exacerbations occur, as indicated in the GOLD COPD Report from the year 2024 [COPD Diagnosis, Management and Prevention, GOLD, 2024]. \n\nFor further guidance on asthma treatment, refer to the Global Initiative for Asthma (GINA) report, which recommends using a low-dose ICS-formoterol as a reliever therapy over short-acting beta-agonist alone, even at the mildest step of treatment [Global Strategy for Asthma Management, GINA, 2024]. However, this advice is related to asthma, not COPD.\n\nIt's important to consult with a healthcare provider for personalized recommendations.",
+  "answer": "For COPD patients with frequent exacerbations, LABA+LAMA (long-acting beta-agonist plus long-acting muscarinic antagonist) combination therapy is preferred [GOLD, 2024]. Inhaled corticosteroids are added for patients with blood eosinophils >=300 cells/uL or continued exacerbations.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "COPD exacerbation treatment inhaler therapy",
+        "query": "preferred inhaler therapy for COPD patients with frequent exacerbations",
         "top_k": 2
       },
       "result": {
-        "query": "COPD exacerbation treatment inhaler therapy",
+        "query": "preferred inhaler therapy for COPD patients with frequent exacerbations",
         "results": [
           {
             "id": "gold-2024-copd",
@@ -17,7 +17,7 @@
             "source": "GOLD COPD Report",
             "citation": "COPD Diagnosis, Management and Prevention, GOLD, 2024",
             "url": "https://goldcopd.org/2024-gold-report/",
-            "score": 0.0479,
+            "score": 0.0492,
             "metadata": {
               "category": "pulmonology",
               "organization": "GOLD",
@@ -32,7 +32,7 @@
             "source": "Global Initiative for Asthma Report",
             "citation": "Global Strategy for Asthma Management, GINA, 2024",
             "url": "https://ginasthma.org/2026-gina-strategy-report/",
-            "score": 0.0479,
+            "score": 0.0465,
             "metadata": {
               "category": "pulmonology",
               "organization": "GINA",
@@ -46,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 14168,
+  "latency_ms": 38426,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2144,
-  "completion_tokens": 227,
+  "prompt_tokens": 1997,
+  "completion_tokens": 116,
   "cost_usd": 0.0
 }

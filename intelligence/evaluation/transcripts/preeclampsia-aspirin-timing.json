@@ -1,15 +1,15 @@
 {
   "case_id": "preeclampsia-aspirin-timing",
-  "answer": "For high-risk pregnant patients, the use of baby aspirin (low-dose) starting at 12-28 weeks of gestation is recommended to reduce the risk of preeclampsia. This recommendation is provided in the ACOG Practice Bulletin on Preeclampsia [ACOG, 2020]. \n\nFor other indications such as primary prevention of cardiovascular disease, aspirin is not typically prescribed according to the ACC/AHA Primary Prevention of Cardiovascular Disease Guideline [ACC/AHA, 2019]. This guideline does not support routine use and recommends a personalized risk-benefit discussion with the clinician rather than aspirin initiation. \n\nPlease ensure to discuss these recommendations specifically tailored for you or your patient with their healthcare provider due to individual variances.",
+  "answer": "Starting low-dose aspirin (baby aspirin) at 12-28 weeks of gestation is recommended for high-risk pregnant patients to reduce the risk of preeclampsia [ACOG, 2020]. This guidance applies specifically to women at high risk of developing preeclampsia. Aspirin is not routinely recommended for primary prevention of cardiovascular disease in non-pregnant adults, except in select cases after a risk-benefit discussion with a clinician [ACC/AHA, 2019].",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "high risk pregnancy aspirin",
+        "query": "high-risk pregnant patient start baby aspirin",
         "top_k": 2
       },
       "result": {
-        "query": "high risk pregnancy aspirin",
+        "query": "high-risk pregnant patient start baby aspirin",
         "results": [
           {
             "id": "acog-2020-preeclampsia",
@@ -32,7 +32,7 @@
             "source": "ACC/AHA Primary Prevention of Cardiovascular Disease Guideline",
             "citation": "Primary Prevention of Cardiovascular Disease, ACC/AHA, 2019",
             "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000678",
-            "score": 0.0164,
+            "score": 0.0487,
             "metadata": {
               "category": "cardiovascular",
               "organization": "ACC/AHA",
@@ -46,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 11839,
+  "latency_ms": 37850,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2248,
-  "completion_tokens": 197,
+  "prompt_tokens": 2101,
+  "completion_tokens": 150,
   "cost_usd": 0.0
 }

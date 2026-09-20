@@ -1,0 +1,11 @@
+{
+  "case_id": "gdm-screening-timing",
+  "answer": "Gestational diabetes is typically screened for between 24 and 28 weeks of gestation in women who are at average risk [ACOG, 2023]. This screening is usually done through an oral glucose tolerance test (OGTT). If a woman has risk factors for gestational diabetes, such as a family history of diabetes or obesity, screening may occur earlier in pregnancy.",
+  "tool_calls": [],
+  "latency_ms": 13732,
+  "tool_call_count": 0,
+  "rounds": 1,
+  "prompt_tokens": 760,
+  "completion_tokens": 81,
+  "cost_usd": 0.0
+}

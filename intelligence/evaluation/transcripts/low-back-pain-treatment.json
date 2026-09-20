@@ -1,14 +1,15 @@
 {
   "case_id": "low-back-pain-treatment",
-  "answer": "For acute low back pain, the first-line treatment is noninvasive care such as heat, massage, or gentle activity. If medications are needed, NSAIDs can be used. Imaging should only be considered if there are red flags like new bladder dysfunction, bowel problems, progressive leg weakness, fever with back pain, or a history of cancer with new-onset back pain (possible metastasis). [ACP Clinical Practice Guideline, 2017]",
+  "answer": "The first-line treatment for acute low back pain is nonpharmacologic care, such as heat, massage, or gentle activity [ACP, 2017]. NSAIDs may be used if medication is needed. Imaging is not recommended unless there are red-flag findings like trauma, unexplained weight loss, or neurologic deficits [ACP, 2017].",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "acute low back pain treatment"
+        "query": "first-line treatment for acute low back pain",
+        "top_k": 2
       },
       "result": {
-        "query": "acute low back pain treatment",
+        "query": "first-line treatment for acute low back pain",
         "results": [
           {
             "id": "acp-2017-low-back-pain",
@@ -16,7 +17,7 @@
             "source": "ACP Clinical Practice Guideline",
             "citation": "Noninvasive Treatments for Low Back Pain, American College of Physicians, 2017",
             "url": "https://www.acpjournals.org/doi/10.7326/M16-2367",
-            "score": 0.0487,
+            "score": 0.0489,
             "metadata": {
               "category": "musculoskeletal",
               "organization": "American College of Physicians",
@@ -31,7 +32,7 @@
             "source": "NICE Guideline NG59",
             "citation": "Low Back Pain and Sciatica: Assessment, NICE, 2020",
             "url": "https://www.nice.org.uk/guidance/ng59",
-            "score": 0.0164,
+            "score": 0.0487,
             "metadata": {
               "category": "musculoskeletal",
               "organization": "NICE",
@@ -45,10 +46,10 @@
       }
     }
   ],
-  "latency_ms": 7888,
+  "latency_ms": 30960,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2180,
-  "completion_tokens": 121,
+  "prompt_tokens": 2038,
+  "completion_tokens": 114,
   "cost_usd": 0.0
 }

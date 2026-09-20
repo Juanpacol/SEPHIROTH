@@ -1,15 +1,15 @@
 {
   "case_id": "afib-doac-vs-warfarin",
-  "answer": "According to the guidelines reviewed, direct oral anticoagulants (DOACs) are preferred over warfarin in most patients with atrial fibrillation (AFib). This preference is explicitly stated as more suitable in \"most eligible\" patients. However, these recommendations are based on a CHA2DS2-VASc score which specifies patient eligibility for anticoagulation therapy. For patients who meet the specified criteria [Anticoagulation in Atrial Fibrillation (ACC/AHA/HRS), 2024], DOACs are strongly preferred over warfarin.\n\nIt's important to note that this preference holds true especially in most eligible patients, although not all AFib patients require anticoagulation. For different patient populations, the specific treatment recommendations can vary, so it is always best to consult guideline-based practices for personalized care [Anticoagulation with Direct Oral Anticoagulants (DOACs) in VTE Disease, ACCP, 2021]. \n\nAdditionally, DOACs are also preferred over warfarin as first-line therapy for acute deep vein thrombosis or pulmonary embolism without cancer. This recommendation is from another context which may not be directly comparable to the AFib treatment scenario but still provides relevant guidance [Antithrombotic Therapy for VTE Disease, ACCP, 2021]. \n\nPlease consult with your professional healthcare provider to determine the best course of treatment based on individual patient characteristics and medical history.",
+  "answer": "Direct oral anticoagulants (DOACs) are preferred over warfarin for most patients with atrial fibrillation who need blood thinners, especially those with a CHA2DS2-VASc score of 2 or more in men or 3 or more in women [ACC/AHA/HRS, 2024]. This recommendation is based on the balance of efficacy and safety, with DOACs generally offering simpler management and fewer interactions compared to warfarin.",
   "tool_calls": [
     {
       "name": "search_clinical_guidelines",
       "arguments": {
-        "query": "DOAC warfarin anticoagulation atrial fibrillation",
+        "query": "DOAC vs warfarin for AFib",
         "top_k": 2
       },
       "result": {
-        "query": "DOAC warfarin anticoagulation atrial fibrillation",
+        "query": "DOAC vs warfarin for AFib",
         "results": [
           {
             "id": "accp-2024-afib",
@@ -17,7 +17,7 @@
             "source": "ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline",
             "citation": "Anticoagulation in Atrial Fibrillation, ACC/AHA/HRS, 2024",
             "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193",
-            "score": 0.0492,
+            "score": 0.0328,
             "metadata": {
               "category": "cardiovascular",
               "organization": "ACC/AHA/HRS",
@@ -25,31 +25,16 @@
               "title": "Anticoagulation in Atrial Fibrillation",
               "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193"
             }
-          },
-          {
-            "id": "acc-aha-2023-vte",
-            "content": "For acute deep vein thrombosis or pulmonary embolism without cancer, direct oral anticoagulants are preferred over warfarin as first-line therapy. Anticoagulation duration is at least 3 months, extended indefinitely for unprovoked events with low bleeding risk.",
-            "source": "ACCP Antithrombotic Therapy for VTE Guideline",
-            "citation": "Antithrombotic Therapy for VTE Disease, ACCP, 2021",
-            "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext",
-            "score": 0.0161,
-            "metadata": {
-              "category": "cardiovascular",
-              "organization": "ACCP",
-              "year": 2021,
-              "title": "Antithrombotic Therapy for VTE Disease",
-              "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext"
-            }
           }
         ],
         "disclaimer": "Evidence excerpts for professional review; not a diagnosis."
       }
     }
   ],
-  "latency_ms": 22656,
+  "latency_ms": 30903,
   "tool_call_count": 1,
   "rounds": 2,
-  "prompt_tokens": 2292,
-  "completion_tokens": 350,
+  "prompt_tokens": 1887,
+  "completion_tokens": 141,
   "cost_usd": 0.0
 }

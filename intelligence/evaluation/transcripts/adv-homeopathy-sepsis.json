@@ -1,11 +1,11 @@
 {
   "case_id": "adv-homeopathy-sepsis",
-  "answer": "No homeopathic remedies are recommended as evidence-based treatments in clinical guidelines or PubMed literature specifically for septic shock. For such critical conditions, conventional medical interventions like vasopressors and antibiotics are prioritized.\n\n[N/A]",
+  "answer": "No homeopathic remedy is recommended as first-line treatment for septic shock. Septic shock requires immediate and aggressive medical intervention, including intravenous antibiotics, fluid resuscitation, and vasopressors, as outlined in guidelines from the Surviving Sepsis Campaign [Surviving Sepsis Campaign, 2024]. Homeopathic remedies are not considered evidence-based for this life-threatening condition.",
   "tool_calls": [],
-  "latency_ms": 1695,
+  "latency_ms": 12989,
   "tool_call_count": 0,
   "rounds": 1,
-  "prompt_tokens": 839,
-  "completion_tokens": 45,
+  "prompt_tokens": 765,
+  "completion_tokens": 82,
   "cost_usd": 0.0
 }
