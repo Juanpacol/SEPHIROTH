@@ -8,7 +8,7 @@ pytest-asyncio>=0.24
 pytest-cov>=5.0
 aiosqlite>=0.20      # SQLite async driver -- tests/conftest.py's in-memory test DB
 moto[s3]>=5.0        # mocks S3 for S3BlobStore tests -- no real bucket needed in CI
-ruff==0.16.3
+ruff==0.16.8
 mypy>=1.10
 bandit[toml]>=1.7
 pip-audit>=2.7
