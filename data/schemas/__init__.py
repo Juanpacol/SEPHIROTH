@@ -491,21 +491,24 @@ class Consultation(Base):
 
 
 class GuidelineDocument(Base):
-    """Schema for a future clinical guideline ingestion endpoint — no route
-    reads or writes this table today (`DEBT-003`, resolved by documenting
-    this as intentional cold storage, not by building the endpoint).
-    Retrieval scoring always runs against the in-memory vector store
-    (`data.vectors.InMemoryVectorStore`, seeded at startup), not a query
-    against this table — see `data/rag/__init__.py`.
+    """The RAG corpus's live storage — `sephiroth.rag.RAGPipeline.retrieve`
+    (SPEC-030/ADR-017, Phase 15) queries this table directly on every call,
+    closing `DEBT-003` for real (previously: "persists a pgvector column
+    that is never queried," resolved back then only by documenting the gap,
+    not building the read path). Populated by `data/rag/seed_pgvector.py`
+    from the curated Python corpus (`SEED_GUIDELINES`); there is still no
+    live ingestion *endpoint* — a route a clinician calls to add a
+    guideline — since nothing has a validated need for one (`SPEC-030` NG-1).
 
     `embedding` uses `JSON` on SQLite (the in-memory test DB — pgvector has
     no SQLite equivalent) and `pgvector`'s native type on Postgres, so
-    `Base.metadata.create_all` keeps working in both, ready for whichever
-    dialect a real ingestion endpoint eventually targets.
+    `Base.metadata.create_all` keeps working in both — real retrieval
+    still requires a real Postgres, since SQLite's `JSON` fallback has no
+    nearest-neighbor operator (`RAGPipeline`-touching tests skip without
+    one, same pattern as `tests/test_alembic_migration.py`).
 
-    No HNSW/IVFFlat index — intentionally deferred until a real ingestion
-    endpoint exists and rows actually land here; indexing an empty table
-    has no use case to validate against.
+    An IVFFlat/HNSW index on `embedding` lives in a dedicated migration
+    (added once real rows existed to index against, per `SPEC-030` NG-3).
     """
 
     __tablename__ = "guideline_documents"

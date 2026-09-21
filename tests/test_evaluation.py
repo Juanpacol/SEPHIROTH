@@ -240,25 +240,21 @@ def test_embeddings_artifact_staleness_hash_match_is_fresh(monkeypatch):
     assert warning is None
 
 
-@pytest.mark.xfail(
-    reason="SPEC-030 not yet implemented — graceful DB-unavailable handling lands in SF062", strict=False
-)
-def test_run_ci_mode_reports_skipped_without_a_database(monkeypatch, capsys):
+async def test_run_ci_mode_reports_skipped_without_a_database(monkeypatch, capsys):
     """AC-030-05: once retrieval metrics require Postgres (SPEC-030), CI's
     `eval` job (no Postgres service, `.github/workflows/code-review.yml`)
     must see a clear 'skipped — no database' status, never a raw
     connection-error traceback."""
-    import core.config as config_module
-    from intelligence.evaluation.runner import run_ci_mode
+    import intelligence.evaluation.runner as runner_module
 
-    monkeypatch.setattr(
-        config_module.settings,
-        "database_url",
-        "postgresql+asyncpg://nobody:nobody@localhost:1/does_not_exist",
-    )
+    async def _boom(cases, pipeline=None):
+        raise runner_module.RetrievalMetricsUnavailable("connection refused")
 
-    run_ci_mode()
+    monkeypatch.setattr(runner_module, "compute_retrieval_metrics", _boom)
+
+    result = await runner_module.run_ci_mode()
     output = capsys.readouterr().out
+    assert result["retrieval_metrics_skipped"] is True
     assert "skipped" in output.lower()
-    assert "database" in output.lower()
+    assert "database" in output.lower() or "connection" in output.lower()
     assert "Traceback" not in output

@@ -68,24 +68,37 @@ def extract_evidence_texts(tool_calls: List[Dict[str, Any]]) -> List[str]:
 
 
 def _offline_pipeline() -> RAGPipeline:
-    """Retrieval pipeline wired to the committed embeddings artifact only —
-    deterministic and offline regardless of whether GEMINI_API_KEY happens
-    to be set in the environment running this eval (CI must never depend
-    on that)."""
+    """Retrieval pipeline wired to query embeddings from the committed
+    cache only — deterministic regardless of whether GEMINI_API_KEY
+    happens to be set (CI must never depend on that). Since SPEC-030
+    (Phase 15) the *documents* it queries live in Postgres, not this
+    process — "offline" now describes the embedding side only."""
     return RAGPipeline(embedding_provider=CachedEmbeddingProvider(inner=None))
 
 
-def retrieved_ids_by_case(
+class RetrievalMetricsUnavailable(RuntimeError):
+    """Raised when retrieval metrics can't be computed because
+    `guideline_documents` is unreachable (SPEC-030 AC-030-05) — distinct
+    from a metric that was simply never gated, so callers can report
+    "skipped — no database" rather than a bare connection traceback."""
+
+
+async def retrieved_ids_by_case(
     cases: List[GoldenCase], pipeline: Optional[RAGPipeline] = None, top_k: int = 5
 ) -> Dict[str, List[str]]:
     pipeline = pipeline or _offline_pipeline()
-    return {case.id: [hit["id"] for hit in pipeline.retrieve(case.query, top_k=top_k)] for case in cases}
+    try:
+        return {
+            case.id: [hit["id"] for hit in await pipeline.retrieve(case.query, top_k=top_k)] for case in cases
+        }
+    except Exception as exc:  # pragma: no cover - exact exception type is driver-specific
+        raise RetrievalMetricsUnavailable(str(exc)) from exc
 
 
-def compute_retrieval_metrics(
+async def compute_retrieval_metrics(
     cases: List[GoldenCase], pipeline: Optional[RAGPipeline] = None
 ) -> Dict[str, float]:
-    ids_by_case = retrieved_ids_by_case(cases, pipeline, top_k=max(RETRIEVAL_K_VALUES))
+    ids_by_case = await retrieved_ids_by_case(cases, pipeline, top_k=max(RETRIEVAL_K_VALUES))
     result = {f"recall_at_{k}": metrics.recall_at_k(cases, ids_by_case, k) for k in RETRIEVAL_K_VALUES}
     result["mrr"] = metrics.mrr(cases, ids_by_case)
     return result
@@ -142,7 +155,7 @@ def compare_thresholds(
     return rows
 
 
-def run_ci_mode(
+async def run_ci_mode(
     dataset_path: Path = DATASET_PATH,
     transcripts_dir: Path = TRANSCRIPTS_DIR,
     results_path: Path = RESULTS_PATH,
@@ -151,13 +164,25 @@ def run_ci_mode(
     """Deterministic, offline evaluation: retrieval metrics from live code +
     golden dataset, replay metrics from committed transcripts, faithfulness
     (LLM judge) pulled from the committed `results/latest.json` after
-    verifying it isn't stale."""
+    verifying it isn't stale.
+
+    Since SPEC-030 (Phase 15), retrieval metrics need `guideline_documents`
+    reachable — CI's `eval` job has no Postgres service
+    (`.github/workflows/code-review.yml`), so an unreachable database
+    degrades those specific metrics to "skipped" (AC-030-05) rather than
+    failing the whole run with a raw connection error."""
     cases = load_dataset(dataset_path)
     transcripts = load_transcripts(transcripts_dir)
     thresholds = load_thresholds(thresholds_path)
 
     observed: Dict[str, Any] = {}
-    observed.update(compute_retrieval_metrics(cases, pipeline=_offline_pipeline()))
+    retrieval_skipped = False
+    retrieval_metric_names = {f"recall_at_{k}" for k in RETRIEVAL_K_VALUES} | {"mrr"}
+    try:
+        observed.update(await compute_retrieval_metrics(cases, pipeline=_offline_pipeline()))
+    except RetrievalMetricsUnavailable as exc:
+        retrieval_skipped = True
+        print(f"skipped retrieval metrics — no database reachable ({exc})")
     replay = compute_replay_metrics(cases, transcripts)
     observed["citation_precision"] = replay["citation"]["precision"]
 
@@ -189,6 +214,8 @@ def run_ci_mode(
     # Named explicitly, not inferred from "absent": a metric that disappears for
     # any other reason must still fail the run.
     ungated = {"faithfulness_llm_judge", "abstention_recall"} if dataset_stale else set()
+    if retrieval_skipped:
+        ungated |= retrieval_metric_names
 
     embeddings_stale, embeddings_warning = _check_embeddings_artifact_staleness()
 
@@ -202,6 +229,7 @@ def run_ci_mode(
         "stale_results": dataset_stale or transcripts_stale,
         "dataset_stale": dataset_stale,
         "transcripts_stale": transcripts_stale,
+        "retrieval_metrics_skipped": retrieval_skipped,
         "ungated_metrics": sorted(ungated),
         "embeddings_artifact_stale": embeddings_stale,
         "embeddings_artifact_warning": embeddings_warning,
@@ -293,7 +321,7 @@ async def run_full_mode(
         for t in transcripts:
             (transcripts_dir / f"{t['case_id']}.json").write_text(json.dumps(t, indent=2))
 
-    retrieval = compute_retrieval_metrics(cases)
+    retrieval = await compute_retrieval_metrics(cases)
     replay = compute_replay_metrics(cases, transcripts)
 
     faithfulness_scores = []

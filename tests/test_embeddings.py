@@ -1,5 +1,11 @@
 """Unit tests for the embedding provider layer — cache behavior, hashing
-determinism, and the "never silently degrade" contract. No network calls."""
+determinism, and the "never silently degrade" contract. No network calls.
+
+The in-memory vector store this file used to also cover
+(`data.vectors.InMemoryVectorStore`) was deleted in Phase 15
+(SPEC-030/ADR-017) — dense retrieval now queries pgvector directly, see
+`tests/test_rag_pipeline.py`/`tests/test_embeddings_matching.py`.
+"""
 
 import gzip
 import json
@@ -10,7 +16,6 @@ import pytest
 from data.embeddings.base import EmbeddingUnavailable
 from data.embeddings.cached import CachedEmbeddingProvider, _cache_key, load_artifact
 from data.embeddings.gemini import _normalize
-from data.vectors import InMemoryVectorStore, ScoredDoc
 
 
 def test_cache_key_is_deterministic():
@@ -85,39 +90,3 @@ def test_normalize_produces_unit_vector():
 
 def test_normalize_zero_vector_is_safe():
     assert _normalize([0.0, 0.0]) == [0.0, 0.0]
-
-
-def test_vector_store_respects_top_k_and_min_score():
-    store = InMemoryVectorStore()
-    store.upsert("a", [1.0, 0.0], {})
-    store.upsert("b", [0.9, 0.1], {})
-    store.upsert("c", [0.1, 0.9], {})
-
-    results = store.search([1.0, 0.0], top_k=2, min_score=0.0)
-    assert [r.id for r in results] == ["a", "b"]
-
-    filtered = store.search([1.0, 0.0], top_k=5, min_score=0.5)
-    assert [r.id for r in filtered] == ["a", "b"]
-
-
-def test_vector_store_ties_are_deterministic_by_insertion_order():
-    store = InMemoryVectorStore()
-    store.upsert("first", [1.0, 0.0], {})
-    store.upsert("second", [1.0, 0.0], {})
-    results = store.search([1.0, 0.0], top_k=2)
-    assert [r.id for r in results] == ["first", "second"]
-
-
-def test_vector_store_count():
-    store = InMemoryVectorStore()
-    assert store.count() == 0
-    store.upsert("a", [1.0], {})
-    assert store.count() == 1
-    store.upsert("a", [0.5], {})  # re-upsert same id doesn't grow count
-    assert store.count() == 1
-
-
-def test_scored_doc_is_a_plain_dataclass():
-    sd = ScoredDoc(id="x", score=0.5)
-    assert sd.id == "x"
-    assert sd.score == 0.5

@@ -93,6 +93,27 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    # SPEC-030/ADR-017 (Phase 15): RAGPipeline queries guideline_documents
+    # (pgvector) for real now — a scripted FakeLLMClient test that triggers
+    # search_clinical_guidelines executes that query for real, same as it
+    # always executed the old in-memory retrieval for real. Mapped to 5433,
+    # matching the local docker-compose port every "skip without local
+    # Postgres" test already hardcodes (tests/test_alembic_migration.py,
+    # tests/test_rag_pipeline.py) — one URL works in both places.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_USER: clinical_ai
+          POSTGRES_PASSWORD: clinical_ai_password
+          POSTGRES_DB: clinical_ai_db
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U clinical_ai -d clinical_ai_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -104,6 +125,12 @@ jobs:
       # Editable install puts src/sephiroth on the path the same way it is in
       # production. `pythonpath` in pyproject only covers pytest.
       - run: pip install -e .
+      - name: Migrate + seed the RAG corpus (guideline_documents)
+        env:
+          DATABASE_URL: "postgresql+asyncpg://clinical_ai:clinical_ai_password@localhost:5433/clinical_ai_db"
+        run: |
+          PYTHONPATH=.:platform alembic upgrade head
+          PYTHONPATH=.:platform python -m data.rag.seed_pgvector
       - name: Run tests with coverage gate
         run: pytest --cov --cov-report=term --cov-report=xml
       - uses: actions/upload-artifact@v4

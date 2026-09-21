@@ -51,15 +51,22 @@ components:
       tests: [tests/test_timeline_extractor.py]
     data/rag:
       status: implemented
-      description: Hybrid retrieval — keyword + dense, fused via RRF over 22 seed docs
-      tests: [tests/test_rag_pipeline.py]
+      spec: SPEC-030
+      description: >-
+        Hybrid retrieval — keyword + dense, fused via RRF, over documents
+        stored in Postgres (data.schemas.GuidelineDocument, pgvector).
+        Phase 15 (SPEC-030, ADR-017) moved this off an in-memory corpus +
+        JSON embeddings artifact; data/vectors/ (the in-memory backend) was
+        deleted, RAGPipeline.retrieve is now async and requires a real DB.
+      tests: [tests/test_rag_pipeline.py, tests/test_rag_seed.py,
+              tests/test_no_in_memory_vector_store.py]
     data/embeddings:
       status: implemented
+      description: >-
+        Query-side embedding only since Phase 15 — document-side embeddings
+        are computed once at seed time (data/rag/seed_pgvector.py), not
+        cached in an artifact read at query time.
       tests: [tests/test_embeddings.py, tests/test_embeddings_matching.py, tests/test_corpus_hash.py]
-    data/vectors:
-      status: implemented
-      description: In-memory brute-force cosine; no ANN index
-      tests: [tests/test_embeddings.py]
     data/schemas:
       status: implemented
       tests: [tests/test_db_seed.py, tests/test_alembic_migration.py]
@@ -261,11 +268,11 @@ known_debt:
   - id: DEBT-003
     item: "data/schemas GuidelineDocument persists a pgvector column that is never queried"
     action: >-
-      Documented as intentional cold storage (Phase 5, Part 5) — no route
-      reads or writes this table today; retrieval always runs against the
-      in-memory vector store. Resolved by clarifying the docstring, not by
-      building an ingestion endpoint (out of scope, no validated need).
-    phase: 5
+      Phase 5: documented as intentional cold storage, not built. Phase 15
+      (SPEC-030, ADR-017) actually closed it: RAGPipeline.retrieve queries
+      this table on every call; data/vectors/ (the in-memory backend this
+      table was cold storage next to) is deleted.
+    phase: 15
     status: resolved
   - id: DEBT-004
     item: "platform/api/routers/medical.py and rag.py exposed MCP tools with no authentication"

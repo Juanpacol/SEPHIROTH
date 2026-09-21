@@ -23,26 +23,62 @@ def _default_min_similarity() -> float:
         return 0.70
 
 
-_pipeline = RAGPipeline(embedding_provider=get_embedding_provider(), min_similarity=_default_min_similarity())
+def _required_embedding_provider():
+    """SPEC-030/ADR-017: `RAGPipeline` has no keyword-only fallback mode
+    anymore — `settings.enable_rag_embeddings=False` (previously "degrade
+    to keyword-only") is now a configuration error, not a supported
+    degraded mode. Fail loudly at import time rather than at the first
+    query."""
+    provider = get_embedding_provider()
+    if provider is None:
+        raise RuntimeError(
+            "No embedding provider available (enable_rag_embeddings=False or no "
+            "provider configured) — RAGPipeline requires one since SPEC-030; "
+            "keyword-only retrieval is no longer a supported fallback."
+        )
+    return provider
 
 
-def list_evidence_categories() -> Dict[str, int]:
+_pipeline = RAGPipeline(
+    embedding_provider=_required_embedding_provider(), min_similarity=_default_min_similarity()
+)
+
+
+async def list_evidence_categories() -> Dict[str, int]:
     """Category slug -> document count, for the Evidence Library's browse
     view. Not an `@mcp.tool` — this is a UI-only concern, an agent never
     needs to "browse by category" to answer a clinical question, only to
     search or read one item, which the tools above already cover."""
+    from sqlalchemy import select
+
+    from core.db import SessionLocal  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
+    from data.schemas import GuidelineDocument
+
     counts: Dict[str, int] = {}
-    for doc in _pipeline.documents:
-        category = doc.metadata.get("category", "general")
+    async with SessionLocal() as session:
+        rows = (await session.execute(select(GuidelineDocument.doc_metadata))).scalars().all()
+    for doc_metadata in rows:
+        category = (doc_metadata or {}).get("category", "general")
         counts[category] = counts.get(category, 0) + 1
     return counts
 
 
-def list_evidence_by_category(category: str) -> List[Dict[str, Any]]:
+async def list_evidence_by_category(category: str) -> List[Dict[str, Any]]:
     """Every guideline excerpt in one category, for the Evidence Library's
     browse view. The excerpt itself doubles as the preview — these are
     already short, hand-picked snippets, not full documents with a
     separate summary to generate."""
+    from sqlalchemy import select
+
+    from core.db import SessionLocal  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
+    from data.rag import Document
+    from data.schemas import GuidelineDocument
+
+    async with SessionLocal() as session:
+        rows = (await session.execute(select(GuidelineDocument))).scalars().all()
+    docs = [
+        Document(id=r.id, content=r.content, source=r.source, metadata=r.doc_metadata or {}) for r in rows
+    ]
     return [
         {
             "id": doc.id,
@@ -53,7 +89,7 @@ def list_evidence_by_category(category: str) -> List[Dict[str, Any]]:
             "citation": doc.citation,
             "url": doc.metadata.get("url"),
         }
-        for doc in _pipeline.documents
+        for doc in docs
         if doc.metadata.get("category", "general") == category
     ]
 
@@ -72,11 +108,11 @@ MAX_GUIDELINE_RESULTS = 2
 
 
 @mcp.tool
-def search_clinical_guidelines(query: str, top_k: int = MAX_GUIDELINE_RESULTS) -> Dict[str, Any]:
+async def search_clinical_guidelines(query: str, top_k: int = MAX_GUIDELINE_RESULTS) -> Dict[str, Any]:
     """Search indexed clinical practice guidelines for evidence relevant to a
     clinical question. Returns the top 2 excerpts with mandatory citations.
     Use this FIRST for treatment/diagnosis questions."""
-    results = _pipeline.retrieve(query, top_k=min(top_k, MAX_GUIDELINE_RESULTS))
+    results = await _pipeline.retrieve(query, top_k=min(top_k, MAX_GUIDELINE_RESULTS))
     return {
         "query": query,
         "results": results,

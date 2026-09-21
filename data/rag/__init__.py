@@ -1,24 +1,40 @@
 """
 RAG (Retrieval-Augmented Generation) pipeline for medical evidence.
 
-Hybrid retrieval over an in-memory corpus seeded with clinical guideline
-excerpts: keyword overlap (always available, zero dependencies) fused via
-Reciprocal Rank Fusion with dense Gemini-embedding similarity (when an
-embedding provider is configured). Every result always carries a citation,
-and the output shape is identical regardless of which scoring path fired —
-see `retrieve()`.
+Hybrid retrieval over documents stored in Postgres
+(`data.schemas.GuidelineDocument`, pgvector — SPEC-030/ADR-017, Phase 15):
+keyword overlap (always available) fused via Reciprocal Rank Fusion with
+dense embedding similarity. Every result always carries a citation, and
+the output shape is identical regardless of which scoring path fired —
+see `RAGPipeline.retrieve()`.
 """
 
 from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from contextlib import AbstractAsyncContextManager
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from data.embeddings.base import EmbeddingProvider, EmbeddingUnavailable
 from data.rag.corpus_primary_care import PRIMARY_CARE_GUIDELINES
 from data.rag.document import Document
-from data.vectors import InMemoryVectorStore, VectorStore
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+
+@dataclass
+class ScoredDoc:
+    """A document id + its cosine similarity to a query, from a pgvector
+    nearest-neighbor search. Replaces `data.vectors.ScoredDoc`
+    (`data/vectors/` was deleted in Phase 15 — SPEC-030/ADR-017 — along
+    with the in-memory backend it existed for)."""
+
+    id: str
+    score: float
+
 
 logger = logging.getLogger(__name__)
 
@@ -958,172 +974,214 @@ def _tokenize(text: str) -> List[str]:
     return [t for t in re.findall(r"[a-z0-9]+", text.lower()) if t not in STOPWORDS]
 
 
-class RAGPipeline:
-    """Retrieval pipeline over medical documents. Every hit carries a citation.
+def _doc_from_row(row: Any) -> Document:
+    return Document(id=row.id, content=row.content, source=row.source, metadata=row.doc_metadata or {})
 
-    Fully functional with zero configuration — `RAGPipeline()` alone must
-    keep working with no network or DB, since it's constructed at module
-    scope by `intelligence/mcp/rag_server.py` and by the eval harness's
-    `compute_retrieval_metrics`. Passing an `embedding_provider` upgrades
-    retrieval to hybrid (dense + keyword); passing none keeps today's exact
-    keyword-only behavior.
+
+def _retrieve_keyword(query_tokens: set, docs: List[Document]) -> List[Dict[str, Any]]:
+    """Today's original scoring: weighted keyword overlap. Pure function of
+    an explicit document list — unit-testable with no database.
+
+    Requires at least 2 distinct query tokens to match (when the query has
+    that many) — a single shared generic word (e.g. "small" between
+    "small-business tax returns" and "a small cut") produced a nonzero
+    score against an unrelated document once the corpus grew past ~40
+    documents, letting keyword noise alone surface an irrelevant result
+    through `_fuse` even when dense retrieval correctly found nothing.
     """
+    min_distinct_matches = min(2, len(query_tokens))
+    scored = []
+    for doc in docs:
+        doc_tokens = _tokenize(doc.content)
+        if not doc_tokens:
+            continue
+        matched = query_tokens.intersection(doc_tokens)
+        if len(matched) < min_distinct_matches:
+            continue
+        overlap = sum(1 for t in doc_tokens if t in query_tokens)
+        score = overlap / len(doc_tokens) ** 0.5
+        if score > 0:
+            scored.append((score, doc))
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [
+        {
+            "id": doc.id,
+            "content": doc.content,
+            "source": doc.source,
+            "citation": doc.citation,
+            "url": doc.metadata.get("url"),
+            "score": round(score, 4),
+            "metadata": doc.metadata,
+        }
+        for score, doc in scored
+    ]
 
-    def __init__(
-        self,
-        seed: bool = True,
-        embedding_provider: Optional[EmbeddingProvider] = None,
-        vector_store: Optional[VectorStore] = None,
-        # Mirrors `settings.retrieval_min_similarity` (platform/core/config.py),
-        # which carries the calibration rationale. Duplicated rather than
-        # imported because this module must construct with zero configuration
-        # and no dependency on `platform/` — but the two have to move together,
-        # and `tests/test_embeddings_matching.py` fails if they drift.
-        min_similarity: float = 0.636,
-    ):
-        self.documents: List[Document] = list(SEED_GUIDELINES) if seed else []
-        self._embedding_provider = embedding_provider
-        self._vector_store = vector_store or InMemoryVectorStore()
-        self._min_similarity = min_similarity
-        if seed and embedding_provider is not None:
-            self._index_documents(self.documents)
 
-    def _index_documents(self, docs: List[Document]) -> None:
-        """Index documents one at a time so a single cache miss (a doc added
-        without rebuilding the embeddings artifact) degrades only that one
-        document to keyword-only, instead of silently emptying the entire
-        vector store — the whole-corpus batch call used to raise on the
-        first miss and `_index_documents` swallowed it with a bare `return`,
-        leaving every other document unindexed too."""
-        skipped = 0
-        for doc in docs:
-            try:
-                vector = self._embedding_provider.embed_documents([doc.content])[0]
-            except EmbeddingUnavailable:
-                skipped += 1
-                continue
-            self._vector_store.upsert(doc.id, vector, {})
-        if skipped:
-            logger.warning(
-                "RAGPipeline: %d/%d document(s) have no cached embedding and were "
-                "left keyword-only for this session — rebuild the embeddings artifact.",
-                skipped,
-                len(docs),
-            )
+def _fuse(
+    keyword_hits: List[Dict[str, Any]],
+    dense_hits: List[ScoredDoc],
+    candidate_pool_size: int,
+    by_id: Dict[str, Document],
+) -> List[Dict[str, Any]]:
+    """Reciprocal Rank Fusion, weighted toward the dense signal. Pure
+    function of the two hit lists and an explicit id->Document map —
+    unit-testable with no database.
 
-    def add_document(self, doc: Document) -> None:
-        self.documents.append(doc)
-        if self._embedding_provider is not None:
-            self._index_documents([doc])
+    Keyword scoring here isn't IDF-weighted (`score = overlap /
+    sqrt(len(doc))`), so short documents sharing only generic words
+    with the query (e.g. "patient", "class") can rank artificially
+    high — real corpus behavior confirmed empirically while building
+    the matching-quality test suite (see tests/test_embeddings_
+    matching.py::test_compound_query_surfaces_all_relevant_documents
+    and ::test_bp_target_specific_query_does_not_default_to_ckd_
+    document). An equal-weight RRF let that keyword noise, or a
+    near-exact RRF tie, outrank a real embedding-model win. Dense gets
+    2x weight so it can only be overridden by a *clear* keyword
+    signal, not by noise or a coin-flip tie.
 
-    def _retrieve_keyword(self, query_tokens: set) -> List[Dict[str, Any]]:
-        """Today's original scoring: weighted keyword overlap.
+    Returns `candidate_pool_size` results, not the caller's final
+    `top_k` — see `MMR_CANDIDATE_POOL_MULTIPLIER`; the caller's
+    `_finalize`/`mmr_rerank` does the actual top_k cut.
+    """
+    rrf_scores: Dict[str, float] = {}
+    for rank, hit in enumerate(keyword_hits):
+        rrf_scores[hit["id"]] = rrf_scores.get(hit["id"], 0.0) + KEYWORD_WEIGHT / (RRF_K + rank + 1)
+    for rank, scored_doc in enumerate(dense_hits):
+        rrf_scores[scored_doc.id] = rrf_scores.get(scored_doc.id, 0.0) + DENSE_WEIGHT / (RRF_K + rank + 1)
 
-        Requires at least 2 distinct query tokens to match (when the query
-        has that many) — a single shared generic word (e.g. "small" between
-        "small-business tax returns" and "a small cut") produced a nonzero
-        score against an unrelated document once the corpus grew past ~40
-        documents, letting keyword noise alone surface an irrelevant result
-        through `_fuse` even when dense retrieval correctly found nothing.
-        """
-        min_distinct_matches = min(2, len(query_tokens))
-        scored = []
-        for doc in self.documents:
-            doc_tokens = _tokenize(doc.content)
-            if not doc_tokens:
-                continue
-            matched = query_tokens.intersection(doc_tokens)
-            if len(matched) < min_distinct_matches:
-                continue
-            overlap = sum(1 for t in doc_tokens if t in query_tokens)
-            score = overlap / len(doc_tokens) ** 0.5
-            if score > 0:
-                scored.append((score, doc))
-        scored.sort(key=lambda pair: pair[0], reverse=True)
-        return [
+    ordered_ids = sorted(rrf_scores.keys(), key=lambda doc_id: rrf_scores[doc_id], reverse=True)
+    results = []
+    for doc_id in ordered_ids[:candidate_pool_size]:
+        doc = by_id.get(doc_id)
+        if doc is None:
+            continue
+        results.append(
             {
                 "id": doc.id,
                 "content": doc.content,
                 "source": doc.source,
                 "citation": doc.citation,
                 "url": doc.metadata.get("url"),
-                "score": round(score, 4),
+                "score": round(rrf_scores[doc_id], 4),
                 "metadata": doc.metadata,
             }
-            for score, doc in scored
-        ]
+        )
+    return results
 
-    def _fuse(
-        self, keyword_hits: List[Dict[str, Any]], dense_hits: List[Any], candidate_pool_size: int
-    ) -> List[Dict[str, Any]]:
-        """Reciprocal Rank Fusion, weighted toward the dense signal.
 
-        Keyword scoring here isn't IDF-weighted (`score = overlap /
-        sqrt(len(doc))`), so short documents sharing only generic words
-        with the query (e.g. "patient", "class") can rank artificially
-        high — real corpus behavior confirmed empirically while building
-        the matching-quality test suite (see tests/test_embeddings_
-        matching.py::test_compound_query_surfaces_all_relevant_documents
-        and ::test_bp_target_specific_query_does_not_default_to_ckd_
-        document). An equal-weight RRF let that keyword noise, or a
-        near-exact RRF tie, outrank a real embedding-model win. Dense gets
-        2x weight so it can only be overridden by a *clear* keyword
-        signal, not by noise or a coin-flip tie.
+class RAGPipeline:
+    """Retrieval pipeline over medical documents. Every hit carries a
+    citation.
 
-        Returns `candidate_pool_size` results, not the caller's final
-        `top_k` — see `MMR_CANDIDATE_POOL_MULTIPLIER`; the caller's
-        `_finalize`/`mmr_rerank` does the actual top_k cut.
-        """
-        by_id = {doc.id: doc for doc in self.documents}
-        rrf_scores: Dict[str, float] = {}
-        for rank, hit in enumerate(keyword_hits):
-            rrf_scores[hit["id"]] = rrf_scores.get(hit["id"], 0.0) + KEYWORD_WEIGHT / (RRF_K + rank + 1)
-        for rank, scored_doc in enumerate(dense_hits):
-            rrf_scores[scored_doc.id] = rrf_scores.get(scored_doc.id, 0.0) + DENSE_WEIGHT / (RRF_K + rank + 1)
+    SPEC-030/ADR-017 (Phase 15): documents and their embeddings live in
+    Postgres (`data.schemas.GuidelineDocument`, pgvector), queried fresh on
+    every `retrieve()` call — not an in-memory corpus. There is no
+    zero-configuration/no-DB mode: `embedding_provider` is required, and a
+    call against an unreachable database propagates the underlying
+    connection error rather than degrading to keyword-only (`ADR-017`'s
+    explicit "no fallback" decision).
+    """
 
-        ordered_ids = sorted(rrf_scores.keys(), key=lambda doc_id: rrf_scores[doc_id], reverse=True)
-        results = []
-        for doc_id in ordered_ids[:candidate_pool_size]:
-            doc = by_id.get(doc_id)
-            if doc is None:
-                continue
-            results.append(
-                {
-                    "id": doc.id,
-                    "content": doc.content,
-                    "source": doc.source,
-                    "citation": doc.citation,
-                    "url": doc.metadata.get("url"),
-                    "score": round(rrf_scores[doc_id], 4),
-                    "metadata": doc.metadata,
-                }
+    def __init__(
+        self,
+        embedding_provider: EmbeddingProvider,
+        # Mirrors `settings.retrieval_min_similarity` (platform/core/config.py),
+        # which carries the calibration rationale. Duplicated rather than
+        # imported because this module must not depend on `platform/` at
+        # import time — but the two have to move together, and
+        # `tests/test_embeddings_matching.py` fails if they drift.
+        min_similarity: float = 0.636,
+        session_factory: Optional[Callable[[], "AbstractAsyncContextManager[AsyncSession]"]] = None,
+    ):
+        self._embedding_provider = embedding_provider
+        self._min_similarity = min_similarity
+        self._session_factory = session_factory
+
+    def _session(self) -> "AbstractAsyncContextManager[AsyncSession]":
+        if self._session_factory is not None:
+            return self._session_factory()
+        from core.db import SessionLocal  # noqa: PLC0415 — platform/ is on PYTHONPATH at runtime
+
+        return SessionLocal()
+
+    async def _load_documents(self, session: "AsyncSession") -> List[Document]:
+        from sqlalchemy import select
+
+        from data.schemas import GuidelineDocument
+
+        rows = (await session.execute(select(GuidelineDocument))).scalars().all()
+        return [_doc_from_row(row) for row in rows]
+
+    async def add_document(self, doc: Document) -> None:
+        """Upsert one document (and its embedding, if the configured
+        provider can produce one) into `guideline_documents`."""
+        from data.schemas import GuidelineDocument
+
+        vector: Optional[List[float]] = None
+        try:
+            vector = self._embedding_provider.embed_documents([doc.content])[0]
+        except EmbeddingUnavailable:
+            logger.warning(
+                "RAGPipeline.add_document: no embedding available for %r — "
+                "stored keyword-only until the artifact/provider catches up.",
+                doc.id,
             )
-        return results
+        async with self._session() as session:
+            await session.merge(
+                GuidelineDocument(
+                    id=doc.id,
+                    content=doc.content,
+                    source=doc.source,
+                    doc_metadata=doc.metadata,
+                    embedding=vector,
+                    embedding_model=self._embedding_provider.model_id if vector is not None else None,
+                )
+            )
+            await session.commit()
 
-    def retrieve(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    async def retrieve(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """Return the top_k documents as dicts with content, source,
-        citation, and score. Hybrid when an embedding provider is
-        configured and available; keyword-only otherwise — the output
-        shape never changes. Reranked for diversity and content-budgeted
+        citation, and score. Hybrid when the query embeds successfully;
+        keyword-only otherwise (an `EmbeddingUnavailable` on the *query*
+        side, e.g. no cached vector for novel free text, still degrades
+        gracefully — only an unreachable *database* propagates, per
+        `ADR-017`). Reranked for diversity and content-budgeted
         (`src/sephiroth/context/`) before returning."""
+        from sqlalchemy import select
+
+        from data.schemas import GuidelineDocument
+
         query_tokens = set(_tokenize(query))
         if not query_tokens:
             return []
 
-        keyword_hits = self._retrieve_keyword(query_tokens)
-        if self._embedding_provider is None:
-            return self._finalize(keyword_hits, top_k)
+        async with self._session() as session:
+            docs = await self._load_documents(session)
+            keyword_hits = _retrieve_keyword(query_tokens, docs)
 
-        try:
-            query_vector = self._embedding_provider.embed_query(query)
-        except EmbeddingUnavailable:
-            return self._finalize(keyword_hits, top_k)  # full fallback — never raises to the caller
+            try:
+                query_vector = self._embedding_provider.embed_query(query)
+            except EmbeddingUnavailable:
+                return self._finalize(keyword_hits, top_k)
 
-        candidate_pool_size = top_k * MMR_CANDIDATE_POOL_MULTIPLIER
-        dense_hits = self._vector_store.search(
-            query_vector, top_k=candidate_pool_size, min_score=self._min_similarity
-        )
-        fused = self._fuse(keyword_hits, dense_hits, candidate_pool_size)
+            candidate_pool_size = top_k * MMR_CANDIDATE_POOL_MULTIPLIER
+            distance = GuidelineDocument.embedding.cosine_distance(query_vector)
+            rows = (
+                await session.execute(
+                    select(GuidelineDocument.id, distance.label("distance"))
+                    .where(GuidelineDocument.embedding.isnot(None))
+                    .order_by(distance)
+                    .limit(candidate_pool_size)
+                )
+            ).all()
+            dense_hits = [
+                ScoredDoc(id=row.id, score=1.0 - row.distance)
+                for row in rows
+                if (1.0 - row.distance) >= self._min_similarity
+            ]
+
+        by_id = {doc.id: doc for doc in docs}
+        fused = _fuse(keyword_hits, dense_hits, candidate_pool_size, by_id)
         return self._finalize(fused, top_k)
 
     def _finalize(self, hits: List[Dict[str, Any]], top_k: int) -> List[Dict[str, Any]]:
@@ -1140,11 +1198,11 @@ class RAGPipeline:
 class MedicalKnowledgeBase:
     """Named collections of medical knowledge sources."""
 
-    def __init__(self):
-        self.pipeline = RAGPipeline()
+    def __init__(self, embedding_provider: EmbeddingProvider):
+        self.pipeline = RAGPipeline(embedding_provider=embedding_provider)
 
-    def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        return self.pipeline.retrieve(query, top_k=top_k)
+    async def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        return await self.pipeline.retrieve(query, top_k=top_k)
 
 
 __all__ = ["RAGPipeline", "Document", "MedicalKnowledgeBase", "SEED_GUIDELINES"]

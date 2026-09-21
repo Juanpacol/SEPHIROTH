@@ -2,8 +2,8 @@
 id: SPEC-030
 title: RAG Document Storage on pgvector
 phase: 15
-version: 0.1.0
-status: Approved
+version: 1.0.0
+status: Implemented
 authors: [jbotero]
 created: 2026-09-21
 updated: 2026-09-21
@@ -286,5 +286,6 @@ one-line amendment noting the RAG-specific exception.
 
 | Version | Date | Change |
 |---|---|---|
+| 1.0.0 | 2026-09-21 | Implemented (SF062): `RAGPipeline`/`MedicalKnowledgeBase` query `guideline_documents` directly (async), `data/vectors/` deleted, `data/rag/seed_pgvector.py` added, `search_clinical_guidelines`/category-browse helpers are async, an IVFFlat index migration added, CI's `test` job gained a Postgres service to seed/migrate against. All 7 ACs green. |
 | 0.1.0 | 2026-09-21 | Initial draft |
 | 0.1.0 | 2026-09-21 | Approved — human review confirmed the no-fallback pgvector-only design and the full SDD process before writing tests |

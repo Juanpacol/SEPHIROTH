@@ -39,7 +39,7 @@ _CATEGORY_LABELS = {
 
 @router.get("/categories", summary="Browse the evidence corpus by clinical category")
 async def evidence_categories(user: User = Depends(get_current_user)) -> List[Dict[str, Any]]:
-    counts = list_evidence_categories()
+    counts = await list_evidence_categories()
     categories: List[Dict[str, Any]] = [
         {"slug": slug, "label": _CATEGORY_LABELS.get(slug, slug.replace("_", " ").title()), "count": count}
         for slug, count in counts.items()
@@ -50,7 +50,7 @@ async def evidence_categories(user: User = Depends(get_current_user)) -> List[Di
 
 @router.get("/categories/{category}", summary="Every guideline excerpt in one category")
 async def evidence_by_category(category: str, user: User = Depends(get_current_user)) -> List[Dict[str, Any]]:
-    items = list_evidence_by_category(category)
+    items = await list_evidence_by_category(category)
     if not items:
         raise HTTPException(status_code=404, detail=f"No evidence found for category '{category}'")
     return items

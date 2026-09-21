@@ -23,6 +23,39 @@ async def db_session():
     await engine.dispose()
 
 
+# SPEC-030/ADR-017 (Phase 15): `RAGPipeline` (`data/rag/__init__.py`) queries
+# `guideline_documents` via `core.db.SessionLocal` — a lazy import inside the
+# method body, not a module-level one, specifically so this fixture's
+# monkeypatch of the `core.db` module attribute is picked up on every call.
+# Without this override, any test whose scripted FakeLLMClient triggers a
+# real `search_clinical_guidelines` tool execution would resolve
+# `settings.database_url` from whatever `.env` happens to hold on this
+# machine — Supabase, in local dev — and silently query a real remote
+# database during a test run. Always redirect to the local docker-compose
+# Postgres (port 5433, same credentials `tests/test_alembic_migration.py`
+# and `tests/test_rag_pipeline.py` already use) instead; a test that
+# specifically needs pgvector unreachable to exercise a skip path builds
+# its own isolated engine rather than relying on this one.
+_TEST_POSTGRES_URL = "postgresql+asyncpg://clinical_ai:clinical_ai_password@localhost:5433/clinical_ai_db"
+
+
+@pytest.fixture(autouse=True)
+def _redirect_rag_db_to_local_postgres():
+    # Function-scoped, not session-scoped: asyncpg connections are bound to
+    # the event loop they were created on, and pytest-asyncio gives each
+    # test function its own loop by default — a shared engine across tests
+    # fails with "another operation is in progress" the moment a second
+    # test's loop tries to reuse a connection opened under the first's
+    # (already-closed) one.
+    import core.db as db_module
+
+    original = db_module.SessionLocal
+    engine = create_async_engine(_TEST_POSTGRES_URL)
+    db_module.SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+    yield
+    db_module.SessionLocal = original
+
+
 @pytest.fixture
 def anyio_backend():
     return "asyncio"
