@@ -125,13 +125,23 @@ EVIDENCE = AgentCapability(
     # `require_tool_call=True` above forces tool_choice on round 0, but the
     # 2026-09-20 audit found the omission still slips past that on a local
     # model that ignores tool_choice outright (`ToolCallOmittedError`,
-    # agent.py). `llama3-groq-tool-use:8b` is fine-tuned + DPO'd specifically
-    # to emit correct tool calls (89.06% BFCL) — swapping just this one
-    # capability's model, via `get_llm_client(model_hint)`
-    # (`sephiroth.models.factory`), is a targeted fix for the one specialist
-    # that must never answer without citing its tool's output. Only takes
-    # effect on the local Ollama provider; ignored otherwise.
-    model_hint="llama3-groq-tool-use:8b",
+    # agent.py).
+    #
+    # `model_hint="llama3-groq-tool-use:8b"` was tried here as a targeted
+    # fix (SF056) on the theory that a model fine-tuned + DPO'd specifically
+    # for tool-calling (89.06% BFCL) would honor `require_tool_call` more
+    # reliably than the generalist `qwen3:8b` every other agent uses.
+    # Reverted the same day, confirmed by direct A/B against Ollama's
+    # `/api/chat` with EVIDENCE's real ~400-word system prompt + both real
+    # tool schemas: `llama3-groq-tool-use:8b` fabricated an answer with an
+    # invented citation (never called the tool) on the exact query that
+    # motivated `require_tool_call` in the first place, while `qwen3:8b`
+    # called the tool correctly on the identical input. The benchmark score
+    # is for short, tool-focused prompts; this model's fine-tuning appears
+    # to lose the tool-calling habit against a long, multi-rule clinical
+    # system prompt — the opposite of what EVIDENCE actually needs. No
+    # `model_hint` set: falls back to whatever `get_llm_client()` returns
+    # by default (`qwen3:8b` locally), same as every other specialist.
 )
 
 #: The three specialists `intent_router` selects from, keyed by node name —
