@@ -5,13 +5,7 @@ unconditional once `laboratory`/`coordinator`/the fan-out are gone, so there
 is no longer a second mode to flag between.
 """
 
-import pytest
-
 from core.config import Settings
-
-pytestmark = pytest.mark.xfail(
-    reason="SPEC-029 not yet implemented — flag removal lands in SF059", strict=False
-)
 
 
 def test_enable_single_agent_mode_field_is_removed():

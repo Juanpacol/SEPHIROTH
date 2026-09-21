@@ -1,20 +1,12 @@
-"""The executor — fan-out, merge, coordinate, verify, decide. LangGraph, gone.
+"""The executor — route, run one specialist, verify, decide. LangGraph, gone.
 
 Replaces `intelligence/agents/workflow.py`'s compiled graph
-(`docs/specs/SPEC-003-agent-runtime.md`, `ADR-001`). The graph's shape is
-preserved exactly:
+(`docs/specs/SPEC-003-agent-runtime.md`, `ADR-001`). SPEC-029 (Phase 14)
+removed the multi-agent fan-out/coordinator merge this executor originally
+also supported — a consultation now always takes a single path:
 
-    ┬─> radiology ───┐
-    ├─> laboratory ──┤
-    ├─> drug_safety ─┼─> coordinator ─> citation guard ─> claim verification
-    └─> evidence ────┘                                  ─> abstention gate
-
-`run_consultation` fans out with `asyncio.gather` (order doesn't matter for
-its return value — nothing downstream is order-sensitive there).
-`stream_consultation` uses `asyncio.as_completed` instead, so
-`agent_completed` events still arrive progressively as each specialist
-actually finishes — the same streaming UX the LangGraph implementation gave
-for free, not something to regress on a relocation.
+    intent_router ─> one specialist ─> citation guard ─> claim verification
+                                                        ─> abstention gate
 
 Internal state is a real `sephiroth.contracts.RunState` (SPEC-004 §1) — the
 deferral documented in SPEC-003 §10 ends here, now that evidence/claims/
@@ -26,14 +18,13 @@ shape.
 
 from __future__ import annotations
 
-import asyncio
 import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
 
 from core.config import settings
-from sephiroth.context import context_for_agent, truncate
+from sephiroth.context import context_for_agent
 from sephiroth.contracts import (
     AgentCapability,
     AgentResult,
@@ -59,22 +50,19 @@ from sephiroth.verification.combined import extract_and_verify
 
 from .agent import Agent
 from .intent_router import route_intent
-from .planner import route_specialists, route_specialists_dynamic
 from .recovery import classify, decide_recovery
-from .registry import COORDINATOR, get_capability
-from .router import resolve
+from .registry import get_capability
 
 #: Matches PlanStep.max_attempts' default (src/sephiroth/contracts/plan.py) —
 #: a specialist gets one retry before the run continues without its section.
 MAX_AGENT_ATTEMPTS = 2
 
-#: The closing disclaimer every consultation answer must carry. In
-#: multi-agent mode the coordinator's role prompt instructs the model to
-#: end with it; in single-agent mode a specialist's answer is the final
-#: answer, so it is appended here instead of trusting a smaller model to
-#: remember an instruction. A guarantee this load-bearing belongs in code,
-#: not in a prompt — the same reasoning behind deterministic citation
-#: auditing rather than asking the model to self-check.
+#: The closing disclaimer every consultation answer must carry. The one
+#: selected specialist's answer is the final answer (SPEC-029: the only
+#: path since the coordinator was removed), so it is appended here instead
+#: of trusting a smaller model to remember an instruction. A guarantee this
+#: load-bearing belongs in code, not in a prompt — the same reasoning behind
+#: deterministic citation auditing rather than asking the model to self-check.
 CLOSING_DISCLAIMER = "This is decision support, not a diagnosis — professional review required."
 
 
@@ -93,16 +81,6 @@ def _initial_context(context: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     return context or {}
 
 
-async def _route(context: Optional[Dict[str, Any]], client: ModelProvider, query: str = "") -> List[str]:
-    """SPEC-008: dynamic routing behind `settings.enable_dynamic_planner`
-    (default off); static `route_specialists` otherwise. `query` is only
-    consumed by the dynamic path — the static heuristic stays key-presence
-    only, unchanged (parity gate: tests/test_workflow.py)."""
-    if settings.enable_dynamic_planner:
-        return await route_specialists_dynamic(context, client, query)
-    return route_specialists(context)
-
-
 async def _select_and_run(
     context: Optional[Dict[str, Any]],
     client: ModelProvider,
@@ -110,84 +88,28 @@ async def _select_and_run(
     run_context: RunContext,
     state: RunState,
 ) -> Tuple[List[str], str]:
-    """Route, then run the selected specialist(s), returning
+    """Route, then run the selected specialist, returning
     `(node_names, answer_text)`.
 
-    Two modes behind `settings.enable_single_agent_mode`:
+    `intent_router.route_intent` picks ONE specialist and its answer IS the
+    final answer — no coordinator turn (SPEC-029: the only path since the
+    multi-agent fan-out was removed). This is what takes a consultation from
+    4-8 sequential model calls down to 1 for the answer itself.
 
-    - **single-agent (default)**: `intent_router.route_intent` picks ONE
-      specialist and its answer IS the final answer — no coordinator turn.
-      This is what takes a consultation from 4-8 sequential model calls
-      down to 1 for the answer itself.
-    - **multi-agent**: the original fan-out — every routed specialist runs
-      in parallel, then the coordinator merges their sections into one
-      answer.
-
-    Everything downstream (citation guard, verification, abstention,
-    trace) is identical in both modes and operates on the returned text.
+    Everything downstream (citation guard, verification, abstention, trace)
+    operates on the returned text.
     """
-    if settings.enable_single_agent_mode:
-        node = await route_intent(query, context, client)
-        node_names = [node]
-        capability = get_capability(node)
-        state.lifecycle[capability.id] = LifecycleState.SELECTED
+    node = await route_intent(query, context, client)
+    node_names = [node]
+    capability = get_capability(node)
+    state.lifecycle[capability.id] = LifecycleState.SELECTED
 
-        _, agent_result, tool_calls = await _run_specialist(
-            capability, client, query, run_context, state, answering=True
-        )
-        state.agent_results[capability.id] = agent_result
-        state.tool_calls.extend(tool_calls)
-        return node_names, _with_disclaimer(agent_result.content)
-
-    node_names = await _route(context, client, query)
-    capabilities = resolve(node_names)
-    for cap in capabilities:
-        state.lifecycle[cap.id] = LifecycleState.SELECTED
-
-    results = await asyncio.gather(
-        *(_run_specialist(cap, client, query, run_context, state) for cap in capabilities)
+    _, agent_result, tool_calls = await _run_specialist(
+        capability, client, query, run_context, state, answering=True
     )
-    for capability, agent_result, tool_calls in results:
-        state.agent_results[capability.id] = agent_result
-        state.tool_calls.extend(tool_calls)
-
-    return node_names, await _run_coordinator(client, query, run_context, state)
-
-
-async def _run_coordinator(
-    client: ModelProvider, query: str, run_context: RunContext, state: RunState
-) -> str:
-    """The multi-agent merge turn — one `chat()` over every specialist's
-    section. Only reached when `enable_single_agent_mode` is off."""
-    sections = "\n\n".join(f"### {name} agent\n{output}" for name, output in state.agent_outputs.items())
-    sections = truncate(sections, settings.max_context_chars)
-    coordinator = Agent(COORDINATOR, client)
-    coord_started = time.perf_counter()
-    with traced_span(
-        state, SpanKind.AGENT, COORDINATOR.id, agent=COORDINATOR.id, model=getattr(client, "model", "")
-    ):
-        coord_result = await coordinator.run(
-            f"Clinical question: {query}\n\nSpecialist analyses:\n\n{sections}",
-            context_for_agent(COORDINATOR, run_context),
-        )
-    coord_tool_calls = to_tool_calls(coordinator.name, coord_result.tool_calls)
-    state.tool_calls.extend(coord_tool_calls)
-    # Recorded after the fact (not via _run_specialist's retry loop -- the
-    # coordinator has none): without this, its usually-largest single
-    # chat() call (it sees every specialist's output at once) would be
-    # invisible to build_trace's token/cost/latency totals (SPEC-016).
-    # `state.coordinator_result`, NOT `state.agent_results` -- see that
-    # field's docstring for why.
-    state.coordinator_result = AgentResult(
-        agent=COORDINATOR.id,
-        content=coord_result.content,
-        tool_call_ids=[tc.id for tc in coord_tool_calls],
-        rounds=coord_result.rounds,
-        prompt_tokens=coord_result.prompt_tokens,
-        completion_tokens=coord_result.completion_tokens,
-        latency_ms=int((time.perf_counter() - coord_started) * 1000),
-    )
-    return coord_result.content
+    state.agent_results[capability.id] = agent_result
+    state.tool_calls.extend(tool_calls)
+    return node_names, _with_disclaimer(agent_result.content)
 
 
 def _tool_call_wire(tc: ToolCall) -> Dict[str, Any]:
@@ -469,44 +391,30 @@ async def stream_consultation(
         }
         return
 
-    # Single-agent mode routes to one specialist and returns its answer
-    # directly; multi-agent fans out and merges via the coordinator. Both
-    # emit the same frozen event sequence — see `_select_and_run`.
-    if settings.enable_single_agent_mode:
-        node = await route_intent(query, context, client)
-        node_names = [node]
-        capabilities = [get_capability(node)]
-    else:
-        node_names = await _route(context, client, query)
-        capabilities = resolve(node_names)
-    for cap in capabilities:
-        state.lifecycle[cap.id] = LifecycleState.SELECTED
+    # Routes to exactly one specialist and yields its answer directly —
+    # SPEC-029: the only path since the multi-agent fan-out/coordinator
+    # merge was removed. See `_select_and_run`.
+    node = await route_intent(query, context, client)
+    node_names = [node]
+    capability = get_capability(node)
+    state.lifecycle[capability.id] = LifecycleState.SELECTED
 
     yield {"event": "routing", "agents": node_names}
 
-    single = settings.enable_single_agent_mode
-    tasks = [
-        asyncio.ensure_future(_run_specialist(cap, client, query, run_context, state, answering=single))
-        for cap in capabilities
-    ]
-    answer = ""
-    for finished in asyncio.as_completed(tasks):
-        capability, agent_result, tool_calls = await finished
-        state.agent_results[capability.id] = agent_result
-        state.tool_calls.extend(tool_calls)
-        answer = agent_result.content  # single-agent: this IS the answer
-        node_calls_wire = [_tool_call_wire(tc) for tc in tool_calls]
-        yield {
-            "event": "agent_completed",
-            "agent": capability.id,
-            "summary": (agent_result.content or "")[:280],
-            "tool_calls": [{"name": c.get("name"), "arguments": c.get("arguments")} for c in node_calls_wire],
-        }
+    _, agent_result, tool_calls = await _run_specialist(
+        capability, client, query, run_context, state, answering=True
+    )
+    state.agent_results[capability.id] = agent_result
+    state.tool_calls.extend(tool_calls)
+    node_calls_wire = [_tool_call_wire(tc) for tc in tool_calls]
+    yield {
+        "event": "agent_completed",
+        "agent": capability.id,
+        "summary": (agent_result.content or "")[:280],
+        "tool_calls": [{"name": c.get("name"), "arguments": c.get("arguments")} for c in node_calls_wire],
+    }
 
-    if settings.enable_single_agent_mode:
-        answer = _with_disclaimer(answer)
-    else:
-        answer = await _run_coordinator(client, query, run_context, state)
+    answer = _with_disclaimer(agent_result.content)
 
     citation_report = audit(answer, [_tool_call_wire(tc) for tc in state.tool_calls])
     sanitized = sanitize(answer, citation_report)

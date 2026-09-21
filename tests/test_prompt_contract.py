@@ -2,9 +2,10 @@
 script selection.
 
 `tests/conftest.py::FakeLLMClient._script_for` picks the first script key that
-is a *substring of the assembled system prompt*. Two keys are canonical across
-the suite — "clinical evidence specialist" (EvidenceAgent) and
-"coordinating physician-assistant" (ClinicalCoordinator).
+is a *substring of the assembled system prompt*. "clinical evidence
+specialist" (EvidenceAgent) is the canonical key across the suite —
+`ClinicalCoordinator`'s "coordinating physician-assistant" was the other one
+until `SPEC-029` (Phase 14) removed the coordinator entirely.
 
 If a role prompt is reworded, or the system-prompt assembly in `Agent.run()`
 changes shape, every workflow and API test silently falls through to
@@ -21,29 +22,20 @@ from typing import Dict, List, Tuple
 
 import pytest
 
-from intelligence.agents import (
-    ClinicalCoordinator,
-    DrugSafetyAgent,
-    EvidenceAgent,
-    LabAgent,
-    RadiologyAgent,
-)
+from intelligence.agents import DrugSafetyAgent, EvidenceAgent, RadiologyAgent
 from sephiroth.runtime.registry import AGENTS
 from tests.conftest import FakeLLMClient
 
-# The two keys real test modules script against. Keep in sync with
+# The canonical key real test modules script against. Keep in sync with
 # tests/test_workflow.py and tests/test_api_agents.py.
 CANONICAL_SCRIPT_KEYS: Dict[str, str] = {
     "evidence": "clinical evidence specialist",
-    "coordinator": "coordinating physician-assistant",
 }
 
 ALL_AGENTS = [
     RadiologyAgent,
-    LabAgent,
     DrugSafetyAgent,
     EvidenceAgent,
-    ClinicalCoordinator,
 ]
 
 ALL_CAPABILITIES = list(AGENTS.values())
@@ -62,7 +54,6 @@ async def _assembled_system_prompt(agent_cls) -> str:
     "agent_cls,key",
     [
         (EvidenceAgent, CANONICAL_SCRIPT_KEYS["evidence"]),
-        (ClinicalCoordinator, CANONICAL_SCRIPT_KEYS["coordinator"]),
     ],
 )
 async def test_canonical_script_key_present_in_system_prompt(agent_cls, key):
@@ -86,7 +77,6 @@ def test_agent_role_prompt_is_non_empty(capability):
     "agent_cls,key",
     [
         (EvidenceAgent, CANONICAL_SCRIPT_KEYS["evidence"]),
-        (ClinicalCoordinator, CANONICAL_SCRIPT_KEYS["coordinator"]),
     ],
 )
 async def test_script_selection_does_not_fall_through_to_default(agent_cls, key):

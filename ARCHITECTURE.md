@@ -68,18 +68,20 @@ Execution is in-process via FastMCP's in-memory client — no subprocesses/socke
 A consultation takes the cheapest matching path first:
 
 1. **`platform/api/fast_path.py`** — pure lookup (guideline search, drug interaction)? Tool result returned verbatim with its own citation. 0 LLM calls, ~4s.
-2. **`src/sephiroth/runtime/executor.py`** — otherwise:
-   - **Single-agent mode (default, `enable_single_agent_mode=True`)** — `intent_router` picks ONE specialist; its answer is final. 1 LLM call.
-   - **Multi-agent mode** (flag off) — `route_specialists` fans out to N specialists in parallel; a coordinator merges sections. N+1 LLM calls.
+2. **`src/sephiroth/runtime/executor.py`** — otherwise: `intent_router` picks exactly ONE specialist (`SPEC-029`, Phase 14 — the only path; the multi-agent fan-out and coordinator merge it used to also support were removed as unreachable-in-production dead code, `ADR-016`); its answer is final. 1 LLM call.
 3. Citation guard (deterministic) → claim verification (1 LLM call) → abstention gate (deterministic) → trace.
 
 | Agent | Tools | Runs when |
 |---|---|---|
 | EvidenceAgent | search_clinical_guidelines, search_pubmed | Default / always eligible |
 | RadiologyAgent | describe_medical_image, analyze_medical_image | `context.image_path` present |
-| LabAgent | (context only) | `context.lab_results` present |
 | DrugSafetyAgent | check_drug_interactions | `context.medications` present |
-| (Coordinator) | extract_medical_entities, summarize_clinical_note | Multi-agent mode only |
+
+`LabAgent`/`ClinicalCoordinator` were removed in Phase 14 (`SPEC-029`) —
+lab-value interpretation is covered by `src/sephiroth/safety/risk.py`'s
+deterministic rules (surfaced outside the chat path) plus `EvidenceAgent`
+as the default fallback for anything `intent_router` can't confidently
+place.
 
 Each agent is an `Agent` (`src/sephiroth/runtime/agent.py`) bound to an `AgentCapability` record: system prompt + allowed-tool whitelist + `.run(query, context)`.
 

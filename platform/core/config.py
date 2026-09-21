@@ -251,24 +251,6 @@ class Settings(BaseSettings):
     # disabled vs. enabled, apart from the (then-empty) .spans list.
     enable_tracing: bool = True
 
-    # SPEC-008 (closes SPEC-003 NG-1): when True, routing asks the model
-    # which specialists are relevant instead of the static key-presence
-    # heuristic, falling back to that heuristic on any model failure.
-    # Default False — the offline eval (--mode ci) has no live model, so
-    # leaving this off keeps eval deterministic.
-    enable_dynamic_planner: bool = False
-
-    # When True, a consultation routes to exactly ONE specialist
-    # (`sephiroth.runtime.intent_router`) whose answer is returned
-    # directly, skipping both the parallel fan-out and the coordinator
-    # turn that merges its results. Cuts a consultation from 4-8
-    # sequential model round-trips to 3 (1 answer + 2 verification),
-    # which is what makes the chat usable on a free/local model.
-    # Verification, citation guard, and abstention are unaffected —
-    # they run identically in both modes. Set False to restore the
-    # multi-agent fan-out; `enable_dynamic_planner` only applies then.
-    enable_single_agent_mode: bool = True
-
     # Claim extraction and claim verification are two strictly sequential
     # `generate_json` calls (the second needs the first's claim ids).
     # Measured on a local model they were 47s of a 74s consultation — more

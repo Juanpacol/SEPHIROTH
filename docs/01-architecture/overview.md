@@ -7,30 +7,32 @@
 Two architectures coexist during the migration. Both are described here, clearly
 labelled, because confusing them is the main way this document could mislead.
 
-## Current (what runs today, as of Phase 3)
+## Current (what runs today, as of Phase 14 — SPEC-029)
 
 ```
 Next.js  →  FastAPI  →  sephiroth.runtime executor  →  Gemini (+ Groq fallback)
                              │
-                    static presence-check routing (route_specialists)
-                             ├── radiology    → imaging + vision
-                             ├── laboratory   → patient context only
-                             ├── drug-safety  → interaction table
-                             └── evidence     → guidelines + PubMed
-                             ↓ asyncio.gather / asyncio.as_completed
-                          coordinator
+                     intent_router (keywords → context → LLM classify)
+                             │
+                    exactly one specialist answers
+                     radiology | drug-safety | evidence
                              ↓
-                  citation guard → sanitize → explanation
+                  citation guard → sanitize → claim verification
+                             ↓
+                     abstention gate → explanation
 ```
 
-**Characteristics.** Depth is fixed at two. Routing is still a key-presence
-check over the request context (`route_specialists`, unchanged in behavior,
-relocated to `src/sephiroth/runtime/planner.py`) — dynamic, capability-matching
-routing is a later phase. Specialists are `AgentCapability` records
+**Characteristics.** A consultation always routes to exactly one specialist
+(`src/sephiroth/runtime/intent_router.py`) — the multi-agent fan-out and the
+coordinator that merged it (`planner.py`, `router.py`, `COORDINATOR`) were
+removed in Phase 14 (`SPEC-029`, `ADR-016`) after sitting unreachable in
+production since single-specialist routing became the default; `LABORATORY`
+was removed alongside it, superseded by `sephiroth.safety.risk`'s
+deterministic lab rules. Specialists are `AgentCapability` records
 (`src/sephiroth/runtime/registry.py`), not hardcoded classes; LangGraph is gone
-(`ADR-001`) in favour of a plain `asyncio`-based executor. Verification still
-means auditing citation *labels* against tool output — claim-content
-verification is Phase 4.
+(`ADR-001`) in favour of a plain `asyncio`-based executor. Verification is
+claim-content verification against retrieved evidence (`SPEC-004`), not just
+citation-label auditing.
 
 **What works well and is being kept:** hybrid retrieval with RRF fusion, the MCP
 tool layer, the evaluation harness, citation provenance checking, the risk
@@ -82,15 +84,18 @@ uvicorn and Docker.
 ## Data flow of one consultation, today
 
 1. `POST /api/agents/consult/stream`, authenticated.
-2. `route_specialists(context)` picks branches; a `routing` event is emitted.
-3. Selected specialists run concurrently; each emits `agent_completed`.
-4. The coordinator joins their outputs and synthesises an answer.
-5. `audit()` checks citations, `sanitize()` strips fabricated ones,
-   `build_explanation()` renders the trail; a `final` event is emitted.
-6. The consultation is persisted; a `persisted` event carries its id.
+2. `intent_router.route_intent(query, context, client)` picks the one
+   specialist that answers; a `routing` event is emitted.
+3. That specialist runs; it emits `agent_completed` and its answer becomes
+   the final answer directly (`_with_disclaimer`) — no coordinator turn.
+4. `audit()` checks citations, `sanitize()` strips fabricated ones, claim
+   verification and the abstention gate run, `build_explanation()` renders
+   the trail; a `final` event is emitted.
+5. The consultation is persisted; a `persisted` event carries its id.
 
-Steps 2–4 are what Phase 3 replaces; step 5 is what Phase 4 replaces. The event
-sequence in steps 2–6 is a frozen contract and survives both.
+The five-event sequence (`routing`, `agent_completed`, `final`, `persisted`,
+`error`) is a frozen contract (`docs/00-migration-charter.md` §2) and has
+survived every phase since it was introduced.
 
 ## Cross-cutting decisions
 

@@ -110,26 +110,29 @@ components:
       phase: 3
       spec: SPEC-003
       description: >-
-        Analyzer/Planner/Router + Agent (capability-bound) + async executor
-        (fan-out/merge/coordinate), replacing the LangGraph-compiled graph
-        entirely in this phase (ADR-001). route_specialists relocated
-        verbatim. Since Phase 4 (SPEC-004), the executor's internal state is
-        a real RunState — the SPEC-003 §10 deferral is resolved; ToolCall.tool
+        Agent (capability-bound) + intent_router + async executor, replacing
+        the LangGraph-compiled graph entirely in this phase (ADR-001). Since
+        Phase 4 (SPEC-004), the executor's internal state is a real
+        RunState — the SPEC-003 §10 deferral is resolved; ToolCall.tool
         vs. the frozen wire's name is projected at one function, _tool_call_wire.
         Since Phase 5 (SPEC-007), src/sephiroth/runtime/recovery.py
         classifies a failing specialist and retries/abstains per policy
         (ADR-007); RunState.lifecycle/.failures/.retries/.recovery_actions
         are populated for the first time. A specialist that exhausts
         retries no longer aborts the consultation — it contributes an
-        empty section instead. Since Phase 5 (SPEC-008), NG-1 is closed:
-        route_specialists_dynamic asks the model which specialists are
-        relevant, gated by settings.enable_dynamic_planner (default False)
-        and degrading to the static heuristic on any failure.
+        empty section instead. Phase 5 (SPEC-008) added a dynamic
+        capability-matching planner (route_specialists_dynamic) inside the
+        multi-agent fan-out; Phase 14 (SPEC-029, ADR-016) removed that
+        fan-out entirely — LABORATORY/COORDINATOR, planner.py, router.py,
+        and enable_single_agent_mode/enable_dynamic_planner are all gone.
+        intent_router (one specialist per consultation) is now the only
+        routing path; SPEC-008 is Superseded.
       tests: [tests/test_agent_registry.py, tests/test_runtime_executor.py,
-              tests/test_no_langgraph.py, tests/test_workflow.py,
-              tests/test_sse_contract.py, tests/test_api_agents.py,
-              tests/test_prompt_contract.py, tests/test_runtime_recovery.py,
-              tests/test_dynamic_planner.py]
+              tests/test_no_langgraph.py, tests/test_no_fanout_modules.py,
+              tests/test_workflow.py, tests/test_sse_contract.py,
+              tests/test_api_agents.py, tests/test_prompt_contract.py,
+              tests/test_runtime_recovery.py, tests/test_intent_router.py,
+              tests/test_config_flags.py, tests/test_explainability.py]
     src/sephiroth/verification:
       status: implemented
       phase: 4

@@ -5,6 +5,10 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+## SF059
+
+- Remove the `laboratory` and `coordinator` agents and the multi-agent fan-out entirely (SPEC-029, ADR-016): `intent_router` → one specialist → answer is now the only consultation path. `laboratory` was redundant with `risk.py`'s deterministic lab rules; `coordinator`/the fan-out had been unreachable in production since single-specialist routing became the default. SPEC-008 (dynamic planner) is superseded [refactor]
+
 ## SF056
 
 - Fix agent tool-calling reliability: deterministic (temperature=0) specialist chat, post-hoc detection of `require_tool_call` violations routed through the existing retry/abstain recovery path, `radiology` now shares `CLINICIAN_VOICE` with the other specialists, the duplicated "is this a guideline question?" regex is unified into one shared module, and `AgentCapability.model_hint` is wired so `evidence` can use a tool-calling-tuned local Ollama model [fix]

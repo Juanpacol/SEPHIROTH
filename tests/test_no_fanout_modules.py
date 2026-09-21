@@ -10,7 +10,6 @@ import importlib
 import pytest
 
 
-@pytest.mark.xfail(reason="SPEC-029 not yet implemented — module deletion lands in SF059", strict=False)
 @pytest.mark.parametrize("module_name", ["sephiroth.runtime.planner", "sephiroth.runtime.router"])
 def test_fanout_module_no_longer_importable(module_name):
     with pytest.raises(ModuleNotFoundError):

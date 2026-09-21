@@ -46,12 +46,12 @@ vendored tree.
 | F-023 | Config-driven provider selection (`llm_provider`) | ✅ | `sephiroth/models/factory.py` | `test_llm_factory.py` | — | SPEC-001 |
 | F-024 | Tool runtime with capability metadata | ✅ | `sephiroth/tools/` | `test_tool_runtime.py` | — | SPEC-002 |
 | F-025 | Tool call timeout | ⚠️ | `sephiroth/tools/runtime.py` | `test_tool_runtime.py` | — | SPEC-002 |
-| F-026 | Agent registry with declared capabilities | ✅ | `sephiroth/runtime/registry.py` | `test_agent_registry.py` | — | SPEC-003 |
-| F-027 | Task analyzer | ✅ | `sephiroth/runtime/analyzer.py` | `test_agent_registry.py` (via planner) | — | SPEC-003 |
-| F-028 | Static planner (parity with `route_specialists`) | ✅ | `sephiroth/runtime/planner.py` | `test_workflow.py` (unmodified parity gate) | — | SPEC-003 |
-| F-029 | Dynamic LLM planner | ✅ | `sephiroth/runtime/planner.py` | `test_dynamic_planner.py` | H1 (unmeasured, needs live traffic) | ✅ SPEC-008 |
-| F-030 | Capability-based router | ⚠️ | `sephiroth/runtime/router.py` | `test_agent_registry.py` | — | SPEC-003 §4 NG-1 |
-| F-031 | Executor (fan-out/merge/coordinate, LangGraph removed) | ✅ | `sephiroth/runtime/executor.py` | `test_runtime_executor.py`, `test_sse_contract.py` | — | SPEC-003 |
+| F-026 | Agent registry with declared capabilities | ✅ | `sephiroth/runtime/registry.py` | `test_agent_registry.py` | — | SPEC-003, SPEC-029 |
+| F-027 | Task analyzer (context-tier signals for `intent_router`) | ✅ | `sephiroth/runtime/analyzer.py` | `test_intent_router.py` | — | SPEC-003 |
+| F-028 | ❌ removed (Phase 14) | — | — | — | — | SPEC-003 → SPEC-029 |
+| F-029 | ❌ removed (Phase 14): dynamic LLM planner had no path left once the multi-agent fan-out it routed within was removed | — | — | — | — | SPEC-008 (Superseded) → SPEC-029 |
+| F-030 | ❌ removed (Phase 14): `router.resolve` had no caller once the fan-out it resolved node lists for was removed | — | — | — | — | SPEC-003 §4 NG-1 → SPEC-029 |
+| F-031 | Executor (route → run one specialist → verify → decide, LangGraph removed) | ✅ | `sephiroth/runtime/executor.py` | `test_runtime_executor.py`, `test_sse_contract.py` | — | SPEC-003, SPEC-029 |
 | F-032 | Agent lifecycle state machine | ✅ | `src/sephiroth/runtime/executor.py` | ✅ | `tests/test_runtime_executor.py` | ✅ SPEC-007, D2 |
 | F-033 | Recovery engine (retry/abstain; fallback/replan NG) | ✅ | `src/sephiroth/runtime/recovery.py` | ✅ | `tests/test_runtime_recovery.py`, `tests/test_runtime_executor.py` | ✅ SPEC-007, ADR-007 |
 | F-034 | Typed `RunContext` + per-agent views | ✅ | `sephiroth/context/views.py` | `test_context_views.py` | — | SPEC-005, ADR-011 |

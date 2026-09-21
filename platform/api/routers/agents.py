@@ -327,20 +327,20 @@ async def agents_status(
     the dashboard was redesigned around a critical-patients list — this data
     is about agents, not "what needs my attention today," and belongs in
     this router. Behavior unchanged from the old dashboard endpoint."""
-    consultation_count = await session.scalar(select(func.count(Consultation.id))) or 0
     all_agents_used = (await session.scalars(select(Consultation.agents))).all()
     usage = {name: 0 for name in _AGENT_KEYS}
     for agents_list in all_agents_used:
         for name, key in _AGENT_KEYS.items():
             if key in (agents_list or []):
                 usage[name] += 1
-    # The coordinator synthesizes every consultation in multi-agent mode,
-    # and none at all in single-agent mode (the routed specialist answers
-    # directly) — so its count can't be derived from the consultation
-    # total. It is deliberately absent from `Consultation.agents`
-    # (RunState.coordinator_result, not agent_results), which is why the
-    # loop above never counts it either.
-    usage["Coordinator"] = 0 if settings.enable_single_agent_mode else consultation_count
+    # `laboratory`/`coordinator` were removed as live agents in SPEC-029
+    # (Phase 14) — kept here only so a consultation persisted before that
+    # phase still shows its historical usage correctly (`docs/00-migration-
+    # charter.md` §2.3). No consultation running today can ever add to
+    # either count: `coordinator` was always kept out of `Consultation.agents`
+    # by design (`RunState.coordinator_result`, not `agent_results`), so its
+    # count can only ever be 0 going forward.
+    usage["Coordinator"] = 0
 
     client = get_llm_client()
     llm_ok = await client.health()
@@ -517,7 +517,7 @@ async def export_consultation(
 
 
 class AskAgentRequest(BaseModel):
-    agent: str = Field(..., description="radiology|laboratory|drug-safety|evidence|coordinator")
+    agent: str = Field(..., description="radiology|drug-safety|evidence")
     query: str
     context: Optional[Dict[str, Any]] = None
 
@@ -528,20 +528,12 @@ async def ask_single_agent(
     user: User = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """Query one specialist agent directly (not persisted)."""
-    from intelligence.agents import (
-        ClinicalCoordinator,
-        DrugSafetyAgent,
-        EvidenceAgent,
-        LabAgent,
-        RadiologyAgent,
-    )
+    from intelligence.agents import DrugSafetyAgent, EvidenceAgent, RadiologyAgent
 
     agents = {
         "radiology": RadiologyAgent,
-        "laboratory": LabAgent,
         "drug-safety": DrugSafetyAgent,
         "evidence": EvidenceAgent,
-        "coordinator": ClinicalCoordinator,
     }
     agent_cls = agents.get(request.agent)
     if agent_cls is None:

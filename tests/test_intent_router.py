@@ -155,9 +155,6 @@ async def test_empty_query_short_circuits_to_default(query):
     assert await route_intent(query, None, _NoLLMClient()) == DEFAULT_ROUTE
 
 
-@pytest.mark.xfail(
-    reason="SPEC-029 not yet implemented — laboratory keyword rule removal lands in SF059", strict=False
-)
 @pytest.mark.parametrize(
     "query",
     [
@@ -176,9 +173,6 @@ async def test_lab_interpretation_question_falls_through_to_evidence(query):
     assert await route_intent(query, None, client) == "evidence"
 
 
-@pytest.mark.xfail(
-    reason="SPEC-029 not yet implemented — laboratory keyword rule removal lands in SF059", strict=False
-)
 async def test_lab_interpretation_question_degrades_to_evidence_by_default():
     """Same shape, but the LLM tier itself fails — must still land on
     `evidence` (`DEFAULT_ROUTE`), never on the removed `laboratory` name."""
@@ -190,10 +184,6 @@ async def test_lab_interpretation_question_degrades_to_evidence_by_default():
     assert await route_intent("Interpret these lab values", None, _RaisingClient()) == DEFAULT_ROUTE
 
 
-@pytest.mark.xfail(
-    reason="SPEC-029 not yet implemented — lab_results context-tier mapping removal lands in SF059",
-    strict=False,
-)
 async def test_lab_result_context_no_longer_routes_to_a_removed_agent():
     """SPEC-029 AC-029-01/02: `lab_results` in context used to select
     `laboratory` directly (tier 2). That mapping is gone — the signal must

@@ -50,9 +50,12 @@ def test_filtered_out_fields_are_absent_not_just_empty():
 
 
 def test_answering_agent_also_receives_recent_consultations():
-    """In single-agent mode a specialist writes the final answer, so it
-    needs the per-patient memory digest the coordinator would otherwise
-    carry — without this, memory silently vanishes in that mode."""
+    """The one specialist `intent_router` selects writes the final answer
+    (SPEC-029: the only path since the coordinator was removed), so it
+    needs the per-patient memory digest — without this, memory silently
+    vanishes.
+
+    Verifies AC-005-05 (docs/specs/SPEC-005-context-engine.md)."""
     capability = _capability(["conditions"])
     result = context_for_agent(capability, _context(), answering=True)
     assert result["recent_consultations"] == ["Q: x -> A: y"]
@@ -61,7 +64,9 @@ def test_answering_agent_also_receives_recent_consultations():
 
 def test_answering_flag_does_not_widen_clinical_data_access():
     """Only `recent_consultations` is added — a specialist that never
-    declared `medications`/`lab_results` still cannot see them."""
+    declared `medications`/`lab_results` still cannot see them.
+
+    Verifies AC-005-05 (docs/specs/SPEC-005-context-engine.md)."""
     capability = _capability(["conditions"])
     result = context_for_agent(capability, _context(), answering=True)
     assert set(result.keys()) == {"conditions", "recent_consultations", "language"}
@@ -71,6 +76,7 @@ def test_answering_flag_does_not_widen_clinical_data_access():
 
 
 def test_non_answering_agent_never_sees_recent_consultations():
+    """Verifies AC-005-05 (docs/specs/SPEC-005-context-engine.md)."""
     capability = _capability(["conditions"])
     result = context_for_agent(capability, _context())
     assert "recent_consultations" not in result

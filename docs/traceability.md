@@ -28,9 +28,9 @@ Requirements are defined in [scope.md](00-project/scope.md); features in
 | **R-003** Provider-independent | F-022 `ModelProvider` interface | `sephiroth/models/` | `test_model_provider_protocol.py` | H5 | all metrics, per provider | ✅ implemented; H5 experiment not yet run |
 | | F-023 config-driven selection | `sephiroth/models/factory.py` | `test_llm_factory.py` | H5 | — | ✅ implemented |
 | **R-004** Capability-based selection | F-026 agent registry | `sephiroth/runtime/registry.py` | `test_agent_registry.py` | H1 | agent selection accuracy | ✅ implemented (phase 3); H1 experiment not yet run |
-| | F-028 static planner (parity) | `sephiroth/runtime/planner.py` | `test_workflow.py` (unmodified parity gate) | — | — | ✅ implemented (phase 3) |
-| | F-029 dynamic planner | `sephiroth/runtime/planner.py` | `test_dynamic_planner.py` | H1 | unnecessary invocation rate | ✅ implemented (phase 5, SPEC-008); feature-flagged (`enable_dynamic_planner`, default off), degrades to static on failure; H1 metric not yet run (needs live traffic) |
-| | F-030 capability router | `sephiroth/runtime/router.py` | `test_agent_registry.py` | H1 | tool selection accuracy | ⚠️ static lookup only, not capability-matching (phase 3) |
+| | F-028 static planner (parity) | — | — | — | — | ❌ removed (phase 14, SPEC-029) — the multi-agent fan-out it planned for was removed; `intent_router` (SPEC-003) is the only routing path now |
+| | F-029 dynamic planner | — | — | H1 | unnecessary invocation rate | ❌ removed (phase 14, SPEC-029, superseding SPEC-008) — H1 (unnecessary-invocation-rate) is no longer answerable for this feature; it never ran in production (`enable_dynamic_planner` defaulted off) |
+| | F-030 capability router | — | — | H1 | tool selection accuracy | ❌ removed (phase 14, SPEC-029) — had exactly one caller (the removed executor fan-out branch) |
 | **R-005** Failures classified and handled | F-033 recovery engine | `sephiroth/runtime/recovery.py` | `test_runtime_recovery.py`, `test_runtime_executor.py` | H4 | recovery success rate | ✅ implemented (phase 5, SPEC-007); RETRY/ABSTAIN only — FALLBACK/REPLAN explicit non-goals; H4 metric not yet run (needs live traffic) |
 | | F-032 lifecycle state machine | `sephiroth/runtime/executor.py` | `test_runtime_executor.py` | H4 | completion under fault injection | ✅ implemented (phase 5, SPEC-007) |
 | | F-025 tool call timeout | `sephiroth/tools/runtime.py` | `test_tool_runtime.py` | H4 | tool success rate | ⚠️ timeout only; retry/fallback deferred |

@@ -28,9 +28,6 @@ LEGACY_ALLOWED_TOOLS = {
 }
 
 
-@pytest.mark.xfail(
-    reason="SPEC-029 not yet implemented — laboratory/coordinator removal lands in SF059", strict=False
-)
 def test_agents_is_exactly_the_three_specialists_intent_router_selects_from():
     """AC-029-01: `laboratory` and `coordinator` no longer exist as
     registry entries — there is no longer a separate "specialists vs. all
@@ -66,9 +63,6 @@ def test_get_capability_raises_on_unknown_node_name():
         get_capability("not_a_real_agent")
 
 
-@pytest.mark.xfail(
-    reason="SPEC-029 not yet implemented — laboratory/coordinator removal lands in SF059", strict=False
-)
 @pytest.mark.parametrize("node_name", ["laboratory", "coordinator"])
 def test_get_capability_raises_on_a_removed_agent_name(node_name):
     """AC-029-02: `laboratory` and `coordinator` are removed capabilities,
