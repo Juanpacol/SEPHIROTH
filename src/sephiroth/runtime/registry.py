@@ -1,17 +1,20 @@
-"""The five clinical agents, as data.
+"""The three clinical agents, as data.
 
 Moved from `intelligence/agents/__init__.py`'s five hardcoded classes
-(`docs/specs/SPEC-003-agent-runtime.md`). Role prompts are copied
-**byte-for-byte** — including the canonical substrings
-`"clinical evidence specialist"` and `"coordinating physician-assistant"` that
+(`docs/specs/SPEC-003-agent-runtime.md`). `laboratory` and `coordinator` were
+removed in Phase 14 (`docs/specs/SPEC-029-agent-consolidation.md`,
+`ADR-016`) — `laboratory` duplicated `sephiroth.safety.risk`'s deterministic
+lab rules with no test on its own clinical output, and `coordinator`/the
+multi-agent fan-out it merged had been unreachable in production since
+`enable_single_agent_mode` defaulted `True`. Role prompts are copied
+**byte-for-byte** from the pre-Phase-3 classes — including the canonical
+substring `"clinical evidence specialist"` that
 `tests/conftest.py::FakeLLMClient._script_for` matches against
-(`docs/00-migration-charter.md`, the FakeLLMClient trap). Rewording any prompt
-here is a separate, later change with its own test updates — not part of this
-relocation.
+(`docs/00-migration-charter.md`, the FakeLLMClient trap).
 
 `node_name` carries the underscore form used on the `routing` SSE event;
 `id` carries the hyphenated display form used on `agent_completed` and in
-`_persist`. Both existed implicitly before this phase (`drug_safety` vs
+`_persist`. Both existed implicitly before Phase 3 (`drug_safety` vs
 `drug-safety`); carrying them explicitly is what eventually lets the
 frontend's `.replace("_", "-")` normalisation be removed.
 """
@@ -20,14 +23,15 @@ from __future__ import annotations
 
 from sephiroth.contracts import AgentCapability
 
-# Single-agent mode (decision #24) routes a consultation to exactly one
-# specialist, and that specialist's answer IS what the clinician reads. So the
-# register has to be identical whichever way the router went — otherwise the
-# product's voice changes with the question. Appended to every capability that
-# can end up answering (all four specialists — radiology included, since a
-# text-only question can still misroute to it, per intent_router.py's keyword
-# rules matching on question text regardless of whether an image was
-# actually provided); kept as one constant so they cannot drift apart.
+# `intent_router` routes a consultation to exactly one specialist, and that
+# specialist's answer IS what the clinician reads (SPEC-029: this is now the
+# only path, not a mode). So the register has to be identical whichever
+# specialist gets picked — otherwise the product's voice changes with the
+# question. Appended to every capability that can end up answering (all
+# three — radiology included, since a text-only question can still misroute
+# to it, per intent_router.py's keyword rules matching on question text
+# regardless of whether an image was actually provided); kept as one
+# constant so they cannot drift apart.
 #
 # The length ceiling is not stylistic: every sentence becomes another claim for
 # `extract_and_verify` to judge, and verification is the dominant cost of a
@@ -65,22 +69,6 @@ RADIOLOGY = AgentCapability(
     capabilities=["imaging_analysis", "vision"],
     tools=["inspect_medical_image", "analyze_medical_image", "describe_medical_image"],
     context_fields=["image_path", "conditions"],
-)
-
-LABORATORY = AgentCapability(
-    id="laboratory",
-    node_name="laboratory",
-    name="Laboratory Agent",
-    description="Interprets laboratory values present in the patient context.",
-    role_prompt=(
-        "You are the laboratory medicine specialist. Interpret the lab values "
-        "in the patient context: flag values outside reference ranges, "
-        "describe clinical significance, and note trends when prior values "
-        "are available. Do not invent values that are not provided.\n\n" + CLINICIAN_VOICE
-    ),
-    capabilities=["lab_interpretation"],
-    tools=[],  # works purely from the provided patient context
-    context_fields=["lab_results", "conditions"],
 )
 
 DRUG_SAFETY = AgentCapability(
@@ -146,56 +134,13 @@ EVIDENCE = AgentCapability(
     model_hint="llama3-groq-tool-use:8b",
 )
 
-COORDINATOR = AgentCapability(
-    id="coordinator",
-    node_name="coordinator",
-    name="Clinical Coordinator",
-    description="Synthesizes the specialists' outputs into one clinical summary.",
-    role_prompt=(
-        "You are the coordinating physician-assistant. You receive analyses "
-        "from specialist agents (radiology, laboratory, drug safety, "
-        "evidence). Synthesize them into a single structured response with "
-        "sections: Summary, Findings, Evidence (with citations), "
-        "Recommendations. End with: 'This is decision support, not a "
-        "diagnosis — professional review required.'\n\n"
-        "Grounding: only state claims that a specialist's analysis actually "
-        "contains. Do not add exceptions, sub-cases, follow-up schedules, or "
-        "other clinically-plausible detail from your own general knowledge "
-        "if no specialist reported it — an omission in the specialists' "
-        "output means it stays out of your answer, even if you know it to "
-        "be generally true.\n\n"
-        "Citations: in the Evidence section, copy each citation EXACTLY as "
-        "the Evidence specialist wrote it (e.g. '[ADA, 2024]') — never "
-        "invent, rename, or generalize a citation (do not write 'ESC "
-        "Guidelines' or 'UpToDate' unless a specialist's output contains "
-        "that exact string). Never cite a specialist's role or a tool name "
-        "(e.g. 'drug-safety agent', 'the imaging tool') as if it were a "
-        "source — that is attribution of who analyzed it, not evidence. If "
-        "no specialist provided a citation for a claim, state the claim "
-        "without one rather than fabricating a source.\n\n"
-        "Multi-topic queries: if the specialists cover more than one "
-        "clinical topic (e.g. heart failure AND anticoagulation), give each "
-        "topic its own bullet or sub-heading in Findings and Evidence — "
-        "never merge two topics' claims into one sentence with one shared "
-        "citation. Blending topics is how a citation ends up attached to "
-        "the wrong claim."
-    ),
-    capabilities=["synthesis"],
-    tools=["extract_medical_entities", "summarize_clinical_note"],
-)
-
-#: The four specialists a plan can select, keyed by node name — the exact set
-#: `route_specialists` (planner.py) chooses from.
-SPECIALISTS: dict[str, AgentCapability] = {
+#: The three specialists `intent_router` selects from, keyed by node name —
+#: since SPEC-029 there is no separate "specialists vs. all agents" set.
+AGENTS: dict[str, AgentCapability] = {
     "radiology": RADIOLOGY,
-    "laboratory": LABORATORY,
     "drug_safety": DRUG_SAFETY,
     "evidence": EVIDENCE,
 }
-
-#: Every agent, including the coordinator, keyed by node name — the router's
-#: lookup table.
-AGENTS: dict[str, AgentCapability] = {**SPECIALISTS, "coordinator": COORDINATOR}
 
 
 def get_capability(node_name: str) -> AgentCapability:
@@ -207,11 +152,8 @@ def get_capability(node_name: str) -> AgentCapability:
 
 __all__ = [
     "AGENTS",
-    "COORDINATOR",
     "DRUG_SAFETY",
     "EVIDENCE",
-    "LABORATORY",
     "RADIOLOGY",
-    "SPECIALISTS",
     "get_capability",
 ]

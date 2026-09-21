@@ -1,10 +1,10 @@
 """Typed per-consultation context, and what each agent is allowed to see of it.
 
 Today every specialist receives the exact same raw `dict` — a `RadiologyAgent`
-gets `lab_results` it never reads, a `LabAgent` gets `image_path` it never
-opens. `RunContext` names the fields that actually flow through the system
-today; `AgentCapability.context_fields` (`capability.py`) is what lets an
-agent declare which of them it needs, enforced by
+gets `medications` it never reads, a `DrugSafetyAgent` gets `image_path` it
+never opens. `RunContext` names the fields that actually flow through the
+system today; `AgentCapability.context_fields` (`capability.py`) is what lets
+an agent declare which of them it needs, enforced by
 `src/sephiroth/context/views.py::context_for_agent`.
 """
 

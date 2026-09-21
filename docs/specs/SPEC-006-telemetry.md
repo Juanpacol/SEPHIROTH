@@ -2,11 +2,11 @@
 id: SPEC-006
 title: Telemetry — Trace-Based Observability
 phase: 5
-version: 1.1.0
+version: 1.2.0
 status: Implemented
 authors: [jbotero]
 created: 2026-08-19
-updated: 2026-08-21
+updated: 2026-09-21
 supersedes: []
 superseded_by: null
 depends_on: [SPEC-000, SPEC-003, SPEC-004]
@@ -178,7 +178,7 @@ closed by omission instead of by exception at this one call boundary.
 | AC-006-06 | A consultation run with tracing enabled vs. disabled produces an identical result apart from `trace`/`spans` (ADR-009 H6) | G-3 | `tests/test_runtime_executor.py::test_tracing_on_vs_off_produces_an_identical_run_apart_from_the_trace` |
 | AC-006-07 | The five frozen SSE events keep their pre-existing fields unchanged; `trace` is additive only | B-4 | `tests/test_sse_contract.py` (additively extended, not altered) |
 | AC-006-08 | `GeminiClient`/`GroqClient` report real `prompt_tokens`/`completion_tokens` on `ChatResult`, summed across tool-calling rounds, `0` when the response carries no usage metadata | NG-2 closure | `tests/test_gemini_client.py::test_chat_reports_real_usage_when_present`, `::test_chat_sums_usage_across_tool_rounds`, `::test_chat_usage_defaults_to_zero_when_absent`, `tests/test_groq_client.py::test_chat_reports_real_usage_when_present`, `::test_chat_usage_defaults_to_zero_when_absent` |
-| AC-006-09 | `ExecutionTrace.tokens`/`.cost_usd` reflect every specialist's real usage *and* the coordinator's, without the coordinator appearing in `agents_involved` | NG-2 closure | `tests/test_telemetry_build_trace.py::test_latency_and_tokens_summed_from_agent_results`, `::test_cost_estimated_from_known_model_pricing`, `::test_cost_is_zero_for_unrecognized_model`, `tests/test_runtime_executor.py::test_trace_tokens_include_both_specialists_and_coordinator` |
+| AC-006-09 | `ExecutionTrace.tokens`/`.cost_usd` reflect the real usage of every real `chat()` call the run made — a placeholder never leaks through | NG-2 closure | `tests/test_telemetry_build_trace.py::test_latency_and_tokens_summed_from_agent_results`, `::test_cost_estimated_from_known_model_pricing`, `::test_cost_is_zero_for_unrecognized_model`, `tests/test_runtime_executor.py::test_trace_tokens_reflect_the_one_specialists_real_usage` |
 
 ## 9. Test Matrix
 
@@ -232,3 +232,4 @@ as its own follow-up cycle, not part of this spec.
 |---|---|---|
 | 1.0.0 | 2026-08-19 | Initial version; implemented in the same phase it was approved. |
 | 1.1.0 | 2026-08-21 | Closes NG-2 (real token/cost, `GeminiClient`/`GroqClient` usage metadata + `pricing.py`); partially advances NG-1 (real `model`/token/latency data on the existing `AGENT` span and `AgentResult`, incl. the coordinator via new `RunState.coordinator_result` — still no independent `MODEL`/`TOOL` span). Additive only — see AC-006-08/09. |
+| 1.2.0 | 2026-09-21 | AC-006-09 reworded: `SPEC-029`/`ADR-016` removed the coordinator, so "the coordinator's usage" no longer applies — restated as "every real `chat()` call," which was always the underlying guarantee. No contract in §6 changed. |

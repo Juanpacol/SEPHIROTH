@@ -65,8 +65,13 @@ Step 4 is not optional. `allowed_tools` is enforced at dispatch by
 1. Add an `AgentCapability` record to `src/sephiroth/runtime/registry.py` —
    `id`, `role_prompt`, and `tools`. The field is **`role_prompt`**, not
    `system_prompt`; the system prompt is assembled in `agent.py` from the
-   disclaimer + `role_prompt` + tool catalog.
-2. Select it from `route_specialists` in `src/sephiroth/runtime/planner.py`.
+   disclaimer + `role_prompt` + tool catalog. Add it to the `AGENTS` dict too.
+2. Give `src/sephiroth/runtime/intent_router.py` a way to route to it — a
+   keyword rule in `_FAST_RULES`, a context-tier signal in `_from_context`,
+   or rely on the LLM classification tier (it already enumerates every name
+   in `AGENTS`). There is no separate planner to register with since
+   `SPEC-029` (Phase 14) removed the multi-agent fan-out — a consultation
+   always routes to exactly one specialist.
 3. Add an entry to `_ACTION_TEMPLATES` / `_NO_TOOL_ACTIONS` in
    `src/sephiroth/telemetry/explain.py`.
 

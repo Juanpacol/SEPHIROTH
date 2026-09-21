@@ -1,10 +1,18 @@
-"""The executor's fan-out: bounded concurrency, per-agent error isolation, and
-progressive streaming as each specialist actually finishes.
+"""The executor's single-specialist path: per-agent error isolation and
+recovery mechanics the wire contract doesn't directly observe.
 
 `tests/test_workflow.py` already proves output parity; this file proves the
-concurrency *mechanics* the wire contract doesn't directly observe — that a
-raising agent doesn't take down the rest, and that streaming is genuinely
-progressive (`asyncio.as_completed`), not a burst after everyone finishes.
+recovery *mechanics* — retry-then-succeed on a transient failure, and
+abstain-with-empty-section once retries are exhausted.
+
+SPEC-029 (Phase 14) removed the multi-agent fan-out entirely, so the
+concurrency-across-specialists tests this file used to carry (parallel
+execution, progressive streaming across several agents, coordinator token
+accounting, `agents_involved` sort order across several agents) described a
+path that no longer exists — a consultation always runs exactly one
+specialist now, so "concurrent with what" and "sorted relative to what"
+have no other agent to be relative to. Removed rather than kept green
+artificially.
 
 Also verifies AC-004-07, AC-004-09 (docs/specs/SPEC-004-verification-safety.md)
 — the RunState-adoption and abstain/partial wiring tests near the bottom.
@@ -16,8 +24,6 @@ passes unmodified after the executor switched to enforcing
 field outside its declared `context_fields`.
 """
 
-import asyncio
-
 import pytest
 
 from core.config import settings
@@ -27,48 +33,15 @@ from tests.conftest import FakeLLMClient
 pytestmark = pytest.mark.spec
 
 
-@pytest.fixture
-def multi_agent_mode(monkeypatch):
-    """Most of this file tests the fan-out *mechanics* (concurrency, error
-    isolation, progressive streaming, coordinator token accounting), which
-    only exist when `enable_single_agent_mode` is off. Single-agent mode
-    runs exactly one specialist and no coordinator by design — see that
-    setting's docstring in `platform/core/config.py`."""
-    monkeypatch.setattr(settings, "enable_single_agent_mode", False)
-
-
-async def test_all_four_specialists_run_concurrently_not_sequentially(multi_agent_mode):
-    """A staggered-sleep fake: if the four ran sequentially, this would take
-    4x as long as the slowest single agent."""
-
-    class SlowFakeClient(FakeLLMClient):
-        async def chat(self, messages, system_prompt=None, **kwargs):
-            await asyncio.sleep(0.05)
-            return await super().chat(messages, system_prompt=system_prompt, **kwargs)
-
-    client = SlowFakeClient(default_script=[("answer", "ok")])
-    context = {"image_path": "/x.png", "lab_results": {"a1c": "7.0"}, "medications": ["metformin"]}
-
-    started = asyncio.get_event_loop().time()
-    await run_consultation(client, "test query", context=context)
-    elapsed = asyncio.get_event_loop().time() - started
-
-    # 5 agents (4 specialists + coordinator) at 0.05s each: sequential would be
-    # >=0.25s; concurrent specialists collapse the first four into ~0.05s, so
-    # the whole run should land well under 4x a single agent's delay.
-    assert elapsed < 0.05 * 3, f"took {elapsed:.3f}s — looks sequential, not concurrent"
-
-
-async def test_one_specialist_raising_does_not_abort_the_others(monkeypatch, multi_agent_mode):
-    """SPEC-007 (executes ADR-007) changed this behaviour on purpose: a
-    specialist that raises a plain exception is classified AGENT-category
-    (not transient, per sephiroth.runtime.recovery.decide_recovery — only
-    MODEL/TOOL categories retry), so it abstains immediately and
-    contributes an empty section — the consultation completes with the
-    other specialists' output rather than aborting entirely. Was
-    previously a clean-propagation test; the pre-Phase-5 behaviour (an
-    unhandled exception aborts everything) is gone by design, not a
-    regression.
+async def test_the_one_selected_specialist_exhausting_retries_abstains_cleanly(monkeypatch):
+    """SPEC-007 (executes ADR-007): a specialist that raises a plain
+    exception is classified AGENT-category (not transient, per
+    sephiroth.runtime.recovery.decide_recovery — only MODEL/TOOL categories
+    retry), so it abstains immediately with an empty section. In the
+    single-specialist path (SPEC-029) there is no other agent to fall back
+    on, so the consultation completes with an empty final answer rather
+    than raising — the executor never crashes a request because its one
+    chosen specialist failed.
 
     Verifies AC-007-03 (docs/specs/SPEC-007-recovery.md)."""
     import sephiroth.runtime.executor as executor_module
@@ -84,16 +57,18 @@ async def test_one_specialist_raising_does_not_abort_the_others(monkeypatch, mul
     state_holder = {}
     original_run_specialist = executor_module._run_specialist
 
-    async def _capture_state(capability, client, query, run_context, state):
+    async def _capture_state(capability, client, query, run_context, state, **kwargs):
         state_holder["state"] = state
-        return await original_run_specialist(capability, client, query, run_context, state)
+        return await original_run_specialist(capability, client, query, run_context, state, **kwargs)
 
     monkeypatch.setattr(executor_module, "_run_specialist", _capture_state)
+    # Context-tier signal (has_image) routes this to radiology without
+    # relying on the removed multi-agent fan-out.
     result = await run_consultation(client, "test query", context={"image_path": "/x.png"})
 
     assert "radiology" in result["agent_outputs"]
     assert result["agent_outputs"]["radiology"] == ""
-    assert result["final_answer"]  # the coordinator still produced an answer
+    assert result["final_answer"] == ""
 
     state = state_holder["state"]
     assert state.lifecycle["radiology"] == LifecycleState.FAILED
@@ -103,7 +78,7 @@ async def test_one_specialist_raising_does_not_abort_the_others(monkeypatch, mul
     assert state.recovery_actions[0].succeeded is False
 
 
-async def test_transient_model_failure_retries_then_succeeds(monkeypatch, multi_agent_mode):
+async def test_transient_model_failure_retries_then_succeeds(monkeypatch):
     """A MODEL-category failure (LLMUnavailableError) is transient per
     sephiroth.runtime.recovery.decide_recovery — retried once, then
     succeeds on the second attempt within MAX_AGENT_ATTEMPTS=2.
@@ -127,9 +102,9 @@ async def test_transient_model_failure_retries_then_succeeds(monkeypatch, multi_
     state_holder = {}
     original_run_specialist = executor_module._run_specialist
 
-    async def _capture_state(capability, client, query, run_context, state):
+    async def _capture_state(capability, client, query, run_context, state, **kwargs):
         state_holder["state"] = state
-        return await original_run_specialist(capability, client, query, run_context, state)
+        return await original_run_specialist(capability, client, query, run_context, state, **kwargs)
 
     monkeypatch.setattr(executor_module, "_run_specialist", _capture_state)
     result = await run_consultation(client, "test query", context={"image_path": "/x.png"})
@@ -146,54 +121,18 @@ async def test_transient_model_failure_retries_then_succeeds(monkeypatch, multi_
     assert state.retries["radiology"] == 1
 
 
-async def test_stream_yields_agent_completed_progressively_not_in_a_burst(multi_agent_mode):
-    """The fastest specialist's `agent_completed` must be observable before
-    the slowest one finishes — proves `asyncio.as_completed` is doing real
-    work, not `asyncio.gather` dressed up as streaming."""
-
-    class VariableSpeedClient(FakeLLMClient):
-        async def chat(self, messages, system_prompt=None, **kwargs):
-            if system_prompt and "laboratory medicine specialist" in system_prompt:
-                await asyncio.sleep(0.2)
-            return await super().chat(messages, system_prompt=system_prompt, **kwargs)
-
-    client = VariableSpeedClient(default_script=[("answer", "ok")])
-    context = {"lab_results": {"a1c": "7.0"}}  # evidence (fast) + laboratory (slow)
-
-    first_agent_completed_at = None
-    started = asyncio.get_event_loop().time()
-    async for event in stream_consultation(client, "test query", context=context):
-        if event["event"] == "agent_completed" and first_agent_completed_at is None:
-            first_agent_completed_at = asyncio.get_event_loop().time() - started
-
-    assert first_agent_completed_at is not None
-    assert first_agent_completed_at < 0.15, (
-        f"first agent_completed arrived at {first_agent_completed_at:.3f}s — "
-        "expected the fast agent to complete well before the 0.2s slow one"
-    )
-
-
-async def test_final_event_agents_involved_is_sorted_regardless_of_completion_order(multi_agent_mode):
-    """Matches the pre-Phase-3 behaviour: the `final` event's `agents_involved`
-    is always alphabetically sorted, independent of which specialist actually
-    finished first — `laboratory` completes before `radiology` here, the
-    reverse of declaration order, and the wire value must not leak that."""
-
-    class ReverseOrderClient(FakeLLMClient):
-        async def chat(self, messages, system_prompt=None, **kwargs):
-            if system_prompt and "radiology specialist" in system_prompt:
-                await asyncio.sleep(0.05)
-            return await super().chat(messages, system_prompt=system_prompt, **kwargs)
-
-    client = ReverseOrderClient(default_script=[("answer", "ok")])
-    context = {"image_path": "/x.png", "lab_results": {"a1c": "7.0"}}
-
-    events = [e async for e in stream_consultation(client, "test query", context=context)]
+async def test_stream_consultation_final_event_agents_involved_is_the_one_selected_specialist():
+    """SPEC-029: with the multi-agent fan-out gone, `agents_involved` always
+    names exactly the one specialist `intent_router` selected — the sort
+    guarantee from the pre-Phase-3/fan-out era is now trivial (a one-element
+    list is always sorted) but the shape itself (a list, not a bare string)
+    is still the frozen wire contract."""
+    client = FakeLLMClient(default_script=[("answer", "ok")])
+    events = [e async for e in stream_consultation(client, "test query", context={"image_path": "/x.png"})]
     final = events[-1]
 
     assert final["event"] == "final"
-    assert final["agents_involved"] == sorted(final["agents_involved"])
-    assert set(final["agents_involved"]) == {"evidence", "laboratory", "radiology"}
+    assert final["agents_involved"] == ["radiology"]
 
 
 async def test_run_consultation_default_answers_when_no_claims_extracted():
@@ -208,9 +147,8 @@ async def test_run_consultation_default_answers_when_no_claims_extracted():
     assert state["abstention"]["status"] == "answer"
     assert state["abstention"]["reason"] is None
     assert state["verification_report"] == {"claims": [], "contradictions": []}
-    # The agent's text is returned verbatim; single-agent mode appends the
-    # closing disclaimer the coordinator's prompt would otherwise carry
-    # (executor._with_disclaimer).
+    # The agent's text is returned verbatim; the executor appends the
+    # closing disclaimer itself (executor._with_disclaimer).
     assert state["final_answer"].startswith("A plain answer with no claims scripted.")
     assert "professional review required" in state["final_answer"]
 
@@ -274,7 +212,7 @@ async def test_stream_consultation_final_event_carries_verification_and_abstenti
 
 
 async def test_run_consultation_partial_status_prepends_caveat_banner(monkeypatch):
-    """A PARTIAL abstention decision keeps the coordinator's answer but
+    """A PARTIAL abstention decision keeps the specialist's answer but
     prepends a fixed caveat banner — unlike ABSTAIN, which replaces it."""
     import sephiroth.runtime.executor as executor_module
     from sephiroth.contracts import AbstentionDecision, ResponseStatus
@@ -287,12 +225,12 @@ async def test_run_consultation_partial_status_prepends_caveat_banner(monkeypatc
 
     monkeypatch.setattr(executor_module, "decide_abstention", fake_decide)
 
-    client = FakeLLMClient(default_script=[("answer", "The coordinator's real answer.")])
+    client = FakeLLMClient(default_script=[("answer", "The specialist's real answer.")])
     state = await run_consultation(client, "test query")
 
     assert state["abstention"]["status"] == "partial"
     assert state["final_answer"].startswith(PARTIAL_BANNER)
-    assert "The coordinator's real answer." in state["final_answer"]
+    assert "The specialist's real answer." in state["final_answer"]
 
 
 async def test_tracing_on_vs_off_produces_an_identical_run_apart_from_the_trace(monkeypatch):
@@ -300,7 +238,6 @@ async def test_tracing_on_vs_off_produces_an_identical_run_apart_from_the_trace(
     (docs/specs/SPEC-006-telemetry.md): a run with tracing disabled must
     produce an identical result to one with it enabled, aside from the
     trace/spans themselves."""
-    from core.config import settings
 
     def _without_trace(state):
         return {k: v for k, v in state.items() if k != "trace"}
@@ -318,26 +255,21 @@ async def test_tracing_on_vs_off_produces_an_identical_run_apart_from_the_trace(
     assert _without_trace(state_on) == _without_trace(state_off)
 
 
-async def test_trace_tokens_include_both_specialists_and_coordinator(multi_agent_mode):
-    """SPEC-016: `trace.tokens` must reflect every real chat() call in the
-    run -- not just the specialists (`state.agent_results`) but also the
-    coordinator's own call, which lives in `state.coordinator_result`
-    specifically so it doesn't pollute `agents_involved` (see that
-    field's docstring) while still counting toward the aggregate.
+async def test_trace_tokens_reflect_the_one_specialists_real_usage():
+    """SPEC-016: `trace.tokens` must reflect the real chat() call the
+    executor made, not a placeholder. SPEC-029 removed the coordinator, so
+    there is exactly one real call to account for in the common case
+    (no retries) — the double-call/coordinator-ledger split this test used
+    to verify no longer applies (`state.coordinator_result` has no live
+    producer post-SPEC-029; see that spec's Risk #3).
 
     Verifies AC-006-09 (docs/specs/SPEC-006-telemetry.md)."""
     client = FakeLLMClient(default_script=[("answer", "an answer")], prompt_tokens=100, completion_tokens=50)
     state = await run_consultation(client, "what is the target A1C for a diabetic adult?")
 
     trace = state["trace"]
-    # >=2 real chat() calls happened (>=1 specialist + the coordinator),
-    # each reporting the same scripted usage -- so the total must be more
-    # than a single call's worth, proving the coordinator's own usage was
-    # folded in rather than dropped.
-    assert trace["tokens"]["prompt_tokens"] >= 200
-    assert trace["tokens"]["completion_tokens"] >= 100
-    # "coordinator" must never appear in agents_involved -- confirms the
-    # separate-ledger fix didn't leak into the frozen wire contract.
+    assert trace["tokens"]["prompt_tokens"] == 100
+    assert trace["tokens"]["completion_tokens"] == 50
     assert "coordinator" not in state["agent_outputs"]
 
 

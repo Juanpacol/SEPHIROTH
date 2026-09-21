@@ -2,8 +2,8 @@
 id: SPEC-029
 title: Agent Consolidation
 phase: 14
-version: 0.1.0
-status: Approved
+version: 1.0.0
+status: Implemented
 authors: [jbotero]
 created: 2026-09-21
 updated: 2026-09-21
@@ -265,5 +265,6 @@ old data, not because it still runs.
 
 | Version | Date | Change |
 |---|---|---|
+| 1.0.0 | 2026-09-21 | Implemented (SF059): `LABORATORY`/`COORDINATOR` removed from the registry, `planner.py`/`router.py` deleted, `enable_single_agent_mode`/`enable_dynamic_planner` removed from `Settings`, `intent_router`'s laboratory rule and lab_results context-tier mapping removed, `SPEC-008` marked `Superseded`. All 7 ACs green. |
 | 0.1.0 | 2026-09-21 | Initial draft |
 | 0.1.0 | 2026-09-21 | Approved — human review confirmed both design calls (`laboratory` deleted/delegated to `risk.py`; `coordinator`/multi-agent fan-out deleted entirely) before this spec was written |

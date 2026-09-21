@@ -1,11 +1,9 @@
 """Intent routing — pick exactly ONE specialist for a query.
 
-Distinct from `planner.py`, which answers "which specialists *could*
-contribute" and returns a list to fan out over. This answers "which single
-specialist should own this question", so the executor can skip both the
-fan-out and the coordinator turn that merges its results — the two most
-expensive parts of a consultation (4-8 sequential model round-trips down
-to 1 for the answer itself).
+Since `SPEC-029` (Phase 14) removed the multi-agent fan-out/coordinator
+merge entirely, this is the only routing path in the executor — there is no
+longer a separate "which specialists *could* contribute" planner to be
+distinct from.
 
 Three tiers, cheapest first — the same escalation shape used in the
 Rocket Elevators orchestrator (`platform/orchestrator/router.py` there):
@@ -13,16 +11,17 @@ Rocket Elevators orchestrator (`platform/orchestrator/router.py` there):
 1. **Keyword rules** over the question text. Zero latency, deterministic,
    and covers the overwhelming majority of real clinical phrasing.
 2. **Structured context signals** (`analyzer.analyze`) when the wording
-   was ambiguous but the request carries an image path / lab panel /
-   medication list. Still zero latency.
+   was ambiguous but the request carries an image path / medication list.
+   Still zero latency.
 3. **One `generate_json` classification call**, only for questions that
    neither tier resolved.
 
 Every failure path degrades to `evidence` rather than raising: the
 evidence specialist is the only one whose tools answer a general clinical
 question with citations, so it is the correct default for "we could not
-tell". `planner.route_specialists` makes the same call (`evidence` is its
-unconditional first branch).
+tell" — including a lab-value question, now that `laboratory` no longer
+exists as a specialist (`ADR-016`): the deterministic curated rules in
+`sephiroth.safety.risk` already surface that outside the chat path.
 
 Rules are evaluated in order, first match wins, and are deliberately
 narrow — a borderline question should fall through to a later tier rather
@@ -38,7 +37,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from sephiroth.clinical import GUIDELINE_CORE_TERMS
 
 from .analyzer import analyze
-from .registry import SPECIALISTS
+from .registry import AGENTS
 
 if TYPE_CHECKING:
     from sephiroth.models import ModelProvider
@@ -53,11 +52,10 @@ DEFAULT_ROUTE = "evidence"
 #: phrasing ("what is the target for…", "first-line") states what the
 #: clinician wants — a cited recommendation — regardless of which analyte
 #: or drug the question happens to name. "What A1C goal is appropriate?"
-#: is a guideline question that merely mentions a lab test; routing it to
-#: `laboratory` on the word "a1c" would answer the wrong question. The
-#: specialists therefore match on *doing something to data in hand*
-#: (interpreting a value, reading an image, screening a regimen), not on
-#: domain vocabulary alone.
+#: is a guideline question that merely mentions a lab test; matching it on
+#: the word "a1c" alone would answer the wrong question. The specialists
+#: therefore match on *doing something to data in hand* (reading an image,
+#: screening a regimen), not on domain vocabulary alone.
 _FAST_RULES: List[Tuple[str, "re.Pattern[str]"]] = [
     (
         "evidence",
@@ -106,36 +104,17 @@ _FAST_RULES: List[Tuple[str, "re.Pattern[str]"]] = [
             re.IGNORECASE,
         ),
     ),
-    (
-        # Interpretation framing only — a bare analyte name is a topic, not
-        # an intent (see the note above this list).
-        "laboratory",
-        re.compile(
-            r"\b(lab (value|result|panel)s?|these (values|results)|"
-            r"(interpret|explain|abnormal|elevated|low|high) .{0,20}"
-            r"(a1c|hba1c|creatinine|potassium|sodium|bnp|inr|troponin|ldl|hdl)|"
-            r"(a1c|hba1c|creatinine|potassium|sodium|bnp|inr|troponin|ldl|hdl)"
-            r"\s+(is|of|at|was)\s+\d|"
-            # Spanish: valores/resultados de laboratorio
-            r"(valores|resultados) de laboratorio|estos (valores|resultados)|"
-            r"(interpretar|explicar|anormal|elevad[oa]|baj[oa]|alt[oa]) .{0,20}"
-            r"(a1c|hba1c|creatinina|potasio|sodio|bnp|inr|troponina|ldl|hdl)|"
-            r"(a1c|hba1c|creatinina|potasio|sodio|bnp|inr|troponina|ldl|hdl)"
-            r"\s+(es|de|est[áa] en|fue)\s+\d)",
-            re.IGNORECASE,
-        ),
-    ),
 ]
 
 _CLASSIFY_SCHEMA = {
     "type": "object",
-    "properties": {"agent": {"type": "string", "enum": list(SPECIALISTS)}},
+    "properties": {"agent": {"type": "string", "enum": list(AGENTS)}},
     "required": ["agent"],
 }
 
 
 def _classify_system_prompt() -> str:
-    lines = [f"- {node}: {cap.description}" for node, cap in SPECIALISTS.items()]
+    lines = [f"- {node}: {cap.description}" for node, cap in AGENTS.items()]
     return (
         "You are a clinical intake router. Read the clinician's question — "
         "in any language — and pick the ONE specialist best suited to "
@@ -162,8 +141,6 @@ def _from_context(context: Optional[Dict[str, Any]]) -> Optional[str]:
     signals = analyze(context)
     if signals["has_image"]:
         return "radiology"
-    if signals["has_lab_results"]:
-        return "laboratory"
     if signals["has_medications"]:
         return "drug_safety"
     return None
@@ -186,7 +163,7 @@ async def _llm_classify(client: "ModelProvider", query: str) -> str:
     if not isinstance(payload, dict):
         return DEFAULT_ROUTE
     agent = payload.get("agent")
-    if not isinstance(agent, str) or agent not in SPECIALISTS:
+    if not isinstance(agent, str) or agent not in AGENTS:
         return DEFAULT_ROUTE
     return agent
 

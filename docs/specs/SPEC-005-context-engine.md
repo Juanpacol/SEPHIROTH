@@ -2,11 +2,11 @@
 id: SPEC-005
 title: Context Engine
 phase: 4
-version: 1.0.0
+version: 1.1.0
 status: Implemented
 authors: [jbotero]
 created: 2026-08-19
-updated: 2026-08-19
+updated: 2026-09-21
 supersedes: []
 superseded_by: null
 depends_on: [SPEC-000, SPEC-003]
@@ -147,8 +147,11 @@ returns `[]` for an empty `patient_id` or no prior rows.
   (`platform/api/routers/agents.py`), not the executor — the executor
   remains free of any DB dependency.
 - **B-4** `recent_consultations` reaches only agents whose `context_fields`
-  includes it or is empty — today, only the coordinator (every specialist
-  has a non-empty `context_fields` that excludes it).
+  includes it or is empty. Since `SPEC-029` (Phase 14) removed the
+  coordinator, the only agent that ever receives it is whichever specialist
+  `intent_router` selects to answer, via
+  `context_for_agent(..., answering=True)` — every specialist's own
+  declared `context_fields` still excludes it otherwise.
 - **B-5** `truncate` cuts at the last word boundary before the limit, never
   mid-word.
 
@@ -160,7 +163,7 @@ returns `[]` for an empty `patient_id` or no prior rows.
 | AC-005-02 | `mmr_rerank`'s first pick is always the highest-relevance candidate; a near-duplicate is deprioritized behind a dissimilar lower-scored candidate | B-2 | `tests/test_context_rerank.py` |
 | AC-005-03 | `recent_consultation_summaries` returns `[]` for no `patient_id`/no rows, newest-first otherwise, scoped to the requested patient only | G-3 | `tests/test_context_memory.py` |
 | AC-005-04 | `truncate` is a no-op under budget, cuts at a word boundary over budget | B-5 | `tests/test_context_budget.py` |
-| AC-005-05 | `recent_consultations` injected by the router reaches the coordinator's prompt but not the evidence specialist's | B-3, B-4 | `tests/test_api_agents.py` |
+| AC-005-05 | `recent_consultations` reaches the answering specialist (`context_for_agent(..., answering=True)`) but never a non-answering one, and never widens clinical-data access beyond that one field | B-3, B-4 | `tests/test_context_views.py` |
 | AC-005-06 | The full pre-existing test suite (including the three frozen contract files) passes unmodified after the executor switched to enforcing `context_for_agent` | ADR-011's rollout rationale | `tests/test_workflow.py`, `tests/test_sse_contract.py`, `tests/test_api_agents.py`, `tests/test_runtime_executor.py` |
 
 ## 9. Test Matrix
@@ -208,4 +211,5 @@ here for visibility since it's a new pattern.
 
 | Version | Date | Change |
 |---|---|---|
+| 1.1.0 | 2026-09-21 | B-4/AC-005-05 reworded: the coordinator no longer exists (`SPEC-029`/`ADR-016`) — `recent_consultations` now reaches whichever specialist `intent_router` selects to answer. No contract in §6 changed; the mechanism (`context_for_agent(..., answering=True)`) is unchanged. |
 | 1.0.0 | 2026-08-19 | Initial version; implemented in the same phase it was approved. |

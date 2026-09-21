@@ -3,12 +3,12 @@ id: SPEC-008
 title: Dynamic Capability-Matching Planner
 phase: 5
 version: 1.0.0
-status: Implemented
+status: Superseded
 authors: [jbotero]
 created: 2026-08-19
-updated: 2026-08-19
+updated: 2026-09-21
 supersedes: []
-superseded_by: null
+superseded_by: SPEC-029
 depends_on: [SPEC-000, SPEC-003]
 adrs: []
 features: [F-029]
@@ -16,6 +16,14 @@ diagrams: []
 ---
 
 # SPEC-008 — Dynamic Capability-Matching Planner
+
+> **Superseded by [SPEC-029](SPEC-029-agent-consolidation.md) (Phase 14).**
+> `route_specialists_dynamic`, `enable_dynamic_planner`, and the multi-agent
+> fan-out this planner selected specialists *for* were all removed —
+> `intent_router` (`SPEC-003`) is now the only routing path, and it always
+> selects exactly one specialist, so there is nothing left to "dynamically
+> plan." Kept here for historical record per `SPEC-000` §6.2; not
+> reversible without a new spec.
 
 ## 1. Summary
 
@@ -165,4 +173,5 @@ of the new setting reproduces the pre-existing behaviour exactly.
 
 | Version | Date | Change |
 |---|---|---|
+| 1.0.0 | 2026-09-21 | Status: Implemented → Superseded by SPEC-029 (Phase 14 removed the multi-agent fan-out this planner routed within). Lifecycle transition only, per `SPEC-000` §6.2 — no contract in §6 changed. |
 | 1.0.0 | 2026-08-19 | Initial version; implemented in the same phase it was approved. |

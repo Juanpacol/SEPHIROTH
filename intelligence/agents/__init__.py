@@ -11,7 +11,7 @@ one-line adapter binding `Agent` to a capability record, kept only so
 
 from sephiroth.models import ModelProvider
 from sephiroth.runtime.agent import Agent
-from sephiroth.runtime.registry import COORDINATOR, DRUG_SAFETY, EVIDENCE, LABORATORY, RADIOLOGY
+from sephiroth.runtime.registry import DRUG_SAFETY, EVIDENCE, RADIOLOGY
 
 MCPAgent = Agent
 
@@ -19,11 +19,6 @@ MCPAgent = Agent
 class RadiologyAgent(Agent):
     def __init__(self, client: ModelProvider):
         super().__init__(RADIOLOGY, client)
-
-
-class LabAgent(Agent):
-    def __init__(self, client: ModelProvider):
-        super().__init__(LABORATORY, client)
 
 
 class DrugSafetyAgent(Agent):
@@ -36,16 +31,9 @@ class EvidenceAgent(Agent):
         super().__init__(EVIDENCE, client)
 
 
-class ClinicalCoordinator(Agent):
-    def __init__(self, client: ModelProvider):
-        super().__init__(COORDINATOR, client)
-
-
 __all__ = [
     "MCPAgent",
-    "ClinicalCoordinator",
     "RadiologyAgent",
-    "LabAgent",
     "DrugSafetyAgent",
     "EvidenceAgent",
 ]

@@ -31,6 +31,13 @@ AC-006-07.
 Phase 5 (SPEC-007) added the recovery engine (specialist retry/abstain on
 failure) — this file passes unmodified since none of the five frozen
 events changed shape. Verifies AC-007-05 (docs/specs/SPEC-007-recovery.md).
+
+Phase 14 (SPEC-029) removed the multi-agent fan-out — a consultation always
+runs exactly one specialist now. The two tests that used to force
+multi-agent mode to get a specialist whose display id differs from its
+node name (`drug-safety` vs `drug_safety`) now just route to that one
+specialist directly via the query's own wording — the naming-convention
+guarantee they check never depended on how many agents ran.
 """
 
 import json
@@ -44,7 +51,6 @@ from httpx import ASGITransport, AsyncClient
 import sephiroth.models.factory as factory_module
 from api.routers import agents as agents_router_module
 from auth import router as auth_router_module
-from core.config import settings
 from core.db import get_session
 from sephiroth.runtime import stream_consultation
 from tests.conftest import FakeLLMClient
@@ -60,12 +66,8 @@ EVIDENCE_SCRIPT = [
     ("tool", "search_clinical_guidelines", {"query": "type 2 diabetes first line"}),
     ("answer", LONG_ANSWER),
 ]
-COORDINATOR_SCRIPT = [
-    ("answer", "Summary: metformin is first-line [ADA Standards of Care in Diabetes, 2024]."),
-]
 SCRIPTS = {
     "clinical evidence specialist": EVIDENCE_SCRIPT,
-    "coordinating physician-assistant": COORDINATOR_SCRIPT,
 }
 
 
@@ -75,21 +77,13 @@ SCRIPTS = {
 
 
 async def _workflow_events(
-    context: Dict[str, Any] | None = None, *, single_agent: bool = True
+    context: Dict[str, Any] | None = None, *, query: str = "first-line therapy?"
 ) -> List[Dict[str, Any]]:
-    """`single_agent` selects the execution mode under test. The frozen
-    event contract is identical in both — what differs is how many
-    `agent_completed` events appear and which specialists produce them.
-    Tests asserting a *specific* specialist's identity (the
-    underscore/hyphen convention) need the multi-agent fan-out, since
-    single-agent mode routes on the question's own wording."""
+    """`query` selects which specialist `intent_router` picks — the only
+    consultation path since SPEC-029 removed the multi-agent fan-out. The
+    default routes to `evidence` (matches `SCRIPTS`' scripted answer)."""
     client = FakeLLMClient(scripts=SCRIPTS, default_script=[("answer", "specialist output")])
-    original = settings.enable_single_agent_mode
-    settings.enable_single_agent_mode = single_agent
-    try:
-        return [e async for e in stream_consultation(client, "first-line therapy?", context=context)]
-    finally:
-        settings.enable_single_agent_mode = original
+    return [e async for e in stream_consultation(client, query, context=context)]
 
 
 async def test_event_order_is_routing_then_completions_then_final():
@@ -107,7 +101,7 @@ async def test_routing_agents_use_underscore_node_names():
     """`routing` carries *node* names. The frontend maps them with
     `.replace("_", "-")` to match the agent chips, so the underscore form is
     load-bearing."""
-    events = await _workflow_events({"medications": ["warfarin", "aspirin"]}, single_agent=False)
+    events = await _workflow_events(query="Are these medications safe together?")
     routing = events[0]
 
     assert set(routing.keys()) == {"event", "agents"}
@@ -121,7 +115,7 @@ async def test_agent_completed_shape_and_hyphenated_identity():
     """`agent_completed.agent` is the *display* name (hyphenated), which is the
     opposite convention to `routing`. Both are relied on by the frontend's
     dual match: `p.name === event.agent || p.name.replace("-","_") === event.agent`."""
-    events = await _workflow_events({"medications": ["warfarin"]}, single_agent=False)
+    events = await _workflow_events(query="Are these medications safe together?")
     completed = [e for e in events if e["event"] == "agent_completed"]
 
     assert completed, "at least one agent_completed expected"
@@ -136,17 +130,16 @@ async def test_agent_completed_shape_and_hyphenated_identity():
     assert "drug_safety" not in names
 
 
-async def test_single_agent_mode_emits_exactly_one_agent_completed():
-    """Single-agent mode changes *how many* specialists run, never the
-    event shapes. `routing` still carries a list (of one), and exactly one
-    `agent_completed` precedes `final` — the frontend's parsing is
-    unchanged because it already loops over however many arrive."""
-    events = await _workflow_events({"medications": ["warfarin"]}, single_agent=True)
+async def test_every_consultation_emits_exactly_one_agent_completed():
+    """SPEC-029: every consultation routes to exactly one specialist —
+    `routing` carries a list of one, and exactly one `agent_completed`
+    precedes `final`."""
+    events = await _workflow_events(query="Are these medications safe together?")
 
     routing = events[0]
     assert routing["event"] == "routing"
     assert isinstance(routing["agents"], list)
-    assert len(routing["agents"]) == 1, "single-agent mode routes to exactly one specialist"
+    assert len(routing["agents"]) == 1
 
     completed = [e for e in events if e["event"] == "agent_completed"]
     assert len(completed) == 1

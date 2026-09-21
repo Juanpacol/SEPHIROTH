@@ -83,10 +83,9 @@ async def test_empty_scope_authorizes_nothing(registry, monkeypatch):
 
 
 async def test_none_scope_is_unrestricted(registry, monkeypatch):
-    """`allowed_tools = None` means "no tool whitelist declared". `LabAgent`
-    uses it to work purely from patient context, and `registry.llm_tools(None)`
-    already means unrestricted — the executor must agree, or the two halves of
-    the contract disagree."""
+    """`allowed_tools = None` means "no tool whitelist declared", and
+    `registry.llm_tools(None)` already means unrestricted — the executor
+    must agree, or the two halves of the contract disagree."""
     dispatched: List[str] = []
 
     async def spy(tool_name: str, arguments: Dict[str, Any]) -> Any:
