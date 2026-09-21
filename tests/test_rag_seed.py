@@ -4,15 +4,12 @@ idempotent — re-running it updates existing rows by id rather than
 duplicating them.
 
 Skips automatically when no local Postgres is reachable (AC-030-04), same
-pattern as `tests/test_alembic_migration.py`, and when the seed module
-itself doesn't exist yet (pre-SF062).
+pattern as `tests/test_alembic_migration.py`.
 """
 
 import socket
 
 import pytest
-
-pytest.importorskip("data.rag.seed_pgvector", reason="SPEC-030 not yet implemented — lands in SF062")
 
 LOCAL_POSTGRES_HOST = "localhost"
 LOCAL_POSTGRES_PORT = 5433

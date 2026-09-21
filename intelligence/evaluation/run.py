@@ -49,7 +49,7 @@ def _print_table(rows) -> None:
 
 
 def _run_ci() -> int:
-    result = runner.run_ci_mode()
+    result = asyncio.run(runner.run_ci_mode())
     print(f"Cases evaluated: {result['n_cases']}")
     if result["transcripts_stale"]:
         print(

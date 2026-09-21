@@ -35,11 +35,10 @@ An **AI-powered clinical decision support platform** for healthcare professional
 | `intelligence/mcp/` | FastMCP servers (nlp, imaging, rag, drug_safety, vision — vision shares the same Gemini client, model override via `gemini_vision_model`); the registry/dispatcher itself lives in `src/sephiroth/tools/` |
 | `intelligence/agents/` | Thin `Agent` wrappers (shim into `src/sephiroth/runtime/`). `citation_guard.py`/`explainability.py`/`risk_engine.py` are Phase-5 shims into `src/sephiroth/verification`/`telemetry`/`safety` respectively — real logic lives there now |
 | `intelligence/nlp/` | `timeline_extractor.py` (note → timeline events via structured LLM output). The vendored MedCAT tree (`ner/`, `pipeline/`, `preprocessing/`) was deleted in Phase 5 (`DEBT-001`) — it had zero call sites |
-| `data/rag/` | Evidence retrieval with mandatory citations (seeded guideline corpus + PubMed) |
+| `data/rag/` | Evidence retrieval with mandatory citations, stored in pgvector (`guideline_documents`, Phase 15 `SPEC-030`/`ADR-017`) — `RAGPipeline.retrieve` is async, queries the table on every call, no in-memory fallback. `seed_pgvector.py` populates it from the curated Python corpus + PubMed |
 | `data/schemas/` | SQLAlchemy 2.0 models (User, Patient, TimelineEvent, ClinicalNote, Consultation) |
-| `tests/` | pytest suite (auth, citation guard, timeline fallback) — SQLite in-memory, no services needed, no API key needed |
-| `data/embeddings/` | Gemini embedding providers (live + cached-artifact) powering hybrid RAG retrieval |
-| `data/vectors/` | In-memory vector store (cosine similarity) used by `RAGPipeline` |
+| `tests/` | pytest suite (auth, citation guard, timeline fallback) — SQLite in-memory, no API key needed; RAG-touching tests need local Postgres (self-skip without it) |
+| `data/embeddings/` | Gemini/Ollama embedding providers (live + cached-artifact) — query-side embedding only since Phase 15; document-side embeddings are computed once at seed time |
 | `references/` | Cloned open-source projects (don't edit; reference only) |
 | `real_data/` | Optional real/synthetic sample data (Synthea patients+notes, DDInter drug interactions, RSNA imaging fixtures) — see `real_data/README.md`; never required for tests/CI |
 | `migrations/` | Alembic schema migrations for Postgres (local docker-compose + Supabase). SQLite tests never touch this — see "Database migrations" below |
@@ -237,7 +236,7 @@ Schema is Alembic-managed for both local Postgres and Supabase (`migrations/vers
 
 ## Testing
 
-- `PYTHONPATH=.:platform .venv/bin/pytest` — unit suite (auth roundtrip, citation guard, timeline fallback, risk engine); SQLite in-memory, no services required, **no GEMINI_API_KEY required** (the LLM layer degrades gracefully and the whole agent stack is exercised through a scripted fake — see `tests/conftest.py::FakeLLMClient`)
+- `PYTHONPATH=.:platform .venv/bin/pytest` — unit suite (auth roundtrip, citation guard, timeline fallback, risk engine); SQLite in-memory, **no GEMINI_API_KEY required** (the LLM layer degrades gracefully and the whole agent stack is exercised through a scripted fake — see `tests/conftest.py::FakeLLMClient`). One exception since Phase 15 (`SPEC-030`): RAG-touching tests query real pgvector (`docker compose up -d postgres`, then `python -m data.rag.seed_pgvector`) and self-skip without it — `tests/conftest.py::_redirect_rag_db_to_local_postgres` always points that traffic at the local docker-compose instance, never at whatever `DATABASE_URL` a developer's `.env` happens to hold.
 - `examples/tools_example.py` — exercises all MCP tools directly, no LLM needed (fast smoke test)
 - `examples/agents_example.py` — full multi-agent consultation through Gemini (requires `GEMINI_API_KEY`, burns free-tier quota)
 - API: register/login via `/api/auth/*`, then `curl -X POST http://127.0.0.1:8000/api/agents/consult -H "Authorization: Bearer $TOKEN" ...` (agent endpoints require auth)

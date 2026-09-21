@@ -78,13 +78,13 @@ def eval_fixtures(tmp_path):
     }
 
 
-def test_run_ci_mode_stale_when_no_results_file(eval_fixtures):
-    result = run_ci_mode(**eval_fixtures)
+async def test_run_ci_mode_stale_when_no_results_file(eval_fixtures):
+    result = await run_ci_mode(**eval_fixtures)
     assert result["stale_results"] is True
     assert result["passed"] is False
 
 
-def test_run_ci_mode_passes_with_fresh_results(eval_fixtures):
+async def test_run_ci_mode_passes_with_fresh_results(eval_fixtures):
     results_path = eval_fixtures["results_path"]
     results_path.parent.mkdir(parents=True, exist_ok=True)
     results_path.write_text(
@@ -98,13 +98,13 @@ def test_run_ci_mode_passes_with_fresh_results(eval_fixtures):
             }
         )
     )
-    result = run_ci_mode(**eval_fixtures)
+    result = await run_ci_mode(**eval_fixtures)
     assert result["stale_results"] is False
     assert result["passed"] is True
     assert result["n_cases"] == 2
 
 
-def test_run_ci_mode_stale_when_dataset_changes_after_results_written(eval_fixtures):
+async def test_run_ci_mode_stale_when_dataset_changes_after_results_written(eval_fixtures):
     results_path = eval_fixtures["results_path"]
     results_path.parent.mkdir(parents=True, exist_ok=True)
     results_path.write_text(
@@ -119,11 +119,11 @@ def test_run_ci_mode_stale_when_dataset_changes_after_results_written(eval_fixtu
         )
     )
     eval_fixtures["dataset_path"].write_text(json.dumps({"cases": GOLDEN["cases"][:1]}))
-    result = run_ci_mode(**eval_fixtures)
+    result = await run_ci_mode(**eval_fixtures)
     assert result["stale_results"] is True
 
 
-def test_dataset_drift_ungates_baseline_metrics_without_failing_the_run(eval_fixtures):
+async def test_dataset_drift_ungates_baseline_metrics_without_failing_the_run(eval_fixtures):
     """A grown golden set must not turn the whole gate red.
 
     The baseline's faithfulness was judged over the old question set, so it
@@ -151,7 +151,7 @@ def test_dataset_drift_ungates_baseline_metrics_without_failing_the_run(eval_fix
     )
     eval_fixtures["dataset_path"].write_text(json.dumps({"cases": GOLDEN["cases"][:1]}))
 
-    result = run_ci_mode(**eval_fixtures)
+    result = await run_ci_mode(**eval_fixtures)
 
     assert result["dataset_stale"] is True
     assert result["transcripts_stale"] is False
@@ -163,7 +163,7 @@ def test_dataset_drift_ungates_baseline_metrics_without_failing_the_run(eval_fix
     assert row["value"] is None, "still listed, so the gap stays visible"
 
 
-def test_transcript_drift_still_fails_the_run(eval_fixtures):
+async def test_transcript_drift_still_fails_the_run(eval_fixtures):
     """The other half of the split: replayed metrics describing answers that no
     longer exist are not trustworthy, so this stays a hard failure."""
     results_path = eval_fixtures["results_path"]
@@ -179,7 +179,7 @@ def test_transcript_drift_still_fails_the_run(eval_fixtures):
             }
         )
     )
-    result = run_ci_mode(**eval_fixtures)
+    result = await run_ci_mode(**eval_fixtures)
 
     assert result["transcripts_stale"] is True
     assert result["passed"] is False

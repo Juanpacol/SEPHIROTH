@@ -14,6 +14,17 @@ someone chooses to refresh the baseline."""
 from intelligence.evaluation import run as eval_run
 
 
+def _async_returning(value):
+    """`_run_ci` now does `asyncio.run(runner.run_ci_mode())` — a plain
+    `lambda: value` monkeypatch would hand `asyncio.run` a dict, not an
+    awaitable. Wrap the stubbed result in a coroutine function instead."""
+
+    async def _stub(*args, **kwargs):
+        return value
+
+    return _stub
+
+
 def test_print_table_writes_github_step_summary(tmp_path, monkeypatch, capsys):
     summary_path = tmp_path / "summary.md"
     monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary_path))
@@ -72,7 +83,7 @@ def test_run_ci_warns_loudly_when_transcripts_are_stale(monkeypatch, capsys):
     """Transcript drift means the replayed metrics describe answers that no
     longer exist, so nothing in the run is trustworthy: hard failure."""
     monkeypatch.setattr(
-        eval_run.runner, "run_ci_mode", lambda: _ci_result(passed=False, transcripts_stale=True)
+        eval_run.runner, "run_ci_mode", _async_returning(_ci_result(passed=False, transcripts_stale=True))
     )
     exit_code = eval_run._run_ci()
 
@@ -88,7 +99,7 @@ def test_run_ci_passes_with_a_stale_dataset_but_names_what_it_stopped_gating(mon
     monkeypatch.setattr(
         eval_run.runner,
         "run_ci_mode",
-        lambda: _ci_result(dataset_stale=True, ungated_metrics=["faithfulness_llm_judge"]),
+        _async_returning(_ci_result(dataset_stale=True, ungated_metrics=["faithfulness_llm_judge"])),
     )
     exit_code = eval_run._run_ci()
 
@@ -103,10 +114,12 @@ def test_run_ci_surfaces_a_stale_embeddings_artifact(monkeypatch, capsys):
     monkeypatch.setattr(
         eval_run.runner,
         "run_ci_mode",
-        lambda: _ci_result(
-            passed=False,
-            embeddings_artifact_stale=True,
-            embeddings_artifact_warning="corpus hash changed",
+        _async_returning(
+            _ci_result(
+                passed=False,
+                embeddings_artifact_stale=True,
+                embeddings_artifact_warning="corpus hash changed",
+            )
         ),
     )
     exit_code = eval_run._run_ci()

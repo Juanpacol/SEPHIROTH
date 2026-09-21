@@ -5,6 +5,10 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+## SF062
+
+- Move the RAG corpus from decoupled Python-literal-plus-JSON-artifact storage onto pgvector (SPEC-030, ADR-017): `RAGPipeline`/`MedicalKnowledgeBase` now query `guideline_documents` directly and require a real embedding provider, closing DEBT-003 for real. `data/vectors/` (in-memory vector store) is deleted; `search_clinical_guidelines` and the evidence-library browse helpers are now async. New `data/rag/seed_pgvector.py` populates the table; CI's `test` job gained a Postgres service to seed/migrate against. Tests touching RAG now skip gracefully without a local Postgres (`docker compose up -d postgres`) [refactor]
+
 ## SF059
 
 - Remove the `laboratory` and `coordinator` agents and the multi-agent fan-out entirely (SPEC-029, ADR-016): `intent_router` → one specialist → answer is now the only consultation path. `laboratory` was redundant with `risk.py`'s deterministic lab rules; `coordinator`/the fan-out had been unreachable in production since single-specialist routing became the default. SPEC-008 (dynamic planner) is superseded [refactor]

@@ -120,7 +120,6 @@ async def test_search_pubmed_falls_back_gracefully_when_unreachable(monkeypatch)
     assert "error" in result
 
 
-@pytest.mark.xfail(reason="SPEC-030 not yet implemented — these become async in SF062", strict=False)
 def test_rag_tools_are_async():
     """AC-030-07: SPEC-030 moves document retrieval onto a real pgvector
     query — `search_clinical_guidelines` and the category-browse helpers
