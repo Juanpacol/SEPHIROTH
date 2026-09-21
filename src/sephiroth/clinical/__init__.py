@@ -5,10 +5,12 @@ Vital ranges and note templates live here for the same reason
 code is reviewable in a way a prompt is not.
 """
 
+from .guideline_intent import GUIDELINE_CORE_TERMS
 from .templates import SPECIALTIES, encounter_template, fallback_draft, render_note
 from .vitals import VITAL_SPECS, VitalError, format_vitals, validate_vitals, vital_findings
 
 __all__ = [
+    "GUIDELINE_CORE_TERMS",
     "SPECIALTIES",
     "VITAL_SPECS",
     "VitalError",

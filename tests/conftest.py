@@ -113,6 +113,17 @@ class FakeLLMClient:
                 executed.append({"name": name, "arguments": args, "result": result})
             elif kind == "answer":
                 content = step[1]
+        if tool_choice == "required" and not executed and tools:
+            # The real Ollama/Gemini clients would genuinely call a tool here
+            # (that's what tool_choice="required" means) — a script that
+            # only lists ("answer", ...) for a require_tool_call capability
+            # (e.g. evidence) is testing something else entirely (retries,
+            # concurrency, tracing) and isn't asserting on this call's tool
+            # identity, so honor the contract with a no-op call rather than
+            # making every such test script a real tool step. A test that
+            # DOES want to exercise "no tool call happened" uses a plain
+            # capability/client double instead (see test_agent_tool_choice.py).
+            executed.append({"name": tools[0]["function"]["name"], "arguments": {}, "result": None})
         return ChatResult(
             content=content,
             tool_calls=executed,

@@ -20,14 +20,25 @@ from datetime import datetime, timezone
 
 from sephiroth.contracts import Failure, FailureCategory, RecoveryActionType
 from sephiroth.models import LLMUnavailableError
+from sephiroth.runtime.agent import ToolCallOmittedError
 
 
 def classify(exc: Exception, component: str, step_id: str | None = None, attempt: int = 1) -> Failure:
     """Maps an exception to a `Failure` record. `LLMUnavailableError` (rate
-    limit, quota exhaustion, transient outage) is `MODEL`; anything else
-    raised by an agent's turn is `AGENT` — the taxonomy is coarse by
-    design, matching what's actually distinguishable at this call site."""
-    category = FailureCategory.MODEL if isinstance(exc, LLMUnavailableError) else FailureCategory.AGENT
+    limit, quota exhaustion, transient outage) is `MODEL`; `ToolCallOmittedError`
+    (a `require_tool_call=True` capability answered without calling its
+    tool — see that class's docstring) is `TOOL`, transient in the same
+    sense a flaky tool call is: worth one retry before abstaining, since a
+    fresh `chat()` call re-forces `tool_choice="required"` on its own round
+    0. Anything else raised by an agent's turn is `AGENT` — the taxonomy is
+    coarse by design, matching what's actually distinguishable at this call
+    site."""
+    if isinstance(exc, LLMUnavailableError):
+        category = FailureCategory.MODEL
+    elif isinstance(exc, ToolCallOmittedError):
+        category = FailureCategory.TOOL
+    else:
+        category = FailureCategory.AGENT
     return Failure(
         id=uuid.uuid4().hex,
         category=category,

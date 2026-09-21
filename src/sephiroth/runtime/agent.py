@@ -24,6 +24,21 @@ MEDICAL_DISCLAIMER = (
 _LANGUAGE_NAMES = {"en": "English", "es": "Spanish"}
 
 
+class ToolCallOmittedError(RuntimeError):
+    """A capability with `require_tool_call=True` completed with zero tool
+    calls — the model answered from parametric memory instead of using its
+    (available, forced-on-round-0) tool. `tool_choice="required"` only
+    covers round 0 (forcing it every round would loop forever — see
+    `OllamaClient.chat`); this is the post-hoc check for the case that
+    slips past it: a small local model that ignores `tool_choice` outright,
+    or that calls a tool on round 0 but then answers without one on a later
+    round. For an evidence-citing agent this is exactly how a fabricated
+    citation gets into the answer in the first place — `_run_specialist`
+    classifies this as `FailureCategory.TOOL` (recovery.py) so it goes
+    through the same retry-then-abstain path as any other transient
+    failure, rather than shipping an ungrounded answer."""
+
+
 class Agent:
     """A capability record, an LLM client, and a tool scope — nothing else."""
 
@@ -58,7 +73,7 @@ class Agent:
             context_lines = "\n".join(f"{k}: {v}" for k, v in context_for_prompt.items() if v)
             user_content = f"{query}\n\n--- Patient context ---\n{context_lines}"
 
-        return await self.client.chat(
+        result = await self.client.chat(
             messages=[{"role": "user", "content": user_content}],
             system_prompt="\n\n".join(p for p in system_parts if p),
             tools=tools,
@@ -67,6 +82,11 @@ class Agent:
             tool_executor=registry.scoped_executor(allowed_tools) if tools else None,
             tool_choice="required" if (tools and self.capability.require_tool_call) else None,
         )
+        if tools and self.capability.require_tool_call and not result.tool_calls:
+            raise ToolCallOmittedError(
+                f"{self.capability.id} is require_tool_call=True but completed with no tool calls"
+            )
+        return result
 
 
-__all__ = ["Agent", "MEDICAL_DISCLAIMER"]
+__all__ = ["Agent", "MEDICAL_DISCLAIMER", "ToolCallOmittedError"]

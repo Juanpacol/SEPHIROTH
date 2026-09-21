@@ -184,7 +184,13 @@ class OllamaClient:
                     "messages": history,
                     "stream": False,
                     "think": bool(think),
-                    "options": {"num_predict": self.max_output_tokens},
+                    # Deterministic sampling: whether the model calls a tool at
+                    # all was the one non-deterministic decision left in the
+                    # pipeline (generate_json's classification/verification
+                    # calls were already temperature 0) — the same query could
+                    # call search_clinical_guidelines on one run and fabricate
+                    # a citation on the next, purely from sampling variance.
+                    "options": {"temperature": 0, "num_predict": self.max_output_tokens},
                 }
                 if tools:
                     payload["tools"] = tools
@@ -198,6 +204,7 @@ class OllamaClient:
                     "model": self.model,
                     "messages": history,
                     "max_tokens": self.max_output_tokens,
+                    "temperature": 0,
                 }
                 if tools:
                     payload["tools"] = tools

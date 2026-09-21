@@ -66,3 +66,14 @@ def test_get_capability_raises_on_unknown_node_name():
     degrade silently — relevant once a future planner can hallucinate names."""
     with pytest.raises(KeyError):
         get_capability("not_a_real_agent")
+
+
+@pytest.mark.parametrize("capability", [RADIOLOGY, LABORATORY, DRUG_SAFETY, EVIDENCE])
+def test_every_specialist_shares_the_clinician_voice(capability):
+    """Single-agent mode makes whichever specialist gets routed the final
+    answer verbatim (decision #24) — the product's voice must not change
+    with the question. `radiology` was the one specialist missing this
+    (found during the 2026-09-20 agent-reliability audit): it can still
+    answer directly on a text-only misroute (intent_router.py's keyword
+    rules match on question text, not on whether an image was provided)."""
+    assert "Voice: write in plain, everyday language" in capability.role_prompt

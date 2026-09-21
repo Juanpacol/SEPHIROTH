@@ -24,7 +24,10 @@ from sephiroth.contracts import AgentCapability
 # specialist, and that specialist's answer IS what the clinician reads. So the
 # register has to be identical whichever way the router went — otherwise the
 # product's voice changes with the question. Appended to every capability that
-# can end up answering; kept as one constant so the three cannot drift apart.
+# can end up answering (all four specialists — radiology included, since a
+# text-only question can still misroute to it, per intent_router.py's keyword
+# rules matching on question text regardless of whether an image was
+# actually provided); kept as one constant so they cannot drift apart.
 #
 # The length ceiling is not stylistic: every sentence becomes another claim for
 # `extract_and_verify` to judge, and verification is the dominant cost of a
@@ -57,7 +60,7 @@ RADIOLOGY = AgentCapability(
         "confidence. Clearly attribute what came from the vision model versus "
         "your clinical reasoning. Flag anything requiring urgent review. "
         "Never cite a tool/agent name (e.g. 'the imaging tool') as if it "
-        "were a published source."
+        "were a published source.\n\n" + CLINICIAN_VOICE
     ),
     capabilities=["imaging_analysis", "vision"],
     tools=["inspect_medical_image", "analyze_medical_image", "describe_medical_image"],
@@ -131,6 +134,16 @@ EVIDENCE = AgentCapability(
     tools=["search_clinical_guidelines", "search_pubmed"],
     context_fields=["conditions"],
     require_tool_call=True,
+    # `require_tool_call=True` above forces tool_choice on round 0, but the
+    # 2026-09-20 audit found the omission still slips past that on a local
+    # model that ignores tool_choice outright (`ToolCallOmittedError`,
+    # agent.py). `llama3-groq-tool-use:8b` is fine-tuned + DPO'd specifically
+    # to emit correct tool calls (89.06% BFCL) — swapping just this one
+    # capability's model, via `get_llm_client(model_hint)`
+    # (`sephiroth.models.factory`), is a targeted fix for the one specialist
+    # that must never answer without citing its tool's output. Only takes
+    # effect on the local Ollama provider; ignored otherwise.
+    model_hint="llama3-groq-tool-use:8b",
 )
 
 COORDINATOR = AgentCapability(

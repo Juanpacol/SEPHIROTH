@@ -19,6 +19,7 @@ def _reload_settings(monkeypatch, **overrides):
     settings = Settings(_env_file=None, environment="development", **overrides)
     monkeypatch.setattr(factory_module, "settings", settings)
     monkeypatch.setattr(factory_module, "_client", None)
+    monkeypatch.setattr(factory_module, "_hinted_clients", {})
     return settings
 
 
@@ -98,6 +99,34 @@ def test_llm_provider_split_without_groq_key_has_no_chat_fallback(monkeypatch):
     assert isinstance(client, VisionChatSplitClient)
     assert isinstance(client.chat_client, OllamaClient)
     assert not isinstance(client.chat_client, FallbackLLMClient)
+
+
+def test_model_hint_yields_a_separate_ollama_client_on_local_provider(monkeypatch):
+    """`AgentCapability.model_hint` (e.g. evidence wanting a tool-calling-tuned
+    model) only means something for a local Ollama provider — a hint names an
+    Ollama model tag, not a Gemini/Groq one."""
+    _reload_settings(monkeypatch, llm_provider="ollama", ollama_model="qwen3:8b")
+    default_client = factory_module.get_llm_client()
+    hinted_client = factory_module.get_llm_client("llama3-groq-tool-use:8b")
+    assert isinstance(hinted_client, OllamaClient)
+    assert hinted_client.model == "llama3-groq-tool-use:8b"
+    assert default_client.model == "qwen3:8b"
+    assert hinted_client is not default_client
+
+
+def test_model_hint_client_is_cached_per_hint(monkeypatch):
+    _reload_settings(monkeypatch, llm_provider="ollama")
+    first = factory_module.get_llm_client("llama3-groq-tool-use:8b")
+    second = factory_module.get_llm_client("llama3-groq-tool-use:8b")
+    assert first is second
+
+
+def test_model_hint_ignored_on_gemini_provider(monkeypatch):
+    """A model_hint is meaningless against Gemini/Groq — must not error or
+    silently swap providers, just fall back to the default client."""
+    _reload_settings(monkeypatch, gemini_api_key="fake-gemini-key")
+    client = factory_module.get_llm_client("llama3-groq-tool-use:8b")
+    assert isinstance(client, GeminiClient)
 
 
 def test_llm_provider_groq_ignores_gemini_key(monkeypatch):

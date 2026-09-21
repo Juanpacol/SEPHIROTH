@@ -5,6 +5,10 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+## SF056
+
+- Fix agent tool-calling reliability: deterministic (temperature=0) specialist chat, post-hoc detection of `require_tool_call` violations routed through the existing retry/abstain recovery path, `radiology` now shares `CLINICIAN_VOICE` with the other specialists, the duplicated "is this a guideline question?" regex is unified into one shared module, and `AgentCapability.model_hint` is wired so `evidence` can use a tool-calling-tuned local Ollama model [fix]
+
 ## SF055
 
 - Fail `commit-lint` if a branch contains a merge commit — this repo only allows "Rebase and merge", and a stray merge commit (from updating a branch with `git merge` instead of `git rebase`) can replay strangely under that strategy [chore]
