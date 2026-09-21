@@ -4,9 +4,9 @@
 Two properties matter most here and get the most cases:
 
 1. **Intent beats topic.** "What A1C goal is appropriate?" names a lab test
-   but asks for a guideline, so it must reach `evidence`, not `laboratory`.
-   A router that matched on domain vocabulary alone would answer the wrong
-   question — this is the failure the rule ordering exists to prevent.
+   but asks for a guideline, so it must reach `evidence`. A router that
+   matched on domain vocabulary alone would answer the wrong question —
+   this is the failure the rule ordering exists to prevent.
 2. **Every failure path degrades, never raises.** A routing miss should
    cost accuracy, not the consultation.
 """
@@ -59,10 +59,6 @@ class _StubClassifier(FakeLLMClient):
         ("Interpret this chest X-ray", "radiology"),
         ("What does the MRI show?", "radiology"),
         ("Any findings on this radiograph?", "radiology"),
-        # Laboratory: interpreting values in hand, not merely naming a test
-        ("Interpret these lab values", "laboratory"),
-        ("The creatinine is 2.4, what does that mean?", "laboratory"),
-        ("Explain the elevated potassium", "laboratory"),
     ],
 )
 async def test_keyword_tier_routes_without_touching_the_llm(query, expected):
@@ -89,8 +85,6 @@ async def test_keyword_tier_routes_without_touching_the_llm(query, expected):
         ("Son seguros estos medicamentos juntos?", "drug_safety"),
         ("Interpreta esta radiografía de tórax", "radiology"),
         ("Qué muestra la resonancia magnética?", "radiology"),
-        ("Interpreta estos valores de laboratorio", "laboratory"),
-        ("La creatinina está en 2.4, qué significa?", "laboratory"),
     ],
 )
 async def test_keyword_tier_routes_spanish_without_touching_the_llm(query, expected):
@@ -106,7 +100,6 @@ async def test_keyword_tier_routes_spanish_without_touching_the_llm(query, expec
     "context,expected",
     [
         ({"image_path": "/scan.png"}, "radiology"),
-        ({"lab_results": {"a1c": "7.2"}}, "laboratory"),
         ({"medications": ["warfarin", "aspirin"]}, "drug_safety"),
     ],
 )
@@ -160,6 +153,57 @@ async def test_classification_exception_degrades_to_default():
 @pytest.mark.parametrize("query", ["", "   ", "\n"])
 async def test_empty_query_short_circuits_to_default(query):
     assert await route_intent(query, None, _NoLLMClient()) == DEFAULT_ROUTE
+
+
+@pytest.mark.xfail(
+    reason="SPEC-029 not yet implemented — laboratory keyword rule removal lands in SF059", strict=False
+)
+@pytest.mark.parametrize(
+    "query",
+    [
+        "Interpret these lab values",
+        "The creatinine is 2.4, what does that mean?",
+        "Explain the elevated potassium",
+    ],
+)
+async def test_lab_interpretation_question_falls_through_to_evidence(query):
+    """SPEC-029 AC-029-05: `laboratory` no longer exists as a keyword-tier
+    match — a query shaped like the old laboratory rule must not raise or
+    resolve to a removed agent. No keyword or context signal matches it, so
+    it reaches the LLM tier; when that tier itself names `evidence` (the
+    correct call once `laboratory` is gone), the route is `evidence`."""
+    client = _StubClassifier({"agent": "evidence"})
+    assert await route_intent(query, None, client) == "evidence"
+
+
+@pytest.mark.xfail(
+    reason="SPEC-029 not yet implemented — laboratory keyword rule removal lands in SF059", strict=False
+)
+async def test_lab_interpretation_question_degrades_to_evidence_by_default():
+    """Same shape, but the LLM tier itself fails — must still land on
+    `evidence` (`DEFAULT_ROUTE`), never on the removed `laboratory` name."""
+
+    class _RaisingClient(FakeLLMClient):
+        async def generate_json(self, prompt, schema, *, system_prompt=None):
+            raise RuntimeError("model unavailable")
+
+    assert await route_intent("Interpret these lab values", None, _RaisingClient()) == DEFAULT_ROUTE
+
+
+@pytest.mark.xfail(
+    reason="SPEC-029 not yet implemented — lab_results context-tier mapping removal lands in SF059",
+    strict=False,
+)
+async def test_lab_result_context_no_longer_routes_to_a_removed_agent():
+    """SPEC-029 AC-029-01/02: `lab_results` in context used to select
+    `laboratory` directly (tier 2). That mapping is gone — the signal must
+    not resolve to a name `get_capability` can no longer look up."""
+    from sephiroth.runtime.registry import get_capability
+
+    client = _StubClassifier({"agent": "evidence"})
+    node = await route_intent("Please review this", {"lab_results": {"a1c": "7.2"}}, client)
+    assert get_capability(node) is not None
+    assert node != "laboratory"
 
 
 async def test_returned_route_is_always_a_real_specialist():
