@@ -3,7 +3,7 @@ id: SPEC-029
 title: Agent Consolidation
 phase: 14
 version: 0.1.0
-status: Draft
+status: Approved
 authors: [jbotero]
 created: 2026-09-21
 updated: 2026-09-21
@@ -266,3 +266,4 @@ old data, not because it still runs.
 | Version | Date | Change |
 |---|---|---|
 | 0.1.0 | 2026-09-21 | Initial draft |
+| 0.1.0 | 2026-09-21 | Approved — human review confirmed both design calls (`laboratory` deleted/delegated to `risk.py`; `coordinator`/multi-agent fan-out deleted entirely) before this spec was written |
