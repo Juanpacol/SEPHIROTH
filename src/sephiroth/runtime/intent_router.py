@@ -35,6 +35,8 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+from sephiroth.clinical import GUIDELINE_CORE_TERMS
+
 from .analyzer import analyze
 from .registry import SPECIALISTS
 
@@ -60,7 +62,7 @@ _FAST_RULES: List[Tuple[str, "re.Pattern[str]"]] = [
     (
         "evidence",
         re.compile(
-            r"\b(guideline\w*|first[- ]line|recommend\w*|standard of care|"
+            r"\b(" + "|".join(GUIDELINE_CORE_TERMS) + r"|standard of care|"
             r"evidence|indicated for|"
             r"(target|goal|threshold) (for|in|is|of)|"
             r"what (is|are) the (target|goal|recommended|first)|"

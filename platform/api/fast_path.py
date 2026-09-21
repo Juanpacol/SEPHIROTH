@@ -44,6 +44,7 @@ from core.config import settings
 from data.schemas import Patient
 from intelligence.mcp.drug_safety_server import INTERACTIONS
 from intelligence.mcp.rag_server import MAX_GUIDELINE_RESULTS
+from sephiroth.clinical import GUIDELINE_CORE_TERMS
 from sephiroth.tools import get_tool_runtime
 
 #: Every drug name the curated interaction table knows about, lowercase —
@@ -66,9 +67,17 @@ _DRUG_INTERACTION_RE = re.compile(
 # those signal a question that needs THIS patient's actual data synthesized,
 # not a general guideline lookup. Keep in sync with the module docstring's
 # safety argument: this router must stay conservative about what it claims.
+#
+# Built from `sephiroth.clinical.GUIDELINE_CORE_TERMS` — the words this check
+# shares with `intent_router`'s broader `evidence` rule — plus two phrasal
+# patterns that stay local to fast_path on purpose: this is the *narrower* of
+# the two guideline-question checks in the codebase (a 0-LLM-call, verbatim
+# top-1-document answer), so it does not also pick up intent_router's wider
+# net ("standard of care", "when is/are/should/does", Spanish, etc.) — see
+# `sephiroth.clinical.guideline_intent`'s module docstring for why the two
+# are asymmetric on purpose, not drifted.
 _GUIDELINE_RE = re.compile(
-    r"\b(guideline|first-line|first line|recommend|target|threshold|"
-    r"when (is|should)|what is the (target|recommended))\b",
+    r"\b(" + "|".join(GUIDELINE_CORE_TERMS) + r"|when (is|should)|what is the (target|recommended))\b",
     re.I,
 )
 _PATIENT_SPECIFIC_RE = re.compile(r"\b(this patient|my patient|patient'?s|their regimen)\b", re.I)

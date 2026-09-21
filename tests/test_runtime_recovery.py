@@ -4,6 +4,7 @@ Verifies AC-007-01, AC-007-02 (docs/specs/SPEC-007-recovery.md)."""
 
 from sephiroth.contracts import FailureCategory, RecoveryActionType
 from sephiroth.models import LLMUnavailableError
+from sephiroth.runtime.agent import ToolCallOmittedError
 from sephiroth.runtime.recovery import classify, decide_recovery
 
 
@@ -12,6 +13,21 @@ def test_classify_llm_unavailable_as_model():
     assert failure.category == FailureCategory.MODEL
     assert failure.component == "evidence"
     assert failure.message == "rate limited"
+
+
+def test_classify_tool_call_omitted_as_tool():
+    failure = classify(ToolCallOmittedError("evidence skipped its tool"), component="evidence")
+    assert failure.category == FailureCategory.TOOL
+
+
+def test_decide_retry_tool_call_omitted_when_attempts_remain():
+    failure = classify(ToolCallOmittedError("x"), component="evidence")
+    assert decide_recovery(failure, attempt=1, max_attempts=2) == RecoveryActionType.RETRY
+
+
+def test_decide_abstain_tool_call_omitted_when_exhausted():
+    failure = classify(ToolCallOmittedError("x"), component="evidence")
+    assert decide_recovery(failure, attempt=2, max_attempts=2) == RecoveryActionType.ABSTAIN
 
 
 def test_classify_generic_exception_as_agent():

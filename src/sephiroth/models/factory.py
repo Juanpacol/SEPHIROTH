@@ -21,7 +21,7 @@ with Groq as a chat-only fallback — no Gemini object is constructed for
 
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from core.config import settings
 
@@ -35,9 +35,32 @@ _client: Optional[Union[GeminiClient, GroqClient, OllamaClient, FallbackLLMClien
     None
 )
 
+#: One extra `OllamaClient` per distinct `AgentCapability.model_hint` in use,
+#: keyed by model name. Local-only by design (`llm_provider in {"ollama",
+#: "split"}`): a hint names an Ollama model tag (e.g.
+#: `llama3-groq-tool-use:8b`, fine-tuned specifically for reliable
+#: tool-calling), not a Gemini/Groq model, so it is meaningless against
+#: those providers and silently ignored there — see `get_llm_client`.
+_hinted_clients: Dict[str, OllamaClient] = {}
 
-def get_llm_client() -> Any:
+
+def get_llm_client(model_hint: Optional[str] = None) -> Any:
     global _client
+    if model_hint and settings.llm_provider in ("ollama", "split"):
+        if model_hint not in _hinted_clients:
+            _hinted_clients[model_hint] = OllamaClient(
+                model=model_hint,
+                vision_model=settings.ollama_vision_model,
+                base_url=settings.ollama_base_url,
+                api_key=settings.ollama_api_key,
+                max_output_tokens=settings.ollama_max_output_tokens,
+                timeout_seconds=settings.ollama_timeout_seconds,
+                max_retries=settings.ollama_max_retries,
+                max_tool_rounds=settings.llm_max_tool_rounds,
+                rpm_limit=settings.ollama_rpm_limit,
+            )
+        return _hinted_clients[model_hint]
+
     if _client is None:
         if settings.llm_provider == "split":
             vision_client = OllamaClient(
@@ -131,9 +154,10 @@ def get_llm_client() -> Any:
 
 
 def reset_llm_client() -> None:
-    """Test-only: drop the cached client so the next call rebuilds it."""
+    """Test-only: drop the cached client(s) so the next call rebuilds them."""
     global _client
     _client = None
+    _hinted_clients.clear()
 
 
 __all__ = ["get_llm_client", "reset_llm_client"]

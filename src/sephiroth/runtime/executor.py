@@ -47,7 +47,7 @@ from sephiroth.contracts import (
     ToolCall,
     VerificationReport,
 )
-from sephiroth.models import ModelProvider
+from sephiroth.models import ModelProvider, OllamaClient, get_llm_client
 from sephiroth.safety import check_input, check_scope
 from sephiroth.safety import decide as decide_abstention
 from sephiroth.safety.abstention import PARTIAL_BANNER
@@ -232,7 +232,17 @@ async def _run_specialist(
     contributes an empty section rather than aborting the rest of the
     consultation; the failure and the recovery attempt are both recorded on
     `state` for later inspection (recovery success rate, etc.)."""
-    agent = Agent(capability, client)
+    # `model_hint` names an Ollama model tag chosen for this capability
+    # specifically (e.g. evidence wants a tool-calling-tuned model). Only
+    # swapped in when the running client is itself a real `OllamaClient` —
+    # checking the *instance*, not `settings.llm_provider`, so a test's
+    # injected `FakeLLMClient` is never routed through the live factory
+    # singleton (which would ignore that fake and reintroduce a real,
+    # unconfigured client mid-test).
+    agent_client = client
+    if capability.model_hint and isinstance(client, OllamaClient):
+        agent_client = get_llm_client(capability.model_hint)
+    agent = Agent(capability, agent_client)
     state.lifecycle[capability.id] = LifecycleState.EXECUTING
 
     attempt = 1
@@ -244,7 +254,7 @@ async def _run_specialist(
                 SpanKind.AGENT,
                 capability.id,
                 agent=capability.id,
-                model=getattr(client, "model", ""),
+                model=getattr(agent_client, "model", ""),
             ):
                 result = await agent.run(
                     query, context_for_agent(capability, run_context, answering=answering)

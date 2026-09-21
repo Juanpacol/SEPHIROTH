@@ -96,6 +96,37 @@ async def test_chat_sends_think_false_by_default():
 
 
 @pytest.mark.asyncio
+async def test_chat_uses_deterministic_sampling():
+    """Whether the model calls a tool at all used to be the one
+    non-deterministic decision in the pipeline — the same query could call
+    search_clinical_guidelines on one run and fabricate a citation on the
+    next, purely from sampling variance. `generate_json` was already
+    temperature 0; `chat` must be too."""
+    captured = {}
+
+    def handler(request):
+        captured.update(json_mod.loads(request.content))
+        return httpx.Response(200, json=_native_response(content="ok"))
+
+    client = _make_client(handler)
+    await client.chat(messages=[{"role": "user", "content": "hi"}])
+    assert captured["options"]["temperature"] == 0
+
+
+@pytest.mark.asyncio
+async def test_chat_against_hosted_endpoint_uses_deterministic_sampling():
+    captured = {}
+
+    def handler(request):
+        captured.update(json_mod.loads(request.content))
+        return httpx.Response(200, json=_openai_response(content="ok"))
+
+    client = _make_client(handler, base_url="https://openrouter.ai/api/v1")
+    await client.chat(messages=[{"role": "user", "content": "hi"}])
+    assert captured["temperature"] == 0
+
+
+@pytest.mark.asyncio
 async def test_chat_reports_real_usage_when_present():
     def handler(request):
         return httpx.Response(
