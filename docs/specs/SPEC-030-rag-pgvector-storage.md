@@ -3,7 +3,7 @@ id: SPEC-030
 title: RAG Document Storage on pgvector
 phase: 15
 version: 0.1.0
-status: Draft
+status: Approved
 authors: [jbotero]
 created: 2026-09-21
 updated: 2026-09-21
@@ -287,3 +287,4 @@ one-line amendment noting the RAG-specific exception.
 | Version | Date | Change |
 |---|---|---|
 | 0.1.0 | 2026-09-21 | Initial draft |
+| 0.1.0 | 2026-09-21 | Approved — human review confirmed the no-fallback pgvector-only design and the full SDD process before writing tests |

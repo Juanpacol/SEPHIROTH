@@ -220,3 +220,57 @@ def test_similarity_floor_separates_adversarial_from_relevant_scores(
     best_adversarial = store.search(adversarial_vec, top_k=1, min_score=-1.0)[0].score
 
     assert best_adversarial < settings.retrieval_min_similarity < best_relevant
+
+
+# --- SPEC-030: parity between the in-memory pipeline and pgvector-backed one ---
+
+import socket  # noqa: E402
+
+_LOCAL_POSTGRES_HOST = "localhost"
+_LOCAL_POSTGRES_PORT = 5433
+
+
+def _local_postgres_reachable() -> bool:
+    try:
+        with socket.create_connection((_LOCAL_POSTGRES_HOST, _LOCAL_POSTGRES_PORT), timeout=1):
+            return True
+    except OSError:
+        return False
+
+
+@pytest.mark.skipif(
+    not _local_postgres_reachable(),
+    reason=f"no Postgres reachable at {_LOCAL_POSTGRES_HOST}:{_LOCAL_POSTGRES_PORT}",
+)
+@pytest.mark.xfail(
+    reason="SPEC-030 not yet implemented — pgvector-backed retrieve() lands in SF062", strict=False
+)
+async def test_pgvector_backed_retrieval_matches_golden_cases(embedding_provider):
+    """AC-030-02: given a seeded `guideline_documents` table, the
+    pgvector-backed `retrieve()` must return the same top-1 id as the
+    pre-migration in-memory pipeline for every golden case — this is the
+    parity gate for the storage migration, not a new quality bar."""
+    import json
+    from pathlib import Path
+
+    from data.rag import RAGPipeline
+    from data.rag.seed_pgvector import seed_from_python_corpus
+
+    await seed_from_python_corpus(embedding_provider)
+
+    from core.config import settings
+
+    pipeline = RAGPipeline(
+        embedding_provider=embedding_provider, min_similarity=settings.retrieval_min_similarity
+    )
+
+    golden = json.loads(
+        (Path(__file__).parent.parent / "intelligence/evaluation/datasets/golden.json").read_text()
+    )
+    cases = golden if isinstance(golden, list) else golden.get("cases", golden)
+    for case in cases:
+        relevant = set(case.get("relevant_doc_ids", []))
+        if not relevant:
+            continue
+        results = await pipeline.retrieve(case["query"], top_k=1)
+        assert results and results[0]["id"] in relevant, f"case {case['id']!r} regressed"

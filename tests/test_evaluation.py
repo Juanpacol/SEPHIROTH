@@ -238,3 +238,27 @@ def test_embeddings_artifact_staleness_hash_match_is_fresh(monkeypatch):
     stale, warning = _check_embeddings_artifact_staleness()
     assert stale is False
     assert warning is None
+
+
+@pytest.mark.xfail(
+    reason="SPEC-030 not yet implemented — graceful DB-unavailable handling lands in SF062", strict=False
+)
+def test_run_ci_mode_reports_skipped_without_a_database(monkeypatch, capsys):
+    """AC-030-05: once retrieval metrics require Postgres (SPEC-030), CI's
+    `eval` job (no Postgres service, `.github/workflows/code-review.yml`)
+    must see a clear 'skipped — no database' status, never a raw
+    connection-error traceback."""
+    import core.config as config_module
+    from intelligence.evaluation.runner import run_ci_mode
+
+    monkeypatch.setattr(
+        config_module.settings,
+        "database_url",
+        "postgresql+asyncpg://nobody:nobody@localhost:1/does_not_exist",
+    )
+
+    run_ci_mode()
+    output = capsys.readouterr().out
+    assert "skipped" in output.lower()
+    assert "database" in output.lower()
+    assert "Traceback" not in output

@@ -1,7 +1,22 @@
 """Tests for the keyword-scored RAG pipeline over the seeded guideline corpus."""
 
+import pytest
+
 from data.embeddings.base import EmbeddingUnavailable
 from data.rag import SEED_GUIDELINES, Document, MedicalKnowledgeBase, RAGPipeline, _tokenize
+
+
+@pytest.mark.xfail(
+    reason="SPEC-030 not yet implemented — embedding_provider becomes required in SF062", strict=False
+)
+def test_rag_pipeline_requires_an_embedding_provider():
+    """AC-030-01: SPEC-030/ADR-017 removes the keyword-only degraded mode
+    (NG-5, no fallback) — a `RAGPipeline` with no way to embed a query can
+    no longer be constructed at all, so omitting `embedding_provider` must
+    fail loudly (`TypeError`) rather than silently constructing a
+    keyword-only pipeline the way it does today."""
+    with pytest.raises(TypeError):
+        RAGPipeline()
 
 
 def test_tokenize_lowercases_and_drops_stopwords():
