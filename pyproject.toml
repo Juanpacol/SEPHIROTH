@@ -119,7 +119,6 @@ source = [
     "data/rag",
     "data/schemas",
     "data/embeddings",
-    "data/vectors",
     "platform/api",
     "platform/auth",
     "platform/core",
