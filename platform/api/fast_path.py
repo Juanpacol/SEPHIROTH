@@ -148,6 +148,7 @@ async def try_fast_path(
                 "final_answer": answer,
                 "tool_calls": [
                     {
+                        "agent": "drug-safety",
                         "name": "check_drug_interactions",
                         "arguments": {"medications": medications},
                         "result": result,
@@ -180,6 +181,7 @@ async def try_fast_path(
                     "final_answer": answer,
                     "tool_calls": [
                         {
+                            "agent": "evidence",
                             "name": "search_clinical_guidelines",
                             "arguments": {"query": query},
                             "result": result,
