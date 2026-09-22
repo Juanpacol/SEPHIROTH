@@ -35,7 +35,7 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GH_PAT_CHANGELOG }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # generate_changelog.py needs full history to read `cursor..HEAD`
           token: ${{ secrets.GH_PAT_CHANGELOG }} # so the later `git push` authenticates as the PAT, not GITHUB_TOKEN
