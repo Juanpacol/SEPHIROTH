@@ -89,6 +89,10 @@ async def test_drug_interaction_query_triggers_with_two_plus_meds(db_session):
     assert result is not None
     assert result["source"] == "drug-safety"
     assert result["tool_calls"][0]["name"] == "check_drug_interactions"
+    # Regression: a missing "agent" key here renders "unknown" in the
+    # explainability panel — src/sephiroth/telemetry/explain.py falls back
+    # to that literal string when a tool_call lacks it.
+    assert result["tool_calls"][0]["agent"] == "drug-safety"
 
 
 async def test_drug_interaction_query_extracts_medications_named_in_the_query(db_session):
@@ -151,6 +155,10 @@ async def test_guideline_query_triggers_without_patient_id(db_session):
     assert result is not None
     assert result["source"] == "evidence"
     assert result["tool_calls"][0]["name"] == "search_clinical_guidelines"
+    # Regression: a missing "agent" key here renders "unknown" in the
+    # explainability panel — src/sephiroth/telemetry/explain.py falls back
+    # to that literal string when a tool_call lacks it.
+    assert result["tool_calls"][0]["agent"] == "evidence"
     assert result["citation_report"]["fabricated"] == []
 
 
