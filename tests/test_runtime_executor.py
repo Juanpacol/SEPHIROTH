@@ -338,7 +338,6 @@ async def test_stream_consultation_rejects_out_of_scope_query_with_routing_then_
 # --------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
 @pytest.mark.parametrize("combined", [True, False], ids=["combined-verify", "two-call-verify"])
 async def test_radiology_answer_grounded_in_a_real_vision_description_is_partial_not_abstained(
     monkeypatch, combined
@@ -368,7 +367,26 @@ async def test_radiology_answer_grounded_in_a_real_vision_description_is_partial
 
     monkeypatch.setattr(tool_runtime_module.ToolRuntime, "execute", _fake_execute)
 
-    client = FakeLLMClient(
+    class _RadiologyClient(FakeLLMClient):
+        """The two-call path (`extract_claims` -> `verify_claims`) generates
+        its own claim id (`uuid.uuid4().hex`, ignoring any "id" the payload
+        supplies) — the verdict step must reference *that* real id, not a
+        hardcoded one, so this pulls it straight out of `verify.py`'s
+        prompt (`- id={c.id} risk=...`) instead of trusting a fixed alias."""
+
+        async def generate_json(self, prompt, schema, system_prompt=None):
+            if schema.get("required") == ["verdicts"]:
+                import re
+
+                claims_section, _, evidence_section = prompt.partition("Evidence:")
+                claim_id = re.search(r"id=(\S+)", claims_section).group(1)
+                evidence_id = re.search(r"id=(\S+)", evidence_section).group(1)
+                return {
+                    "verdicts": [{"claim_id": claim_id, "status": "supported", "evidence_ids": [evidence_id]}]
+                }
+            return await super().generate_json(prompt, schema, system_prompt=system_prompt)
+
+    client = _RadiologyClient(
         scripts={
             "radiology specialist": [
                 (
@@ -394,12 +412,6 @@ async def test_radiology_answer_grounded_in_a_real_vision_description_is_partial
                     }
                 ]
             },
-            # Two-call path needs claim extraction + a separate verdict payload.
-            {
-                "verdicts": [
-                    {"claim_id": "c1", "status": "supported", "evidence_ids": ["e1"]},
-                ]
-            },
         ],
     )
 
@@ -418,7 +430,6 @@ async def test_radiology_answer_grounded_in_a_real_vision_description_is_partial
     assert claims[0]["originating_agent"] == "radiology"
 
 
-@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
 async def test_radiology_invented_high_risk_finding_still_abstains(monkeypatch):
     """The flip side of the fix above: a finding the vision tool never
     reported must still trigger the unchanged high-risk abstention gate —

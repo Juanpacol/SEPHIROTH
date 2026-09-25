@@ -12,6 +12,16 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .enums import RiskLevel, VerificationStatus
 
+#: SPEC-004 1.2.0 (ADR-018): weight an OBSERVED claim carries in
+#: `grounded_claim_ratio` — faithful to a perception tool's own output, not
+#: independently corroborated. Chosen so an all-OBSERVED answer's confidence
+#: lands inside `safety.abstention`'s [ABSTAIN_THRESHOLD, PARTIAL_THRESHOLD)
+#: band — always `partial`, never `abstain`, never a silent full `answer`.
+#: Lives here, not in `verification/confidence.py`, because `contracts` must
+#: stay a leaf package (`tests/test_package_layout.py`) — `confidence.py`
+#: imports and re-exports this constant instead of owning it.
+OBSERVED_WEIGHT = 0.6
+
 
 class Claim(BaseModel):
     """One independently verifiable assertion extracted from an answer."""
@@ -55,13 +65,33 @@ class VerificationReport(BaseModel):
     def supported_claim_ratio(self) -> float:
         """Share of claims that are fully supported.
 
-        Drives abstention. Returns 1.0 for an answer with no claims — nothing
-        unsupported was asserted, so there is nothing to abstain over.
+        Unchanged by 1.2.0/OBSERVED — this still counts SUPPORTED only, since
+        `platform/api/routers/agents.py`'s `_persist` and `dashboard.py` read
+        it as that exact metric. `grounded_claim_ratio` below is what
+        `compute_confidence` actually uses.
+
+        Returns 1.0 for an answer with no claims — nothing unsupported was
+        asserted, so there is nothing to abstain over.
         """
         if not self.claims:
             return 1.0
         supported = sum(1 for c in self.claims if c.status is VerificationStatus.SUPPORTED)
         return supported / len(self.claims)
+
+    @property
+    def grounded_claim_ratio(self) -> float:
+        """Like `supported_claim_ratio`, but an OBSERVED claim counts as
+        `OBSERVED_WEIGHT` rather than 0 — faithful to a perception tool's
+        own output, not independently corroborated, so it isn't full
+        support but isn't baseless either (SPEC-004 1.2.0, ADR-018)."""
+        if not self.claims:
+            return 1.0
+        weights = {
+            VerificationStatus.SUPPORTED: 1.0,
+            VerificationStatus.OBSERVED: OBSERVED_WEIGHT,
+        }
+        total = sum(weights.get(c.status, 0.0) for c in self.claims)
+        return total / len(self.claims)
 
     @property
     def has_unsupported_high_risk_claim(self) -> bool:
@@ -87,4 +117,4 @@ class CitationReport(BaseModel):
     total_checked: int = 0
 
 
-__all__ = ["CitationReport", "Claim", "Contradiction", "VerificationReport"]
+__all__ = ["OBSERVED_WEIGHT", "CitationReport", "Claim", "Contradiction", "VerificationReport"]

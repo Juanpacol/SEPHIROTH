@@ -18,6 +18,7 @@ from sephiroth.contracts import (
     ResponseStatus,
     SafetyFlag,
     VerificationReport,
+    VerificationStatus,
 )
 
 # Tunable per ADR-008 ("tuning them is itself an experiment") — validate
@@ -28,6 +29,16 @@ PARTIAL_THRESHOLD = 0.65
 PARTIAL_BANNER = (
     "Note: this answer has moderate confidence — some claims could not be "
     "fully verified against retrieved evidence. Please review carefully."
+)
+
+#: SPEC-004 1.2.0 (ADR-018) — distinct from PARTIAL_BANNER so a clinician can
+#: tell the two `partial` reasons apart: this one means the answer is
+#: faithful to an AI perception tool's own output, not independently
+#: corroborated by a guideline/paper/table.
+OBSERVED_BANNER = (
+    "Note: this answer is based on an AI visual description of the image, "
+    "not independently verified against retrieved evidence. Please review "
+    "carefully and confirm with a qualified professional."
 )
 
 _ABSTAIN_MESSAGES = {
@@ -87,12 +98,21 @@ def decide(
     if confidence < ABSTAIN_THRESHOLD:
         return _abstain(AbstentionReason.INSUFFICIENT_EVIDENCE, confidence, ratio)
     if confidence < PARTIAL_THRESHOLD:
+        # SPEC-004 1.2.0 (ADR-018): tag the observation-grounded reason only
+        # when it's actually why this landed in the partial band — lowest
+        # priority, never overrides a higher gate above (those all return
+        # before reaching here).
+        reason = (
+            AbstentionReason.OBSERVED_NOT_CORROBORATED
+            if any(c.status is VerificationStatus.OBSERVED for c in report.claims)
+            else None
+        )
         return AbstentionDecision(
-            status=ResponseStatus.PARTIAL, confidence=confidence, supported_claim_ratio=ratio
+            status=ResponseStatus.PARTIAL, reason=reason, confidence=confidence, supported_claim_ratio=ratio
         )
     return AbstentionDecision(
         status=ResponseStatus.ANSWER, confidence=confidence, supported_claim_ratio=ratio
     )
 
 
-__all__ = ["ABSTAIN_THRESHOLD", "PARTIAL_BANNER", "PARTIAL_THRESHOLD", "decide"]
+__all__ = ["ABSTAIN_THRESHOLD", "OBSERVED_BANNER", "PARTIAL_BANNER", "PARTIAL_THRESHOLD", "decide"]

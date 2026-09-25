@@ -291,7 +291,6 @@ def _observation(id_, content, agent="radiology"):
     )
 
 
-@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
 async def test_claim_citing_only_observations_becomes_observed_not_supported():
     """AC-004-11: a claim the judge calls supported, grounded only in
     perception-tool output, must not reach full SUPPORTED weight — it
@@ -323,7 +322,6 @@ async def test_claim_citing_only_observations_becomes_observed_not_supported():
     assert report.claims[0].status is VerificationStatus.OBSERVED
 
 
-@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
 async def test_claim_citing_real_evidence_alongside_an_observation_is_not_downgraded_to_observed():
     """A claim backed by BOTH an observation and independent evidence keeps
     its real SUPPORTED verdict — OBSERVED only applies when every cited id
@@ -356,7 +354,6 @@ async def test_claim_citing_real_evidence_alongside_an_observation_is_not_downgr
     assert report.claims[0].status is VerificationStatus.SUPPORTED
 
 
-@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
 async def test_claim_inventing_a_finding_absent_from_observations_is_unsupported():
     """AC-004-12: a claim citing nothing (the answering agent asserted a
     finding the tool never reported) stays UNSUPPORTED, never OBSERVED —
@@ -389,7 +386,6 @@ async def test_claim_inventing_a_finding_absent_from_observations_is_unsupported
     assert report.has_unsupported_high_risk_claim is True
 
 
-@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
 async def test_no_evidence_and_no_observations_still_marks_every_claim_unknown():
     """The pre-1.2.0 no-evidence branch is unchanged when observations are
     also empty — passing observations=[] must not alter this path."""
@@ -402,7 +398,6 @@ async def test_no_evidence_and_no_observations_still_marks_every_claim_unknown()
     assert report.claims[0].status is VerificationStatus.UNKNOWN
 
 
-@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
 async def test_llm_emitting_observed_directly_is_rejected():
     """NG-7/B-9: OBSERVED must only ever be assigned deterministically —
     the schema's status enum must not even accept the model emitting it

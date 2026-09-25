@@ -115,7 +115,8 @@
         "partially_supported",
         "unsupported",
         "contradicted",
-        "unknown"
+        "unknown",
+        "observed"
       ],
       "title": "VerificationStatus",
       "type": "string"

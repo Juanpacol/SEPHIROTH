@@ -51,7 +51,8 @@
         "tool_failure",
         "model_uncertainty",
         "policy_restriction",
-        "out_of_scope"
+        "out_of_scope",
+        "observed_not_corroborated"
       ],
       "title": "AbstentionReason",
       "type": "string"
@@ -898,7 +899,8 @@
         "partially_supported",
         "unsupported",
         "contradicted",
-        "unknown"
+        "unknown",
+        "observed"
       ],
       "title": "VerificationStatus",
       "type": "string"

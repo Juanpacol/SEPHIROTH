@@ -7,7 +7,13 @@
 
 from .claims import extract_claims
 from .confidence import compute_confidence
-from .evidence import harvest_evidence
+from .evidence import harvest_evidence, harvest_observations
 from .verify import verify_claims
 
-__all__ = ["compute_confidence", "extract_claims", "harvest_evidence", "verify_claims"]
+__all__ = [
+    "compute_confidence",
+    "extract_claims",
+    "harvest_evidence",
+    "harvest_observations",
+    "verify_claims",
+]

@@ -12,7 +12,7 @@ against the eval harness has one place to change.
 
 from __future__ import annotations
 
-from sephiroth.contracts import CitationReport, VerificationReport
+from sephiroth.contracts import OBSERVED_WEIGHT, CitationReport, VerificationReport
 
 FABRICATION_WEIGHT = 0.5
 TOOL_FAILURE_WEIGHT = 0.2
@@ -30,11 +30,11 @@ def compute_confidence(
     capped_failures = min(max(tool_failures, 0), TOOL_FAILURE_CAP)
 
     confidence = (
-        report.supported_claim_ratio
+        report.grounded_claim_ratio
         * (1 - FABRICATION_WEIGHT * fabrication_rate)
         * (1 - TOOL_FAILURE_WEIGHT * capped_failures / TOOL_FAILURE_CAP)
     )
     return max(0.0, min(1.0, confidence))
 
 
-__all__ = ["compute_confidence"]
+__all__ = ["OBSERVED_WEIGHT", "compute_confidence"]

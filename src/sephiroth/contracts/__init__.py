@@ -18,7 +18,7 @@ See `docs/specs/SPEC-000-spec-process.md`.
 """
 
 from .capability import AgentCapability, ExecutionSpec, RiskSpec, ToolDescriptor
-from .claims import CitationReport, Claim, Contradiction, VerificationReport
+from .claims import OBSERVED_WEIGHT, CitationReport, Claim, Contradiction, VerificationReport
 from .context import RunContext
 from .enums import (
     AbstentionReason,
@@ -75,6 +75,7 @@ PUBLIC_MODELS = (
 
 __all__ = [
     "ALLOWED_SPAN_ATTRIBUTES",
+    "OBSERVED_WEIGHT",
     "PUBLIC_MODELS",
     "AbstentionDecision",
     "AbstentionReason",
