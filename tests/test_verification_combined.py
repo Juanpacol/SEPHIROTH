@@ -271,6 +271,167 @@ async def test_no_evidence_marks_every_claim_unknown():
 
 
 # --------------------------------------------------------------------------
+# OBSERVED (1.2.0, ADR-018) — a claim faithful to a perception tool's own
+# output, cited alongside or instead of retrieved evidence.
+# --------------------------------------------------------------------------
+
+
+def _observation(id_, content, agent="radiology"):
+    from sephiroth.contracts import SourceType
+
+    return EvidenceRecord(
+        id=id_,
+        source="vision model",
+        source_type=SourceType.TOOL_OUTPUT,
+        retrieval_method=RetrievalMethod.TOOL,
+        citation=Citation(label="AI visual description"),
+        originating_agent=agent,
+        timestamp=datetime.now(timezone.utc),
+        content=content,
+    )
+
+
+@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
+async def test_claim_citing_only_observations_becomes_observed_not_supported():
+    """AC-004-11: a claim the judge calls supported, grounded only in
+    perception-tool output, must not reach full SUPPORTED weight — it
+    becomes OBSERVED (ADR-018's whole point: faithful, not corroborated)."""
+    observations = [_observation("o1", "There is a left-basilar opacity on the chest x-ray.")]
+    client = FakeLLMClient(
+        json_payloads=[
+            {
+                "claims": [
+                    {
+                        "id": "c1",
+                        "text": "There is a left-basilar opacity",
+                        "originating_agent": "radiology",
+                        "risk": "medium",
+                        "status": "supported",
+                        "evidence_ids": ["e1"],
+                        "confidence": 0.8,
+                    }
+                ]
+            }
+        ]
+    )
+
+    report = await extract_and_verify(
+        "There is a left-basilar opacity.", [], client, observations=observations
+    )
+
+    assert len(report.claims) == 1
+    assert report.claims[0].status is VerificationStatus.OBSERVED
+
+
+@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
+async def test_claim_citing_real_evidence_alongside_an_observation_is_not_downgraded_to_observed():
+    """A claim backed by BOTH an observation and independent evidence keeps
+    its real SUPPORTED verdict — OBSERVED only applies when every cited id
+    is tool-output-only."""
+    evidence = [_evidence("e1", "Chest x-ray findings should be correlated clinically.")]
+    observations = [_observation("o1", "There is a left-basilar opacity.")]
+    client = FakeLLMClient(
+        json_payloads=[
+            {
+                "claims": [
+                    {
+                        "id": "c1",
+                        "text": "There is a left-basilar opacity, correlate clinically",
+                        "status": "supported",
+                        "evidence_ids": ["e1", "e2"],
+                        "confidence": 0.9,
+                    }
+                ]
+            }
+        ]
+    )
+
+    report = await extract_and_verify(
+        "There is a left-basilar opacity, correlate clinically.",
+        evidence,
+        client,
+        observations=observations,
+    )
+
+    assert report.claims[0].status is VerificationStatus.SUPPORTED
+
+
+@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
+async def test_claim_inventing_a_finding_absent_from_observations_is_unsupported():
+    """AC-004-12: a claim citing nothing (the answering agent asserted a
+    finding the tool never reported) stays UNSUPPORTED, never OBSERVED —
+    the high-risk gate must still be able to catch it."""
+    observations = [_observation("o1", "The lungs are clear, no acute abnormality.")]
+    client = FakeLLMClient(
+        json_payloads=[
+            {
+                "claims": [
+                    {
+                        "id": "c1",
+                        "text": "There is a large pleural effusion requiring immediate drainage",
+                        "risk": "critical",
+                        "status": "unsupported",
+                        "evidence_ids": [],
+                    }
+                ]
+            }
+        ]
+    )
+
+    report = await extract_and_verify(
+        "There is a large pleural effusion requiring immediate drainage.",
+        [],
+        client,
+        observations=observations,
+    )
+
+    assert report.claims[0].status is VerificationStatus.UNSUPPORTED
+    assert report.has_unsupported_high_risk_claim is True
+
+
+@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
+async def test_no_evidence_and_no_observations_still_marks_every_claim_unknown():
+    """The pre-1.2.0 no-evidence branch is unchanged when observations are
+    also empty — passing observations=[] must not alter this path."""
+    client = FakeLLMClient(
+        json_payloads=[{"claims": [{"text": "Double the warfarin dose", "risk": "critical"}]}]
+    )
+
+    report = await extract_and_verify(ANSWER, [], client, observations=[])
+
+    assert report.claims[0].status is VerificationStatus.UNKNOWN
+
+
+@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
+async def test_llm_emitting_observed_directly_is_rejected():
+    """NG-7/B-9: OBSERVED must only ever be assigned deterministically —
+    the schema's status enum must not even accept the model emitting it
+    directly, so a model that tries falls back to UNKNOWN like any other
+    invalid enum value."""
+    observations = [_observation("o1", "There is a left-basilar opacity.")]
+    client = FakeLLMClient(
+        json_payloads=[
+            {
+                "claims": [
+                    {
+                        "id": "c1",
+                        "text": "There is a left-basilar opacity",
+                        "status": "observed",
+                        "evidence_ids": ["e1"],
+                    }
+                ]
+            }
+        ]
+    )
+
+    report = await extract_and_verify(
+        "There is a left-basilar opacity.", [], client, observations=observations
+    )
+
+    assert report.claims[0].status is not VerificationStatus.OBSERVED
+
+
+# --------------------------------------------------------------------------
 # Degradation — every failure yields an empty report, never a false pass
 # --------------------------------------------------------------------------
 

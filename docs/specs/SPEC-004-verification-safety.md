@@ -3,7 +3,7 @@ id: SPEC-004
 title: Verification & Safety
 phase: 4
 version: 1.1.0
-status: Draft
+status: Approved
 authors: [jbotero]
 created: 2026-08-19
 updated: 2026-09-22
@@ -171,8 +171,10 @@ alongside the unchanged `supported_claim_ratio`:
 ```python
 OBSERVED_WEIGHT: float = 0.6  # verification/confidence.py
 
+
 class VerificationReport(BaseModel):
     ...
+
     @property
     def grounded_claim_ratio(self) -> float:
         """Like `supported_claim_ratio`, but counts an OBSERVED claim as
@@ -429,3 +431,4 @@ future imaging/vision golden case.
 | 1.0.0 | 2026-08-19 | Initial version; implemented in the same phase it was approved. Scoped to Verification & Safety only (Phase 4b) — Context Engine (4a) deferred to its own spec. |
 | 1.1.0 | 2026-08-19 | Added the abstention-replay eval wiring (`intelligence/evaluation/abstention_replay.py`) that risk 2 originally flagged as missing — computes `abstention_recall`/`abstention_precision` against the golden dataset's 4 `adversarial-negative` cases, reported but not yet gated (no real committed data to gate against). Real calibration remains a follow-up. |
 | 1.1.0 (Draft, 1.2.0 pending) | 2026-09-22 | `SF065`: drafted the 1.2.0 amendment — `VerificationStatus.OBSERVED` (ADR-018), `harvest_observations`/`grounded_claim_ratio`/`OBSERVED_WEIGHT`, new §7 rules B-9..B-12, new AC-004-10..15 — so a RadiologyAgent answer faithful to a vision/imaging tool's own output returns `partial` with an observation banner instead of abstaining on `INSUFFICIENT_EVIDENCE`. Status held at `Draft` (not `Implemented`) until `SF066` (tests) and `SF067` (code) land, per `SPEC-000` B-2/B-4 — the new ACs have no test yet. Additive only — no existing §6 contract removed or retyped, no migration. |
+| 1.1.0 (Approved, 1.2.0 pending) | 2026-09-22 | `SF066`: tests-first coverage for AC-004-10..15 landed (`tests/test_verification_evidence.py`, `test_verification_combined.py`, `test_verification_verify.py`, `test_contracts_models.py`, `test_verification_confidence.py`, `test_safety_abstention.py`, `test_runtime_executor.py`, `test_abstention_replay.py`), all marked `xfail(strict=False)` against the not-yet-existing symbols (`SPEC-000` B-2 precedent: SF058/SF061). No production code touched. Moves to `Approved`; `SF067` implements and flips version to 1.2.0/`Implemented`. |
