@@ -58,3 +58,38 @@ def test_confidence_never_negative_or_above_one():
     citation_report = CitationReport(verified=[], fabricated=["a", "b"], total_checked=2)
     confidence = compute_confidence(report, citation_report, tool_failures=99)
     assert 0.0 <= confidence <= 1.0
+
+
+# --------------------------------------------------------------------------
+# OBSERVED / grounded_claim_ratio (1.2.0, ADR-018) — AC-004-14
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.xfail(
+    reason="SPEC-004 1.2.0 not yet implemented — grounded_claim_ratio lands in SF067", strict=False
+)
+def test_all_observed_claims_yields_observed_weight_confidence():
+    from sephiroth.verification.confidence import OBSERVED_WEIGHT
+
+    report = _report([VerificationStatus.OBSERVED, VerificationStatus.OBSERVED])
+    citation_report = CitationReport(total_checked=0)
+    confidence = compute_confidence(report, citation_report, tool_failures=0)
+    assert confidence == pytest.approx(OBSERVED_WEIGHT)
+
+
+@pytest.mark.xfail(
+    reason="SPEC-004 1.2.0 not yet implemented — grounded_claim_ratio lands in SF067", strict=False
+)
+def test_all_observed_confidence_lands_in_the_partial_band():
+    """AC-004-14: OBSERVED_WEIGHT must land strictly inside
+    [ABSTAIN_THRESHOLD, PARTIAL_THRESHOLD) under today's thresholds — an
+    all-observed answer is always `partial`, never `abstain`, never a
+    silent full `answer`."""
+    from sephiroth.safety.abstention import ABSTAIN_THRESHOLD, PARTIAL_THRESHOLD
+    from sephiroth.verification.confidence import OBSERVED_WEIGHT
+
+    report = _report([VerificationStatus.OBSERVED])
+    citation_report = CitationReport(total_checked=0)
+    confidence = compute_confidence(report, citation_report, tool_failures=0)
+    assert ABSTAIN_THRESHOLD <= confidence < PARTIAL_THRESHOLD
+    assert confidence == pytest.approx(OBSERVED_WEIGHT)

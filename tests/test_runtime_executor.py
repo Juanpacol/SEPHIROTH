@@ -179,10 +179,10 @@ async def test_run_consultation_abstains_on_unsupported_high_risk_claim(monkeypa
         ]
     )
 
-    async def fake_extract_and_verify(answer, evidence, client):
+    async def fake_extract_and_verify(answer, evidence, client, observations=None):
         return unsupported
 
-    async def fake_verify_claims(claims, evidence, client):
+    async def fake_verify_claims(claims, evidence, client, observations=None):
         return unsupported
 
     async def fake_extract_claims(answer, client):
@@ -329,3 +329,149 @@ async def test_stream_consultation_rejects_out_of_scope_query_with_routing_then_
     assert events[0]["agents"] == []
     assert events[1]["abstention"]["reason"] == "out_of_scope"
     assert events[1]["tool_calls"] == []
+
+
+# --------------------------------------------------------------------------
+# OBSERVED (SPEC-004 1.2.0, ADR-018) — a radiology answer faithful to a
+# real vision-tool description must return `partial`, not `abstain` on
+# INSUFFICIENT_EVIDENCE. AC-004-14, AC-004-15.
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
+@pytest.mark.parametrize("combined", [True, False], ids=["combined-verify", "two-call-verify"])
+async def test_radiology_answer_grounded_in_a_real_vision_description_is_partial_not_abstained(
+    monkeypatch, combined
+):
+    """Reproduces the live bug (2026-09-22): describe_medical_image returns
+    a genuine finding, but with zero harvestable evidence every claim used
+    to become UNKNOWN, confidence hit 0.0, and the run abstained on
+    INSUFFICIENT_EVIDENCE — discarding a correct answer. Also pins
+    AC-004-15: the claim's originating_agent must be the real answering
+    agent ("radiology"), not the extraction prompt's "evidence" example."""
+    import sephiroth.tools.runtime as tool_runtime_module
+
+    monkeypatch.setattr(settings, "enable_combined_verification", combined)
+
+    original_execute = tool_runtime_module.ToolRuntime.execute
+
+    async def _fake_execute(self, tool_name, arguments):
+        if tool_name == "describe_medical_image":
+            return {
+                "status": "ok",
+                "description": "There is a left-basilar opacity on the chest x-ray.",
+                "model": "fake-vision-model",
+                "clinical_focus": None,
+                "requires_professional_review": True,
+            }
+        return await original_execute(self, tool_name, arguments)
+
+    monkeypatch.setattr(tool_runtime_module.ToolRuntime, "execute", _fake_execute)
+
+    client = FakeLLMClient(
+        scripts={
+            "radiology specialist": [
+                (
+                    "tool",
+                    "describe_medical_image",
+                    {"image_path": "/x.png"},
+                ),
+                ("answer", "There is a left-basilar opacity on the chest x-ray."),
+            ]
+        },
+        default_script=[("answer", "ok")],
+        json_payloads=[
+            {
+                "claims": [
+                    {
+                        "id": "c1",
+                        "text": "There is a left-basilar opacity",
+                        "originating_agent": "evidence",  # deliberately wrong — executor must overwrite it
+                        "risk": "medium",
+                        "status": "supported",
+                        "evidence_ids": ["e1"],
+                        "confidence": 0.8,
+                    }
+                ]
+            },
+            # Two-call path needs claim extraction + a separate verdict payload.
+            {
+                "verdicts": [
+                    {"claim_id": "c1", "status": "supported", "evidence_ids": ["e1"]},
+                ]
+            },
+        ],
+    )
+
+    state = await run_consultation(
+        client,
+        "What do you see in this chest x-ray?",
+        context={"image_path": "/x.png"},
+    )
+
+    assert state["abstention"]["status"] == "partial"
+    assert state["abstention"]["reason"] == "observed_not_corroborated"
+    assert "There is a left-basilar opacity" in state["final_answer"]
+    claims = state["verification_report"]["claims"]
+    assert len(claims) == 1
+    assert claims[0]["status"] == "observed"
+    assert claims[0]["originating_agent"] == "radiology"
+
+
+@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
+async def test_radiology_invented_high_risk_finding_still_abstains(monkeypatch):
+    """The flip side of the fix above: a finding the vision tool never
+    reported must still trigger the unchanged high-risk abstention gate —
+    OBSERVED grounding must never excuse a genuinely unsupported claim."""
+    import sephiroth.tools.runtime as tool_runtime_module
+
+    original_execute = tool_runtime_module.ToolRuntime.execute
+
+    async def _fake_execute(self, tool_name, arguments):
+        if tool_name == "describe_medical_image":
+            return {
+                "status": "ok",
+                "description": "The lungs are clear, no acute abnormality.",
+                "model": "fake-vision-model",
+                "clinical_focus": None,
+                "requires_professional_review": True,
+            }
+        return await original_execute(self, tool_name, arguments)
+
+    monkeypatch.setattr(tool_runtime_module.ToolRuntime, "execute", _fake_execute)
+
+    client = FakeLLMClient(
+        scripts={
+            "radiology specialist": [
+                ("tool", "describe_medical_image", {"image_path": "/x.png"}),
+                (
+                    "answer",
+                    "There is a large pleural effusion requiring immediate drainage.",
+                ),
+            ]
+        },
+        default_script=[("answer", "ok")],
+        json_payloads=[
+            {
+                "claims": [
+                    {
+                        "id": "c1",
+                        "text": "There is a large pleural effusion requiring immediate drainage",
+                        "originating_agent": "radiology",
+                        "risk": "critical",
+                        "status": "unsupported",
+                        "evidence_ids": [],
+                    }
+                ]
+            }
+        ],
+    )
+
+    state = await run_consultation(
+        client,
+        "What do you see in this chest x-ray?",
+        context={"image_path": "/x.png"},
+    )
+
+    assert state["abstention"]["status"] == "abstain"
+    assert state["abstention"]["reason"] == "unsupported_high_risk_claim"

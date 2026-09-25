@@ -3,6 +3,8 @@ priority level to prove earlier checks override later, more lenient ones.
 
 Verifies AC-004-05 (docs/specs/SPEC-004-verification-safety.md)."""
 
+import pytest
+
 from sephiroth.contracts import (
     AbstentionReason,
     Claim,
@@ -81,3 +83,54 @@ def test_supported_claim_ratio_is_carried_through():
     )
     decision = decide(report, confidence=1.0, input_flags=[])
     assert decision.supported_claim_ratio == 0.5
+
+
+# --------------------------------------------------------------------------
+# OBSERVED (1.2.0, ADR-018) — AC-004-14: partial with a distinct banner,
+# never abstain for that reason alone; an invented finding still abstains.
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.xfail(
+    reason="SPEC-004 1.2.0 not yet implemented — OBSERVED_NOT_CORROBORATED lands in SF067", strict=False
+)
+def test_all_observed_claims_are_partial_with_the_observation_reason():
+    report = VerificationReport(
+        claims=[Claim(id="c1", text="There is a left-basilar opacity", status=VerificationStatus.OBSERVED)]
+    )
+    decision = decide(report, confidence=0.6, input_flags=[])
+    assert decision.status is ResponseStatus.PARTIAL
+    assert decision.reason is AbstentionReason.OBSERVED_NOT_CORROBORATED
+
+
+@pytest.mark.xfail(
+    reason="SPEC-004 1.2.0 not yet implemented — OBSERVED_NOT_CORROBORATED lands in SF067", strict=False
+)
+def test_observed_reason_never_overrides_higher_priority_gates():
+    """An OBSERVED claim alongside an unsupported high-risk one must still
+    abstain — the OBSERVED banner is the lowest-priority reason, never a
+    way to soften a genuinely unsafe answer (AC-004-12)."""
+    report = VerificationReport(
+        claims=[
+            Claim(id="c1", text="observed finding", status=VerificationStatus.OBSERVED),
+            Claim(
+                id="c2",
+                text="invented critical finding",
+                risk=RiskLevel.CRITICAL,
+                status=VerificationStatus.UNSUPPORTED,
+            ),
+        ]
+    )
+    decision = decide(report, confidence=0.6, input_flags=[])
+    assert decision.status is ResponseStatus.ABSTAIN
+    assert decision.reason is AbstentionReason.UNSUPPORTED_HIGH_RISK_CLAIM
+
+
+@pytest.mark.xfail(
+    reason="SPEC-004 1.2.0 not yet implemented — OBSERVED_NOT_CORROBORATED lands in SF067", strict=False
+)
+def test_observed_banner_is_distinct_from_the_generic_partial_banner():
+    from sephiroth.safety.abstention import OBSERVED_BANNER, PARTIAL_BANNER
+
+    assert OBSERVED_BANNER != PARTIAL_BANNER
+    assert "AI visual description" in OBSERVED_BANNER or "not independently verified" in OBSERVED_BANNER
