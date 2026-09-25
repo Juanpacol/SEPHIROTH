@@ -168,6 +168,54 @@ def test_unsupported_high_risk_detection(status, risk, expected):
 
 
 # --------------------------------------------------------------------------
+# grounded_claim_ratio (1.2.0, ADR-018) — AC-004-14
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.xfail(
+    reason="SPEC-004 1.2.0 not yet implemented — grounded_claim_ratio lands in SF067", strict=False
+)
+def test_grounded_ratio_of_empty_report_is_one():
+    assert VerificationReport().grounded_claim_ratio == 1.0
+
+
+@pytest.mark.xfail(
+    reason="SPEC-004 1.2.0 not yet implemented — grounded_claim_ratio lands in SF067", strict=False
+)
+def test_grounded_ratio_weights_supported_full_and_observed_partial():
+    report = VerificationReport(
+        claims=[
+            _claim("1", VerificationStatus.SUPPORTED),
+            _claim("2", VerificationStatus.OBSERVED),
+        ]
+    )
+    from sephiroth.verification.confidence import OBSERVED_WEIGHT
+
+    assert report.grounded_claim_ratio == pytest.approx((1.0 + OBSERVED_WEIGHT) / 2)
+
+
+@pytest.mark.xfail(
+    reason="SPEC-004 1.2.0 not yet implemented — grounded_claim_ratio lands in SF067", strict=False
+)
+def test_grounded_ratio_all_observed_matches_observed_weight():
+    from sephiroth.verification.confidence import OBSERVED_WEIGHT
+
+    report = VerificationReport(
+        claims=[_claim("1", VerificationStatus.OBSERVED), _claim("2", VerificationStatus.OBSERVED)]
+    )
+    assert report.grounded_claim_ratio == pytest.approx(OBSERVED_WEIGHT)
+
+
+def test_supported_claim_ratio_unchanged_by_observed_claims():
+    """supported_claim_ratio still counts only SUPPORTED — an OBSERVED
+    claim must not inflate the metric `_persist`/dashboard.py read."""
+    report = VerificationReport(
+        claims=[_claim("1", VerificationStatus.SUPPORTED), _claim("2", VerificationStatus.UNSUPPORTED)]
+    )
+    assert report.supported_claim_ratio == 0.5
+
+
+# --------------------------------------------------------------------------
 # Span — redaction is a contract, not a convention
 # --------------------------------------------------------------------------
 

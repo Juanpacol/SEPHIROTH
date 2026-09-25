@@ -153,3 +153,53 @@ async def test_supported_verdict_citing_unknown_evidence_id_is_downgraded():
     )
     report = await verify_claims(claims, evidence, client)
     assert report.claims[0].status is VerificationStatus.PARTIALLY_SUPPORTED
+
+
+# --------------------------------------------------------------------------
+# OBSERVED (1.2.0, ADR-018) — two-call path parity with combined.py
+# --------------------------------------------------------------------------
+
+
+def _observation(id_, content, agent="radiology"):
+    return EvidenceRecord(
+        id=id_,
+        source="vision model",
+        source_type=SourceType.TOOL_OUTPUT,
+        retrieval_method=RetrievalMethod.TOOL,
+        citation=Citation(label="AI visual description"),
+        originating_agent=agent,
+        timestamp=datetime.now(timezone.utc),
+        content=content,
+    )
+
+
+@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
+@pytest.mark.asyncio
+async def test_claim_citing_only_an_observation_becomes_observed():
+    claims = [Claim(id="c1", text="There is a left-basilar opacity")]
+    observations = [_observation("o1", "There is a left-basilar opacity on the chest x-ray.")]
+    client = FakeLLMClient(
+        json_payloads=[{"verdicts": [{"claim_id": "c1", "status": "supported", "evidence_ids": ["o1"]}]}]
+    )
+    report = await verify_claims(claims, [], client, observations=observations)
+    assert report.claims[0].status is VerificationStatus.OBSERVED
+
+
+@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
+@pytest.mark.asyncio
+async def test_claim_with_no_evidence_and_no_observations_stays_unknown():
+    claims = [Claim(id="c1", text="metformin is first-line")]
+    report = await verify_claims(claims, [], FakeLLMClient(), observations=[])
+    assert report.claims[0].status is VerificationStatus.UNKNOWN
+
+
+@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
+@pytest.mark.asyncio
+async def test_invented_finding_absent_from_observations_stays_unsupported():
+    claims = [Claim(id="c1", text="There is a large pleural effusion", risk="critical")]
+    observations = [_observation("o1", "The lungs are clear, no acute abnormality.")]
+    client = FakeLLMClient(
+        json_payloads=[{"verdicts": [{"claim_id": "c1", "status": "unsupported", "evidence_ids": []}]}]
+    )
+    report = await verify_claims(claims, [], client, observations=observations)
+    assert report.claims[0].status is VerificationStatus.UNSUPPORTED
