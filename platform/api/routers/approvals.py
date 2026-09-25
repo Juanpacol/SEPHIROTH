@@ -86,7 +86,7 @@ async def _patient_names(session: AsyncSession, patient_ids: List[str]) -> Dict[
     rows = (
         await session.execute(select(Patient.id, Patient.name).where(Patient.id.in_(set(patient_ids))))
     ).all()
-    return dict(rows)  # type: ignore[arg-type]
+    return {row.id: row.name for row in rows}
 
 
 async def _expire_if_due(session: AsyncSession, action: PendingAction, now: datetime) -> None:

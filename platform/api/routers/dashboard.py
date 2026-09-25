@@ -552,9 +552,8 @@ async def dashboard_action_items(session: AsyncSession = Depends(get_session)) -
 
 async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    names: Dict[str, str] = dict(
-        (await session.execute(select(Patient.id, Patient.name))).all()  # type: ignore[arg-type]
-    )
+    name_rows = (await session.execute(select(Patient.id, Patient.name))).all()
+    names: Dict[str, str] = {row.id: row.name for row in name_rows}
     items: List[Dict[str, Any]] = []
 
     def _name(patient_id: Any) -> Any:
