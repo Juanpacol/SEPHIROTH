@@ -39,7 +39,7 @@ SYSTEM_PROMPT = (
     "claims. Each claim is a single assertion (a recommendation, a fact, a "
     "value) that can be checked against evidence on its own. Tag each claim "
     "with the specialist section it most closely matches (originating_agent, "
-    "e.g. 'evidence', 'drug_safety') and a coarse clinical risk level "
+    "e.g. 'evidence', 'drug_safety', 'radiology') and a coarse clinical risk level "
     "(low/medium/high/critical) — high/critical for claims where being wrong "
     "could cause patient harm (dosing, contraindications, diagnosis). Never "
     "invent claims not present in the answer."

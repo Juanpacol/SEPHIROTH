@@ -145,13 +145,18 @@ components:
       phase: 4
       spec: SPEC-004
       description: >-
-        Claim extraction, evidence harvesting, batched 5-state claim
-        verification (VerificationStatus), and deterministic confidence
-        scoring. citation_guard.py relocated here in Phase 5, Part 3 (still
-        a distinct pre-filter feeding this, per ADR-006 — not merged into
-        claims/evidence).
+        Claim extraction, evidence harvesting, batched claim verification
+        (VerificationStatus, now 6-state including OBSERVED), and
+        deterministic confidence scoring. citation_guard.py relocated here
+        in Phase 5, Part 3 (still a distinct pre-filter feeding this, per
+        ADR-006 — not merged into claims/evidence). SPEC-004 1.2.0 (ADR-018)
+        added harvest_observations: a perception tool's own output (vision/
+        imaging) grounds a claim as OBSERVED — faithful to the tool, never
+        independent corroboration — so a radiology answer returns partial
+        instead of wrongly abstaining on INSUFFICIENT_EVIDENCE.
       tests: [tests/test_verification_claims.py, tests/test_verification_evidence.py,
-              tests/test_verification_verify.py, tests/test_verification_confidence.py,
+              tests/test_verification_verify.py, tests/test_verification_combined.py,
+              tests/test_verification_confidence.py, tests/test_contracts_models.py,
               tests/test_citation_guard.py, tests/test_citation_guard_adversarial.py]
     src/sephiroth/safety:
       status: implemented

@@ -13,10 +13,21 @@ from __future__ import annotations
 import uuid
 from typing import Dict, List
 
-from sephiroth.contracts import Claim, Contradiction, EvidenceRecord, VerificationReport, VerificationStatus
+from sephiroth.contracts import (
+    Claim,
+    Contradiction,
+    EvidenceRecord,
+    SourceType,
+    VerificationReport,
+    VerificationStatus,
+)
 from sephiroth.models import ModelProvider
 
-_STATUS_VALUES = sorted(status.value for status in VerificationStatus)
+# OBSERVED is excluded on purpose (ADR-018, NG-7/SPEC-004): only this
+# module's deterministic post-check may assign it, never the judge.
+_STATUS_VALUES = sorted(
+    status.value for status in VerificationStatus if status is not VerificationStatus.OBSERVED
+)
 
 VERIFY_SCHEMA = {
     "type": "object",
@@ -88,20 +99,31 @@ def _build_prompt(claims: List[Claim], evidence: List[EvidenceRecord]) -> str:
 
 
 async def verify_claims(
-    claims: List[Claim], evidence: List[EvidenceRecord], client: ModelProvider
+    claims: List[Claim],
+    evidence: List[EvidenceRecord],
+    client: ModelProvider,
+    observations: List[EvidenceRecord] | None = None,
 ) -> VerificationReport:
+    """SPEC-004 1.2.0 (ADR-018): `observations` (perception-tool output,
+    `harvest_observations`) is judged alongside `evidence`, but a verdict
+    citing only observation ids is downgraded from SUPPORTED/
+    PARTIALLY_SUPPORTED to OBSERVED — faithful to the tool's own output,
+    never independent corroboration."""
     if not claims:
         return VerificationReport()
-    if not evidence:
+
+    observations = observations or []
+    grounding = evidence + observations
+    if not grounding:
         # Nothing to check against — every claim is UNKNOWN, not silently SUPPORTED.
         return VerificationReport(
             claims=[c.model_copy(update={"status": VerificationStatus.UNKNOWN}) for c in claims]
         )
 
-    evidence_by_id = {e.id: e for e in evidence}
+    evidence_by_id = {e.id: e for e in grounding}
     try:
         payload = await client.generate_json(
-            prompt=_build_prompt(claims, evidence), schema=VERIFY_SCHEMA, system_prompt=SYSTEM_PROMPT
+            prompt=_build_prompt(claims, grounding), schema=VERIFY_SCHEMA, system_prompt=SYSTEM_PROMPT
         )
     except Exception:
         payload = {}
@@ -121,6 +143,9 @@ async def verify_claims(
             status = VerificationStatus(verdict.get("status", "unknown"))
         except ValueError:
             status = VerificationStatus.UNKNOWN
+        if status is VerificationStatus.OBSERVED:
+            # The model must never grant itself OBSERVED (ADR-018).
+            status = VerificationStatus.UNKNOWN
 
         evidence_ids = [eid for eid in verdict.get("evidence_ids", []) if eid in evidence_by_id]
         raw_confidence = verdict.get("confidence")
@@ -135,7 +160,7 @@ async def verify_claims(
                 "rationale": verdict.get("rationale", "") or "",
             }
         )
-        if status is VerificationStatus.SUPPORTED and not _overlap_supports(updated, evidence_by_id):
+        if updated.status is VerificationStatus.SUPPORTED and not _overlap_supports(updated, evidence_by_id):
             updated = updated.model_copy(
                 update={
                     "status": VerificationStatus.PARTIALLY_SUPPORTED,
@@ -144,6 +169,14 @@ async def verify_claims(
                     ).strip(),
                 }
             )
+
+        # ADR-018: a claim judged supported/partially supported, cited
+        # ENTIRELY against perception-tool output, is faithful to the tool —
+        # not independently corroborated. Never mixed with real evidence.
+        if updated.status in (VerificationStatus.SUPPORTED, VerificationStatus.PARTIALLY_SUPPORTED):
+            cited = [evidence_by_id[eid] for eid in updated.evidence_ids if eid in evidence_by_id]
+            if cited and all(record.source_type is SourceType.TOOL_OUTPUT for record in cited):
+                updated = updated.model_copy(update={"status": VerificationStatus.OBSERVED})
         verified_claims.append(updated)
 
     contradictions = [

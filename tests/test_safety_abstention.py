@@ -3,8 +3,6 @@ priority level to prove earlier checks override later, more lenient ones.
 
 Verifies AC-004-05 (docs/specs/SPEC-004-verification-safety.md)."""
 
-import pytest
-
 from sephiroth.contracts import (
     AbstentionReason,
     Claim,
@@ -91,9 +89,6 @@ def test_supported_claim_ratio_is_carried_through():
 # --------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — OBSERVED_NOT_CORROBORATED lands in SF067", strict=False
-)
 def test_all_observed_claims_are_partial_with_the_observation_reason():
     report = VerificationReport(
         claims=[Claim(id="c1", text="There is a left-basilar opacity", status=VerificationStatus.OBSERVED)]
@@ -103,9 +98,6 @@ def test_all_observed_claims_are_partial_with_the_observation_reason():
     assert decision.reason is AbstentionReason.OBSERVED_NOT_CORROBORATED
 
 
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — OBSERVED_NOT_CORROBORATED lands in SF067", strict=False
-)
 def test_observed_reason_never_overrides_higher_priority_gates():
     """An OBSERVED claim alongside an unsupported high-risk one must still
     abstain — the OBSERVED banner is the lowest-priority reason, never a
@@ -126,9 +118,6 @@ def test_observed_reason_never_overrides_higher_priority_gates():
     assert decision.reason is AbstentionReason.UNSUPPORTED_HIGH_RISK_CLAIM
 
 
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — OBSERVED_NOT_CORROBORATED lands in SF067", strict=False
-)
 def test_observed_banner_is_distinct_from_the_generic_partial_banner():
     from sephiroth.safety.abstention import OBSERVED_BANNER, PARTIAL_BANNER
 

@@ -31,6 +31,15 @@ between the calls. Ids are only used to join verdicts to claims within
 one report, so their provenance doesn't matter — but a missing or
 duplicate id must not silently drop a claim, hence the fallback id
 assignment below.
+
+SPEC-004 1.2.0 (ADR-018): an optional `observations` list (perception-tool
+output, `harvest_observations`) is judged alongside `evidence` in the same
+prompt/alias scheme, but a verdict citing *only* observation ids is
+downgraded from the judge's SUPPORTED/PARTIALLY_SUPPORTED to OBSERVED —
+faithful to the tool's own output, never counted as independent
+corroboration. The model can never assign OBSERVED itself (excluded from
+`_STATUS_VALUES` and rejected if it slips through anyway); only this
+module's deterministic post-check can.
 """
 
 from __future__ import annotations
@@ -43,6 +52,7 @@ from sephiroth.contracts import (
     Contradiction,
     EvidenceRecord,
     RiskLevel,
+    SourceType,
     VerificationReport,
     VerificationStatus,
 )
@@ -50,7 +60,12 @@ from sephiroth.models import ModelProvider
 
 from .verify import _overlap_supports
 
-_STATUS_VALUES = sorted(status.value for status in VerificationStatus)
+# OBSERVED is excluded here on purpose (ADR-018, NG-7/SPEC-004): it must
+# only ever be assigned deterministically by `_claim_from`'s post-check,
+# never emitted by the judge directly.
+_STATUS_VALUES = sorted(
+    status.value for status in VerificationStatus if status is not VerificationStatus.OBSERVED
+)
 
 # No per-claim `rationale` here, unlike the two-call schema in `verify.py`.
 # On a local CPU model decoding is the wall clock (~23 tok/s), and a free-prose
@@ -101,7 +116,7 @@ SYSTEM_PROMPT = (
     "For each claim: give it a short unique id, the claim text (a single "
     "assertion — a recommendation, a fact, a value — checkable on its own), "
     "the specialist section it most closely matches (originating_agent, e.g. "
-    "'evidence', 'drug_safety'), and a coarse clinical risk level "
+    "'evidence', 'drug_safety', 'radiology'), and a coarse clinical risk level "
     "(low/medium/high/critical — high or critical when being wrong could "
     "cause patient harm: dosing, contraindications, diagnosis).\n\n"
     "Then judge it against the evidence passages: supported (evidence "
@@ -173,6 +188,11 @@ def _claim_from(
         status = VerificationStatus(raw.get("status", "unknown"))
     except ValueError:
         status = VerificationStatus.UNKNOWN
+    if status is VerificationStatus.OBSERVED:
+        # The model must never grant itself OBSERVED (ADR-018) — treat a
+        # direct claim of it exactly like any other value the schema
+        # doesn't actually offer.
+        status = VerificationStatus.UNKNOWN
 
     raw_confidence = raw.get("confidence")
     confidence = float(raw_confidence) if isinstance(raw_confidence, (int, float)) else 0.5
@@ -194,7 +214,7 @@ def _claim_from(
     # ADR-006's mitigation, unchanged from the two-call path: never trust
     # a `supported` verdict whose claim shares almost no vocabulary with
     # the evidence it cites.
-    if status is VerificationStatus.SUPPORTED and not _overlap_supports(claim, evidence_by_id):
+    if claim.status is VerificationStatus.SUPPORTED and not _overlap_supports(claim, evidence_by_id):
         claim = claim.model_copy(
             update={
                 "status": VerificationStatus.PARTIALLY_SUPPORTED,
@@ -203,23 +223,41 @@ def _claim_from(
                 ).strip(),
             }
         )
+
+    # ADR-018: a claim the judge found supported/partially supported, but
+    # whose cited evidence is ENTIRELY perception-tool output (never mixed
+    # with real evidence), is faithful to the tool — not independently
+    # corroborated. Downgrade to OBSERVED, a ceiling this claim can never
+    # rise above from here.
+    if claim.status in (VerificationStatus.SUPPORTED, VerificationStatus.PARTIALLY_SUPPORTED):
+        cited = [evidence_by_id[eid] for eid in claim.evidence_ids if eid in evidence_by_id]
+        if cited and all(record.source_type is SourceType.TOOL_OUTPUT for record in cited):
+            claim = claim.model_copy(update={"status": VerificationStatus.OBSERVED})
     return claim
 
 
 async def extract_and_verify(
-    answer: str, evidence: List[EvidenceRecord], client: ModelProvider
+    answer: str,
+    evidence: List[EvidenceRecord],
+    client: ModelProvider,
+    observations: List[EvidenceRecord] | None = None,
 ) -> VerificationReport:
     """One call that decomposes `answer` into claims and judges each against
-    `evidence`. Returns an empty report on any failure — see module
-    docstring for why that is the safe degradation."""
+    `evidence` (plus, since SPEC-004 1.2.0, `observations` — perception-tool
+    output, judged the same way but never promoted past OBSERVED). Returns
+    an empty report on any failure — see module docstring for why that is
+    the safe degradation."""
     if not answer.strip():
         return VerificationReport()
 
-    if not evidence:
-        # No evidence to judge against. Still decompose (the abstention gate
-        # needs to know a high-risk claim was made), but every verdict is
-        # UNKNOWN — never silently SUPPORTED. Falls back to the extraction-
-        # only path, which is exactly what the two-call version did here.
+    observations = observations or []
+    grounding = evidence + observations
+    if not grounding:
+        # No evidence or observations to judge against. Still decompose (the
+        # abstention gate needs to know a high-risk claim was made), but
+        # every verdict is UNKNOWN — never silently SUPPORTED. Falls back to
+        # the extraction-only path, which is exactly what the two-call
+        # version did here.
         from .claims import extract_claims
 
         extracted = await extract_claims(answer, client)
@@ -227,15 +265,15 @@ async def extract_and_verify(
             claims=[c.model_copy(update={"status": VerificationStatus.UNKNOWN}) for c in extracted]
         )
 
-    evidence_by_id = {e.id: e for e in evidence}
-    alias_of = _prompt_aliases(evidence)
+    evidence_by_id = {e.id: e for e in grounding}
+    alias_of = _prompt_aliases(grounding)
     # Accept either the alias the prompt showed or the real id, so a model
     # that happens to quote the underlying id still joins correctly.
     id_by_reference = {alias: record_id for record_id, alias in alias_of.items()}
     id_by_reference.update({record_id: record_id for record_id in evidence_by_id})
     try:
         payload = await client.generate_json(
-            prompt=_build_prompt(answer, evidence, alias_of),
+            prompt=_build_prompt(answer, grounding, alias_of),
             schema=COMBINED_SCHEMA,
             system_prompt=SYSTEM_PROMPT,
         )

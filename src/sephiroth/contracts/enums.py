@@ -68,6 +68,10 @@ class VerificationStatus(StrEnum):
     UNSUPPORTED = "unsupported"
     CONTRADICTED = "contradicted"
     UNKNOWN = "unknown"
+    #: Faithful to a perception tool's own output (a vision/imaging result),
+    #: not independently corroborated. Never assigned by the LLM judge —
+    #: derived deterministically in code (SPEC-004 1.2.0 B-9, ADR-018).
+    OBSERVED = "observed"
 
 
 class SupportRelationship(StrEnum):
@@ -131,6 +135,11 @@ class AbstentionReason(StrEnum):
     MODEL_UNCERTAINTY = "model_uncertainty"
     POLICY_RESTRICTION = "policy_restriction"
     OUT_OF_SCOPE = "out_of_scope"
+    #: A PARTIAL decision driven by OBSERVED claims — faithful to a
+    #: perception tool's output, not independently corroborated (SPEC-004
+    #: 1.2.0, ADR-018). Lowest priority: never overrides a higher-priority
+    #: abstain reason.
+    OBSERVED_NOT_CORROBORATED = "observed_not_corroborated"
 
 
 class ResponseStatus(StrEnum):

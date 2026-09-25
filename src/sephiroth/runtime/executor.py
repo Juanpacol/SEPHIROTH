@@ -26,6 +26,7 @@ from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
 from core.config import settings
 from sephiroth.context import context_for_agent
 from sephiroth.contracts import (
+    AbstentionReason,
     AgentCapability,
     AgentResult,
     LifecycleState,
@@ -41,10 +42,16 @@ from sephiroth.contracts import (
 from sephiroth.models import ModelProvider, OllamaClient, get_llm_client
 from sephiroth.safety import check_input, check_scope
 from sephiroth.safety import decide as decide_abstention
-from sephiroth.safety.abstention import PARTIAL_BANNER
+from sephiroth.safety.abstention import OBSERVED_BANNER, PARTIAL_BANNER
 from sephiroth.telemetry import build_trace, traced_span
 from sephiroth.telemetry.explain import build_explanation
-from sephiroth.verification import compute_confidence, extract_claims, harvest_evidence, verify_claims
+from sephiroth.verification import (
+    compute_confidence,
+    extract_claims,
+    harvest_evidence,
+    harvest_observations,
+    verify_claims,
+)
 from sephiroth.verification.citation_guard import audit, sanitize
 from sephiroth.verification.combined import extract_and_verify
 
@@ -233,14 +240,23 @@ async def _verify_and_decide(
     `settings.enable_combined_verification` (default on) does the
     decomposition and the judging in one model call instead of two
     sequential ones — see `verification/combined.py` for why the merge
-    preserves every guarantee."""
+    preserves every guarantee.
+
+    SPEC-004 1.2.0 (ADR-018): `harvest_observations` runs alongside
+    `harvest_evidence` — a perception tool's own output (vision/imaging) can
+    ground a claim as OBSERVED without ever counting as independent
+    corroboration. Each claim's `originating_agent` is then overwritten with
+    the actual answering agent id (`state.agent_results`) rather than trust
+    the extraction prompt's guess — since Phase 14 exactly one agent answers
+    per consultation, so there is never ambiguity about which one that is."""
     with traced_span(state, SpanKind.VERIFY, "verify"):
         evidence = harvest_evidence(state.tool_calls)
+        observations = harvest_observations(state.tool_calls)
         if settings.enable_combined_verification:
-            report = await extract_and_verify(sanitized_answer, evidence, client)
+            report = await extract_and_verify(sanitized_answer, evidence, client, observations=observations)
         else:
             claims = await extract_claims(sanitized_answer, client)
-            report = await verify_claims(claims, evidence, client)
+            report = await verify_claims(claims, evidence, client, observations=observations)
         tool_failures = sum(1 for tc in state.tool_calls if not tc.ok)
         confidence = compute_confidence(report, state.citation_report, tool_failures)
         # `check_input`/`check_scope` already ran in `_early_reject` before
@@ -249,6 +265,15 @@ async def _verify_and_decide(
         # re-check here. `input_flags` stays empty; `decide()` still takes
         # the parameter so its priority-order contract doesn't change shape.
         input_flags: List[SafetyFlag] = []
+        answering_agent = next(iter(state.agent_results), "")
+        if answering_agent:
+            report = report.model_copy(
+                update={
+                    "claims": [
+                        c.model_copy(update={"originating_agent": answering_agent}) for c in report.claims
+                    ]
+                }
+            )
         abstention = decide_abstention(report, confidence, input_flags)
 
         state.evidence = evidence
@@ -269,7 +294,16 @@ def _final_answer(sanitized_answer: str, state: RunState) -> str:
     if abstention.status.value == "abstain":
         return abstention.message
     if abstention.status.value == "partial":
-        return f"{PARTIAL_BANNER}\n\n{sanitized_answer}"
+        # SPEC-004 1.2.0 (ADR-018): a partial driven by OBSERVED claims gets
+        # its own banner, distinct from the generic one — a clinician can
+        # tell "moderate confidence overall" apart from "faithful to an AI
+        # visual description, not independently corroborated."
+        banner = (
+            OBSERVED_BANNER
+            if abstention.reason is AbstentionReason.OBSERVED_NOT_CORROBORATED
+            else PARTIAL_BANNER
+        )
+        return f"{banner}\n\n{sanitized_answer}"
     return sanitized_answer
 
 

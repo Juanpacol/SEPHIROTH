@@ -23,10 +23,6 @@ def _case(id_, expects_abstention=False):
     )
 
 
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — 3-tuple return (+observations) lands in SF067",
-    strict=False,
-)
 def test_build_verification_inputs_extracts_evidence_from_guideline_results():
     transcript = {
         "tool_calls": [
@@ -45,10 +41,6 @@ def test_build_verification_inputs_extracts_evidence_from_guideline_results():
     assert observations == []
 
 
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — 3-tuple return (+observations) lands in SF067",
-    strict=False,
-)
 def test_build_verification_inputs_handles_no_evidence():
     transcript = {
         "tool_calls": [{"name": "search_clinical_guidelines", "arguments": {}, "result": {"results": []}}]
@@ -59,10 +51,6 @@ def test_build_verification_inputs_handles_no_evidence():
     assert observations == []
 
 
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — harvest_observations wiring lands in SF067",
-    strict=False,
-)
 def test_build_verification_inputs_extracts_observations_from_vision_output():
     """AC-004-10: the replay path must call harvest_observations too, or it
     silently diverges from live executor behavior for an imaging/vision

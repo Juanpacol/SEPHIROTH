@@ -172,16 +172,10 @@ def test_unsupported_high_risk_detection(status, risk, expected):
 # --------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — grounded_claim_ratio lands in SF067", strict=False
-)
 def test_grounded_ratio_of_empty_report_is_one():
     assert VerificationReport().grounded_claim_ratio == 1.0
 
 
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — grounded_claim_ratio lands in SF067", strict=False
-)
 def test_grounded_ratio_weights_supported_full_and_observed_partial():
     report = VerificationReport(
         claims=[
@@ -194,9 +188,6 @@ def test_grounded_ratio_weights_supported_full_and_observed_partial():
     assert report.grounded_claim_ratio == pytest.approx((1.0 + OBSERVED_WEIGHT) / 2)
 
 
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — grounded_claim_ratio lands in SF067", strict=False
-)
 def test_grounded_ratio_all_observed_matches_observed_weight():
     from sephiroth.verification.confidence import OBSERVED_WEIGHT
 

@@ -22,7 +22,13 @@ from sephiroth.contracts import CitationReport, EvidenceRecord, ToolCall
 from sephiroth.models import ModelProvider
 from sephiroth.runtime.executor import to_tool_calls
 from sephiroth.safety import check_input, decide
-from sephiroth.verification import compute_confidence, extract_claims, harvest_evidence, verify_claims
+from sephiroth.verification import (
+    compute_confidence,
+    extract_claims,
+    harvest_evidence,
+    harvest_observations,
+    verify_claims,
+)
 
 # Transcripts don't record a citation_guard.audit() verdict (only the
 # answer/tool_calls), so every replayed case is treated as zero-fabrication
@@ -30,13 +36,21 @@ from sephiroth.verification import compute_confidence, extract_claims, harvest_e
 # `compute_confidence`, not the claim-verification pipeline itself.
 
 
-def build_verification_inputs(transcript: Dict[str, Any]) -> tuple[List[ToolCall], List[EvidenceRecord]]:
+def build_verification_inputs(
+    transcript: Dict[str, Any],
+) -> tuple[List[ToolCall], List[EvidenceRecord], List[EvidenceRecord]]:
     """Converts a committed transcript's raw `tool_calls` into the typed
     records `sephiroth.verification` expects — the same conversion
-    `sephiroth.runtime.executor` does live, reused here via `to_tool_calls`."""
+    `sephiroth.runtime.executor` does live, reused here via `to_tool_calls`.
+
+    SPEC-004 1.2.0 (ADR-018): also harvests observations, so a future
+    imaging/vision golden case replays with the same OBSERVED grounding the
+    live executor gives it — without this, the replay path would silently
+    diverge from production behavior for that case shape."""
     tool_calls = to_tool_calls("evidence", transcript.get("tool_calls", []))
     evidence = harvest_evidence(tool_calls)
-    return tool_calls, evidence
+    observations = harvest_observations(tool_calls)
+    return tool_calls, evidence, observations
 
 
 async def replay_abstention(
@@ -44,11 +58,11 @@ async def replay_abstention(
 ) -> Dict[str, Any]:
     """Runs the live verification/abstention pipeline over one transcript's
     recorded answer, returning the decision alongside the case's expectation."""
-    tool_calls, evidence = build_verification_inputs(transcript)
+    tool_calls, evidence, observations = build_verification_inputs(transcript)
     answer = transcript.get("answer", "")
 
     claims = await extract_claims(answer, client)
-    report = await verify_claims(claims, evidence, client)
+    report = await verify_claims(claims, evidence, client, observations=observations)
     tool_failures = sum(1 for tc in tool_calls if not tc.ok)
     citation_report = CitationReport()  # see module docstring
     confidence = compute_confidence(report, citation_report, tool_failures)

@@ -151,9 +151,6 @@ def test_non_dict_items_in_results_are_skipped():
 # --------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — harvest_observations lands in SF067", strict=False
-)
 def test_harvest_observations_builds_a_tool_output_record_from_a_successful_vision_description():
     from sephiroth.verification.evidence import harvest_observations
 
@@ -166,27 +163,6 @@ def test_harvest_observations_builds_a_tool_output_record_from_a_successful_visi
     assert records[0].originating_agent == "radiology"
 
 
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — harvest_observations lands in SF067", strict=False
-)
-def test_harvest_observations_builds_a_tool_output_record_from_successful_imaging_findings():
-    from sephiroth.verification.evidence import harvest_observations
-
-    result = {
-        "status": "ok",
-        "modality": "xray",
-        "findings": [{"label": "abnormal", "probability": 0.91}],
-    }
-    records = harvest_observations([_vision_tool_call(result, tool="analyze_medical_image")])
-
-    assert len(records) == 1
-    assert records[0].source_type is SourceType.TOOL_OUTPUT
-    assert "abnormal" in records[0].content
-
-
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — harvest_observations lands in SF067", strict=False
-)
 @pytest.mark.parametrize(
     "result",
     [
@@ -204,9 +180,21 @@ def test_harvest_observations_yields_nothing_for_degraded_or_empty_results(resul
     assert harvest_observations([_vision_tool_call(result)]) == []
 
 
-@pytest.mark.xfail(
-    reason="SPEC-004 1.2.0 not yet implemented — harvest_observations lands in SF067", strict=False
-)
+def test_harvest_observations_builds_a_tool_output_record_from_successful_imaging_findings():
+    from sephiroth.verification.evidence import harvest_observations
+
+    result = {
+        "status": "ok",
+        "modality": "xray",
+        "findings": [{"label": "abnormal", "probability": 0.91}],
+    }
+    records = harvest_observations([_vision_tool_call(result, tool="analyze_medical_image")])
+
+    assert len(records) == 1
+    assert records[0].source_type is SourceType.TOOL_OUTPUT
+    assert "abnormal" in records[0].content
+
+
 def test_harvest_observations_ignores_non_perception_tools():
     from sephiroth.verification.evidence import harvest_observations
 

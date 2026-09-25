@@ -173,7 +173,6 @@ def _observation(id_, content, agent="radiology"):
     )
 
 
-@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
 @pytest.mark.asyncio
 async def test_claim_citing_only_an_observation_becomes_observed():
     claims = [Claim(id="c1", text="There is a left-basilar opacity")]
@@ -185,7 +184,6 @@ async def test_claim_citing_only_an_observation_becomes_observed():
     assert report.claims[0].status is VerificationStatus.OBSERVED
 
 
-@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
 @pytest.mark.asyncio
 async def test_claim_with_no_evidence_and_no_observations_stays_unknown():
     claims = [Claim(id="c1", text="metformin is first-line")]
@@ -193,7 +191,6 @@ async def test_claim_with_no_evidence_and_no_observations_stays_unknown():
     assert report.claims[0].status is VerificationStatus.UNKNOWN
 
 
-@pytest.mark.xfail(reason="SPEC-004 1.2.0 not yet implemented — OBSERVED lands in SF067", strict=False)
 @pytest.mark.asyncio
 async def test_invented_finding_absent_from_observations_stays_unsupported():
     claims = [Claim(id="c1", text="There is a large pleural effusion", risk="critical")]
