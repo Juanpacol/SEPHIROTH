@@ -35,6 +35,9 @@ const ES: Record<string, string> = {
   "dashboard.stat.moderate": "Moderados",
   "dashboard.stat.stable": "Estables",
   "dashboard.stat.maxPriority": "Puntaje de prioridad máxima",
+  // Mirrors PRIORITY_SCORE (src/sephiroth/safety/priority.py): high=3, medium=2, low=1.
+  "dashboard.stat.maxPriorityOf": "de 3",
+  "dashboard.stat.maxPriorityHint": "1 bajo · 2 moderado · 3 alto",
   "dashboard.stat.alertResponse": "Tiempo respuesta alertas",
   "dashboard.stat.aiConfidence": "Confianza IA",
   "dashboard.stat.evidenceCoverage": "Cobertura de evidencia",

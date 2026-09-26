@@ -5,9 +5,14 @@ import { useEffect, useState } from "react";
 import { CalendarClock, ChevronRight, Menu } from "lucide-react";
 import { useUser } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
+import { CLINICIAN_NAV, PATIENT_NAV } from "@/lib/nav";
 import MobileNavDrawer from "@/components/mobile-nav-drawer";
 import NotificationBell from "@/components/notification-bell";
 import ThemeToggle from "@/components/theme-toggle";
+
+const NAV_ID_BY_HREF = new Map(
+  [...CLINICIAN_NAV, ...PATIENT_NAV].flatMap((group) => group.items.map((item) => [item.href, item.id] as const))
+);
 
 export default function Topbar() {
   const pathname = usePathname();
@@ -55,7 +60,7 @@ export default function Topbar() {
               <span key={i} className={`items-center gap-1.5 ${last ? "flex min-w-0" : "hidden sm:flex"}`}>
                 {i > 0 && <ChevronRight size={14} className="hidden shrink-0 sm:block" />}
                 <span className={last ? "truncate font-semibold text-ink" : ""}>
-                  {decodeURIComponent(crumb)}
+                  {crumbLabel(crumbs, i, t)}
                 </span>
               </span>
             );
@@ -83,4 +88,11 @@ export default function Topbar() {
       </div>
     </header>
   );
+}
+
+/** A route that is a nav destination reads with its nav label ("Panel", not
+ * "dashboard"); anything else (an id, a sub-route) is shown as in the URL. */
+function crumbLabel(crumbs: string[], i: number, t: (key: string) => string): string {
+  const id = NAV_ID_BY_HREF.get(`/${crumbs.slice(0, i + 1).join("/")}`);
+  return id ? t(`nav.${id}`) : decodeURIComponent(crumbs[i]);
 }
