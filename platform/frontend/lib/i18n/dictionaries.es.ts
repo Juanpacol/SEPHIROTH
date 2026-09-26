@@ -947,6 +947,25 @@ const ES: Record<string, string> = {
   "alerts.category.lab": "Laboratorio",
   "alerts.category.medication": "Medicación",
   "alerts.category.clinical": "Clínica",
+  // Dashboard explainability (SPEC-031).
+  "dashboard.distribution.title": "Distribución de pacientes por estado",
+  "dashboard.distribution.empty": "Todavía no hay pacientes para clasificar.",
+  "dashboard.signal.threshold": "umbral {comparator} {threshold}",
+  "dashboard.signal.trendLabel": "Tendencia de las últimas lecturas: de {first} a {last}",
+  "dashboard.signal.activeSince": "activa {when}",
+  "dashboard.signal.recurredAria": "se repitió {count} veces en los últimos 30 días",
+  "risk.explain.hyperkalemia": "Riesgo de arritmias cardíacas",
+  "risk.explain.hypokalemia": "Riesgo de arritmias y debilidad muscular",
+  "risk.explain.supratherapeutic_inr": "Riesgo de sangrado",
+  "risk.explain.poor_glycemic_control": "Riesgo de complicaciones de la diabetes",
+  "risk.explain.elevated_bnp": "Posible descompensación de insuficiencia cardíaca",
+  "risk.explain.reduced_ejection_fraction": "Función de bombeo del corazón reducida",
+  "risk.explain.obesity": "Aumenta el riesgo de diabetes e hipertensión",
+  "risk.explain.severe_obesity": "Aumenta mucho el riesgo cardiovascular y quirúrgico",
+  "risk.explain.high_total_cholesterol": "Aumenta el riesgo cardiovascular",
+  "risk.explain.high_ldl_cholesterol": "Aumenta el riesgo cardiovascular",
+  "risk.explain.very_high_ldl_cholesterol": "Riesgo cardiovascular alto",
+  "risk.explain.hypertensive_range": "Riesgo de daño cardiovascular y renal",
 };
 
 export default ES;

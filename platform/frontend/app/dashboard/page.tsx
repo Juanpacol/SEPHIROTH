@@ -8,6 +8,7 @@ import { useLanguage } from "@/lib/language";
 import ActionItemsList from "@/components/action-items-list";
 import CriticalPatientsList from "@/components/critical-patients-list";
 import StatCard from "@/components/stat-card";
+import RiskDistribution from "@/components/dashboard/risk-distribution";
 
 export default function DashboardPage() {
   const { t } = useLanguage();
@@ -37,10 +38,12 @@ export default function DashboardPage() {
         <p className="text-sm text-muted">{t("dashboard.subtitle")}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label={t("dashboard.stat.critical")} value={data.critical_count} tone="danger" />
-        <StatCard label={t("dashboard.stat.moderate")} value={data.moderate_count} tone="warning" />
-        <StatCard label={t("dashboard.stat.stable")} value={data.stable_count} tone="success" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <RiskDistribution
+          critical={data.critical_count}
+          moderate={data.moderate_count}
+          stable={data.stable_count}
+        />
         <StatCard
           label={t("dashboard.stat.maxPriority")}
           value={data.max_priority_score}
@@ -50,23 +53,25 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="card !p-4">
-        <div className="mb-1 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-sm font-bold">
-            <ShieldAlert size={15} className="text-primary" /> {t("dashboard.criticalPatients")}
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div className="card !p-4">
+          <h2 className="mb-1 flex items-center gap-2 text-sm font-bold">
+            <ClipboardList size={15} className="text-primary" /> {t("dashboard.actionItems.title")}
           </h2>
-          <Link href="/patients?sort=risk" className="text-xs font-semibold text-primary">
-            {t("dashboard.viewAll")}
-          </Link>
+          <ActionItemsList groups={bootstrap?.action_items.groups ?? []} maxVisible={6} />
         </div>
-        <CriticalPatientsList patients={data.critical_patients} maxVisible={5} />
-      </div>
 
-      <div className="card !p-4">
-        <h2 className="mb-1 flex items-center gap-2 text-sm font-bold">
-          <ClipboardList size={15} className="text-primary" /> {t("dashboard.actionItems.title")}
-        </h2>
-        <ActionItemsList groups={bootstrap?.action_items.groups ?? []} maxVisible={6} />
+        <div className="card !p-4">
+          <div className="mb-1 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-sm font-bold">
+              <ShieldAlert size={15} className="text-primary" /> {t("dashboard.criticalPatients")}
+            </h2>
+            <Link href="/patients?sort=risk" className="text-xs font-semibold text-primary">
+              {t("dashboard.viewAll")}
+            </Link>
+          </div>
+          <CriticalPatientsList patients={data.critical_patients} maxVisible={5} />
+        </div>
       </div>
     </div>
   );

@@ -124,6 +124,39 @@ describe("ActionItemsList", () => {
     expect(document.querySelector("time")).toBeNull();
   });
 
+  it("explains a signal: value against threshold, trend, clinical meaning and recurrence", () => {
+    localStorage.setItem("cac_lang", "es");
+    const hoursAgo = (h: number) => new Date(Date.now() - h * 3600 * 1000).toISOString().replace("Z", "");
+    renderList([
+      group([
+        baseItem({
+          title: "Hyperkalemia",
+          detail: "Potassium 6.8 mEq/L (> 5.5)",
+          rule_code: "hyperkalemia",
+          factors: [{ test: "potassium", value: 6.8, comparator: ">", threshold: 5.5, unit: "mEq/L" }],
+          trend: [
+            { value: 4.9, taken_at: hoursAgo(72) },
+            { value: 5.9, taken_at: hoursAgo(24) },
+            { value: 6.8, taken_at: hoursAgo(1) },
+          ],
+          recurrence: { active_since: hoursAgo(72), prior_count: 2 },
+        }),
+      ]),
+    ]);
+    expect(screen.getByText("Potasio 6.8 mEq/L · umbral > 5.5")).toBeInTheDocument();
+    expect(screen.getByText("Potasio alto (hiperpotasemia)")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /de 4.9 a 6.8/ })).toBeInTheDocument();
+    expect(screen.getByText("Riesgo de arritmias cardíacas")).toBeInTheDocument();
+    expect(screen.getByText(/activa hace 3 d/)).toBeInTheDocument();
+    expect(screen.getByLabelText("se repitió 2 veces en los últimos 30 días")).toBeInTheDocument();
+    localStorage.removeItem("cac_lang");
+  });
+
+  it("renders a plain row when there is nothing to explain", () => {
+    renderList([group([baseItem({ category: "approval", severity: "medium", rule_code: null, factors: null })])]);
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
+
   it("shows the empty state when there are no items", () => {
     renderList([]);
     expect(screen.getByText(/caught up|todo al día/i)).toBeInTheDocument();
