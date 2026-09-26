@@ -16,6 +16,7 @@ import {
 import { api, type DashboardActionGroup, type DashboardActionItem } from "@/lib/api";
 import { friendlyTestName, parseInteractionLabel, riskLabel } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
+import { relativeTime } from "@/lib/relative-time";
 import StatusPill from "@/components/status-pill";
 import { useToast } from "@/components/ui/toast";
 
@@ -129,8 +130,9 @@ function ResolveDecisionButton({ consultationId }: { consultationId: string }) {
 }
 
 function SignalRow({ item }: { item: DashboardActionItem }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const Icon = CATEGORY_ICON[item.category];
+  const when = relativeTime(item.occurred_at, lang);
   return (
     <li className="flex min-w-0 items-center gap-2.5">
       <Icon
@@ -138,6 +140,11 @@ function SignalRow({ item }: { item: DashboardActionItem }) {
         className={`shrink-0 ${item.severity === "critical" || item.severity === "high" ? "text-danger" : "text-warning"}`}
       />
       <span className="min-w-0 flex-1 truncate text-xs leading-tight text-muted">{itemText(item, t)}</span>
+      {when && item.occurred_at && (
+        <time dateTime={item.occurred_at} className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-muted">
+          {when}
+        </time>
+      )}
       {item.category === "decision" && item.consultation_id && (
         <ResolveDecisionButton consultationId={item.consultation_id} />
       )}
