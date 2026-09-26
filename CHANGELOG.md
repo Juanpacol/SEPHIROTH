@@ -5,6 +5,10 @@ All notable changes to this project are documented here. Format based on
 
 ## [Unreleased]
 
+## SF070
+
+- Dashboard alert explainability (SPEC-031, ADR-019): every risk flag carries `rule_code` and structured `factors` (value, comparator, threshold, unit); dashboard action items add `factors`, `trend` (last 5 plausible readings) and `recurrence` (active since, prior resolutions in 30 days). The dashboard shows a risk distribution bar, a value-vs-threshold range bar, a mini trend, a recurrence chip and a translated clinical meaning per signal, in a two-column layout. Labels/details unchanged, so alert dedupe and auto-resolve are unaffected [feat]
+
 ## SF062
 
 - Move the RAG corpus from decoupled Python-literal-plus-JSON-artifact storage onto pgvector (SPEC-030, ADR-017): `RAGPipeline`/`MedicalKnowledgeBase` now query `guideline_documents` directly and require a real embedding provider, closing DEBT-003 for real. `data/vectors/` (in-memory vector store) is deleted; `search_clinical_guidelines` and the evidence-library browse helpers are now async. New `data/rag/seed_pgvector.py` populates the table; CI's `test` job gained a Postgres service to seed/migrate against. Tests touching RAG now skip gracefully without a local Postgres (`docker compose up -d postgres`) [refactor]

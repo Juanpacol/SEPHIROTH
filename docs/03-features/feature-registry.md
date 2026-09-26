@@ -26,7 +26,7 @@ evaluation is out of scope for Phases 0–5 and gets filled in afterwards.
 | F-012 | Clinical timeline extraction | ✅ | `timeline_extractor.py` | `test_timeline_extractor.py` | — | — |
 | F-013 | Medical imaging analysis | ⚠️ | `imaging_server.py` | — | — | 📋 `02-agents/radiology-agent.md` |
 | F-014 | SSE streaming consultation | ✅ | `workflow.py`, `routers/agents.py` | `test_sse_contract.py` | — | `00-migration-charter.md` §2.1 |
-| F-044 | Dashboard alert explainability + visual summary (rule factors, trend, recurrence, risk distribution) | 📋 | `safety/risk.py`, `routers/dashboard.py`, `components/dashboard/` | `test_risk_explainability.py`, `test_dashboard_explainability.py` | — | SPEC-031 |
+| F-044 | Dashboard alert explainability + visual summary (rule factors, trend, recurrence, risk distribution) | ✅ | `safety/risk.py`, `routers/dashboard.py`, `components/dashboard/` | `test_risk_explainability.py`, `test_dashboard_explainability.py` | — | SPEC-031 |
 
 F-013 is ⚠️ because MONAI inference is gated behind an unset `monai_model_path`;
 what runs today is metadata inspection plus the vision model. The vendored
