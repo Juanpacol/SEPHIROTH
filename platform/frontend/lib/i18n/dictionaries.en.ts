@@ -945,6 +945,25 @@ const EN: Record<string, string> = {
   "alerts.category.lab": "Lab",
   "alerts.category.medication": "Medication",
   "alerts.category.clinical": "Clinical",
+  // Dashboard explainability (SPEC-031).
+  "dashboard.distribution.title": "Patients by risk state",
+  "dashboard.distribution.empty": "No patients to classify yet.",
+  "dashboard.signal.threshold": "threshold {comparator} {threshold}",
+  "dashboard.signal.trendLabel": "Trend of recent readings: from {first} to {last}",
+  "dashboard.signal.activeSince": "active {when}",
+  "dashboard.signal.recurredAria": "recurred {count} times in the last 30 days",
+  "risk.explain.hyperkalemia": "Risk of cardiac arrhythmia",
+  "risk.explain.hypokalemia": "Risk of arrhythmia and muscle weakness",
+  "risk.explain.supratherapeutic_inr": "Bleeding risk",
+  "risk.explain.poor_glycemic_control": "Risk of diabetes complications",
+  "risk.explain.elevated_bnp": "Possible heart-failure decompensation",
+  "risk.explain.reduced_ejection_fraction": "Reduced heart pumping function",
+  "risk.explain.obesity": "Raises risk of diabetes and hypertension",
+  "risk.explain.severe_obesity": "Sharply raises cardiovascular and surgical risk",
+  "risk.explain.high_total_cholesterol": "Raises cardiovascular risk",
+  "risk.explain.high_ldl_cholesterol": "Raises cardiovascular risk",
+  "risk.explain.very_high_ldl_cholesterol": "High cardiovascular risk",
+  "risk.explain.hypertensive_range": "Risk of cardiovascular and kidney damage",
 };
 
 export default EN;

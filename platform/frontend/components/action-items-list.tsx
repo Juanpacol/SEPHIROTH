@@ -13,11 +13,13 @@ import {
   ShieldAlert,
   TrendingDown,
 } from "lucide-react";
-import { api, type DashboardActionGroup, type DashboardActionItem } from "@/lib/api";
+import { api, type DashboardActionGroup, type DashboardActionItem, type RiskFactor } from "@/lib/api";
 import { friendlyTestName, parseInteractionLabel, riskLabel } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 import { relativeTime } from "@/lib/relative-time";
 import StatusPill from "@/components/status-pill";
+import MiniTrend from "@/components/dashboard/mini-trend";
+import RangeBar from "@/components/dashboard/range-bar";
 import { useToast } from "@/components/ui/toast";
 
 const CATEGORY_ICON: Record<DashboardActionItem["category"], LucideIcon> = {
@@ -46,6 +48,8 @@ export function itemText(item: DashboardActionItem, t: (key: string) => string):
         return t("clinical.interaction").replace("{drugA}", interaction.drugA).replace("{drugB}", interaction.drugB);
       }
       const title = riskLabel(item.title, t);
+      // With structured factors the range bar already says it, translated.
+      if (item.factors?.length) return title;
       return item.detail ? `${title} — ${item.detail}` : title;
     }
     case "deteriorating": {
@@ -129,25 +133,79 @@ function ResolveDecisionButton({ consultationId }: { consultationId: string }) {
   );
 }
 
+const fmt = (n: number) => String(Math.round(n * 10) / 10);
+
+function factorText(factor: RiskFactor, t: (key: string) => string): string {
+  const reading = `${friendlyTestName(factor.test, t)} ${fmt(factor.value)}${factor.unit ? ` ${factor.unit}` : ""}`;
+  const threshold = t("dashboard.signal.threshold")
+    .replace("{comparator}", factor.comparator)
+    .replace("{threshold}", fmt(factor.threshold));
+  return `${reading} · ${threshold}`;
+}
+
+function SignalDetails({ item }: { item: DashboardActionItem }) {
+  const { t, lang } = useLanguage();
+  const factors = item.factors ?? [];
+  const trend = item.trend ?? [];
+  const explainKey = item.rule_code && item.rule_code !== "drug_interaction" ? `risk.explain.${item.rule_code}` : null;
+  const explanation = explainKey && t(explainKey) !== explainKey ? t(explainKey) : null;
+  const recurrence = item.recurrence;
+  if (!factors.length && trend.length < 2 && !explanation && !recurrence) return null;
+
+  const trendTone = item.severity === "critical" || item.severity === "high" ? "danger" : "warning";
+  const trendLabel = t("dashboard.signal.trendLabel")
+    .replace("{first}", fmt(trend[0]?.value ?? 0))
+    .replace("{last}", fmt(trend[trend.length - 1]?.value ?? 0));
+
+  return (
+    <div className="mt-1 flex min-w-0 flex-col gap-1 pl-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
+      {factors.map((factor) => (
+        <RangeBar key={factor.test} factor={factor} text={factorText(factor, t)} />
+      ))}
+      {trend.length >= 2 && (
+        <MiniTrend values={trend.map((point) => point.value)} lastTone={trendTone} label={trendLabel} />
+      )}
+      {(explanation || recurrence) && (
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-[11px] leading-tight">
+          {explanation && <span className="text-ink/80">{explanation}</span>}
+          {recurrence && (
+            <span className="whitespace-nowrap rounded-full bg-primary-soft px-2 py-0.5 font-semibold text-primary">
+              {t("dashboard.signal.activeSince").replace("{when}", relativeTime(recurrence.active_since, lang))}
+              {recurrence.prior_count > 0 && (
+                <span aria-label={t("dashboard.signal.recurredAria").replace("{count}", String(recurrence.prior_count))}>
+                  {` · ↻ ${recurrence.prior_count}`}
+                </span>
+              )}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SignalRow({ item }: { item: DashboardActionItem }) {
   const { t, lang } = useLanguage();
   const Icon = CATEGORY_ICON[item.category];
   const when = relativeTime(item.occurred_at, lang);
   return (
-    <li className="flex min-w-0 items-center gap-2.5">
-      <Icon
-        size={14}
-        className={`shrink-0 ${item.severity === "critical" || item.severity === "high" ? "text-danger" : "text-warning"}`}
-      />
-      <span className="min-w-0 flex-1 truncate text-xs leading-tight text-muted">{itemText(item, t)}</span>
-      {when && item.occurred_at && (
-        <time dateTime={item.occurred_at} className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-muted">
-          {when}
-        </time>
-      )}
-      {item.category === "decision" && item.consultation_id && (
-        <ResolveDecisionButton consultationId={item.consultation_id} />
-      )}
+    <li className="min-w-0">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <Icon
+          size={14}
+          className={`shrink-0 ${item.severity === "critical" || item.severity === "high" ? "text-danger" : "text-warning"}`}
+        />
+        <span className="min-w-0 flex-1 truncate text-xs leading-tight text-muted">{itemText(item, t)}</span>
+        {when && item.occurred_at && (
+          <time dateTime={item.occurred_at} className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-muted">
+            {when}
+          </time>
+        )}
+        {item.category === "decision" && item.consultation_id && (
+          <ResolveDecisionButton consultationId={item.consultation_id} />
+        )}
+      </div>
+      <SignalDetails item={item} />
     </li>
   );
 }
@@ -190,7 +248,7 @@ export default function ActionItemsList({
               )}
               <StatusPill label={group.severity} />
             </div>
-            <ul className="mt-1 space-y-1">
+            <ul className="mt-1.5 space-y-2">
               {group.items.map((item, j) => (
                 <SignalRow key={`${item.category}-${j}`} item={item} />
               ))}

@@ -155,6 +155,15 @@ const ACTION_ITEMS = [
     title: "Hyperkalemia",
     detail: "Potassium 6.4 mmol/L, up from 5.1 in 48 hours.",
     occurred_at: iso(0, 7),
+    rule_code: "hyperkalemia",
+    factors: [{ test: "potassium", value: 6.4, comparator: ">" as const, threshold: 5.5, unit: "mEq/L" }],
+    trend: [
+      { value: 4.8, taken_at: iso(-4) },
+      { value: 5.1, taken_at: iso(-2) },
+      { value: 5.7, taken_at: iso(-1) },
+      { value: 6.4, taken_at: iso(0, 7) },
+    ],
+    recurrence: { active_since: iso(-3), prior_count: 2 },
   },
   {
     category: "lab" as const,
@@ -165,6 +174,13 @@ const ACTION_ITEMS = [
     value: 4.8,
     unit: "",
     occurred_at: iso(-1),
+    rule_code: "supratherapeutic_inr",
+    factors: [{ test: "inr", value: 4.8, comparator: ">" as const, threshold: 3.5, unit: "" }],
+    trend: [
+      { value: 2.6, taken_at: iso(-6) },
+      { value: 3.1, taken_at: iso(-3) },
+      { value: 4.8, taken_at: iso(-1) },
+    ],
   },
   {
     category: "followup" as const,

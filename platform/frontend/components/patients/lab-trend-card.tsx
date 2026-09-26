@@ -4,62 +4,19 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type LabHistoryEntry } from "@/lib/api";
 import { friendlyTestName } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
+import MiniTrend from "@/components/dashboard/mini-trend";
 
-const SPARK_WIDTH = 96;
-const SPARK_HEIGHT = 24;
-const SPARK_PADDING = 3;
-
-/** A minimal trend line, oldest -> newest left to right. `entries` arrives
- * newest-first (matches how a clinician reads the list below it), so this
- * reverses just for the drawing. Values, not the API's already-decided
- * abnormal/critical flags, drive the axis -- a single wildly abnormal point
- * would otherwise flatten every other point on the line, which is exactly
- * the kind of number a clinician needs to still be able to read. */
+/** `entries` arrives newest-first (how a clinician reads the list), so the
+ * line is drawn from the reversed copy. */
 function Sparkline({ entries }: { entries: LabHistoryEntry[] }) {
-  if (entries.length < 2) return null;
   const chronological = [...entries].reverse();
-  const values = chronological.map((e) => e.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
-  const innerW = SPARK_WIDTH - SPARK_PADDING * 2;
-  const innerH = SPARK_HEIGHT - SPARK_PADDING * 2;
-  const points = chronological
-    .map((e, i) => {
-      const x = SPARK_PADDING + (i / (chronological.length - 1)) * innerW;
-      const y = SPARK_PADDING + innerH - ((e.value - min) / span) * innerH;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
   const last = chronological[chronological.length - 1];
-  const lastX = SPARK_PADDING + innerW;
-  const lastY = SPARK_PADDING + innerH - ((last.value - min) / span) * innerH;
-
   return (
-    <svg
-      width={SPARK_WIDTH}
-      height={SPARK_HEIGHT}
-      viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`}
-      className="shrink-0"
-      role="img"
-      aria-label={`Trend: ${chronological.map((e) => e.value).join(" → ")}`}
-    >
-      <polyline
-        points={points}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        className="text-ink/30"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      <circle
-        cx={lastX}
-        cy={lastY}
-        r={2}
-        className={last.is_critical ? "fill-danger" : last.is_abnormal ? "fill-warning" : "fill-ink/50"}
-      />
-    </svg>
+    <MiniTrend
+      values={chronological.map((e) => e.value)}
+      lastTone={last?.is_critical ? "danger" : last?.is_abnormal ? "warning" : "neutral"}
+      label={`Trend: ${chronological.map((e) => e.value).join(" → ")}`}
+    />
   );
 }
 

@@ -55,6 +55,20 @@ export interface DashboardActionItem {
   consultation_id?: string;
   /** Naive UTC ISO timestamp of the signal; null when it has no moment of its own (interactions). */
   occurred_at?: string | null;
+  /** SPEC-031: why the signal fired — null when there is nothing to explain. */
+  rule_code?: string | null;
+  factors?: RiskFactor[] | null;
+  trend?: { value: number; taken_at: string }[] | null;
+  recurrence?: { active_since: string; prior_count: number } | null;
+}
+
+/** One measured input of a firing risk rule (SPEC-031). */
+export interface RiskFactor {
+  test: string;
+  value: number;
+  comparator: ">" | "<" | "≥";
+  threshold: number;
+  unit: string;
 }
 
 /** Every signal for one patient, so a patient is triaged once. `severity` is
@@ -204,6 +218,9 @@ export interface RiskFlag {
   label: string;
   severity: "high" | "medium";
   detail: string;
+  rule_code?: string;
+  factors?: RiskFactor[];
+  drugs?: string[];
 }
 
 export interface TimelineEvent {
