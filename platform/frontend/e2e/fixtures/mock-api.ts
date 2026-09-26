@@ -154,6 +154,7 @@ const ACTION_ITEMS = [
     patient_name: PATIENTS[0].name,
     title: "Severe hyperkalaemia",
     detail: "Potassium 6.4 mmol/L, up from 5.1 in 48 hours.",
+    occurred_at: iso(0, 7),
   },
   {
     category: "lab" as const,
@@ -163,6 +164,7 @@ const ACTION_ITEMS = [
     test_name: "INR",
     value: 4.8,
     unit: "",
+    occurred_at: iso(-1),
   },
   {
     category: "followup" as const,
@@ -171,6 +173,7 @@ const ACTION_ITEMS = [
     patient_name: PATIENTS[2].name,
     check_key: "day7",
     days_late: 12,
+    occurred_at: iso(-12),
   },
 ];
 
@@ -287,6 +290,7 @@ const DASHBOARD_ACTION_ITEMS = {
           test_name: "potassium",
           value: 6.4,
           unit: "mmol/L",
+          occurred_at: iso(0, 6),
         },
       ],
     },

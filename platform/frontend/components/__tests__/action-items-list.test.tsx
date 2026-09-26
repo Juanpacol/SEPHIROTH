@@ -113,6 +113,17 @@ describe("ActionItemsList", () => {
     expect(screen.getAllByRole("link")).toHaveLength(2);
   });
 
+  it("shows how long ago each signal happened", () => {
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString().replace("Z", "");
+    renderList([group([baseItem({ title: "Hyperkalemia", occurred_at: fiveMinutesAgo })])]);
+    expect(screen.getByText("5 min. ago")).toBeInTheDocument();
+  });
+
+  it("shows no time for a signal without one", () => {
+    renderList([group([baseItem({ category: "interaction", drug_a: "warfarin", drug_b: "aspirin", occurred_at: null })])]);
+    expect(document.querySelector("time")).toBeNull();
+  });
+
   it("shows the empty state when there are no items", () => {
     renderList([]);
     expect(screen.getByText(/caught up|todo al día/i)).toBeInTheDocument();

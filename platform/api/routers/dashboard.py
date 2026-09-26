@@ -13,7 +13,7 @@ wasn't already persisted by another route."""
 import os
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any, Awaitable, Callable, Dict, List
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
@@ -140,6 +140,7 @@ async def _dashboard_evolution(session: AsyncSession) -> Dict[str, Any]:
         tests = by_patient.get(p.id, {})
         worsened = improved = 0
         worsened_tests: List[str] = []
+        worsened_at: Optional[datetime] = None
         for test_name, readings in tests.items():
             if len(readings) < 2:
                 continue
@@ -148,14 +149,21 @@ async def _dashboard_evolution(session: AsyncSession) -> Dict[str, Any]:
                 new_flags_total += 1
                 worsened += 1
                 worsened_tests.append(test_name)
+                worsened_at = _latest(worsened_at, latest.taken_at)
             elif prev.is_critical and not latest.is_critical:
                 improved += 1
             elif latest.is_abnormal and not prev.is_abnormal:
                 worsened += 1
                 worsened_tests.append(test_name)
+                worsened_at = _latest(worsened_at, latest.taken_at)
             elif prev.is_abnormal and not latest.is_abnormal:
                 improved += 1
-        entry = {"id": p.id, "name": p.name, "worsened_tests": worsened_tests}
+        entry = {
+            "id": p.id,
+            "name": p.name,
+            "worsened_tests": worsened_tests,
+            "worsened_at": _iso(worsened_at),
+        }
         if worsened > improved:
             deteriorating.append(entry)
         elif improved > worsened:
@@ -578,6 +586,7 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                 "patient_name": _name(a.patient_id),
                 "title": a.title,
                 "detail": a.detail or None,
+                "occurred_at": _iso(a.created_at),
             }
         )
 
@@ -593,6 +602,7 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                 "patient_name": entry["name"],
                 "test_name": worsened_tests[0] if worsened_tests else None,
                 "worsened_test_count": len(worsened_tests),
+                "occurred_at": entry.get("worsened_at"),
             }
         )
 
@@ -637,6 +647,7 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                 "test_name": r.test_name,
                 "value": r.value,
                 "unit": r.unit,
+                "occurred_at": _iso(r.taken_at),
             }
         )
 
@@ -660,6 +671,7 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                     "patient_name": p.name,
                     "drug_a": drug_a,
                     "drug_b": drug_b,
+                    "occurred_at": None,
                 }
             )
             interaction_items += 1
@@ -686,6 +698,7 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                 "patient_name": _name(s.patient_id),
                 "modality": s.modality,
                 "body_part": s.body_part,
+                "occurred_at": _iso(s.created_at),
             }
         )
 
@@ -712,6 +725,7 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                 "patient_name": _name(encounter.patient_id),
                 "order_kind": order.kind,
                 "detail": order.detail,
+                "occurred_at": _iso(order.created_at),
             }
         )
 
@@ -739,6 +753,7 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                 "patient_name": _name(workflow.patient_id),
                 "check_key": step.step_key,
                 "days_late": max((now - step.due_at).days, 0),
+                "occurred_at": _iso(step.due_at),
             }
         )
 
@@ -759,6 +774,7 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                 "patient_id": pa.patient_id,
                 "patient_name": _name(pa.patient_id),
                 "action_type": pa.action_type,
+                "occurred_at": _iso(pa.created_at),
             }
         )
 
@@ -768,7 +784,7 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
     # comment on why `select(Consultation)` is avoided here).
     consultations = (
         await session.execute(
-            select(Consultation.id, Consultation.patient_id, Consultation.query)
+            select(Consultation.id, Consultation.patient_id, Consultation.query, Consultation.created_at)
             .where(Consultation.acted_on.is_(None), Consultation.risk_level == "high")
             .order_by(Consultation.id.desc())
             .limit(_ACTION_ITEM_LIMIT_PER_CATEGORY)
@@ -784,11 +800,21 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                 "patient_id": c.patient_id,
                 "patient_name": _name(c.patient_id) if c.patient_id else None,
                 "query_preview": preview,
+                "occurred_at": _iso(c.created_at),
             }
         )
 
     items.sort(key=lambda item: _SEVERITY_RANK.get(item["severity"], len(_SEVERITY_RANK)))
     return {"groups": _group_by_patient(items), "total_count": len(items)}
+
+
+def _latest(current: Optional[datetime], candidate: datetime) -> datetime:
+    return candidate if current is None or candidate > current else current
+
+
+def _iso(value: Optional[datetime]) -> Optional[str]:
+    """Naive UTC, like every DateTime column here; the frontend appends `Z`."""
+    return value.isoformat() if value else None
 
 
 def _group_by_patient(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

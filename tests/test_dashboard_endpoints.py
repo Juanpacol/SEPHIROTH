@@ -98,6 +98,14 @@ async def test_dashboard_evolution_flags_deterioration_and_improvement(client, d
     assert {p["id"] for p in body["improving"]} == {"PEV2"}
     assert "PEV3" in {p["id"] for p in body["no_change"]}
     assert body["new_risk_factors_count"] == 1
+    # When it got worse feeds the dashboard's "deteriorating" signal timestamp.
+    assert body["deteriorating"][0]["worsened_at"] == datetime(2026, 1, 2).isoformat()
+
+    action_items = (await client.get("/api/dashboard/action-items", headers=headers)).json()
+    deteriorating = [
+        item for g in action_items["groups"] for item in g["items"] if item["category"] == "deteriorating"
+    ]
+    assert [item["occurred_at"] for item in deteriorating] == [datetime(2026, 1, 2).isoformat()]
 
 
 async def test_dashboard_alerts_counts_and_recent(client, db_session):
@@ -545,6 +553,16 @@ async def test_dashboard_action_items_covers_every_category_sorted_by_severity(c
     assert juan["patient_name"] == "Juan Pérez"
     assert juan["severity"] == "critical"
     assert {item["category"] for item in juan["items"]} >= {"alert", "interaction", "decision"}
+
+    # Every signal says when it happened; a medication interaction has no moment of its own.
+    for item in items:
+        assert "occurred_at" in item
+        if item["category"] == "interaction":
+            assert item["occurred_at"] is None
+        else:
+            assert datetime.fromisoformat(item["occurred_at"]), item["category"]
+    lab_when = next(item["occurred_at"] for item in items if item["category"] == "lab")
+    assert lab_when == datetime(2026, 1, 1).isoformat()
 
     alert_item = next(item for item in items if item["category"] == "alert")
     assert alert_item["patient_name"] == "Juan Pérez"

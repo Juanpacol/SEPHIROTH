@@ -53,6 +53,8 @@ export interface DashboardActionItem {
   action_type?: string;
   query_preview?: string;
   consultation_id?: string;
+  /** Naive UTC ISO timestamp of the signal; null when it has no moment of its own (interactions). */
+  occurred_at?: string | null;
 }
 
 /** Every signal for one patient, so a patient is triaged once. `severity` is
