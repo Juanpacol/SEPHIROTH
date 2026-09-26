@@ -15,6 +15,7 @@ from sephiroth.clinical.vitals import (
     VITAL_SPECS,
     VitalError,
     format_vitals,
+    is_physiologically_plausible,
     parse_blood_pressure,
     validate_vitals,
     vital_findings,
@@ -131,6 +132,25 @@ class TestHowItReads:
         """A form with two boxes for a blood pressure is a form that gets one
         box filled."""
         assert parse_blood_pressure(text) == expected
+
+
+class TestPlausibility:
+    @pytest.mark.parametrize(
+        "key, value, expected",
+        [
+            ("systolic", 210, True),
+            ("systolic", 300, True),
+            ("systolic", 301, False),
+            ("diastolic", 20, True),
+            ("diastolic", 19.9, False),
+            ("bp_systolic", 1314, False),
+            ("bp_diastolic", 653, False),
+            ("bp_diastolic", 65.3, True),
+            ("hba1c", 99999, True),
+        ],
+    )
+    def test_only_what_no_body_produces_is_implausible(self, key, value, expected):
+        assert is_physiologically_plausible(key, value) is expected
 
 
 class TestTheSpecItself:
