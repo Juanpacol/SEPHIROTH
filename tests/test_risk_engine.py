@@ -3,7 +3,7 @@
 Retargeted (Phase 5) to `src/sephiroth/safety/risk.py`, the relocated
 implementation; that shim was deleted in Phase 6."""
 
-from sephiroth.safety.risk import assess_patient_risk, assess_risk_level
+from sephiroth.safety.risk import assess_patient_risk, assess_risk_level, bp_abnormality
 
 
 def test_hypokalemia_flags_high():
@@ -36,6 +36,19 @@ def test_blood_pressure_parsing():
     assert assess_patient_risk({"bp": "138/86"}) == []
     flags = assess_patient_risk({"bp": "165/102"})
     assert any(f["label"] == "Hypertensive range" for f in flags)
+
+
+def test_physiologically_impossible_blood_pressure_raises_no_flag():
+    # 1314/653 is what the old synthetic-daily parse made of "131.4"/"65.3" (SF068).
+    assert assess_patient_risk({"bp_systolic": "1314", "bp_diastolic": "653"}) == []
+    assert assess_patient_risk({"bp": "1314/653"}) == []
+    assert bp_abnormality(1314, 653) == (False, False)
+
+
+def test_real_hypertensive_emergency_still_flags():
+    flags = assess_patient_risk({"bp_systolic": "170.0 mm[Hg]", "bp_diastolic": "105.0 mm[Hg]"})
+    assert any(f["label"] == "Hypertensive range" for f in flags)
+    assert bp_abnormality(210, 120) == (True, True)
 
 
 def test_unparseable_values_ignored():

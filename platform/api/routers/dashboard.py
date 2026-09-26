@@ -40,6 +40,7 @@ from data.schemas import (
     WorkflowStep,
 )
 from intelligence.mcp.drug_safety_server import find_interactions
+from sephiroth.clinical.vitals import is_physiologically_plausible
 from sephiroth.safety.priority import compute_priority_score
 from sephiroth.safety.risk import RISK_ORDER, assess_patient_risk, assess_risk_level
 
@@ -616,8 +617,14 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
     latest_per_test: Dict[tuple, LabResult] = {}
     for r in lab_results:
         latest_per_test[(r.patient_id, r.test_name)] = r
+    # Rows written before SF068 can hold impossible values (e.g. BP 1314);
+    # hide them on read rather than deleting clinical records.
     critical_labs = [
-        r for r in latest_per_test.values() if r.is_critical and ("lab", str(r.id)) not in closed_reviews
+        r
+        for r in latest_per_test.values()
+        if r.is_critical
+        and ("lab", str(r.id)) not in closed_reviews
+        and is_physiologically_plausible(r.test_name, r.value)
     ]
     critical_labs.sort(key=lambda r: r.taken_at, reverse=True)
     for r in critical_labs[:_ACTION_ITEM_LIMIT_PER_CATEGORY]:
