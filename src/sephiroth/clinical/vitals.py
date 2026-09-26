@@ -182,6 +182,21 @@ def format_vitals(vitals: Dict[str, Any]) -> str:
     return " · ".join(parts)
 
 
+#: Lab-snapshot keys (Synthea import, risk engine) that name a vital under a
+#: different key than the encounter form does.
+_VITAL_KEY_ALIASES = {"bp_systolic": "systolic", "bp_diastolic": "diastolic"}
+
+
+def is_physiologically_plausible(key: str, value: float) -> bool:
+    """False only for a number no body produces for this vital. A key with no
+    spec is not ours to judge, so it passes."""
+    spec = VITAL_SPECS.get(_VITAL_KEY_ALIASES.get(key, key))
+    if spec is None:
+        return True
+    low, high = spec.physiological
+    return low <= value <= high
+
+
 def parse_blood_pressure(text: str) -> Optional[Tuple[float, float]]:
     """ "120/80" -> (120.0, 80.0). Returns None for anything else.
 
@@ -203,6 +218,7 @@ __all__ = [
     "VitalFinding",
     "VitalSpec",
     "format_vitals",
+    "is_physiologically_plausible",
     "parse_blood_pressure",
     "validate_vitals",
     "vital_findings",

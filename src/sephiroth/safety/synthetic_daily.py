@@ -37,11 +37,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from data.schemas import LabResult, Patient, SyntheticDataRun
+from sephiroth.clinical.vitals import is_physiologically_plausible
 from sephiroth.safety.alerts import (
     generate_alerts_for_all_patients,
     resolve_recovered_alerts_for_all_patients,
 )
-from sephiroth.safety.risk import bp_abnormality, lab_value_abnormality
+from sephiroth.safety.risk import _first_number, bp_abnormality, lab_value_abnormality
 from sephiroth.safety.synthetic_schedule import run_daily_schedule_simulation
 
 logger = logging.getLogger(__name__)
@@ -264,12 +265,8 @@ async def _simulate_patient(
     if schema == "split":
         cur_systolic_raw = by_key_lower.get("bp_systolic")
         cur_diastolic_raw = by_key_lower.get("bp_diastolic")
-        cur_systolic = (
-            float("".join(ch for ch in str(cur_systolic_raw) if ch.isdigit())) if cur_systolic_raw else None
-        )
-        cur_diastolic = (
-            float("".join(ch for ch in str(cur_diastolic_raw) if ch.isdigit())) if cur_diastolic_raw else None
-        )
+        cur_systolic = _first_number(cur_systolic_raw) if cur_systolic_raw else None
+        cur_diastolic = _first_number(cur_diastolic_raw) if cur_diastolic_raw else None
     else:
         combined = by_key_lower.get("bp")
         if combined:
@@ -279,6 +276,18 @@ async def _simulate_patient(
                     cur_systolic, cur_diastolic = float(parts[0]), float(parts[1])
                 except ValueError:
                     cur_systolic = cur_diastolic = None
+
+    # A snapshot corrupted by the old digits-only parse ("131.4" stored as
+    # "1314") would otherwise only drift back 25% a day; restart from baseline.
+    if (
+        cur_systolic is not None
+        and cur_diastolic is not None
+        and not (
+            is_physiologically_plausible("bp_systolic", cur_systolic)
+            and is_physiologically_plausible("bp_diastolic", cur_diastolic)
+        )
+    ):
+        cur_systolic = cur_diastolic = None
 
     systolic, diastolic = _next_bp(cur_systolic, cur_diastolic)
     bp_abnormal, bp_critical = bp_abnormality(systolic, diastolic)
