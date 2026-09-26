@@ -64,15 +64,16 @@ function normalizeTestKey(testName: string): string {
   return _TEST_KEY_ALIASES[cleaned] ?? cleaned;
 }
 
-/** Friendly display name for a lab test key -- falls back to the raw test
- * name (capitalized) when there's no `labs.testName.*` entry for it, so an
- * unmapped test still shows something instead of a raw i18n key string. */
+/** Friendly display name for a lab test key -- falls back to a humanized
+ * test name ("some_test" -> "Some test") when there's no `labs.testName.*`
+ * entry, so an unmapped test never shows a raw key to a clinician. */
 export function friendlyTestName(testName: string | undefined, t: (key: string) => string): string {
   if (!testName) return "";
   const key = `labs.testName.${normalizeTestKey(testName)}`;
   const translated = t(key);
   if (translated !== key) return translated;
-  return testName.length > 0 ? testName[0].toUpperCase() + testName.slice(1) : testName;
+  const words = testName.replace(/_+/g, " ").trim();
+  return words.length > 0 ? words[0].toUpperCase() + words.slice(1) : testName;
 }
 
 interface PlainResultInput {
