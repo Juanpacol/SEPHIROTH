@@ -13,8 +13,6 @@ from data.schemas import Alert, LabResult, Patient, PendingAction
 
 pytestmark = pytest.mark.asyncio
 
-_NOT_YET = "SPEC-031 not yet implemented — action-item enrichment lands in SF070's implementation commit"
-
 
 @pytest.fixture
 def client(db_session):
@@ -59,7 +57,6 @@ def _alert(patient_id, title, *, status="active", created_at=None, resolved_at=N
     )
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 async def test_alert_item_explains_the_flag_that_still_fires(client, db_session):
     """AC-031-05: a risk_engine alert carries the factors of the patient's
     currently firing flag with the same label; a flag that stopped firing
@@ -91,7 +88,6 @@ async def test_alert_item_explains_the_flag_that_still_fires(client, db_session)
     assert stale["factors"] is None
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 async def test_lab_item_carries_factors_and_a_plausible_trend(client, db_session):
     """AC-031-06: a critical lab item explains its value and carries at most the
     last 5 plausible readings of that test, oldest first; an implausible
@@ -141,7 +137,6 @@ async def test_lab_item_carries_factors_and_a_plausible_trend(client, db_session
     assert [point["value"] for point in systolic["trend"]] == [150.0, 185.0]
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 async def test_alert_item_says_how_long_it_has_been_active_and_how_often_it_recurred(client, db_session):
     """AC-031-07: active_since is the alert's created_at; prior_count counts only
     resolved alerts of the same patient and title resolved in the last 30 days."""
@@ -173,7 +168,6 @@ async def test_alert_item_says_how_long_it_has_been_active_and_how_often_it_recu
     assert item["recurrence"] == {"active_since": active_since.isoformat(), "prior_count": 2}
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 async def test_signals_with_nothing_to_explain_carry_nulls(client, db_session):
     """AC-031-08: approval items carry null enrichment; an interaction item is
     coded drug_interaction with no trend."""
