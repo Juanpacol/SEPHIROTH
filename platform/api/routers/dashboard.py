@@ -788,7 +788,31 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
         )
 
     items.sort(key=lambda item: _SEVERITY_RANK.get(item["severity"], len(_SEVERITY_RANK)))
-    return {"items": items, "total_count": len(items)}
+    return {"groups": _group_by_patient(items), "total_count": len(items)}
+
+
+def _group_by_patient(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """One group per patient so a clinician triages a person once, not once
+    per signal. `items` arrive sorted worst-first, so each group's first item
+    carries its severity and groups keep worst-first order. An item with no
+    patient stays on its own."""
+    groups: List[Dict[str, Any]] = []
+    by_patient: Dict[str, Dict[str, Any]] = {}
+    for item in items:
+        patient_id = item.get("patient_id")
+        group = by_patient.get(patient_id) if patient_id else None
+        if group is None:
+            group = {
+                "patient_id": patient_id,
+                "patient_name": item.get("patient_name"),
+                "severity": item["severity"],
+                "items": [],
+            }
+            groups.append(group)
+            if patient_id:
+                by_patient[patient_id] = group
+        group["items"].append(item)
+    return groups
 
 
 async def _evolution_deteriorating(session: AsyncSession) -> tuple[List[Dict[str, Any]], None]:
