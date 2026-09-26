@@ -2,8 +2,8 @@
 id: SPEC-031
 title: Dashboard Alert Explainability and Visual Summary
 phase: 16
-version: 0.1.0
-status: Approved
+version: 1.0.0
+status: Implemented
 authors: [jbotero]
 created: 2026-09-26
 updated: 2026-09-26
@@ -306,5 +306,6 @@ The UI behaviour (B-7..B-12) is verified by the component and E2E tests in
 
 | Version | Date | Change |
 |---|---|---|
+| 1.0.0 | 2026-09-26 | Implemented (SF070): `LabRule` declares `code`/`comparator`/`threshold`/`unit` beside each predicate; every flag carries `rule_code` + `factors` (`drugs` for interactions); new `rule_factors`/`bp_factors`/`bp_rule_factors` helpers; `/dashboard/action-items` items carry `rule_code`, `factors`, `trend`, `recurrence`. Frontend: risk distribution bar, range bar, shared `MiniTrend`, recurrence chip, `risk.explain.*` translations, two-column layout; an alert with factors no longer shows its English `detail`. All 9 ACs green. |
 | 0.1.0 | 2026-09-26 | Initial draft (SF070) |
 | 0.1.0 | 2026-09-26 | Approved (SF070) — human review of the draft, including read-time factor recomputation (a flag that stopped firing yields `null` factors) and no confidence percentage, before writing tests |

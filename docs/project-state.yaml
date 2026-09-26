@@ -11,8 +11,8 @@
 schema_version: 1
 project: SEPHIROTH
 version: 1.0.0
-updated: 2026-08-21
-phase_current: 14
+updated: 2026-09-26
+phase_current: 16
 
 phases:
   "0": {name: "Foundation, SDD scaffolding, tool-authorization hotfix", status: done}
@@ -30,6 +30,8 @@ phases:
   "12": {name: "Patient follow-up (day 3/7/30) + draft_patient_message tool (SPEC-014)", status: done}
   "13": {name: "Operational memory — namespaced preferences, never clinical facts (SPEC-015)", status: done}
   "14": {name: "Automation observability — GET /api/dashboard/automation + frontend tab (SPEC-016)", status: done}
+  "15": {name: "RAG corpus on pgvector, no in-memory fallback (SPEC-030)", status: done}
+  "16": {name: "Dashboard alert explainability — rule factors, trend, recurrence, visual summary (SPEC-031)", status: done}
 
 components:
   legacy:
@@ -169,8 +171,20 @@ components:
         and rate limiting are explicitly deferred (SPEC-004 NG-2).
         risk_engine.py relocated here in Phase 5, Part 3 (src/sephiroth/
         safety/risk.py), read at request-time by patients.py/dashboard.py.
+        Since Phase 16 (SPEC-031) every risk flag also carries rule_code +
+        structured factors (value, comparator, threshold, unit).
       tests: [tests/test_safety_abstention.py, tests/test_safety_output_safety.py,
-              tests/test_risk_engine.py]
+              tests/test_risk_engine.py, tests/test_risk_explainability.py]
+    platform/frontend/components/dashboard:
+      status: implemented
+      phase: 16
+      spec: SPEC-031
+      description: >-
+        Hand-rolled SVG/CSS dashboard visuals (ADR-019): risk distribution
+        bar, value-vs-threshold range bar, shared MiniTrend (also used by
+        the patient lab-trend card). Fed by /api/dashboard/stats and the
+        SPEC-031 enrichment of /api/dashboard/action-items.
+      tests: [tests/test_dashboard_explainability.py]
     src/sephiroth/context:
       status: implemented
       phase: 4
