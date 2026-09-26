@@ -97,4 +97,19 @@ describe("AlertsPage", () => {
     expect(screen.queryByText(/Patient|critical|Hypertensive/)).not.toBeInTheDocument();
     localStorage.removeItem("cac_lang");
   });
+
+  it("renders a drug-interaction alert in Spanish instead of the English audit label", async () => {
+    localStorage.setItem("cac_lang", "es");
+    vi.mocked(api.listAlerts).mockResolvedValue([
+      { ...activeAlert, category: "medication", title: "Interaction: clopidogrel + warfarin" },
+    ]);
+    renderPage();
+
+    await waitFor(() =>
+      expect(screen.getByText("Posible interacción: clopidogrel + warfarin — revisar tratamiento")).toBeInTheDocument()
+    );
+    expect(screen.getByText("Paciente P001 · Medicación")).toBeInTheDocument();
+    expect(screen.queryByText(/Interaction:/)).not.toBeInTheDocument();
+    localStorage.removeItem("cac_lang");
+  });
 });

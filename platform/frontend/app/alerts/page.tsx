@@ -7,7 +7,7 @@ import { api, type ClinicalAlert } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import { useToast } from "@/components/ui/toast";
 import StatusPill from "@/components/status-pill";
-import { riskLabel } from "@/lib/clinical-text";
+import { parseInteractionLabel, riskLabel } from "@/lib/clinical-text";
 
 const STATUS_FILTERS = ["active", "reviewed", "resolved"] as const;
 
@@ -15,6 +15,14 @@ function alertCategory(category: string, t: (key: string) => string): string {
   const key = `alerts.category.${category}`;
   const translated = t(key);
   return translated === key ? category : translated;
+}
+
+function alertTitle(title: string, t: (key: string) => string): string {
+  const interaction = parseInteractionLabel(title);
+  if (interaction) {
+    return t("clinical.interaction").replace("{drugA}", interaction.drugA).replace("{drugB}", interaction.drugB);
+  }
+  return riskLabel(title, t);
 }
 
 function AlertRow({ alert }: { alert: ClinicalAlert }) {
@@ -44,7 +52,7 @@ function AlertRow({ alert }: { alert: ClinicalAlert }) {
     <div className="card space-y-2">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <div className="min-w-0">
-          <p className="font-semibold">{riskLabel(alert.title, t)}</p>
+          <p className="font-semibold">{alertTitle(alert.title, t)}</p>
           <p className="text-xs text-muted">
             {t("alerts.patient").replace("{id}", alert.patient_id)} · {alertCategory(alert.category, t)}
           </p>
