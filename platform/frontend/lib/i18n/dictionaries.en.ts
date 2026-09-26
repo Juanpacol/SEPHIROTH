@@ -37,6 +37,9 @@ const EN: Record<string, string> = {
   "dashboard.stat.moderate": "Moderate",
   "dashboard.stat.stable": "Stable",
   "dashboard.stat.maxPriority": "Max priority score",
+  // Mirrors PRIORITY_SCORE (src/sephiroth/safety/priority.py): high=3, medium=2, low=1.
+  "dashboard.stat.maxPriorityOf": "of 3",
+  "dashboard.stat.maxPriorityHint": "1 low · 2 moderate · 3 high",
   "dashboard.stat.alertResponse": "Alert response time",
   "dashboard.stat.aiConfidence": "AI confidence",
   "dashboard.stat.evidenceCoverage": "Evidence coverage",

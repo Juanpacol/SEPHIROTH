@@ -41,7 +41,13 @@ export default function DashboardPage() {
         <StatCard label={t("dashboard.stat.critical")} value={data.critical_count} tone="danger" />
         <StatCard label={t("dashboard.stat.moderate")} value={data.moderate_count} tone="warning" />
         <StatCard label={t("dashboard.stat.stable")} value={data.stable_count} tone="success" />
-        <StatCard label={t("dashboard.stat.maxPriority")} value={data.max_priority_score} tone="primary" />
+        <StatCard
+          label={t("dashboard.stat.maxPriority")}
+          value={data.max_priority_score}
+          tone="primary"
+          suffix={t("dashboard.stat.maxPriorityOf")}
+          hint={t("dashboard.stat.maxPriorityHint")}
+        />
       </div>
 
       <div className="card !p-4">
