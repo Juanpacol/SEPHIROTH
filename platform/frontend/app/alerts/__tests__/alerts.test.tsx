@@ -82,4 +82,19 @@ describe("AlertsPage", () => {
     await waitFor(() => expect(screen.getByText("Critical potassium")).toBeInTheDocument());
     expect(screen.queryByText("Resolve")).not.toBeInTheDocument();
   });
+
+  it("renders a risk-engine alert entirely in Spanish when Spanish is active", async () => {
+    localStorage.setItem("cac_lang", "es");
+    vi.mocked(api.listAlerts).mockResolvedValue([
+      { ...activeAlert, title: "Hypertensive range", detail: "BP 170/105 (≥ 160/100)" },
+    ]);
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText("Presión arterial en rango hipertensivo")).toBeInTheDocument());
+    expect(screen.getByText("Paciente P001 · Laboratorio")).toBeInTheDocument();
+    expect(screen.getByText("Crítico")).toBeInTheDocument();
+    expect(screen.getByText("Activas", { selector: "button" })).toBeInTheDocument();
+    expect(screen.queryByText(/Patient|critical|Hypertensive/)).not.toBeInTheDocument();
+    localStorage.removeItem("cac_lang");
+  });
 });

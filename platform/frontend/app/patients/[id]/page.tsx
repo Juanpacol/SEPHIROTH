@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { api, ApiError, type TimelineEvent } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
-import { parseInteractionLabel } from "@/lib/clinical-text";
+import { parseInteractionLabel, riskLabel } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 import StatusPill from "@/components/status-pill";
 import AgentBadge from "@/components/agent-badge";
@@ -383,7 +383,7 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
                   // just "X + Y" since the surrounding card already says
                   // this is a risk flag.
                   const interaction = parseInteractionLabel(flag.label);
-                  const label = interaction ? `${interaction.drugA} + ${interaction.drugB}` : flag.label;
+                  const label = interaction ? `${interaction.drugA} + ${interaction.drugB}` : riskLabel(flag.label, t);
                   return (
                     <li
                       key={i}

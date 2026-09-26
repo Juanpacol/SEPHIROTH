@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { friendlyTestName } from "@/lib/clinical-text";
+import { friendlyTestName, riskLabel } from "@/lib/clinical-text";
 import EN from "@/lib/i18n/dictionaries.en";
 import ES from "@/lib/i18n/dictionaries.es";
 
@@ -27,5 +27,18 @@ describe("friendlyTestName", () => {
 
   it("renders nothing for a missing name", () => {
     expect(friendlyTestName(undefined, es)).toBe("");
+  });
+});
+
+describe("riskLabel", () => {
+  it("translates risk-engine labels that stay English in the backend", () => {
+    expect(riskLabel("Hypertensive range", es)).toBe("Presión arterial en rango hipertensivo");
+    expect(riskLabel("Very high LDL cholesterol", es)).toBe("Colesterol LDL muy alto");
+    expect(riskLabel("Hyperkalemia", en)).toBe("Hyperkalemia");
+  });
+
+  it("shows an unknown label as authored", () => {
+    expect(riskLabel("Posible sepsis", es)).toBe("Posible sepsis");
+    expect(riskLabel(undefined, es)).toBe("");
   });
 });

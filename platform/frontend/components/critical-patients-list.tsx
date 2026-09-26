@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import type { CriticalPatient } from "@/lib/api";
+import { riskLabel } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 import StatusPill from "@/components/status-pill";
 
@@ -38,7 +39,7 @@ export default function CriticalPatientsList({
                   <div className="truncate text-sm font-semibold leading-tight">{p.name}</div>
                   {p.top_flag && (
                     <div className="truncate text-xs leading-tight text-muted">
-                      {p.top_flag}
+                      {riskLabel(p.top_flag, t)}
                       {p.flag_count > 1 &&
                         ` · ${t("criticalPatients.moreFlags").replace("{count}", String(p.flag_count - 1))}`}
                     </div>

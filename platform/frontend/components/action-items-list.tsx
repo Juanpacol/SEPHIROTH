@@ -14,7 +14,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { api, type DashboardActionGroup, type DashboardActionItem } from "@/lib/api";
-import { friendlyTestName, parseInteractionLabel } from "@/lib/clinical-text";
+import { friendlyTestName, parseInteractionLabel, riskLabel } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 import StatusPill from "@/components/status-pill";
 import { useToast } from "@/components/ui/toast";
@@ -44,7 +44,8 @@ export function itemText(item: DashboardActionItem, t: (key: string) => string):
       if (interaction) {
         return t("clinical.interaction").replace("{drugA}", interaction.drugA).replace("{drugB}", interaction.drugB);
       }
-      return item.detail ? `${item.title} — ${item.detail}` : item.title ?? "";
+      const title = riskLabel(item.title, t);
+      return item.detail ? `${title} — ${item.detail}` : title;
     }
     case "deteriorating": {
       if (!item.test_name) return t("dashboard.actionItems.deteriorating");
