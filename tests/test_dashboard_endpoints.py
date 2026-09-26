@@ -544,6 +544,30 @@ async def test_dashboard_action_items_covers_every_category_sorted_by_severity(c
     assert decision_item["consultation_id"]  # needed by the frontend to PATCH acted_on
 
 
+async def test_dashboard_action_items_hide_physiologically_impossible_labs(client, db_session):
+    db_session.add(Patient(id="PIMP", name="Gordon", age=70, sex="M", medical_record_number="PT-PIMP"))
+    await db_session.commit()
+    for test_name, value in (("bp_systolic", 1314.0), ("bp_diastolic", 653.0), ("potassium", 6.8)):
+        db_session.add(
+            LabResult(
+                patient_id="PIMP",
+                test_name=test_name,
+                value=value,
+                unit="mmHg" if test_name.startswith("bp_") else "mmol/L",
+                is_critical=True,
+                is_abnormal=True,
+                taken_at=datetime(2026, 9, 25),
+            )
+        )
+    await db_session.commit()
+
+    headers = await _clinician(client, email="dash-implausible@example.org")
+    body = (await client.get("/api/dashboard/action-items", headers=headers)).json()
+
+    lab_tests = {item["test_name"] for item in body["items"] if item["category"] == "lab"}
+    assert lab_tests == {"potassium"}
+
+
 async def test_dashboard_bootstrap_combines_stats_agenda_action_items(client):
     headers = await _clinician(client)
     res = await client.get("/api/dashboard/bootstrap", headers=headers)

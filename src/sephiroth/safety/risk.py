@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from intelligence.mcp.drug_safety_server import find_interactions
+from sephiroth.clinical.vitals import is_physiologically_plausible
 
 _NUMBER_RE = re.compile(r"-?\d+(?:\.\d+)?")
 
@@ -95,7 +96,17 @@ LAB_RULES: Dict[str, List[tuple]] = {
 }
 
 
+def _bp_plausible(systolic: float, diastolic: float) -> bool:
+    return is_physiologically_plausible("bp_systolic", systolic) and is_physiologically_plausible(
+        "bp_diastolic", diastolic
+    )
+
+
 def _blood_pressure_threshold_flags(systolic: float, diastolic: float) -> List[Dict[str, str]]:
+    # A reading no body produces is a data error, not a hypertensive patient;
+    # alerting on it teaches clinicians to ignore every other alert.
+    if not _bp_plausible(systolic, diastolic):
+        return []
     if systolic >= 160 or diastolic >= 100:
         return [
             {
@@ -180,6 +191,8 @@ def bp_abnormality(systolic: float, diastolic: float) -> tuple[bool, bool]:
     (180/110) — one tier above `_blood_pressure_threshold_flags`' single
     "Hypertensive range" severity, since that flag alone doesn't
     distinguish severity."""
+    if not _bp_plausible(systolic, diastolic):
+        return False, False
     is_abnormal = bool(_blood_pressure_threshold_flags(systolic, diastolic))
     is_critical = systolic >= 180 or diastolic >= 110
     return is_abnormal, is_critical
