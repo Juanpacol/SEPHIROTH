@@ -40,6 +40,7 @@ today.
 | Fabrication removal | `sanitize()` replaces unverifiable citations, and reports them |
 | Adversarial evaluation | 4 benchmark cases with no supporting guideline at all |
 | Patient risk flags | Curated lab and medication thresholds |
+| Physiological plausibility | A blood pressure outside `VITAL_SPECS`' physiological range (a data error, not a patient) raises no risk flag and never reaches the dashboard (`is_physiologically_plausible`, SF068) |
 | Tool confinement | Whitelist enforced at dispatch |
 | Disclaimer | On every answer and every page |
 
