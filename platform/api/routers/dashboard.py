@@ -12,6 +12,7 @@ wasn't already persisted by another route."""
 
 import os
 import time
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
@@ -42,7 +43,13 @@ from data.schemas import (
 from intelligence.mcp.drug_safety_server import find_interactions
 from sephiroth.clinical.vitals import is_physiologically_plausible
 from sephiroth.safety.priority import compute_priority_score
-from sephiroth.safety.risk import RISK_ORDER, assess_patient_risk, assess_risk_level
+from sephiroth.safety.risk import (
+    RISK_ORDER,
+    assess_patient_risk,
+    assess_risk_level,
+    bp_rule_factors,
+    rule_factors,
+)
 
 router = APIRouter()
 
@@ -538,6 +545,11 @@ async def _dashboard_automation(session: AsyncSession) -> Dict[str, Any]:
 
 _ACTION_ITEM_LIMIT_PER_CATEGORY = 8
 
+# SPEC-031: explainability fields every action item carries (null when N/A).
+_EXPLANATION_KEYS = ("rule_code", "factors", "trend", "recurrence")
+_TREND_POINTS = 5
+_RECURRENCE_WINDOW_DAYS = 30
+
 #: One rank per category so the list sorts worst-first regardless of which
 #: category a critical item happens to belong to -- a doctor scanning
 #: top-to-bottom hits the most urgent thing first no matter its source.
@@ -568,6 +580,18 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
     def _name(patient_id: Any) -> Any:
         return names.get(patient_id)
 
+    # Plausible per-test history, oldest first: feeds each signal's trend and
+    # the BP pair (SPEC-031). Impossible values never reach the UI (SF068).
+    lab_results = (await session.scalars(select(LabResult).order_by(LabResult.taken_at))).all()
+    history: Dict[tuple, List[LabResult]] = {}
+    for r in lab_results:
+        if is_physiologically_plausible(r.test_name, r.value):
+            history.setdefault((r.patient_id, r.test_name), []).append(r)
+
+    def _trend(patient_id: Any, test_name: Optional[str]) -> Optional[List[Dict[str, Any]]]:
+        readings = history.get((patient_id, test_name), [])[-_TREND_POINTS:]
+        return [{"value": r.value, "taken_at": _iso(r.taken_at)} for r in readings] or None
+
     # 1) Active critical/high alerts.
     alerts = (
         await session.scalars(
@@ -577,7 +601,29 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
             .limit(_ACTION_ITEM_LIMIT_PER_CATEGORY)
         )
     ).all()
+    # An alert explains itself with the patient's *current* flag of the same
+    # label; a flag that stopped firing yields no factors rather than stale ones.
+    alert_patients = (
+        await session.scalars(select(Patient).where(Patient.id.in_({a.patient_id for a in alerts})))
+    ).all()
+    current_flags = {
+        p.id: {flag["label"]: flag for flag in assess_patient_risk(p.lab_results, p.medications)}
+        for p in alert_patients
+    }
+    resolved_rows = (
+        await session.execute(
+            select(Alert.patient_id, Alert.title).where(
+                Alert.status == "resolved",
+                Alert.resolved_at >= now - timedelta(days=_RECURRENCE_WINDOW_DAYS),
+            )
+        )
+    ).all()
+    recent_resolutions: Counter[tuple[str, str]] = Counter(
+        (row.patient_id, row.title) for row in resolved_rows
+    )
     for a in alerts:
+        flag = current_flags.get(a.patient_id, {}).get(a.title) if a.source == "risk_engine" else None
+        factors = flag["factors"] if flag else None
         items.append(
             {
                 "category": "alert",
@@ -587,6 +633,13 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                 "title": a.title,
                 "detail": a.detail or None,
                 "occurred_at": _iso(a.created_at),
+                "rule_code": flag["rule_code"] if flag else None,
+                "factors": factors,
+                "trend": _trend(a.patient_id, factors[0]["test"]) if factors else None,
+                "recurrence": {
+                    "active_since": _iso(a.created_at),
+                    "prior_count": recent_resolutions[(a.patient_id, a.title)],
+                },
             }
         )
 
@@ -603,6 +656,7 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                 "test_name": worsened_tests[0] if worsened_tests else None,
                 "worsened_test_count": len(worsened_tests),
                 "occurred_at": entry.get("worsened_at"),
+                "trend": _trend(entry["id"], worsened_tests[0]) if worsened_tests else None,
             }
         )
 
@@ -623,7 +677,6 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
 
     # 3) Critical lab results (the single most recent per patient/test),
     # excluding any already closed in the results review loop.
-    lab_results = (await session.scalars(select(LabResult).order_by(LabResult.taken_at))).all()
     latest_per_test: Dict[tuple, LabResult] = {}
     for r in lab_results:
         latest_per_test[(r.patient_id, r.test_name)] = r
@@ -648,6 +701,8 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                 "value": r.value,
                 "unit": r.unit,
                 "occurred_at": _iso(r.taken_at),
+                **(_lab_explanation(r, history) or {}),
+                "trend": _trend(r.patient_id, r.test_name),
             }
         )
 
@@ -672,6 +727,8 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
                     "drug_a": drug_a,
                     "drug_b": drug_b,
                     "occurred_at": None,
+                    "rule_code": "drug_interaction",
+                    "factors": [],
                 }
             )
             interaction_items += 1
@@ -804,8 +861,22 @@ async def _dashboard_action_items(session: AsyncSession) -> Dict[str, Any]:
             }
         )
 
+    for item in items:
+        for key in _EXPLANATION_KEYS:
+            item.setdefault(key, None)
     items.sort(key=lambda item: _SEVERITY_RANK.get(item["severity"], len(_SEVERITY_RANK)))
     return {"groups": _group_by_patient(items), "total_count": len(items)}
+
+
+def _lab_explanation(reading: LabResult, history: Dict[tuple, List[LabResult]]) -> Optional[Dict[str, Any]]:
+    """The rule a critical reading fired; a BP reading is explained as the pair."""
+    if reading.test_name in ("bp_systolic", "bp_diastolic"):
+        systolic = history.get((reading.patient_id, "bp_systolic"))
+        diastolic = history.get((reading.patient_id, "bp_diastolic"))
+        if not systolic or not diastolic:
+            return None
+        return bp_rule_factors(systolic[-1].value, diastolic[-1].value)
+    return rule_factors(reading.test_name, reading.value)
 
 
 def _latest(current: Optional[datetime], candidate: datetime) -> datetime:

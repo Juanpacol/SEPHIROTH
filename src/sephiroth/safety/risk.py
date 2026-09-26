@@ -25,13 +25,30 @@ class LabRule:
     label: str
     severity: str  # "high" | "medium"
     detail: str
+    # Structured twin of `detail` (SPEC-031): what the predicate beside this
+    # rule in LAB_RULES compares against. A test pins the two together.
+    code: str
+    comparator: str  # ">" | "<" | "≥"
+    threshold: float
+    unit: str = ""
 
-    def flag(self, value: float) -> Dict[str, str]:
+    def factor(self, test_name: str, value: float) -> Dict[str, Any]:
+        return {
+            "test": test_name,
+            "value": value,
+            "comparator": self.comparator,
+            "threshold": self.threshold,
+            "unit": self.unit,
+        }
+
+    def flag(self, value: float, test_name: str) -> Dict[str, Any]:
         return {
             "source": "lab",
             "label": self.label,
             "severity": self.severity,
             "detail": self.detail.format(value=value),
+            "rule_code": self.code,
+            "factors": [self.factor(test_name, value)],
         }
 
 
@@ -43,23 +60,73 @@ def _first_number(raw: Any) -> Optional[float]:
 # key in Patient.lab_results (lowercase) -> list of (predicate, rule)
 LAB_RULES: Dict[str, List[tuple]] = {
     "potassium": [
-        (lambda v: v < 3.5, LabRule("Hypokalemia", "high", "Potassium {value} mEq/L (< 3.5)")),
-        (lambda v: v > 5.5, LabRule("Hyperkalemia", "high", "Potassium {value} mEq/L (> 5.5)")),
+        (
+            lambda v: v < 3.5,
+            LabRule(
+                "Hypokalemia", "high", "Potassium {value} mEq/L (< 3.5)", "hypokalemia", "<", 3.5, "mEq/L"
+            ),
+        ),
+        (
+            lambda v: v > 5.5,
+            LabRule(
+                "Hyperkalemia", "high", "Potassium {value} mEq/L (> 5.5)", "hyperkalemia", ">", 5.5, "mEq/L"
+            ),
+        ),
     ],
     "inr": [
-        (lambda v: v > 3.5, LabRule("Supratherapeutic INR", "high", "INR {value} (> 3.5) — bleeding risk")),
+        (
+            lambda v: v > 3.5,
+            LabRule(
+                "Supratherapeutic INR",
+                "high",
+                "INR {value} (> 3.5) — bleeding risk",
+                "supratherapeutic_inr",
+                ">",
+                3.5,
+            ),
+        ),
     ],
     "hba1c": [
-        (lambda v: v > 9, LabRule("Poor glycemic control", "medium", "HbA1c {value}% (> 9%)")),
+        (
+            lambda v: v > 9,
+            LabRule(
+                "Poor glycemic control",
+                "medium",
+                "HbA1c {value}% (> 9%)",
+                "poor_glycemic_control",
+                ">",
+                9,
+                "%",
+            ),
+        ),
     ],
     "bnp": [
         (
             lambda v: v > 400,
-            LabRule("Elevated BNP", "medium", "BNP {value} pg/mL (> 400) — decompensation risk"),
+            LabRule(
+                "Elevated BNP",
+                "medium",
+                "BNP {value} pg/mL (> 400) — decompensation risk",
+                "elevated_bnp",
+                ">",
+                400,
+                "pg/mL",
+            ),
         ),
     ],
     "ef": [
-        (lambda v: v < 40, LabRule("Reduced ejection fraction", "high", "EF {value}% (< 40%)")),
+        (
+            lambda v: v < 40,
+            LabRule(
+                "Reduced ejection fraction",
+                "high",
+                "EF {value}% (< 40%)",
+                "reduced_ejection_fraction",
+                "<",
+                40,
+                "%",
+            ),
+        ),
     ],
     # Added for the Synthea-imported patient panel, which never carries
     # potassium/inr/bnp/ef — bmi/cholesterol/ldl are the only extra signal
@@ -71,6 +138,10 @@ LAB_RULES: Dict[str, List[tuple]] = {
                 "Obesity",
                 "medium",
                 "BMI {value} (≥ 30) — raises risk of diabetes, high blood pressure, and joint problems.",
+                "obesity",
+                "≥",
+                30,
+                "kg/m²",
             ),
         ),
         (
@@ -80,18 +151,52 @@ LAB_RULES: Dict[str, List[tuple]] = {
                 "high",
                 "BMI {value} (≥ 40) — sharply raises risk of diabetes, heart disease, "
                 "and surgical/anesthesia complications.",
+                "severe_obesity",
+                "≥",
+                40,
+                "kg/m²",
             ),
         ),
     ],
     "cholesterol": [
         (
             lambda v: v >= 240,
-            LabRule("High total cholesterol", "medium", "Cholesterol {value} mg/dL (≥ 240)"),
+            LabRule(
+                "High total cholesterol",
+                "medium",
+                "Cholesterol {value} mg/dL (≥ 240)",
+                "high_total_cholesterol",
+                "≥",
+                240,
+                "mg/dL",
+            ),
         ),
     ],
     "ldl": [
-        (lambda v: 160 <= v < 190, LabRule("High LDL cholesterol", "medium", "LDL {value} mg/dL (≥ 160)")),
-        (lambda v: v >= 190, LabRule("Very high LDL cholesterol", "high", "LDL {value} mg/dL (≥ 190)")),
+        (
+            lambda v: 160 <= v < 190,
+            LabRule(
+                "High LDL cholesterol",
+                "medium",
+                "LDL {value} mg/dL (≥ 160)",
+                "high_ldl_cholesterol",
+                "≥",
+                160,
+                "mg/dL",
+            ),
+        ),
+        (
+            lambda v: v >= 190,
+            LabRule(
+                "Very high LDL cholesterol",
+                "high",
+                "LDL {value} mg/dL (≥ 190)",
+                "very_high_ldl_cholesterol",
+                "≥",
+                190,
+                "mg/dL",
+            ),
+        ),
     ],
 }
 
@@ -102,24 +207,50 @@ def _bp_plausible(systolic: float, diastolic: float) -> bool:
     )
 
 
-def _blood_pressure_threshold_flags(systolic: float, diastolic: float) -> List[Dict[str, str]]:
+_BP_SYSTOLIC_THRESHOLD = 160.0
+_BP_DIASTOLIC_THRESHOLD = 100.0
+
+
+def bp_factors(systolic: float, diastolic: float) -> List[Dict[str, Any]]:
+    """Both pressures, whichever fired — a clinician reads BP as a pair."""
+    return [
+        {
+            "test": "bp_systolic",
+            "value": float(systolic),
+            "comparator": "≥",
+            "threshold": _BP_SYSTOLIC_THRESHOLD,
+            "unit": "mmHg",
+        },
+        {
+            "test": "bp_diastolic",
+            "value": float(diastolic),
+            "comparator": "≥",
+            "threshold": _BP_DIASTOLIC_THRESHOLD,
+            "unit": "mmHg",
+        },
+    ]
+
+
+def _blood_pressure_threshold_flags(systolic: float, diastolic: float) -> List[Dict[str, Any]]:
     # A reading no body produces is a data error, not a hypertensive patient;
     # alerting on it teaches clinicians to ignore every other alert.
     if not _bp_plausible(systolic, diastolic):
         return []
-    if systolic >= 160 or diastolic >= 100:
+    if systolic >= _BP_SYSTOLIC_THRESHOLD or diastolic >= _BP_DIASTOLIC_THRESHOLD:
         return [
             {
                 "source": "lab",
                 "label": "Hypertensive range",
                 "severity": "medium",
                 "detail": f"BP {int(systolic)}/{int(diastolic)} (≥ 160/100)",
+                "rule_code": "hypertensive_range",
+                "factors": bp_factors(systolic, diastolic),
             }
         ]
     return []
 
 
-def _blood_pressure_flags(raw: Any) -> List[Dict[str, str]]:
+def _blood_pressure_flags(raw: Any) -> List[Dict[str, Any]]:
     """Parses a single combined "systolic/diastolic"-style value (the old
     demo-patient schema's `bp` key)."""
     numbers = [float(n) for n in _NUMBER_RE.findall(str(raw))]
@@ -131,9 +262,9 @@ def _blood_pressure_flags(raw: Any) -> List[Dict[str, str]]:
 def assess_patient_risk(
     lab_results: Optional[Dict[str, Any]],
     medications: Optional[List[str]] = None,
-) -> List[Dict[str, str]]:
+) -> List[Dict[str, Any]]:
     """All rule-based risk flags for a patient (labs + drug interactions)."""
-    flags: List[Dict[str, str]] = []
+    flags: List[Dict[str, Any]] = []
     by_key_lower = {key.strip().lower(): raw for key, raw in (lab_results or {}).items()}
 
     # Two BP schemas coexist: the old demo patients carry one combined "bp"
@@ -157,7 +288,7 @@ def assess_patient_risk(
             continue
         for predicate, rule in rules:
             if predicate(value):
-                flags.append(rule.flag(value))
+                flags.append(rule.flag(value, key_lower))
 
     severity_map = {"major": "high", "moderate": "medium"}
     for interaction in find_interactions(medications or []):
@@ -167,6 +298,9 @@ def assess_patient_risk(
                 "label": f"Interaction: {' + '.join(interaction['pair'])}",
                 "severity": severity_map.get(interaction["severity"], "medium"),
                 "detail": interaction["effect"],
+                "rule_code": "drug_interaction",
+                "factors": [],
+                "drugs": list(interaction["pair"]),
             }
         )
 
@@ -185,6 +319,25 @@ def lab_value_abnormality(test_name: str, value: float) -> tuple[bool, bool]:
     return bool(triggered), any(rule.severity == "high" for rule in triggered)
 
 
+def rule_factors(test_name: str, value: float) -> Optional[Dict[str, Any]]:
+    """{rule_code, factors} for the highest-severity LAB_RULES rule `value`
+    triggers for `test_name`, or None when none fires."""
+    key = test_name.strip().lower()
+    triggered = [rule for predicate, rule in LAB_RULES.get(key, []) if predicate(value)]
+    if not triggered:
+        return None
+    rule = max(triggered, key=lambda r: r.severity == "high")
+    return {"rule_code": rule.code, "factors": [rule.factor(key, value)]}
+
+
+def bp_rule_factors(systolic: float, diastolic: float) -> Optional[Dict[str, Any]]:
+    """{rule_code, factors} for the BP rule, or None when it doesn't fire."""
+    flags = _blood_pressure_threshold_flags(systolic, diastolic)
+    if not flags:
+        return None
+    return {"rule_code": flags[0]["rule_code"], "factors": flags[0]["factors"]}
+
+
 def bp_abnormality(systolic: float, diastolic: float) -> tuple[bool, bool]:
     """Same idea as `lab_value_abnormality`, for the two-key blood-pressure
     schema. Critical uses the standard hypertensive-crisis cutoff
@@ -198,7 +351,7 @@ def bp_abnormality(systolic: float, diastolic: float) -> tuple[bool, bool]:
     return is_abnormal, is_critical
 
 
-def assess_risk_level(flags: List[Dict[str, str]]) -> str:
+def assess_risk_level(flags: List[Dict[str, Any]]) -> str:
     """Overall level for a patient: high > medium > low (no flags)."""
     severities = {f["severity"] for f in flags}
     if "high" in severities:
@@ -222,4 +375,7 @@ __all__ = [
     "assess_risk_level",
     "lab_value_abnormality",
     "bp_abnormality",
+    "bp_factors",
+    "bp_rule_factors",
+    "rule_factors",
 ]

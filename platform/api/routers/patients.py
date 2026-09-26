@@ -30,7 +30,7 @@ _MAX_NOTE_UPLOAD_BYTES = 20 * 1024 * 1024  # 20 MB — same ceiling as medical.p
 router = APIRouter()
 
 
-def _summary(patient: Patient, flags: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
+def _summary(patient: Patient, flags: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     if flags is None:
         flags = assess_patient_risk(patient.lab_results, patient.medications)
     return {

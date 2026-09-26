@@ -9,8 +9,6 @@ import pytest
 
 from sephiroth.safety.risk import LAB_RULES, assess_patient_risk, bp_abnormality
 
-_NOT_YET = "SPEC-031 not yet implemented — structured rule factors land in SF070's implementation commit"
-
 
 def _firing_value(rule) -> float:
     return {
@@ -28,7 +26,6 @@ def _just_missing_value(rule) -> float:
     }[rule.comparator]
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 @pytest.mark.parametrize(
     "test_name, index",
     [(test_name, i) for test_name, rules in LAB_RULES.items() for i in range(len(rules))],
@@ -59,7 +56,6 @@ def test_every_lab_rule_declares_the_threshold_its_predicate_uses(test_name, ind
     ]
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 def test_rule_codes_are_unique_snake_case():
     """AC-031-01: rule codes are stable translation keys, one per rule."""
     codes = [rule.code for rules in LAB_RULES.values() for _, rule in rules]
@@ -67,7 +63,6 @@ def test_rule_codes_are_unique_snake_case():
     assert all(code == code.lower() and " " not in code for code in codes)
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 @pytest.mark.parametrize(
     "labs",
     [{"bp_systolic": "170.0 mm[Hg]", "bp_diastolic": "95.0 mm[Hg]"}, {"bp": "170/95"}],
@@ -82,7 +77,6 @@ def test_hypertensive_flag_carries_both_pressures(labs):
     ]
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 def test_interaction_flag_names_the_pair_without_factors():
     """AC-031-03: a drug interaction has no numeric factor, only the pair."""
     (flag,) = [f for f in assess_patient_risk({}, ["warfarin", "aspirin"]) if f["source"] == "drug"]
