@@ -60,7 +60,7 @@ export default function DashboardPage() {
         <h2 className="mb-1 flex items-center gap-2 text-sm font-bold">
           <ClipboardList size={15} className="text-primary" /> {t("dashboard.actionItems.title")}
         </h2>
-        <ActionItemsList items={bootstrap?.action_items.items ?? []} maxVisible={6} />
+        <ActionItemsList groups={bootstrap?.action_items.groups ?? []} maxVisible={6} />
       </div>
     </div>
   );

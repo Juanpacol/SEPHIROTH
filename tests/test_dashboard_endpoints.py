@@ -522,25 +522,41 @@ async def test_dashboard_action_items_covers_every_category_sorted_by_severity(c
     res = await client.get("/api/dashboard/action-items", headers=headers)
     assert res.status_code == 200
     body = res.json()
-    categories = {item["category"] for item in body["items"]}
+    items = [item for group in body["groups"] for item in group["items"]]
+    categories = {item["category"] for item in items}
     assert categories == {"alert", "lab", "interaction", "imaging", "followup", "approval", "decision"}
-    assert body["total_count"] == len(body["items"])
-    # Sorted worst-first regardless of category.
-    ranks = {"critical": 0, "high": 1, "medium": 2, "low": 3}
-    severities = [ranks[item["severity"]] for item in body["items"]]
-    assert severities == sorted(severities)
+    assert body["total_count"] == len(items)
 
-    alert_item = next(item for item in body["items"] if item["category"] == "alert")
+    # One card per patient, each carrying every signal for that patient.
+    patient_ids = [group["patient_id"] for group in body["groups"]]
+    assert sorted(patient_ids) == ["PAI1", "PAI2", "PAI3"]
+    for group in body["groups"]:
+        assert {item["patient_id"] for item in group["items"]} == {group["patient_id"]}
+
+    # Worst-first: across groups, and inside each group; a group's severity is its worst signal.
+    ranks = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    group_ranks = [ranks[group["severity"]] for group in body["groups"]]
+    assert group_ranks == sorted(group_ranks)
+    for group in body["groups"]:
+        inner = [ranks[item["severity"]] for item in group["items"]]
+        assert inner == sorted(inner)
+        assert ranks[group["severity"]] == inner[0]
+    juan = next(group for group in body["groups"] if group["patient_id"] == "PAI1")
+    assert juan["patient_name"] == "Juan Pérez"
+    assert juan["severity"] == "critical"
+    assert {item["category"] for item in juan["items"]} >= {"alert", "interaction", "decision"}
+
+    alert_item = next(item for item in items if item["category"] == "alert")
     assert alert_item["patient_name"] == "Juan Pérez"
-    lab_item = next(item for item in body["items"] if item["category"] == "lab")
+    lab_item = next(item for item in items if item["category"] == "lab")
     assert lab_item["patient_name"] == "María López"
     assert lab_item["test_name"] == "potassium"
-    interaction_item = next(item for item in body["items"] if item["category"] == "interaction")
+    interaction_item = next(item for item in items if item["category"] == "interaction")
     assert interaction_item["patient_name"] == "Juan Pérez"
-    followup_item = next(item for item in body["items"] if item["category"] == "followup")
+    followup_item = next(item for item in items if item["category"] == "followup")
     assert followup_item["patient_name"] == "Carlos Ruiz"
     assert followup_item["days_late"] == 2
-    decision_item = next(item for item in body["items"] if item["category"] == "decision")
+    decision_item = next(item for item in items if item["category"] == "decision")
     assert decision_item["consultation_id"]  # needed by the frontend to PATCH acted_on
 
 
@@ -564,7 +580,9 @@ async def test_dashboard_action_items_hide_physiologically_impossible_labs(clien
     headers = await _clinician(client, email="dash-implausible@example.org")
     body = (await client.get("/api/dashboard/action-items", headers=headers)).json()
 
-    lab_tests = {item["test_name"] for item in body["items"] if item["category"] == "lab"}
+    lab_tests = {
+        item["test_name"] for group in body["groups"] for item in group["items"] if item["category"] == "lab"
+    }
     assert lab_tests == {"potassium"}
 
 
@@ -576,4 +594,4 @@ async def test_dashboard_bootstrap_combines_stats_agenda_action_items(client):
     assert "stats" in body
     assert "agenda" in body
     assert "action_items" in body
-    assert body["action_items"] == {"items": [], "total_count": 0}
+    assert body["action_items"] == {"groups": [], "total_count": 0}

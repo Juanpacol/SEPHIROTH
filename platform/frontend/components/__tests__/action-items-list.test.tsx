@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import ActionItemsList, { itemText } from "@/components/action-items-list";
 import { api } from "@/lib/api";
-import type { DashboardActionItem } from "@/lib/api";
+import type { DashboardActionGroup, DashboardActionItem } from "@/lib/api";
 import { LanguageProvider, useLanguage } from "@/lib/language";
 
 vi.mock("@/lib/api", async () => {
@@ -25,12 +25,21 @@ function baseItem(overrides: Partial<DashboardActionItem>): DashboardActionItem 
   };
 }
 
-function renderList(items: DashboardActionItem[]) {
+function group(items: DashboardActionItem[]): DashboardActionGroup {
+  return {
+    patient_id: items[0].patient_id,
+    patient_name: items[0].patient_name,
+    severity: items[0].severity,
+    items,
+  };
+}
+
+function renderList(groups: DashboardActionGroup[]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <LanguageProvider>
-        <ActionItemsList items={items} />
+        <ActionItemsList groups={groups} />
       </LanguageProvider>
     </QueryClientProvider>
   );
@@ -77,13 +86,31 @@ describe("itemText — alert category", () => {
 describe("ActionItemsList", () => {
   it("renders the patient-facing simplified interaction line, not the raw alert text", () => {
     renderList([
-      baseItem({
-        title: "Interaction: clopidogrel + warfarin",
-        detail: "Potentially serious interaction (per DDInter 2.0 severity classification).",
-      }),
+      group([
+        baseItem({
+          title: "Interaction: clopidogrel + warfarin",
+          detail: "Potentially serious interaction (per DDInter 2.0 severity classification).",
+        }),
+      ]),
     ]);
     expect(screen.getByText("Juan Pérez")).toBeInTheDocument();
     expect(screen.queryByText(/DDInter/)).not.toBeInTheDocument();
+  });
+
+  it("renders one card per patient with every signal inside it", () => {
+    renderList([
+      group([
+        baseItem({ severity: "critical", title: "Hypertensive range", detail: "BP 185/112" }),
+        baseItem({ category: "lab", severity: "high", test_name: "potassium", value: 6.8, unit: "mmol/L" }),
+      ]),
+      group([baseItem({ patient_id: "P2", patient_name: "María López", category: "followup", severity: "medium" })]),
+    ]);
+
+    expect(screen.getAllByText("Juan Pérez")).toHaveLength(1);
+    expect(screen.getByText(/Hypertensive range/)).toBeInTheDocument();
+    expect(screen.getByText(/6\.8/)).toBeInTheDocument();
+    expect(screen.getByText("María López")).toBeInTheDocument();
+    expect(screen.getAllByRole("link")).toHaveLength(2);
   });
 
   it("shows the empty state when there are no items", () => {
@@ -94,11 +121,13 @@ describe("ActionItemsList", () => {
   it("resolves a decision item without navigating to the patient page", async () => {
     vi.mocked(api.markActedOn).mockResolvedValue({} as never);
     renderList([
-      baseItem({
-        category: "decision",
-        consultation_id: "C1",
-        query_preview: "Should we escalate this patient's care?",
-      }),
+      group([
+        baseItem({
+          category: "decision",
+          consultation_id: "C1",
+          query_preview: "Should we escalate this patient's care?",
+        }),
+      ]),
     ]);
 
     fireEvent.click(screen.getByText("I acted on this"));

@@ -169,6 +169,7 @@ const ACTION_ITEMS = [
     severity: "medium" as const,
     patient_id: "p-003",
     patient_name: PATIENTS[2].name,
+    check_key: "day7",
     days_late: 12,
   },
 ];
@@ -252,25 +253,63 @@ const TIMELINE = [
   },
 ];
 
+const DASHBOARD_STATS = {
+  critical_patients: PATIENTS.filter((p) => p.risk_level !== "low").map((p, i) => ({
+    id: p.id,
+    name: p.name,
+    risk_level: p.risk_level,
+    priority_score: 90 - i * 20,
+    top_flag: "Potassium 6.4 mmol/L",
+    flag_count: 3 - i,
+  })),
+  critical_count: 1,
+  moderate_count: 1,
+  stable_count: 1,
+  at_risk_count: 2,
+  max_priority_score: 90,
+  avg_priority_score: 55,
+};
+
+/** Grouped per patient, as the backend sends it: p-001 carries two signals. */
+const DASHBOARD_ACTION_ITEMS = {
+  groups: [
+    {
+      patient_id: "p-001",
+      patient_name: PATIENTS[0].name,
+      severity: "critical" as const,
+      items: [
+        ACTION_ITEMS[0],
+        {
+          category: "lab" as const,
+          severity: "high" as const,
+          patient_id: "p-001",
+          patient_name: PATIENTS[0].name,
+          test_name: "potassium",
+          value: 6.4,
+          unit: "mmol/L",
+        },
+      ],
+    },
+    ...ACTION_ITEMS.slice(1).map((item) => ({
+      patient_id: item.patient_id,
+      patient_name: item.patient_name,
+      severity: item.severity,
+      items: [item],
+    })),
+  ],
+  total_count: ACTION_ITEMS.length + 1,
+};
+
 /** Longest-prefix wins, so ordering here is irrelevant. */
 const ROUTES: Record<string, unknown> = {
-  "/api/dashboard/stats": {
-    critical_patients: PATIENTS.filter((p) => p.risk_level !== "low").map((p, i) => ({
-      id: p.id,
-      name: p.name,
-      risk_level: p.risk_level,
-      priority_score: 90 - i * 20,
-      top_flag: "Potassium 6.4 mmol/L",
-      flag_count: 3 - i,
-    })),
-    critical_count: 1,
-    moderate_count: 1,
-    stable_count: 1,
-    at_risk_count: 2,
-    max_priority_score: 90,
-    avg_priority_score: 55,
+  "/api/dashboard/stats": DASHBOARD_STATS,
+  "/api/dashboard/action-items": DASHBOARD_ACTION_ITEMS,
+  // What /dashboard actually fetches; without it the page renders "backend down".
+  "/api/dashboard/bootstrap": {
+    stats: DASHBOARD_STATS,
+    agenda: { date: iso(0).slice(0, 10), count: 0, next_at: null, items: [] },
+    action_items: DASHBOARD_ACTION_ITEMS,
   },
-  "/api/dashboard/action-items": { items: ACTION_ITEMS, total_count: ACTION_ITEMS.length },
   "/api/patients": PATIENTS,
   "/api/alerts": ALERTS,
   "/api/approvals/count": { count: APPROVALS.length },

@@ -13,7 +13,7 @@ import {
   ShieldAlert,
   TrendingDown,
 } from "lucide-react";
-import { api, type DashboardActionItem } from "@/lib/api";
+import { api, type DashboardActionGroup, type DashboardActionItem } from "@/lib/api";
 import { friendlyTestName, parseInteractionLabel } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 import StatusPill from "@/components/status-pill";
@@ -127,67 +127,68 @@ function ResolveDecisionButton({ consultationId }: { consultationId: string }) {
   );
 }
 
+function SignalRow({ item }: { item: DashboardActionItem }) {
+  const { t } = useLanguage();
+  const Icon = CATEGORY_ICON[item.category];
+  return (
+    <li className="flex min-w-0 items-center gap-2.5">
+      <Icon
+        size={14}
+        className={`shrink-0 ${item.severity === "critical" || item.severity === "high" ? "text-danger" : "text-warning"}`}
+      />
+      <span className="min-w-0 flex-1 truncate text-xs leading-tight text-muted">{itemText(item, t)}</span>
+      {item.category === "decision" && item.consultation_id && (
+        <ResolveDecisionButton consultationId={item.consultation_id} />
+      )}
+    </li>
+  );
+}
+
 export default function ActionItemsList({
-  items,
+  groups,
   maxVisible,
 }: {
-  items: DashboardActionItem[];
-  /** Caps how many rows render — the dashboard needs the worst few at a
+  groups: DashboardActionGroup[];
+  /** Caps how many patients render — the dashboard needs the worst few at a
    * glance, not the full ranked list, to keep this off a second scroll. */
   maxVisible?: number;
 }) {
   const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
 
-  if (items.length === 0) {
+  if (groups.length === 0) {
     return <p className="text-sm text-muted">{t("dashboard.actionItems.empty")}</p>;
   }
-  const visible = maxVisible && !expanded ? items.slice(0, maxVisible) : items;
-  const hiddenCount = items.length - visible.length;
+  const visible = maxVisible && !expanded ? groups.slice(0, maxVisible) : groups;
+  const hiddenCount = groups.length - visible.length;
 
   return (
     <>
       <ul className="divide-y divide-line/60">
-        {visible.map((item, i) => {
-          const Icon = CATEGORY_ICON[item.category];
-          const content = (
-            <div className="flex min-w-0 items-center gap-2.5">
-              <Icon
-                size={14}
-                className={`shrink-0 ${item.severity === "critical" || item.severity === "high" ? "text-danger" : "text-warning"}`}
-              />
-              <div className="min-w-0">
-                {item.patient_name && (
-                  <div className="truncate text-sm font-semibold leading-tight">{item.patient_name}</div>
-                )}
-                <div className="truncate text-xs leading-tight text-muted">{itemText(item, t)}</div>
-              </div>
-            </div>
-          );
-          return (
-            <li
-              key={`${item.category}-${item.patient_id ?? "none"}-${i}`}
-              className="flex items-center gap-2 py-1.5"
-            >
-              {item.patient_id ? (
+        {visible.map((group, i) => (
+          <li key={group.patient_id ?? `none-${i}`} className="py-2">
+            <div className="flex items-center gap-2">
+              {group.patient_id ? (
                 <Link
-                  href={`/patients/${item.patient_id}`}
-                  className="min-w-0 flex-1 transition-colors hover:text-primary"
+                  href={`/patients/${group.patient_id}`}
+                  className="min-w-0 flex-1 truncate text-sm font-semibold leading-tight transition-colors hover:text-primary"
                 >
-                  {content}
+                  {group.patient_name}
                 </Link>
               ) : (
-                <div className="min-w-0 flex-1">{content}</div>
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-tight">
+                  {group.patient_name}
+                </span>
               )}
-              <div className="flex shrink-0 items-center gap-1.5">
-                {item.category === "decision" && item.consultation_id && (
-                  <ResolveDecisionButton consultationId={item.consultation_id} />
-                )}
-                <StatusPill label={item.severity} />
-              </div>
-            </li>
-          );
-        })}
+              <StatusPill label={group.severity} />
+            </div>
+            <ul className="mt-1 space-y-1">
+              {group.items.map((item, j) => (
+                <SignalRow key={`${item.category}-${j}`} item={item} />
+              ))}
+            </ul>
+          </li>
+        ))}
       </ul>
       {hiddenCount > 0 && (
         <button

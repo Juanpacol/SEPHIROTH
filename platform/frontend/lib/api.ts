@@ -55,8 +55,19 @@ export interface DashboardActionItem {
   consultation_id?: string;
 }
 
-export interface DashboardActionItems {
+/** Every signal for one patient, so a patient is triaged once. `severity` is
+ * the worst of `items`, which arrive worst-first. A signal with no patient
+ * is a group of its own (`patient_id: null`). */
+export interface DashboardActionGroup {
+  patient_id: string | null;
+  patient_name: string | null;
+  severity: DashboardActionItem["severity"];
   items: DashboardActionItem[];
+}
+
+export interface DashboardActionItems {
+  groups: DashboardActionGroup[];
+  /** Number of signals across all groups, not number of groups. */
   total_count: number;
 }
 
