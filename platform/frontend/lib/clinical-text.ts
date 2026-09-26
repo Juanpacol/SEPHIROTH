@@ -17,6 +17,17 @@ export function parseInteractionLabel(label: string | undefined): { drugA: strin
   return { drugA: match[1], drugB: match[2] };
 }
 
+/** Risk-engine labels (`risk.py`) and alert titles stay English in the
+ * backend on purpose: alert de-duplication and auto-resolve key on the exact
+ * label. Translate on display via `risk.label.<slug>`; an unknown label is
+ * shown as authored. */
+export function riskLabel(label: string | null | undefined, t: (key: string) => string): string {
+  if (!label) return "";
+  const key = `risk.label.${label.trim().toLowerCase().replace(/\s+/g, "_")}`;
+  const translated = t(key);
+  return translated === key ? label : translated;
+}
+
 const SNOMED_QUALIFIER_RE = /\s*\((disorder|finding|situation|procedure|morphologic abnormality)\)\s*$/i;
 
 /** Synthetic patient data (Synthea) carries SNOMED CT's own qualifier word

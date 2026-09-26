@@ -7,8 +7,15 @@ import { api, type ClinicalAlert } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import { useToast } from "@/components/ui/toast";
 import StatusPill from "@/components/status-pill";
+import { riskLabel } from "@/lib/clinical-text";
 
 const STATUS_FILTERS = ["active", "reviewed", "resolved"] as const;
+
+function alertCategory(category: string, t: (key: string) => string): string {
+  const key = `alerts.category.${category}`;
+  const translated = t(key);
+  return translated === key ? category : translated;
+}
 
 function AlertRow({ alert }: { alert: ClinicalAlert }) {
   const { t } = useLanguage();
@@ -37,9 +44,9 @@ function AlertRow({ alert }: { alert: ClinicalAlert }) {
     <div className="card space-y-2">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <div className="min-w-0">
-          <p className="font-semibold">{alert.title}</p>
+          <p className="font-semibold">{riskLabel(alert.title, t)}</p>
           <p className="text-xs text-muted">
-            Patient {alert.patient_id} · {alert.category}
+            {t("alerts.patient").replace("{id}", alert.patient_id)} · {alertCategory(alert.category, t)}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -95,11 +102,11 @@ export default function AlertsPage() {
           <button
             key={f}
             onClick={() => setStatus(f)}
-            className={`tap shrink-0 rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+            className={`tap shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
               status === f ? "bg-primary text-white" : "bg-primary-soft text-primary"
             }`}
           >
-            {f}
+            {t(`alerts.filter.${f}`)}
           </button>
         ))}
       </div>

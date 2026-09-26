@@ -1,3 +1,5 @@
+import { useLanguage } from "@/lib/language";
+
 const styles: Record<string, string> = {
   active: "bg-success/10 text-success",
   ready: "bg-success/10 text-success",
@@ -34,15 +36,19 @@ const riskDots: Record<string, string> = {
 };
 
 export default function StatusPill({ label }: { label: string }) {
+  const { t } = useLanguage();
   const key = label.toLowerCase();
   const style = styles[key] ?? "bg-primary-soft text-primary";
   const dot = riskDots[key];
+  const i18nKey = `status.${key}`;
+  const translated = t(i18nKey);
+  const known = translated !== i18nKey;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${style}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${known ? "" : "capitalize"} ${style}`}
     >
       {dot && <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} aria-hidden />}
-      {label}
+      {known ? translated : label}
     </span>
   );
 }
