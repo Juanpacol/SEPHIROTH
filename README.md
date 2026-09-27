@@ -1,29 +1,26 @@
 # SEPHIROTH
 
-![CI](https://github.com/Juanpacol/SEPHIROTH/actions/workflows/ci.yml/badge.svg)
-![coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)
+**Clinical AI Intelligence Platform** — an **AI decision-support platform** for healthcare professionals. Specialized AI agents — powered by the Google Gemini API — extract clinical entities, analyze medical images, screen drug interactions, and retrieve cited evidence from clinical guidelines and PubMed. Beyond the AI copilot, the platform also covers scheduling, alerts and approvals, exam-result sharing, and a patient portal.
 
-**Clinical AI Intelligence Platform** — an **AI decision-support platform** for healthcare professionals. Specialized AI agents — powered by the Google Gemini API — extract clinical entities, analyze medical images, screen drug interactions, and retrieve cited evidence from clinical guidelines and PubMed.
+> **Research, education and professional support only.** Not a medical device. All AI output requires review by a qualified healthcare professional.
 
-> ⚠️ **Research, education and professional support only.** Not a medical device. All AI output requires review by a qualified healthcare professional.
-
-> ⚠️ **Privacy notice:** clinical text and medical images are sent to the Google Gemini API (AI Studio free tier). This is **not HIPAA/GDPR-compliant as-is**, and the free tier may use submitted data to improve Google's models. Use only with synthetic or de-identified data, or migrate to Vertex AI with a Business Associate Agreement before using real patient data.
+> **Privacy notice:** clinical text and medical images are sent to the Google Gemini API (AI Studio free tier). This is **not HIPAA/GDPR-compliant as-is**, and the free tier may use submitted data to improve Google's models. Use only with synthetic or de-identified data, or migrate to Vertex AI with a Business Associate Agreement before using real patient data.
 
 ## Highlights
 
-- 🧠 **Cloud LLM via Google Gemini** — `gemini-flash-latest` with native tool calling and JSON-Schema structured output; free tier, no local GPU required
-- 👁️ **Vision-enabled image reasoning** — the same Gemini model describes medical images multimodally; the Radiology agent reasons over the description
-- 🔧 **MCP tool layer** — clinical capabilities exposed as FastMCP servers (NLP, imaging, vision, evidence, drug safety)
-- 🤖 **Multi-agent workflow** — 4 specialists + a coordinator orchestrated by a purpose-built async executor, fanning out in parallel
-- 📡 **Live streaming consultations** — SSE stream shows each agent and tool call as it completes
-- 🛡️ **Citation Guard** — every citation in an answer is verified against actual tool output; fabricated references are stripped and reported (an anti-hallucination firewall)
-- 🧭 **Explainability panel** — a deterministic reasoning trace under every answer: which agent did what, with which tool, and how many citations survived the guard
-- ⚠️ **Risk scoring & alerts** — rule-based flags (abnormal labs, dangerous drug combos) on every patient, plus a High-Risk Patients KPI
-- 🗓️ **Auto-generated Intelligent Timeline** — paste a clinical note **or upload a PDF** and Gemini extracts structured timeline events (diagnoses, med changes, labs, imaging)
-- 📄 **PDF consultation export** — download any consultation as a shareable clinical report (query, answer, citations, reasoning trace, disclaimer)
-- 🔐 **Auth + per-user history** — JWT login/registration; every consultation is persisted to Postgres under the requesting clinician
-- 📋 **Structured logging** — request ids, per-LLM-call latency, and an audit line per persisted consultation
-- 🎨 **Modern dashboard** — Next.js 14 + Tailwind, design system derived from the Nexura Care reference
+- **Cloud LLM via Google Gemini** — `gemini-flash-latest` with native tool calling and JSON-Schema structured output; free tier, no local GPU required
+- **Vision-enabled image reasoning** — the same Gemini model describes medical images multimodally; the Radiology agent reasons over the description
+- **MCP tool layer** — clinical capabilities exposed as FastMCP servers (NLP, imaging, vision, evidence, drug safety, patient-message drafting)
+- **Single-specialist routing, not a multi-agent fan-out** — an intent router sends each consultation to exactly one specialist (Radiology, Evidence, or Drug Safety); a pure lookup (guideline search, drug interaction check) short-circuits before any model call at all
+- **Live streaming consultations** — SSE stream shows each agent and tool call as it completes
+- **Citation Guard** — every citation in an answer is verified against actual tool output; fabricated references are stripped and reported (an anti-hallucination firewall)
+- **Explainability panel** — a deterministic reasoning trace under every answer: which agent did what, with which tool, and how many citations survived the guard
+- **Rule-based clinical dashboard** — deterministic risk flags (abnormal labs, dangerous drug combinations) on every patient; each dashboard alert explains itself (the rule, the value, the threshold), shows its recent trend, and says whether it is new or recurring — with no fabricated confidence score
+- **Broader clinical workflow, not just chat** — scheduling and appointments, an alert and approval queue, exam-result sharing with a patient portal, and a follow-up flow that drafts (never sends without review) a patient-facing message
+- **Auto-generated Intelligent Timeline** — paste a clinical note **or upload a PDF** and Gemini extracts structured timeline events (diagnoses, med changes, labs, imaging)
+- **PDF consultation export** — download any consultation as a shareable clinical report (query, answer, citations, reasoning trace, disclaimer)
+- **Auth + per-user history** — JWT login/registration; every consultation is persisted to Postgres under the requesting clinician
+- **Structured logging** — request ids, per-LLM-call latency, and an audit line per persisted consultation
 
 ## Quick Start
 
@@ -76,7 +73,7 @@ curl -X POST http://127.0.0.1:8000/api/auth/register -H "Content-Type: applicati
   -d '{"email": "doc@hospital.org", "name": "Dr. Smith", "password": "atleast8chars"}'
 TOKEN=<access_token from the response>
 
-# Full multi-agent consultation, streamed as SSE (calls Gemini — burns free-tier quota)
+# Full consultation, streamed as SSE (calls Gemini — burns free-tier quota)
 curl -N -X POST http://127.0.0.1:8000/api/agents/consult/stream \
   -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
   -d '{"query": "Medication safety concerns for this patient?", "patient_id": "P002",
@@ -95,6 +92,8 @@ PYTHONPATH=.:platform .venv/bin/pytest --cov   # no services needed (SQLite in-m
 
 ## Architecture
 
+A consultation takes one of two paths, cheapest first:
+
 ```
 Next.js frontend (3100)
         │  /api/* proxy
@@ -102,18 +101,22 @@ Next.js frontend (3100)
 FastAPI backend (8000)
         │
         ▼
-Agent executor ──► ClinicalCoordinator
-   │ parallel fan-out
-   ├─► EvidenceAgent ────► rag_server (guidelines + PubMed, cited)
-   ├─► RadiologyAgent ───► imaging_server (MONAI) + vision_server (Gemini)
-   ├─► LabAgent ─────────► patient context
-   └─► DrugSafetyAgent ──► drug_safety_server
+platform/api/fast_path.py — pure lookup? (guideline search, drug interaction)
+   ├─ YES → tool result returned verbatim with its own citation.  0 LLM calls, ~4s
+   └─ NO ↓
+src/sephiroth/runtime/executor.py
+        │
+        ▼
+intent_router picks ONE specialist (Radiology, Evidence, or Drug Safety) → it answers directly.  1 LLM call
+        │
+        ▼
+citation guard (deterministic) → claim verification (1 LLM call) → abstention gate (deterministic) → trace
         │
         ▼
 Gemini (native tool calling, cloud API) — model set by `GEMINI_MODEL`, default `gemini-flash-latest`
 ```
 
-Each specialist is an `MCPAgent`: a role prompt + a whitelist of MCP tools. The MCP registry feeds tool schemas to Gemini's structured function-calling contract **and** summarizes them in the agent's system prompt. The whitelist is enforced at dispatch, so an agent cannot invoke a tool outside its declared scope.
+There is no coordinator turn and no parallel fan-out: every consultation is routed to exactly one specialist, whose answer is the final answer (see `CLAUDE.md`, decision #24). Each specialist is an `Agent`: a role prompt + a whitelist of MCP tools. The MCP registry feeds tool schemas to Gemini's structured function-calling contract **and** summarizes them in the agent's system prompt. The whitelist is enforced at dispatch, so an agent cannot invoke a tool outside its declared scope.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md), [CLAUDE.md](CLAUDE.md), and [docs/](docs/) for details. The architecture is being migrated to a model-agnostic runtime — see [docs/00-migration-charter.md](docs/00-migration-charter.md).
 
@@ -163,7 +166,7 @@ PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ful
 
 Neither Gemini's nor Groq's free tiers are unlimited — Gemini caps requests **per minute and per day**, and newer model aliases (like `gemini-flash-latest`, which resolves to whatever Google's current flash model is) can carry much stricter daily caps than older, established models. This repo's own key hit a 20-request/day cap on the resolved model while regenerating the eval baseline above.
 
-To make that failure mode non-fatal, `intelligence/llm/factory.py::get_llm_client()` optionally wraps Gemini with a **Groq fallback** for text/tool-calling (`intelligence/llm/fallback_client.py`):
+To make that failure mode non-fatal, `src/sephiroth/models/factory.py::get_llm_client()` optionally wraps Gemini with a **Groq fallback** for text/tool-calling (`src/sephiroth/models/fallback.py::FallbackLLMClient`):
 
 - Set `GROQ_API_KEY` (free key at [console.groq.com/keys](https://console.groq.com/keys)) to enable it — unset, behavior is identical to a bare Gemini client.
 - `chat()` and `generate_json()` try Gemini first; on any failure (rate limit, daily quota exhaustion, outage) they fall through to Groq (`llama-3.3-70b-versatile` by default, configurable via `GROQ_MODEL`) — same `ChatResult` contract, so agents and timeline extraction need no changes.
@@ -181,12 +184,21 @@ GROQ_MODEL=llama-3.3-70b-versatile   # default
 ```
 clinical-ai-copilot/
 ├── platform/          # FastAPI backend (api/, core/, auth/) + Next.js frontend
-├── intelligence/      # mcp/ (FastMCP servers), agents/ (shims into src/sephiroth/),
-│                      # evaluation/ (RAG eval harness — see Evaluation above)
-├── src/sephiroth/     # the runtime: models/ (providers), tools/ (MCP dispatch), runtime/ (agents, executor)
-├── data/              # rag/ (evidence retrieval), schemas/ (SQLAlchemy models)
+│                      # (copilot chat, dashboard, patients, scheduling,
+│                      # alerts/approvals, results sharing, patient portal)
+├── intelligence/      # mcp/ (6 FastMCP servers: nlp, imaging, rag, drug_safety,
+│                      # vision, patient_comms), agents/ (thin shim into
+│                      # src/sephiroth/), evaluation/ (RAG eval harness — see below)
+├── src/sephiroth/     # the runtime: models/ (providers), tools/ (MCP dispatch),
+│                      # runtime/ (agents, executor), verification/, safety/,
+│                      # context/, telemetry/ — see CLAUDE.md for the full map
+├── data/              # rag/ (evidence retrieval, pgvector), schemas/ (SQLAlchemy models)
+├── migrations/        # Alembic schema migrations (local Postgres and Supabase)
 ├── examples/          # Runnable examples per module
-├── docs/              # Integration guide
+├── docs/              # Spec-Driven Development: specs, decision records,
+│                      # architecture notes, dev-log, project-state.yaml
+├── real_data/         # Optional real/synthetic sample data — see Sample Data below
+├── tests/             # pytest suite (SQLite in-memory; no external services required)
 └── references/        # Cloned open-source projects (read-only reference; not committed — see .gitignore)
 ```
 
