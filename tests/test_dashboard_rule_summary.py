@@ -13,10 +13,6 @@ from data.schemas import Patient
 
 pytestmark = pytest.mark.asyncio
 
-_NOT_YET = (
-    "SPEC-031 1.1.0 not yet implemented — /dashboard/rule-summary lands in SF072's implementation commit"
-)
-
 
 @pytest.fixture
 def client(db_session):
@@ -78,7 +74,6 @@ async def _summary(client, email):
     return res.json(), headers
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 async def test_counts_distinct_patients_per_rule_over_the_stats_population(client, db_session):
     """AC-031-10: counts are distinct patients per rule_code, over every patient
     /stats assesses; two interaction flags on one patient count once."""
@@ -100,7 +95,6 @@ async def test_counts_distinct_patients_per_rule_over_the_stats_population(clien
     )
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 async def test_rules_are_ordered_by_count_then_severity_then_code(client, db_session):
     """AC-031-11: count desc, then high before medium, then rule_code."""
     await _seed(db_session)
@@ -114,7 +108,6 @@ async def test_rules_are_ordered_by_count_then_severity_then_code(client, db_ses
     ]
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 async def test_each_rule_lists_its_patients_by_risk_then_name(client, db_session):
     """AC-031-12: count == len(patients); patients carry id/name/risk_level,
     ordered by risk (high first) then name."""
@@ -131,7 +124,6 @@ async def test_each_rule_lists_its_patients_by_risk_then_name(client, db_session
     ]
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 async def test_all_interactions_share_one_bucket(client, db_session):
     """AC-031-13: every drug pair aggregates into drug_interaction, with the
     worst severity among them."""
@@ -145,7 +137,6 @@ async def test_all_interactions_share_one_bucket(client, db_session):
     assert [p["id"] for p in buckets[0]["patients"]] == ["RS2"]
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 async def test_no_flags_yields_no_rules_but_a_correct_population(client, db_session):
     """AC-031-14: with no firing flags, rules == [] and total_patients still
     counts the population."""
@@ -156,7 +147,6 @@ async def test_no_flags_yields_no_rules_but_a_correct_population(client, db_sess
     assert body == {"total_patients": 2, "rules": []}
 
 
-@pytest.mark.xfail(reason=_NOT_YET, strict=False)
 async def test_rule_summary_is_clinician_only(client):
     """AC-031-14: an unauthenticated request is rejected."""
     res = await client.get("/api/dashboard/rule-summary")
