@@ -3,7 +3,7 @@ id: SPEC-031
 title: Dashboard Alert Explainability and Visual Summary
 phase: 16
 version: 1.0.0
-status: Implemented
+status: Draft
 authors: [jbotero]
 created: 2026-09-26
 updated: 2026-09-26
@@ -90,6 +90,12 @@ Displaying a probability would invent precision the system does not have
 - **G-6** The dashboard shows proportion, reason, trajectory and recurrence
   visually, readable at 320px and in both themes (§7 B-7..B-12, Vitest and
   Playwright).
+- **G-7** (1.1.0) Show at a glance which clinical problems dominate across
+  *all* patients, with exact counts, and let the clinician drill into each
+  problem's patients (AC-031-10..14, §7 B-13..B-15).
+- **G-8** (1.1.0) De-clutter the dashboard: remove the critical-patients card
+  that duplicated the action list, and show per-signal detail only on demand
+  (§7 B-15, B-16).
 
 ## 4. Non-Goals
 
@@ -106,6 +112,10 @@ Displaying a probability would invent precision the system does not have
 - **NG-5** No schema migration, and no `Alert.rule_key` model column. Factors
   for an alert are recomputed from the patient's current flags.
 - **NG-6** No charting dependency.
+- **NG-7** (1.1.0) The problem chart does not filter the action list. That list
+  is capped per category (`_ACTION_ITEM_LIMIT_PER_CATEGORY`), so a filtered view
+  could show fewer patients than the bar counts. The chart expands its own
+  patient list instead.
 
 ## 5. Definitions
 
@@ -154,6 +164,23 @@ Displaying a probability would invent precision the system does not have
 | `trend` | list[`{value: float, taken_at: str}`] \| null | yes | `null` | ≤5 entries, ascending `taken_at`, plausible values only |
 | `recurrence` | `{active_since: str, prior_count: int}` \| null | yes | `null` | alert items only; `prior_count` ≥ 0 |
 
+**Rule summary** (`GET /api/dashboard/rule-summary`, 1.1.0):
+
+| Field | Type | Req | Default | Invariant |
+|---|---|---|---|---|
+| `total_patients` | int | yes | — | size of the population assessed (the same as `/stats`) |
+| `rules` | list[RuleBucket] | yes | `[]` | ordered by `count` desc, then `severity` (`high` first), then `rule_code` |
+
+`RuleBucket`:
+
+| Field | Type | Req | Default | Invariant |
+|---|---|---|---|---|
+| `rule_code` | str | yes | — | §5; every drug interaction shares `drug_interaction` |
+| `label` | str | yes | — | the authored English label (`"Interaction"` for `drug_interaction`); the UI translates it |
+| `severity` | `"high"` \| `"medium"` | yes | — | the worst severity among this rule's flags |
+| `count` | int | yes | — | distinct patients with ≥1 flag of this rule; `== len(patients)` |
+| `patients` | list[`{id, name, risk_level}`] | yes | — | ordered by `RISK_ORDER`, then name; `risk_level` as `/stats` computes it |
+
 ### 6.2 Interfaces
 
 Module `src/sephiroth/safety/risk.py`:
@@ -186,6 +213,17 @@ Module `platform/api/routers/dashboard.py`, `_dashboard_action_items` (no new ro
 `resolved` and whose `resolved_at` falls inside the recurrence window. The
 active alert itself is excluded.
 
+Module `platform/api/routers/dashboard.py` (1.1.0, new route, behind the
+router-level clinician guard and the existing 15 s `_cached`):
+
+```python
+@router.get("/rule-summary")
+async def dashboard_rule_summary(session: AsyncSession = Depends(get_session)) -> Dict[str, Any]: ...
+```
+
+It assesses the same population as `_dashboard_stats`: every `Patient`, via
+`assess_patient_risk` and `assess_risk_level`. No new table, no migration.
+
 Frontend (not a wire contract; listed for traceability):
 - `platform/frontend/components/dashboard/risk-distribution.tsx` (new)
 - `platform/frontend/components/dashboard/range-bar.tsx` (new)
@@ -195,6 +233,9 @@ Frontend (not a wire contract; listed for traceability):
 - `platform/frontend/components/action-items-list.tsx` (signal rows enriched)
 - `platform/frontend/app/dashboard/page.tsx` (distribution bar, two-column layout)
 - `platform/frontend/lib/api.ts` (types)
+- (1.1.0) `platform/frontend/components/dashboard/rule-summary-chart.tsx` (new);
+  `platform/frontend/components/critical-patients-list.tsx` (removed; its only
+  consumer was the dashboard)
 
 ### 6.3 State machine
 
@@ -248,6 +289,25 @@ constants, not settings.
   (`platform/frontend/CLAUDE.md`). Colours MUST come from the existing
   tokens (`danger`/`warning`/`success`/`primary`). The `sephiroth` gradient is
   reserved for AI content.
+- **B-13** (1.1.0) The "what dominates today" chart MUST draw one horizontal bar
+  per rule, with the translated label (`riskLabel`, or
+  `risk.label.drug_interaction` for interactions) and the patient count as
+  visible text. The bar length is proportional to the count, relative to the
+  largest bar. The colour follows severity (`danger` high, `warning` medium),
+  always paired with an icon, never colour alone. At most 6 bars show at
+  first, with a "show N more" control. With `rules == []` it MUST show an
+  empty state.
+- **B-14** (1.1.0) Each bar MUST be a button (`aria-expanded`, a touch target of
+  at least 44px) that toggles the list of that rule's patients. Each patient
+  shows a risk pill and links to `/patients/{id}`.
+- **B-15** (1.1.0) The critical-patients card MUST NOT appear on the dashboard.
+  The chart card's header keeps the link to `/patients?sort=risk`. The
+  two-column layout of B-12 now pairs the action list with this chart.
+- **B-16** (1.1.0) In the action list, each signal's detail (range bar, trend,
+  explanation, recurrence chip) MUST start collapsed behind a per-signal toggle
+  (`aria-expanded`, a touch target of at least 44px). The first signal of every
+  `critical` group MUST start expanded. The collapsed row MUST keep its icon,
+  text and relative time. A signal with nothing to explain shows no toggle.
 
 ## 8. Acceptance Criteria
 
@@ -262,8 +322,13 @@ constants, not settings.
 | AC-031-07 | An alert item's `recurrence.active_since` equals its `created_at`, and `prior_count` counts only resolved alerts of the same patient and title resolved within the last 30 days | §6.2, B-6 | `tests/test_dashboard_explainability.py` |
 | AC-031-08 | Items with nothing to explain (e.g. `followup`, `approval`) have `rule_code`, `factors`, `trend` and `recurrence` all `null`, and an `interaction` item has `rule_code == "drug_interaction"` and `trend` `null` | §6.2 | `tests/test_dashboard_explainability.py` |
 | AC-031-09 | `/stats` and `/bootstrap` keep their existing shapes | G-5, NG-4 | `tests/test_dashboard_explainability.py` |
+| AC-031-10 | `rule-summary` counts distinct patients per `rule_code` over the same population as `/stats`; a patient with two flags of one rule counts once | §6.1, G-7 | `tests/test_dashboard_rule_summary.py` |
+| AC-031-11 | `rules` are ordered by `count` descending, then `high` before `medium`, then `rule_code` | §6.1 | `tests/test_dashboard_rule_summary.py` |
+| AC-031-12 | Every bucket has `count == len(patients)`; patients carry `id`, `name`, `risk_level` and are ordered by risk then name | §6.1 | `tests/test_dashboard_rule_summary.py` |
+| AC-031-13 | All drug interactions aggregate into a single `drug_interaction` bucket, whatever the drug pair | §6.1 | `tests/test_dashboard_rule_summary.py` |
+| AC-031-14 | With no flags, `rules == []` and `total_patients` is still correct; a non-clinician is rejected | §6.1, §6.4 | `tests/test_dashboard_rule_summary.py` |
 
-The UI behaviour (B-7..B-12) is verified by the component and E2E tests in
+The UI behaviour (B-7..B-16) is verified by the component and E2E tests in
 §9. It carries no AC ids, because `scripts/docs_check.py` scans only
 `tests/**/*.py`.
 
@@ -276,6 +341,8 @@ The UI behaviour (B-7..B-12) is verified by the component and E2E tests in
 | Regression | Existing labels, alert dedupe and auto-resolve, action-item shape | `tests/test_risk_engine.py`, `tests/test_dashboard_endpoints.py`, `tests/test_alert_lifecycle_api.py` |
 | Component | Distribution bar counts and empty state; range bar text and marker; mini trend <2 points and aria label; recurrence chip; explanation fallback | `platform/frontend/components/__tests__/*.test.tsx` (new and updated) |
 | E2E | `/dashboard` with mocked enriched items: no overflow at 320px, 44px touch targets | `platform/frontend/e2e/responsive.spec.ts`, `e2e/fixtures/mock-api.ts` |
+| API (1.1.0) | AC-031-10..14 against the SQLite test DB | `tests/test_dashboard_rule_summary.py` (new) |
+| Component (1.1.0) | Chart counts visible, expand/collapse with `aria-expanded`, patient links, "show more", empty state; signal details collapsed by default, first critical open | `platform/frontend/components/__tests__/rule-summary-chart.test.tsx` (new), `action-items-list.test.tsx` (updated) |
 
 ## 10. Migration & Compatibility
 
@@ -286,6 +353,9 @@ The UI behaviour (B-7..B-12) is verified by the component and E2E tests in
   `LAB_RULES` literals in `risk.py`, so no other code changes.
 - The patient detail page's Risk Flags card is unaffected. It may adopt
   `factors` later.
+- (1.1.0) Additive: one new GET route, with no change to existing routes. The
+  dashboard stops rendering `/stats.critical_patients`, but the field stays in
+  `/stats` (its shape is locked by `tests/test_api_agenda_today.py`).
 
 ## 11. Risks & Open Questions
 
@@ -295,6 +365,8 @@ The UI behaviour (B-7..B-12) is verified by the component and E2E tests in
 | 2 | Recomputing an alert's factors from current data can differ from the value when the alert was raised | Intended: the dashboard answers "why is this still firing now". A non-firing flag yields `null` rather than stale factors (§6.4) |
 | 3 | Richer rows lengthen the list on phones | Enrichment renders compactly below the signal text; range bar and trend share one line from `sm:` up and stack below it (B-12) |
 | 4 | No persisted rule identity on alerts (`rule_key` exists in a migration but not in the model) | Out of scope (NG-5). Matching by `title` is exact today because titles are generated from the same labels |
+| 5 | (1.1.0) Collapsing details hides the "why" a clinician relied on in 1.0.0 | Mitigated by B-16: the first signal of every critical group opens by default, and one tap reveals the rest |
+| 6 | (1.1.0) `rule-summary` assesses every patient on each (cached) call | The same cost as `/stats`, which already does this; at ~14 patients it is negligible. Revisit alongside `/stats` if the population grows by orders of magnitude |
 
 ## 12. References
 
@@ -306,6 +378,7 @@ The UI behaviour (B-7..B-12) is verified by the component and E2E tests in
 
 | Version | Date | Change |
 |---|---|---|
+| 1.0.0 (Draft, 1.1.0 pending) | 2026-09-26 | `SF072`: drafted the additive 1.1.0 amendment: `GET /api/dashboard/rule-summary` (G-7, AC-031-10..14), the "what dominates today" chart replacing the redundant critical-patients card, and collapsible signal details (G-8, B-13..B-16, NG-7). Status is held at `Draft` until tests and code land, per the SPEC-004 1.2.0 precedent. No existing §6 contract is removed or retyped, and there is no migration. |
 | 1.0.0 | 2026-09-26 | Implemented (SF070): `LabRule` declares `code`/`comparator`/`threshold`/`unit` beside each predicate; every flag carries `rule_code` + `factors` (`drugs` for interactions); new `rule_factors`/`bp_factors`/`bp_rule_factors` helpers; `/dashboard/action-items` items carry `rule_code`, `factors`, `trend`, `recurrence`. Frontend: risk distribution bar, range bar, shared `MiniTrend`, recurrence chip, `risk.explain.*` translations, two-column layout; an alert with factors no longer shows its English `detail`. All 9 ACs green. |
 | 0.1.0 | 2026-09-26 | Initial draft (SF070) |
 | 0.1.0 | 2026-09-26 | Approved (SF070) — human review of the draft, including read-time factor recomputation (a flag that stopped firing yields `null` factors) and no confidence percentage, before writing tests |
