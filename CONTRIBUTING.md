@@ -114,8 +114,11 @@ to count a PR author's own approval toward a required-review count:
   under both dev and prod config. `docker-build-smoke-test` also fails on a
   CRITICAL OS-package CVE in the built image (Trivy, `vuln-type: os`,
   `ignore-unfixed: true`). `type-check` (mypy) runs alongside but is
-  excluded from this gate — see its job comment for the 61-error baseline
-  (DEBT-012) blocking that promotion.
+  excluded from this gate — a pre-existing error baseline across the repo
+  (DEBT-012, `docs/project-state.yaml`) blocks that promotion; see the
+  job's own comment in `.github/workflows/code-review.yml` for the current
+  count, and `pyproject.toml`'s `[tool.mypy-ratchet]` for the files that
+  are held clean in the meantime.
 
 ## Before opening a pull request
 

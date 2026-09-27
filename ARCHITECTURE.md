@@ -4,7 +4,7 @@
 
 Clinical decision-support platform. LLM reasoning runs on Google Gemini API (AI Studio free tier); clinical capabilities are FastMCP tool servers; specialist agents run through a purpose-built async executor (`src/sephiroth/runtime/`, replaced LangGraph — [ADR-001](docs/08-decisions/ADR-001-remove-langgraph.md)); answers ground in tool output + citations.
 
-⚠️ **Privacy:** clinical text/images go to Google's Gemini API. Not HIPAA/GDPR-compliant as-is — see README privacy notice before using real patient data.
+**Privacy:** clinical text/images go to Google's Gemini API. Not HIPAA/GDPR-compliant as-is — see README privacy notice before using real patient data.
 
 ## Directory Structure
 
@@ -26,15 +26,16 @@ clinical-ai-copilot/
 │   └── telemetry/             #   build_trace, traced_span → persisted ExecutionTrace
 │
 ├── intelligence/
-│   ├── mcp/                   # FastMCP servers (nlp, imaging, rag, drug_safety, vision)
-│   ├── agents/                # Thin Agent wrappers; shims into src/sephiroth/verification|telemetry|safety
+│   ├── mcp/                   # FastMCP servers (nlp, imaging, rag, drug_safety, vision, patient_comms)
+│   ├── agents/                # __init__.py only: 3 thin Agent subclasses over the runtime registry
 │   ├── nlp/                   # timeline_extractor.py only — vendored MedCAT tree deleted Phase 5 (DEBT-001)
 │   └── evaluation/            # RAG eval harness — Recall@k, MRR, Citation Precision, Faithfulness
 │
 ├── data/
-│   ├── rag/                   # Retrieval pipeline + seeded guideline corpus
+│   ├── rag/                   # Retrieval pipeline, queries pgvector directly (Phase 15, SPEC-030)
 │   ├── schemas/                # SQLAlchemy models (Patient, ClinicalNote, ...)
-│   └── embeddings/, vectors/   # hybrid dense+keyword retrieval (Gemini embeddings, in-memory vector store)
+│   └── embeddings/             # Gemini/Ollama embedding providers — vectors/ (in-memory store) was
+│                               # deleted in Phase 15; there is no non-pgvector fallback anymore
 │
 ├── migrations/                 # Alembic schema migrations (Postgres + Supabase)
 ├── examples/                   # tools_example.py (no LLM), agents_example.py (full workflow)
@@ -101,18 +102,26 @@ FastAPI routers under `platform/api/routers/`:
 - `GET /api/patients`, `/{id}`, `/{id}/timeline` — patient data, Postgres-backed
 - `POST /api/medical/nlp/extract`, `/imaging/analyze`, `/drugs/check` — direct tool access
 - `GET /api/rag/search`, `/api/rag/pubmed` — evidence lookup
-- `GET /api/dashboard/stats` — KPIs + agent/system status
+- `GET /api/dashboard/bootstrap` — combined first-paint payload (`stats` + today's agenda + `action_items`)
+- `GET /api/dashboard/action-items` — cross-patient triage list; each item carries `rule_code`/`factors`
+  (why it fired), a recent trend, and recurrence (new vs. long-active) — `SPEC-031`
+- `GET /api/dashboard/rule-summary` — patients per active clinical problem, exact counts over every
+  patient, feeding the "what dominates today" chart (`SPEC-031` 1.1.0)
 - `platform/api/routers/scheduling.py`, `results.py` — appointment booking, exam-result sharing (role-scoped per route)
 - Auth: JWT, roles `clinician`/`patient`, no patient self-registration (claim-code redemption only)
 
 ## Frontend
 
-Next.js 14 (App Router) + TypeScript + Tailwind + React Query + Recharts. Dev server proxies `/api/*` to FastAPI. Design tokens in `platform/frontend/tailwind.config.ts`:
+Next.js 14 (App Router) + TypeScript + Tailwind + TanStack Query. Dev server proxies `/api/*` to FastAPI. Design tokens in `platform/frontend/tailwind.config.ts`:
 
 - Nexura-derived palette: primary `#3683F8`, ink `#060606`, surface `#EBF3FE`, border `#D8D8D8`, font Manrope
 - **Sephiroth gradient** (`#8C92AC → #D1D5DB`): exclusively marks AI-generated content
+- Dashboard charts (`components/dashboard/`) are hand-rolled SVG/CSS on these same tokens, not a
+  charting library (`ADR-019`)
 
-Pages: `/` (marketing, chromeless), `/dashboard`, `/copilot` (chat + agent badges + citation guard panel), `/patients`, `/patients/[id]` (timeline), `/imaging`, `/evidence`, `/agents`, `/portal` (patient view).
+Pages: `/` (marketing, chromeless), `/dashboard`, `/copilot` (chat + agent badges + citation guard
+panel), `/patients`, `/patients/[id]` (timeline), `/imaging`, `/evidence`, `/schedule`, `/alerts`,
+`/approvals`, `/results`, `/encounters/[id]`, `/portal` (patient view).
 
 ## Deployment
 
@@ -122,4 +131,4 @@ Pages: `/` (marketing, chromeless), `/dashboard`, `/copilot` (chat + agent badge
 
 ## Migration State
 
-Project is mid-migration from a clinical app into a model-agnostic agentic runtime (strangler-fig into `src/sephiroth/`). Current phase, implemented-vs-planned status, and tech debt items: `docs/project-state.yaml`. Frozen external contracts (SSE events, persistence shape): `docs/00-migration-charter.md`. Formal decisions: `docs/08-decisions/ADR-001` through `ADR-014`.
+Project is mid-migration from a clinical app into a model-agnostic agentic runtime (strangler-fig into `src/sephiroth/`). Current phase: 16 (`SPEC-031`, dashboard alert explainability, is the latest `Implemented` spec). Implemented-vs-planned status and tech debt items: `docs/project-state.yaml`. Frozen external contracts (SSE events, persistence shape): `docs/00-migration-charter.md`. Formal decisions: `docs/08-decisions/` (currently `ADR-001` through `ADR-019`).
