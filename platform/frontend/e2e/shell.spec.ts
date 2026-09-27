@@ -127,3 +127,20 @@ test("cancelling an appointment goes through the in-app dialog", async ({ page }
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
 });
+
+test("top-bar controls sit flush right and the breadcrumb stays left", async ({ page }) => {
+  const header = page.locator("header");
+  const bell = header.getByRole("button", { name: /notifications|notificaciones/i });
+  const box = async (locator: import("@playwright/test").Locator) => (await locator.boundingBox())!;
+
+  const bar = await box(header);
+  const paddingRight = await header.evaluate((el) => parseFloat(getComputedStyle(el).paddingRight));
+  const last = await box(bell);
+  // The notification bell is the last control at every width, so its right
+  // edge must meet the header's content edge — not float mid-bar.
+  expect(Math.abs(bar.x + bar.width - paddingRight - (last.x + last.width))).toBeLessThanOrEqual(1);
+
+  const crumb = await box(header.locator("nav").first());
+  expect(crumb.x).toBeLessThan(bar.x + bar.width / 2);
+  await expect(page.locator("#mobile-nav")).toHaveCount(1);
+});
