@@ -125,6 +125,48 @@ async def _dashboard_stats(session: AsyncSession) -> Dict[str, Any]:
     }
 
 
+@router.get("/rule-summary", summary="Patients per active clinical problem, across every patient")
+async def dashboard_rule_summary(session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
+    """SPEC-031 1.1.0: exact counts over the same population `/stats` assesses —
+    not derived from `/action-items`, which is capped per category."""
+    return await _cached("rule_summary", lambda: _dashboard_rule_summary(session))
+
+
+async def _dashboard_rule_summary(session: AsyncSession) -> Dict[str, Any]:
+    patients = (await session.scalars(select(Patient).order_by(Patient.name))).all()
+    buckets: Dict[str, Dict[str, Any]] = {}
+    for p in patients:
+        flags = assess_patient_risk(p.lab_results, p.medications)
+        if not flags:
+            continue
+        member = {"id": p.id, "name": p.name, "risk_level": assess_risk_level(flags)}
+        for flag in flags:
+            code = flag["rule_code"]
+            bucket = buckets.setdefault(
+                code,
+                {
+                    "rule_code": code,
+                    # Each interaction's label names its drug pair; the bucket is the class.
+                    "label": "Interaction" if code == "drug_interaction" else flag["label"],
+                    "severity": flag["severity"],
+                    "members": {},
+                },
+            )
+            if flag["severity"] == "high":
+                bucket["severity"] = "high"
+            bucket["members"][p.id] = member
+
+    rules = []
+    for bucket in buckets.values():
+        members = sorted(
+            bucket.pop("members").values(),
+            key=lambda m: (RISK_ORDER.get(m["risk_level"], len(RISK_ORDER)), m["name"]),
+        )
+        rules.append({**bucket, "count": len(members), "patients": members})
+    rules.sort(key=lambda r: (-r["count"], 0 if r["severity"] == "high" else 1, r["rule_code"]))
+    return {"total_patients": len(patients), "rules": rules}
+
+
 @router.get("/evolution", summary="Clinical evolution — deterioration/improvement signals")
 async def dashboard_evolution(session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
     """Compares each patient's two most recent readings per lab test
