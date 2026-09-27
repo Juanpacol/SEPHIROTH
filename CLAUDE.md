@@ -4,9 +4,9 @@
 
 An **AI-powered clinical decision support platform** for healthcare professionals. Patients upload histories, imaging, and lab data; specialized AI agents (powered by the Google Gemini API) extract findings, retrieve evidence from medical literature, check drug interactions, and generate structured, cited recommendations.
 
-⚠️ **For research, education, and professional support only.** Not a medical device; all AI recommendations must be reviewed by a qualified healthcare professional before clinical use.
+**For research, education, and professional support only.** Not a medical device; all AI recommendations must be reviewed by a qualified healthcare professional before clinical use.
 
-⚠️ **Privacy:** clinical text and medical images are sent to the Google Gemini API (AI Studio free tier). This is not HIPAA/GDPR-compliant as-is, and the free tier may use submitted data to improve Google's models. Use only with synthetic/de-identified data unless you migrate to Vertex AI with a BAA.
+**Privacy:** clinical text and medical images are sent to the Google Gemini API (AI Studio free tier). This is not HIPAA/GDPR-compliant as-is, and the free tier may use submitted data to improve Google's models. Use only with synthetic/de-identified data unless you migrate to Vertex AI with a BAA.
 
 ## Tech Stack
 
@@ -14,7 +14,7 @@ An **AI-powered clinical decision support platform** for healthcare professional
 - **Agents**: `Agent` instances (bound to a capability record, `src/sephiroth/runtime/`) orchestrated by a purpose-built async executor, each with MCP tools
 - **Tools (MCP servers)**: Clinical NLP, medical imaging analysis, evidence retrieval, drug safety checks — all in `intelligence/mcp/`
 - **Backend**: FastAPI + PostgreSQL + pgvector
-- **Frontend**: Next.js 14 (TypeScript, Tailwind, Radix) — design system from Nexura Care (healthcare dashboard), adapted for AI copilot domain
+- **Frontend**: Next.js 14 (TypeScript, Tailwind CSS, TanStack Query for server state) — design system from Nexura Care (healthcare dashboard), adapted for the clinical AI copilot domain. Dashboard charts are hand-rolled SVG/CSS, not a charting library (`ADR-019`)
 - **Container**: Docker Compose (Postgres + API)
 
 ## Folders at a Glance
@@ -24,7 +24,7 @@ An **AI-powered clinical decision support platform** for healthcare professional
 | `platform/api/` | FastAPI routes (routers in `routers/`, main.py with CORS/lifespan) |
 | `platform/core/` | Config (`config.py`) + async DB engine/sessions/seed (`db.py`) |
 | `platform/auth/` | JWT auth: `security.py` (bcrypt+pyjwt), `deps.py` (`get_current_user`), `router.py` (register/login/me) |
-| `platform/frontend/` | Next.js app (pages in `app/`, components in `components/`, design tokens in Tailwind config) |
+| `platform/frontend/` | Next.js app: pages in `app/` (copilot chat, dashboard, patients, scheduling, alerts, approvals, results, patient portal, marketing site), reusable components in `components/`, design tokens in `tailwind.config.ts`. `components/dashboard/` holds the hand-rolled SVG dashboard visuals — risk distribution bar, value-vs-threshold range bar, trend line, "what dominates today" chart (`SPEC-031`, `ADR-019`) |
 | `src/sephiroth/models/` | `GeminiClient` (chat/tool-call loop, structured output, vision) + `GroqClient` (text-only fallback) + `FallbackLLMClient` (composes both) + `factory.py` (`get_llm_client()` singleton), all behind the `ModelProvider` protocol |
 | `src/sephiroth/tools/` | `ToolRuntime` (relocated MCP registry — capability tags, per-call timeout, dispatch-time whitelist enforcement) |
 | `src/sephiroth/runtime/` | `Agent` + 3 capability records + `intent_router` + the async executor (route → run one specialist → verify → decide, replacing LangGraph — see `docs/08-decisions/ADR-001-remove-langgraph.md`); internal state is a real `RunState` since Phase 4. `laboratory`/`coordinator` and the multi-agent fan-out were removed in Phase 14 (`SPEC-029`, `ADR-016`) |
@@ -32,8 +32,8 @@ An **AI-powered clinical decision support platform** for healthcare professional
 | `src/sephiroth/safety/` | Abstention gating (`answer`/`partial`/`abstain`, ADR-008) + a minimal input prompt-injection heuristic |
 | `src/sephiroth/context/` | Per-agent context views, lexical MMR reranking, per-patient consultation memory, character-budget truncation (ADR-011) |
 | `src/sephiroth/telemetry/` | `build_trace` projects `RunState` into the persisted `ExecutionTrace`; `traced_span` records real spans for the executor/verifier seams (ADR-009) |
-| `intelligence/mcp/` | FastMCP servers (nlp, imaging, rag, drug_safety, vision — vision shares the same Gemini client, model override via `gemini_vision_model`); the registry/dispatcher itself lives in `src/sephiroth/tools/` |
-| `intelligence/agents/` | Thin `Agent` wrappers (shim into `src/sephiroth/runtime/`). `citation_guard.py`/`explainability.py`/`risk_engine.py` are Phase-5 shims into `src/sephiroth/verification`/`telemetry`/`safety` respectively — real logic lives there now |
+| `intelligence/mcp/` | FastMCP servers (nlp, imaging, rag, drug_safety, vision, patient_comms — vision shares the same Gemini client, model override via `gemini_vision_model`; `patient_comms` drafts patient-facing follow-up messages for `platform/api/workflows/patient_followup.py`, it is not a chat-agent tool); the registry/dispatcher itself lives in `src/sephiroth/tools/` |
+| `intelligence/agents/` | One file (`__init__.py`): three thin `Agent` subclasses (`RadiologyAgent`, `DrugSafetyAgent`, `EvidenceAgent`) binding a capability record from `src/sephiroth/runtime/registry.py` to the shared client, kept so `platform/api/routers/agents.py`'s `/ask` route and any direct importer can still instantiate them by name. The separate `citation_guard.py`/`explainability.py`/`risk_engine.py` shim files this folder used to hold were deleted once their real logic settled into `src/sephiroth/verification`/`telemetry`/`safety` |
 | `intelligence/nlp/` | `timeline_extractor.py` (note → timeline events via structured LLM output). The vendored MedCAT tree (`ner/`, `pipeline/`, `preprocessing/`) was deleted in Phase 5 (`DEBT-001`) — it had zero call sites |
 | `data/rag/` | Evidence retrieval with mandatory citations, stored in pgvector (`guideline_documents`, Phase 15 `SPEC-030`/`ADR-017`) — `RAGPipeline.retrieve` is async, queries the table on every call, no in-memory fallback. `seed_pgvector.py` populates it from the curated Python corpus + PubMed |
 | `data/schemas/` | SQLAlchemy 2.0 models (User, Patient, TimelineEvent, ClinicalNote, Consultation) |
@@ -120,7 +120,7 @@ MCP tools are FastMCP servers in `intelligence/mcp/`:
 20. **No patient self-registration — ever.** A patient account is created only by redeeming a clinician-issued, one-time claim code (`PatientInvite`, bcrypt-hashed secret, 72h TTL) at public `POST /api/auth/portal/claim`. `POST /api/auth/register` is clinician-only (gated by `require_clinician_for_registration`, with `settings.allow_bootstrap_registration` — default on — letting the first account exist on a fresh database). The patient portal (`platform/api/routers/portal.py`) derives the patient from the token only (`current_patient_record`) — no handler in that router ever takes a `patient_id` parameter, so there's no id for a caller to tamper with. Portal reads deliberately show a trimmed, non-clinical view (`_portal_view`, not `patients.py::_full`) — no rule-derived `risk_level`/`risk_flags`, and the timeline filters out AI-generated events unless a clinician has explicitly shared one.
 8. **Streaming via SSE.** `POST /api/agents/consult/stream` emits `routing` → `agent_completed`(×N) → `final` → `persisted` (carries the consultation id so Export PDF works without a reload); the frontend parses it with fetch+ReadableStream (EventSource can't POST).
 9. **Explainability is derived, never stored.** `src/sephiroth/telemetry/explain.py` (relocated verbatim from `intelligence/agents/explainability.py` in Phase 5; that shim was deleted in Phase 6) builds the reasoning trace on read from persisted `agents`/`tool_calls`/`citation_report` — template-based, no LLM call, so improving templates needs no backfill.
-10. **Risk flags are computed at read-time.** `src/sephiroth/safety/risk.py` (relocated verbatim from `intelligence/agents/risk_engine.py` in Phase 5, that shim deleted in Phase 6; curated lab rules + the drug-safety interaction table via `find_interactions`) runs inside `_summary()`/`_full()` in `patients.py` — no new columns, no background jobs.
+10. **Risk flags are computed at read-time.** `src/sephiroth/safety/risk.py` (relocated verbatim from `intelligence/agents/risk_engine.py` in Phase 5, that shim deleted in Phase 6; curated lab rules + the drug-safety interaction table via `find_interactions`) runs inside `_summary()`/`_full()` in `patients.py` — no new columns, no background jobs. Since `SPEC-031` (Phase 16, `SF068`–`SF072`) the same flags also drive the dashboard: a physiological-plausibility check keeps an impossible reading (a blood pressure no body produces) from ever becoming an alert (`SF068`); every flag's `rule_code`/`factors` let the UI show and translate *why* it fired instead of parsing English text (`SF070`); and `GET /api/dashboard/rule-summary` aggregates flags into a "what dominates today" chart with exact counts over every patient, never a filtered or capped subset (`SF072`). `ADR-019` fixes the one hard boundary across all of this: dashboard visuals show counts of what already happened, never a confidence score or a predicted trend, because the engine is a deterministic rule set with nothing honest to base either one on.
 11. **Vision = one MCP tool, same client.** `describe_medical_image` (vision_server.py) does one-shot `GeminiClient.describe_image()`; the RadiologyAgent is prompted to call it first when `image_path` is in context. It reads rendered images (PNG/JPG…), not raw DICOM. Degrades gracefully (`status: "unavailable"`) if the API key is missing or the request fails.
 12. **Image preview shares the imaging trust boundary.** `GET /api/medical/imaging/preview` (medical.py) streams back the same local file `describe_medical_image`/`analyze_medical_image` already read, hard-restricted to browser-renderable extensions (png/jpg/jpeg/gif/webp/bmp) so it can't become a general file-download route. Powers the side-by-side viewer on `/imaging`.
 13. **Free-tier quota is a real constraint.** `llm_max_tool_rounds` (default 6) and a shared per-client rate limiter (`gemini_rpm_limit`) keep a single consultation (5 agents, each doing several tool-call rounds) inside the AI Studio free tier. See README's Gemini quota section before raising these.
@@ -267,6 +267,8 @@ migration into `src/sephiroth/`. Before changing anything under `intelligence/`,
 - `docs/project-state.yaml` — what is actually implemented versus planned.
 
 The loop is: spec → failing tests → implementation → spec marked `Implemented`.
+
+Current phase: 16 (`SPEC-031` — dashboard alert explainability — is the latest `Implemented` spec; `ADR-019` is the latest decision record). See `docs/project-state.yaml` for the authoritative phase-by-phase status.
 
 ## References
 
