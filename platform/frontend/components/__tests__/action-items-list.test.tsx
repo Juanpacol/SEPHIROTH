@@ -143,6 +143,11 @@ describe("ActionItemsList", () => {
         }),
       ]),
     ]);
+    // Collapsed by default (not a critical group): one tap reveals the detail.
+    expect(screen.queryByText("Potasio 6.8 mEq/L · umbral > 5.5")).not.toBeInTheDocument();
+    const toggle = screen.getByRole("button", { expanded: false });
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("Potasio 6.8 mEq/L · umbral > 5.5")).toBeInTheDocument();
     expect(screen.getByText("Potasio alto (hiperpotasemia)")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: /de 4.9 a 6.8/ })).toBeInTheDocument();
@@ -150,6 +155,30 @@ describe("ActionItemsList", () => {
     expect(screen.getByText(/activa hace 3 d/)).toBeInTheDocument();
     expect(screen.getByLabelText("se repitió 2 veces en los últimos 30 días")).toBeInTheDocument();
     localStorage.removeItem("cac_lang");
+  });
+
+  it("opens the first explainable signal of a critical patient by default", () => {
+    renderList([
+      group([
+        baseItem({ category: "approval", severity: "critical" }),
+        baseItem({
+          severity: "critical",
+          title: "Hyperkalemia",
+          rule_code: "hyperkalemia",
+          factors: [{ test: "potassium", value: 6.8, comparator: ">", threshold: 5.5, unit: "mEq/L" }],
+        }),
+        baseItem({
+          severity: "high",
+          title: "Supratherapeutic INR",
+          rule_code: "supratherapeutic_inr",
+          factors: [{ test: "inr", value: 4.8, comparator: ">", threshold: 3.5, unit: "" }],
+        }),
+      ]),
+    ]);
+    const toggles = screen.getAllByRole("button", { expanded: true });
+    expect(toggles).toHaveLength(1);
+    expect(screen.getByText(/Potassium 6.8 mEq\/L · threshold > 5.5/)).toBeInTheDocument();
+    expect(screen.queryByText(/INR 4.8/)).not.toBeInTheDocument();
   });
 
   it("renders a plain row when there is nothing to explain", () => {

@@ -60,10 +60,14 @@ test("page content is readable under the tab bar at the end of the page", async 
 
   // The footer disclaimer is the last thing in the flow and the first casualty
   // of a floating bar. Scrolled to the end, it has to be fully clear of it.
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  // Scroll inside the poll: dashboard cards load on their own queries, so the
+  // page can still grow after a single scroll and leave the footer below.
+  // "instant" because a smooth scroll restarted on every poll can stall a
+  // pixel short of the end and read as an overlap that is not there.
   await expect
     .poll(async () =>
       page.evaluate(() => {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" });
         const footer = document.querySelector("footer")!.getBoundingClientRect().bottom;
         const bar = document
           .querySelector("nav[aria-label]")!

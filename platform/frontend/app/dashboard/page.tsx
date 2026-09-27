@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardList, ShieldAlert } from "lucide-react";
+import { BarChart3, ClipboardList } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import ActionItemsList from "@/components/action-items-list";
-import CriticalPatientsList from "@/components/critical-patients-list";
 import StatCard from "@/components/stat-card";
 import RiskDistribution from "@/components/dashboard/risk-distribution";
+import RuleSummaryChart from "@/components/dashboard/rule-summary-chart";
 
 export default function DashboardPage() {
   const { t } = useLanguage();
@@ -17,6 +17,11 @@ export default function DashboardPage() {
     queryKey: ["dashboard", "bootstrap"],
     queryFn: api.dashboardBootstrap,
     refetchInterval: 30_000,
+  });
+  const { data: ruleSummary } = useQuery({
+    queryKey: ["dashboard", "rule-summary"],
+    queryFn: api.dashboardRuleSummary,
+    refetchInterval: 60_000,
   });
   const data = bootstrap?.stats;
 
@@ -62,15 +67,18 @@ export default function DashboardPage() {
         </div>
 
         <div className="card !p-4">
-          <div className="mb-1 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-sm font-bold">
-              <ShieldAlert size={15} className="text-primary" /> {t("dashboard.criticalPatients")}
-            </h2>
-            <Link href="/patients?sort=risk" className="text-xs font-semibold text-primary">
+          <div className="mb-2 flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h2 className="flex items-center gap-2 text-sm font-bold">
+                <BarChart3 size={15} className="text-primary" /> {t("dashboard.ruleSummary.title")}
+              </h2>
+              <p className="text-xs text-muted">{t("dashboard.ruleSummary.subtitle")}</p>
+            </div>
+            <Link href="/patients?sort=risk" className="shrink-0 text-xs font-semibold text-primary">
               {t("dashboard.viewAll")}
             </Link>
           </div>
-          <CriticalPatientsList patients={data.critical_patients} maxVisible={5} />
+          {ruleSummary && <RuleSummaryChart summary={ruleSummary} />}
         </div>
       </div>
     </div>

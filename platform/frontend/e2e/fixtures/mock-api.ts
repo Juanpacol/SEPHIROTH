@@ -324,6 +324,35 @@ const DASHBOARD_ACTION_ITEMS = {
 const ROUTES: Record<string, unknown> = {
   "/api/dashboard/stats": DASHBOARD_STATS,
   "/api/dashboard/action-items": DASHBOARD_ACTION_ITEMS,
+  "/api/dashboard/rule-summary": {
+    total_patients: PATIENTS.length,
+    rules: [
+      {
+        rule_code: "hyperkalemia",
+        label: "Hyperkalemia",
+        severity: "high" as const,
+        count: 2,
+        patients: [
+          { id: "p-001", name: PATIENTS[0].name, risk_level: "high" as const },
+          { id: "p-002", name: PATIENTS[1].name, risk_level: "medium" as const },
+        ],
+      },
+      {
+        rule_code: "supratherapeutic_inr",
+        label: "Supratherapeutic INR",
+        severity: "high" as const,
+        count: 1,
+        patients: [{ id: "p-002", name: PATIENTS[1].name, risk_level: "medium" as const }],
+      },
+      {
+        rule_code: "drug_interaction",
+        label: "Interaction",
+        severity: "medium" as const,
+        count: 1,
+        patients: [{ id: "p-001", name: PATIENTS[0].name, risk_level: "high" as const }],
+      },
+    ],
+  },
   // What /dashboard actually fetches; without it the page renders "backend down".
   "/api/dashboard/bootstrap": {
     stats: DASHBOARD_STATS,
