@@ -42,7 +42,6 @@ const ES: Record<string, string> = {
   "dashboard.stat.aiConfidence": "Confianza IA",
   "dashboard.stat.evidenceCoverage": "Cobertura de evidencia",
   "dashboard.stat.humanReviewRate": "{pct}% requiere revisión humana",
-  "dashboard.criticalPatients": "Pacientes críticos",
   "dashboard.viewAll": "Ver todos →",
   "dashboard.tabLoading": "Cargando…",
 
@@ -533,9 +532,7 @@ const ES: Record<string, string> = {
   "patientDetail.interactionChecker.whatToDo": "Qué hacer: {recommendation}",
   "patientDetail.interactionChecker.error": "No se pudo consultar el verificador de interacciones.",
 
-  "criticalPatients.empty": "No hay pacientes de riesgo alto o medio en este momento.",
   "criticalPatients.moreFlags": "+{count} más",
-  "criticalPatients.showMore": "Ver {count} pacientes más →",
 
   "explainability.title": "Cómo se produjo esta respuesta",
 
@@ -966,6 +963,16 @@ const ES: Record<string, string> = {
   "risk.explain.high_ldl_cholesterol": "Aumenta el riesgo cardiovascular",
   "risk.explain.very_high_ldl_cholesterol": "Riesgo cardiovascular alto",
   "risk.explain.hypertensive_range": "Riesgo de daño cardiovascular y renal",
+  // Dashboard focus (SPEC-031 1.1.0).
+  "dashboard.ruleSummary.title": "Qué domina hoy",
+  "dashboard.ruleSummary.subtitle": "Pacientes por problema activo",
+  "dashboard.ruleSummary.empty": "Ningún paciente tiene problemas activos.",
+  "dashboard.ruleSummary.showMore": "Ver {count} problemas más",
+  "dashboard.ruleSummary.patients": "{count} pacientes",
+  "dashboard.ruleSummary.onePatient": "1 paciente",
+  "dashboard.signal.showDetail": "Mostrar detalle",
+  "dashboard.signal.hideDetail": "Ocultar detalle",
+  "risk.label.interaction": "Interacción de medicamentos",
 };
 
 export default ES;

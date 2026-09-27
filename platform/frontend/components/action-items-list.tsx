@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
+  ChevronDown,
   ClipboardList,
   FileCheck2,
   FlaskConical,
@@ -143,14 +144,23 @@ function factorText(factor: RiskFactor, t: (key: string) => string): string {
   return `${reading} · ${threshold}`;
 }
 
+function explanationFor(item: DashboardActionItem, t: (key: string) => string): string | null {
+  const key = item.rule_code && item.rule_code !== "drug_interaction" ? `risk.explain.${item.rule_code}` : null;
+  return key && t(key) !== key ? t(key) : null;
+}
+
+function hasDetails(item: DashboardActionItem, t: (key: string) => string): boolean {
+  return Boolean(
+    item.factors?.length || (item.trend?.length ?? 0) >= 2 || item.recurrence || explanationFor(item, t)
+  );
+}
+
 function SignalDetails({ item }: { item: DashboardActionItem }) {
   const { t, lang } = useLanguage();
   const factors = item.factors ?? [];
   const trend = item.trend ?? [];
-  const explainKey = item.rule_code && item.rule_code !== "drug_interaction" ? `risk.explain.${item.rule_code}` : null;
-  const explanation = explainKey && t(explainKey) !== explainKey ? t(explainKey) : null;
+  const explanation = explanationFor(item, t);
   const recurrence = item.recurrence;
-  if (!factors.length && trend.length < 2 && !explanation && !recurrence) return null;
 
   const trendTone = item.severity === "critical" || item.severity === "high" ? "danger" : "warning";
   const trendLabel = t("dashboard.signal.trendLabel")
@@ -184,28 +194,55 @@ function SignalDetails({ item }: { item: DashboardActionItem }) {
   );
 }
 
-function SignalRow({ item }: { item: DashboardActionItem }) {
+/** Detail stays behind a tap so the list reads as one line per signal
+ * (SPEC-031 B-16). The whole row is the toggle: full width satisfies the
+ * 44px rule without inflating every row's height. */
+function SignalRow({ item, defaultOpen = false }: { item: DashboardActionItem; defaultOpen?: boolean }) {
   const { t, lang } = useLanguage();
+  const [open, setOpen] = useState(defaultOpen);
   const Icon = CATEGORY_ICON[item.category];
   const when = relativeTime(item.occurred_at, lang);
+  const expandable = hasDetails(item, t);
+  const line = (
+    <>
+      <Icon
+        size={14}
+        className={`shrink-0 ${item.severity === "critical" || item.severity === "high" ? "text-danger" : "text-warning"}`}
+      />
+      <span className="min-w-0 flex-1 truncate text-xs leading-tight text-muted">{itemText(item, t)}</span>
+      {when && item.occurred_at && (
+        <time dateTime={item.occurred_at} className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-muted">
+          {when}
+        </time>
+      )}
+    </>
+  );
   return (
     <li className="min-w-0">
-      <div className="flex min-w-0 items-center gap-2.5">
-        <Icon
-          size={14}
-          className={`shrink-0 ${item.severity === "critical" || item.severity === "high" ? "text-danger" : "text-warning"}`}
-        />
-        <span className="min-w-0 flex-1 truncate text-xs leading-tight text-muted">{itemText(item, t)}</span>
-        {when && item.occurred_at && (
-          <time dateTime={item.occurred_at} className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-muted">
-            {when}
-          </time>
-        )}
-        {item.category === "decision" && item.consultation_id && (
-          <ResolveDecisionButton consultationId={item.consultation_id} />
-        )}
-      </div>
-      <SignalDetails item={item} />
+      {expandable ? (
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          title={open ? t("dashboard.signal.hideDetail") : t("dashboard.signal.showDetail")}
+          className="flex w-full min-w-0 items-center gap-2.5 rounded text-left transition-colors hover:bg-primary-soft/40"
+        >
+          {line}
+          <ChevronDown
+            size={14}
+            aria-hidden
+            className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </button>
+      ) : (
+        <div className="flex min-w-0 items-center gap-2.5">
+          {line}
+          {item.category === "decision" && item.consultation_id && (
+            <ResolveDecisionButton consultationId={item.consultation_id} />
+          )}
+        </div>
+      )}
+      {expandable && open && <SignalDetails item={item} />}
     </li>
   );
 }
@@ -250,7 +287,11 @@ export default function ActionItemsList({
             </div>
             <ul className="mt-1.5 space-y-2">
               {group.items.map((item, j) => (
-                <SignalRow key={`${item.category}-${j}`} item={item} />
+                <SignalRow
+                  key={`${item.category}-${j}`}
+                  item={item}
+                  defaultOpen={group.severity === "critical" && j === group.items.findIndex((it) => hasDetails(it, t))}
+                />
               ))}
             </ul>
           </li>

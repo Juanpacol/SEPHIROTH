@@ -62,6 +62,18 @@ export interface DashboardActionItem {
   recurrence?: { active_since: string; prior_count: number } | null;
 }
 
+/** Patients per active clinical problem, over every patient (SPEC-031 1.1.0). */
+export interface DashboardRuleSummary {
+  total_patients: number;
+  rules: {
+    rule_code: string;
+    label: string;
+    severity: "high" | "medium";
+    count: number;
+    patients: { id: string; name: string; risk_level: "high" | "medium" | "low" }[];
+  }[];
+}
+
 /** One measured input of a firing risk rule (SPEC-031). */
 export interface RiskFactor {
   test: string;
@@ -790,6 +802,7 @@ export const api = {
       "/api/dashboard/bootstrap"
     ),
   dashboardActionItems: () => get<DashboardActionItems>("/api/dashboard/action-items"),
+  dashboardRuleSummary: () => get<DashboardRuleSummary>("/api/dashboard/rule-summary"),
   dashboardEvolution: () => get<DashboardEvolution>("/api/dashboard/evolution"),
   dashboardAlerts: () => get<DashboardAlerts>("/api/dashboard/alerts"),
   dashboardMedications: () => get<DashboardMedications>("/api/dashboard/medications"),
