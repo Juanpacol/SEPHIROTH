@@ -2,8 +2,8 @@
 id: SPEC-031
 title: Dashboard Alert Explainability and Visual Summary
 phase: 16
-version: 1.0.0
-status: Approved
+version: 1.1.0
+status: Implemented
 authors: [jbotero]
 created: 2026-09-26
 updated: 2026-09-26
@@ -305,8 +305,9 @@ constants, not settings.
   two-column layout of B-12 now pairs the action list with this chart.
 - **B-16** (1.1.0) In the action list, each signal's detail (range bar, trend,
   explanation, recurrence chip) MUST start collapsed behind a per-signal toggle
-  (`aria-expanded`, a touch target of at least 44px). The first signal of every
-  `critical` group MUST start expanded. The collapsed row MUST keep its icon,
+  (`aria-expanded`, a touch target of at least 44px in one dimension: the full-width
+  row is the toggle). The first *explainable* signal of every `critical` group
+  MUST start expanded. The collapsed row MUST keep its icon,
   text and relative time. A signal with nothing to explain shows no toggle.
 
 ## 8. Acceptance Criteria
@@ -378,6 +379,7 @@ The UI behaviour (B-7..B-16) is verified by the component and E2E tests in
 
 | Version | Date | Change |
 |---|---|---|
+| 1.1.0 | 2026-09-27 | Implemented (SF072): `GET /api/dashboard/rule-summary` (`_dashboard_rule_summary`, same population as `/stats`, cached); `RuleSummaryChart` replaces the removed `critical-patients-list.tsx`; signal details collapse behind a full-width row toggle, with the first explainable signal of each critical group open (B-16 wording refined to say so). Checked against real Supabase data: 32 patients, 30 with ≥1 problem (= critical + moderate). The tab-bar e2e now scrolls instantly inside its poll, because the chart loads on its own query and the old single smooth scroll went flaky. All 14 ACs green. |
 | 1.0.0 (Approved, 1.1.0 pending) | 2026-09-27 | `SF072`: human review approved the 1.1.0 amendment, including exact counts from a dedicated endpoint rather than the capped action list, and expanding a bar into its patients rather than filtering the list, before writing tests. |
 | 1.0.0 (Draft, 1.1.0 pending) | 2026-09-26 | `SF072`: drafted the additive 1.1.0 amendment: `GET /api/dashboard/rule-summary` (G-7, AC-031-10..14), the "what dominates today" chart replacing the redundant critical-patients card, and collapsible signal details (G-8, B-13..B-16, NG-7). Status is held at `Draft` until tests and code land, per the SPEC-004 1.2.0 precedent. No existing §6 contract is removed or retyped, and there is no migration. |
 | 1.0.0 | 2026-09-26 | Implemented (SF070): `LabRule` declares `code`/`comparator`/`threshold`/`unit` beside each predicate; every flag carries `rule_code` + `factors` (`drugs` for interactions); new `rule_factors`/`bp_factors`/`bp_rule_factors` helpers; `/dashboard/action-items` items carry `rule_code`, `factors`, `trend`, `recurrence`. Frontend: risk distribution bar, range bar, shared `MiniTrend`, recurrence chip, `risk.explain.*` translations, two-column layout; an alert with factors no longer shows its English `detail`. All 9 ACs green. |

@@ -11,7 +11,7 @@
 schema_version: 1
 project: SEPHIROTH
 version: 1.0.0
-updated: 2026-09-26
+updated: 2026-09-27
 phase_current: 16
 
 phases:
@@ -182,9 +182,11 @@ components:
       description: >-
         Hand-rolled SVG/CSS dashboard visuals (ADR-019): risk distribution
         bar, value-vs-threshold range bar, shared MiniTrend (also used by
-        the patient lab-trend card). Fed by /api/dashboard/stats and the
-        SPEC-031 enrichment of /api/dashboard/action-items.
-      tests: [tests/test_dashboard_explainability.py]
+        the patient lab-trend card), and (SPEC-031 1.1.0) the "what
+        dominates today" chart fed by /api/dashboard/rule-summary. Fed by
+        /api/dashboard/stats and the SPEC-031 enrichment of
+        /api/dashboard/action-items.
+      tests: [tests/test_dashboard_explainability.py, tests/test_dashboard_rule_summary.py]
     src/sephiroth/context:
       status: implemented
       phase: 4
