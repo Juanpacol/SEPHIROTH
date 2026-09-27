@@ -60,6 +60,11 @@ one chart is a small SVG sparkline in
   diverge if edited carelessly — mitigated by a test over every rule.
 - An alert's factors describe *current* data; if the flag stopped firing,
   the alert shows no factors rather than stale ones.
+- (SF072, SPEC-031 1.1.0) The one aggregate chart added later, "what
+  dominates today", draws **counts of patients per active rule** from a
+  read-time endpoint over the same population as `/stats`: the same
+  honest-data rule, with no trends and no predictions. It replaced the
+  critical-patients card instead of adding to the page.
 - Deferred to follow-up stories: clinician feedback + false-positive rate,
   patient × test heatmap, persisted daily snapshot for count sparklines,
   persisting rule identity on alerts.
