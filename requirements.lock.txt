@@ -309,7 +309,7 @@ typing-inspection==0.4.4
     #   pydantic-settings
 uncalled-for==0.4.0
     # via fastmcp-slim
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   botocore
     #   requests
