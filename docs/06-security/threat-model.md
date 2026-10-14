@@ -19,19 +19,22 @@ data. **Not** a deployment threat model for real patient data — see
 | # | Threat | Control | State |
 |---|---|---|---|
 | T-1 | **Prompt injection in clinical text** drives an agent to invoke tools outside its scope | Whitelist enforced at dispatch, not just at schema advertisement | ✅ closed in phase 0 |
-| T-2 | Injection extracts data via an unrelated tool | Same control; capability metadata narrows it further | ✅ / 📋 phase 2 |
+| T-2 | Injection extracts data via an unrelated tool | Same control; capability metadata narrows it further | ✅ closed in phase 2 |
 | T-3 | **Fabricated citations** make an unsupported claim look sourced | Citation guard audits labels against real tool output | ✅ |
-| T-4 | **Misattributed content** — real citation, wrong claim | Claim-level verification | 📋 phase 4 |
-| T-5 | Unauthenticated tool access via `/api/medical/*` | Route through the tool runtime's permission layer | 📋 phase 2 (DEBT-004) |
+| T-4 | **Misattributed content** — real citation, wrong claim | Claim-level verification (`SPEC-004`) | ✅ closed in phase 4 |
+| T-5 | Unauthenticated tool access via `/api/medical/*` | Routed through the tool runtime's permission layer | ✅ closed in phase 2 (DEBT-004) |
 | T-6 | Arbitrary local file read through the image preview endpoint | Hard-restricted to browser-renderable extensions | ✅ |
 | T-7 | Secrets committed | `.env` gitignored; gitleaks blocking in CI | ✅ |
 | T-8 | Weak `JWT_SECRET` in a deployed environment | `Settings` refuses to start in staging/production with a default or short secret | ✅ |
-| T-9 | PHI leaking into logs or traces | Span attributes are an allow-list, enforced at construction | 🚧 contract done, emitters in phase 5 |
+| T-9 | PHI leaking into logs or traces | Span attributes are an allow-list, enforced at construction (`ADR-009`) | ✅ |
 | T-10 | Dependency CVEs | `pip-audit` + `npm audit`, advisory; Dependabot version-update PRs for pip, npm, docker, and github-actions | ✅ |
 | T-11 | Quota exhaustion as denial of service | Rate limiter, bounded tool rounds, provider fallback | ✅ |
-| T-12 | Model outputs an unsafe recommendation | Output safety engine and abstention | 📋 phase 4 — **the largest open gap** |
+| T-12 | Model outputs an unsafe recommendation | Abstention gate (`answer`/`partial`/`abstain`) on unsupported high-risk claims, contradictions, or low confidence | ✅ gate live; output-side PHI/toxicity/jailbreak classifiers still deferred (`SPEC-004` NG-2) — **the largest remaining gap** |
 | T-13 | Container/OS-image CVEs in the deployed image | Trivy on the built image, CRITICAL OS packages, blocking in CI | ✅ |
 | T-14 | Frontend (TypeScript/Next.js) code has no SAST | Semgrep on platform/frontend + CodeQL javascript-typescript, advisory | ✅ |
+| T-15 | Compromised app DB credential has superuser-level blast radius | Least-privilege Postgres role (`clinical_ai_app`), no `CREATE`/`ALTER`/`DROP`, no ownership | ✅ (`ADR-012`) |
+| T-16 | Credential-stuffing / brute-force login | `slowapi` rate limiting on `/login`/`/login/mfa` (10/min), account lockout after 5 failed attempts, TOTP MFA | ✅ (`ADR-013`) |
+| T-17 | PHI readable directly off disk/backup if the DB itself is compromised | Column-level Fernet encryption (`core/crypto.py`) on clinical note content and patient conditions/medications/allergies/lab results | ✅ (`ADR-014`) |
 
 ## Trust boundaries
 
@@ -45,7 +48,7 @@ data. **Not** a deployment threat model for real patient data — see
 ## Assumed, not defended
 
 - A trusted operator. No defence against a malicious administrator.
-- Trusted MCP servers — all five are in-repo and in-process.
+- Trusted MCP servers — all six are in-repo and in-process.
 - No multi-tenancy: one clinician role, patients shared, consultations per-user.
 
 ## Why T-1 was fixed out of phase order

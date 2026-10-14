@@ -1,7 +1,7 @@
 ---
 id: D1
 title: High-Level Architecture
-status: target
+status: superseded
 phase_authored: 0
 phase_last_updated: 0
 specs: [SPEC-001, SPEC-002, SPEC-003, SPEC-004, SPEC-005]
@@ -9,11 +9,17 @@ specs: [SPEC-001, SPEC-002, SPEC-003, SPEC-004, SPEC-005]
 
 # D1 — High-Level Architecture
 
-> **Status: target.** This is the architecture Phases 0–5 build toward, not
-> what runs today. Boxes marked ▢ do not exist yet; see
-> [project-state.yaml](../../project-state.yaml) for what is actually
-> implemented, and [the migration charter](../../00-migration-charter.md) for
-> the phase order.
+> **Status: superseded.** This was the architecture Phases 0–5 built toward.
+> Phases 0–5 shipped it (including a capability-matching Planner/Router with
+> replanning), but Phase 14 (`SPEC-029`, `ADR-016`) then **removed** the
+> Planner/dynamic-router/replanning layer as unreachable-in-production dead
+> code, in favor of the much simpler `intent_router` (keyword → context →
+> one LLM classification, always exactly one specialist, no replanning —
+> just classified retry/abstain in `recovery.py`). This diagram is kept for
+> history; it does not describe what runs today. See
+> [`docs/01-architecture/overview.md`](../../01-architecture/overview.md) for
+> the current architecture and [project-state.yaml](../../project-state.yaml)
+> for implementation status.
 
 The organising idea: **the runtime is the product, the clinical application is
 its first consumer.** Everything inside the runtime box is domain-agnostic; the

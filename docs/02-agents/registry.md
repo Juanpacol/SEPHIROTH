@@ -1,95 +1,50 @@
 # Agent registry
 
-> **This document is rewritten in Phase 3.** Today it describes five Python
-> classes. After [ADR-004](../08-decisions/ADR-004-capability-based-routing.md)
-> lands, the YAML below becomes the normative source that
-> `sephiroth.runtime.registry` actually loads, and agents stop being classes.
+> Current, not historical. The agents-as-data design this document used to
+> propose as "Phase 3 target" has been the real implementation since Phase 3
+> — the project is at Phase 16 now. Source of truth: `src/sephiroth/runtime/registry.py`.
 
-## The five agents today
+## The three agents
 
-Each is an `MCPAgent` subclass in `intelligence/agents/__init__.py`: a `name`, a
-`role_prompt`, and an `allowed_tools` whitelist enforced at dispatch.
+Each is an `AgentCapability` record (`sephiroth.contracts.AgentCapability`), not
+a class — `id`, `node_name`, a `role_prompt`, and a `tools` whitelist enforced
+at dispatch by `ToolRuntime.scoped_executor()`.
 
-| Agent | `name` | Node name | Tools | Runs when |
+| Agent | `id` | `node_name` | Tools | Runs when |
 |---|---|---|---|---|
-| Evidence | `evidence` | `evidence` | `search_clinical_guidelines`, `search_pubmed` | always |
-| Radiology | `radiology` | `radiology` | `inspect_medical_image`, `analyze_medical_image`, `describe_medical_image` | `image_path` present |
-| Laboratory | `laboratory` | `laboratory` | *(none — works from context)* | `lab_results` present |
-| Drug safety | `drug-safety` | `drug_safety` | `check_drug_interactions` | `medications` present |
-| Coordinator | `coordinator` | `coordinator` | `extract_medical_entities`, `summarize_clinical_note` | always, last |
+| Evidence | `evidence` | `evidence` | `search_clinical_guidelines`, `search_pubmed` | default / always eligible |
+| Radiology | `radiology` | `radiology` | `inspect_medical_image`, `analyze_medical_image`, `describe_medical_image` | `image_path` present in context |
+| Drug safety | `drug-safety` | `drug_safety` | `check_drug_interactions` | `medications` present in context |
 
-### The two-name problem
+`intent_router.py` routes every consultation to exactly **one** of these three
+— its answer is the final answer, no coordinator turn (`ADR-016`). `Laboratory`
+and `Coordinator` (and the 5-agent, multi-agent-fan-out world this document
+used to describe) were removed in Phase 14 (`SPEC-029`): `Laboratory`
+duplicated `sephiroth.safety.risk`'s deterministic lab rules with no test on
+its own clinical output; `Coordinator`/the fan-out it merged had been
+unreachable in production since single-specialist routing became the default.
 
-`drug-safety` (display) and `drug_safety` (node) are the same agent. The SSE
-`routing` event carries node names; `agent_completed` carries display names; the
-frontend normalises between them with `.replace("_", "-")`.
+### The two-name problem (still live, still frozen)
+
+`drug-safety` (`id`, display form) and `drug_safety` (`node_name`) are the same
+agent. The SSE `routing` event carries node names; `agent_completed` carries
+display names; the frontend normalises between them with `.replace("_", "-")`.
 
 This is accidental, load-bearing, and frozen — see
 [the migration charter](../00-migration-charter.md) §2.1. `AgentCapability`
-carries both `id` and `node_name` explicitly so the normalisation can eventually
-be removed deliberately rather than by accident.
-
-## Target: agents as data
-
-Phase 3 replaces the classes with entries like this:
-
-```yaml
-agent:
-  id: drug-safety
-  node_name: drug_safety
-  name: Drug Safety Agent
-  description: Screens medication lists for interactions.
-
-capabilities:
-  - drug_interaction
-  - contraindication
-  - medication_risk
-
-tools:
-  - check_drug_interactions
-
-risk:
-  level: high
-  requires_human_review: false
-
-execution:
-  parallelizable: true
-  requires_evidence: true
-  requires_verification: true
-```
-
-Loaded into `sephiroth.contracts.AgentCapability`, which already exists and is
-schema-locked.
-
-### Why this shape
-
-- **`capabilities` is what the router matches on.** The planner asks for
-  `drug_interaction`; the router finds who provides it. Nothing names a class.
-- **`risk.level` is a routing input**, so a high-risk task can be required to
-  pass through verification.
-- **`execution` flags are scheduling facts**, letting the executor decide what
-  may run concurrently without hardcoding it.
+carries both `id` and `node_name` explicitly so the normalisation can
+eventually be removed deliberately rather than by accident.
 
 ## Adding an agent
 
-Today (see [setup.md](../04-development/setup.md)):
+See CLAUDE.md's "How to Extend → Add a New Agent" for the current steps
+(add an `AgentCapability` to `registry.py`, give `intent_router.py` a way to
+route to it, add an `explainability.py` template entry).
 
-1. Subclass `MCPAgent`; set `name`, `role_prompt`, `allowed_tools`.
-2. Wire it into `intelligence/agents/workflow.py`.
-3. **Add an entry to `_ACTION_TEMPLATES` / `_NO_TOOL_ACTIONS`** in
-   `explainability.py` — `explanation` is rebuilt on read, so a missing template
-   degrades *historical* consultations too.
-4. Add its tools to the whitelist, or dispatch refuses them.
-
-After Phase 3: add a registry entry. Steps 2–4 collapse into declaration.
-
-## Role prompts are byte-frozen during migration
+## Role prompts are byte-sensitive
 
 `tests/conftest.py::FakeLLMClient` selects a script by substring-matching the
-system prompt. Two substrings are canonical across the suite:
-`"clinical evidence specialist"` and `"coordinating physician-assistant"`.
-
-Rewording a role prompt makes dozens of tests fall through to `default_script`
-and **pass while asserting nothing**. `tests/test_prompt_contract.py` guards
-this. Phase 3 moves the prompts byte-for-byte; rewording is a separate,
-later change with its own test updates.
+system prompt. The canonical substring for the Evidence agent,
+`"clinical evidence specialist"`, is asserted by
+`tests/test_prompt_contract.py` — rewording it makes dozens of tests fall
+through to `default_script` and **pass while asserting nothing**.

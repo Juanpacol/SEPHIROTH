@@ -38,7 +38,10 @@ components:
     intelligence/mcp:
       status: implemented
       description: >-
-        The 5 FastMCP servers (nlp, imaging, rag, drug_safety, vision).
+        The 6 FastMCP servers (nlp, imaging, rag, drug_safety, vision,
+        patient_comms — the 6th drafts patient-facing follow-up messages
+        for platform/api/workflows/patient_followup.py, added in Phase 12,
+        SPEC-014; not a chat-agent tool).
         registry.py (the Phase 2 shim over src/sephiroth/tools) was deleted
         in Phase 4 (DEBT-009); all call sites now import
         sephiroth.tools.get_tool_runtime/ToolRuntime directly.
@@ -77,10 +80,20 @@ components:
       tests: [tests/test_api_agents.py, tests/test_api_patients_rag.py, tests/test_main_health.py]
     platform/auth:
       status: implemented
+      description: >-
+        JWT auth (two roles, DB-reread on every request) plus a 2026-09-04
+        security-audit remediation outside the numbered phase track: TOTP
+        MFA (pyotp, ADR-013), password reset, and account lockout after 5
+        failed attempts.
       tests: [tests/test_auth.py]
     platform/core:
       status: implemented
-      tests: [tests/test_config.py, tests/test_logging.py]
+      description: >-
+        Settings/DB/logging, plus the same 2026-09-04 security-audit
+        remediation: least-privilege DB role + no-op RLS (migrations/roles.sql,
+        ADR-012), slowapi rate limiting + security headers (ADR-013), and
+        Fernet column-level PHI encryption (core/crypto.py, ADR-014).
+      tests: [tests/test_config.py, tests/test_logging.py, tests/test_crypto.py]
     platform/frontend:
       status: implemented
       description: Next.js 14; hand-rolled SSE parsing couples it to the wire contract
@@ -250,6 +263,18 @@ components:
       tests: [tests/test_workflow_policy.py, tests/test_workflow_engine_tick.py,
               tests/test_internal_tick_auth.py, tests/test_workflow_alert_refresh.py,
               tests/test_workflow_channels.py, tests/test_workflow_events.py]
+    src/sephiroth/clinical:
+      status: implemented
+      phase: 12
+      description: >-
+        Deterministic clinical helpers outside the agent/LLM path: vitals.py
+        (physiological-plausibility checks, SF068), results.py (lab result
+        classification), templates.py (encounter note templates), and
+        guideline_intent.py. Added piecemeal across phases 10-16 alongside
+        the workflow/dashboard features that call them; grouped under one
+        package rather than scattered across platform/api/ routers.
+      tests: [tests/test_vitals.py, tests/test_result_classification.py,
+              tests/test_encounter_templates.py]
 
 # Capabilities the target architecture requires that have no implementation yet.
 gaps:
