@@ -263,8 +263,6 @@ Schema is Alembic-managed for both local Postgres and Supabase (`migrations/vers
 ## Testing
 
 - `PYTHONPATH=.:platform .venv/bin/pytest` — unit suite (auth roundtrip, citation guard, timeline fallback, risk engine); SQLite in-memory, **no GEMINI_API_KEY required** (the LLM layer degrades gracefully and the whole agent stack is exercised through a scripted fake — see `tests/conftest.py::FakeLLMClient`). One exception since Phase 15 (`SPEC-030`): RAG-touching tests query real pgvector (`docker compose up -d postgres`, then `python -m data.rag.seed_pgvector`) and self-skip without it — `tests/conftest.py::_redirect_rag_db_to_local_postgres` always points that traffic at the local docker-compose instance, never at whatever `DATABASE_URL` a developer's `.env` happens to hold.
-- `examples/tools_example.py` — exercises all MCP tools directly, no LLM needed (fast smoke test)
-- `examples/agents_example.py` — full multi-agent consultation through Gemini (requires `GEMINI_API_KEY`, burns free-tier quota)
 - API: register/login via `/api/auth/*`, then `curl -X POST http://127.0.0.1:8000/api/agents/consult -H "Authorization: Bearer $TOKEN" ...` (agent endpoints require auth)
 - Frontend: `/login` → register/sign in, `/copilot` → streaming chat with live agent chips + Citation Guard panel, `/patients/[id]` → profile + "Add clinical note" (auto-timeline).
 
