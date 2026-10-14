@@ -26,7 +26,7 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = [".", "platform"]
 markers = [
-    "spec: verifies an acceptance criterion from a docs/specs/SPEC-*.md",
+    "spec: documentation-gate tests (scripts/docs_check.py) — see tests/test_docs_gates.py",
     "contract: locks an externally-observable contract (wire format, schema)",
     "integration: exercises more than one subsystem together",
     "legacy: characterizes pre-migration behaviour; deleted with its shim",

@@ -6,14 +6,19 @@
 
 This document is the standing contract for the migration. It defines the
 development loop, the strangler-fig rules, the external contracts that must not
-break, and the phase dependency graph. Every phase spec (`docs/specs/SPEC-00N`)
-operates inside these rules.
+break, and the phase dependency graph.
 
 ---
 
 ## 1. The development loop
 
-Spec-Driven Development, per [SPEC-000](specs/SPEC-000-spec-process.md):
+> **Retired.** The formal `docs/specs/SPEC-NNN` process described below applied
+> through Phase 16; it was retired once the project moved to solo development
+> (see `CONTRIBUTING.md`). Kept here as historical record — §2's frozen
+> external contracts are still active and enforced regardless of how a change
+> gets planned.
+
+Spec-Driven Development, as this project used to practice it:
 
 ```
 spec (Draft → Approved)  →  tests (failing)  →  implementation  →  spec (Implemented)

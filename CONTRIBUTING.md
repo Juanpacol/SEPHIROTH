@@ -12,17 +12,21 @@ python3.11 -m venv .venv
 
 ## The loop
 
-SEPHIROTH uses **Spec-Driven Development**. For anything that changes a contract
-— a type, an interface, a wire format, a state transition — the order is:
+SEPHIROTH used formal **Spec-Driven Development** (write a `docs/specs/SPEC-NNN`,
+get it `Approved`, write failing tests from its acceptance criteria, then
+implement) through Phase 16. That process — and the `docs/specs/*.md` files it
+produced — was retired once the project moved to solo development: the
+ceremony of writing and approving a spec before touching code made sense for
+coordinating reviewers, not for one person. `docs/08-decisions/` (ADRs) still
+records *why* a non-obvious decision was made; `docs/project-state.yaml`
+still tracks what's actually implemented. Tests are still written
+test-first for anything non-trivial — that habit didn't need the spec
+ceremony to keep.
 
-1. **Spec.** Write or amend a `docs/specs/SPEC-00N`, following
-   [SPEC-000](docs/specs/SPEC-000-spec-process.md). Get it to `Approved`.
-2. **Tests.** Write them from the spec's acceptance criteria. They should fail.
-3. **Code.** Make them pass.
-4. **Mark it.** Set the spec to `Implemented` once its criteria are green.
-
-Bug fixes, dependency bumps and anything that changes no contract skip this
-entirely. The ceremony is for contracts, not for every commit.
+`docs/specs/contracts/` (JSON Schema exports of the Pydantic domain models) is
+unrelated to the spec documents and still active — regenerate it with
+`python scripts/export_contracts.py` whenever a contract type changes;
+`tests/test_contracts_schema.py` fails on drift.
 
 ## Commit message format
 

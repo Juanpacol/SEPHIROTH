@@ -276,21 +276,20 @@ Schema is Alembic-managed for both local Postgres and Supabase (`migrations/vers
 
 ## Architecture migration (in progress)
 
-SEPHIROTH is being restructured from a clinical application into a
-model-agnostic agentic runtime, using Spec-Driven Development and a strangler-fig
-migration into `src/sephiroth/`. Before changing anything under `intelligence/`,
-`data/`, or `src/sephiroth/`, read:
+SEPHIROTH was restructured from a clinical application into a model-agnostic
+agentic runtime via a strangler-fig migration into `src/sephiroth/`, phases
+0 through 16. The formal Spec-Driven Development process that governed those
+phases (`docs/specs/SPEC-NNN-*.md`, spec → failing tests → implementation →
+spec marked `Implemented`) was retired once the project moved to solo
+development — see `CONTRIBUTING.md`. Before changing anything under
+`intelligence/`, `data/`, or `src/sephiroth/`, read:
 
 - `docs/00-migration-charter.md` — **the frozen external contracts** (SSE events,
-  persistence shape, derived explanation), the shim rules, and the phase order.
-  Breaking a §2 contract breaks the frontend.
-- `docs/specs/SPEC-000-spec-process.md` — the spec template and lifecycle.
-  Implementation starts only after a spec reaches `Approved`.
+  persistence shape, derived explanation), still enforced regardless of how a
+  change gets planned. Breaking a §2 contract breaks the frontend.
 - `docs/project-state.yaml` — what is actually implemented versus planned.
 
-The loop is: spec → failing tests → implementation → spec marked `Implemented`.
-
-Current phase: 16 (`SPEC-031` — dashboard alert explainability — is the latest `Implemented` spec; `ADR-019` is the latest decision record). See `docs/project-state.yaml` for the authoritative phase-by-phase status.
+Current phase: 16 (`SPEC-031` — dashboard alert explainability — was the last spec written before the process was retired; `ADR-019` is the latest decision record). See `docs/project-state.yaml` for the authoritative phase-by-phase status.
 
 ## References
 
