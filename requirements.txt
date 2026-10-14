@@ -12,7 +12,7 @@ pgvector>=0.3
 
 # Auth
 bcrypt>=4.1
-pyjwt>=2.8
+pyjwt>=2.15.0
 pyotp>=2.9
 slowapi>=0.1.9
 cryptography>=42.0  # column-level PHI encryption (core/crypto.py) — already a

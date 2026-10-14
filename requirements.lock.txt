@@ -209,7 +209,7 @@ pygments==2.21.0
     # via
     #   rich
     #   rich-rst
-pyjwt==2.13.0
+pyjwt==2.15.0
     # via
     #   -r requirements.txt
     #   mcp
