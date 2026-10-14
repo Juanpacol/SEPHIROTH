@@ -1,0 +1,31 @@
+# Template for a LOCAL, per-developer override. Compose merges
+# docker-compose.override.yml on top of docker-compose.yml automatically if
+# present — copy this file to docker-compose.override.yml (gitignored, never
+# committed) and edit it for your machine. Delete your copy to get the plain
+# stack from docker-compose.yml back.
+#
+# Why this exists: on a dev machine running other projects' Docker stacks
+# too, you'll often hit a port already taken, or want to point this API at
+# an LLM server you already have running locally instead of Gemini. Put that
+# machine-specific stuff here, never in docker-compose.yml.
+#
+# Example: your API's default port 8000 is already taken by another stack,
+# and you want to use a local Ollama server (your own, or another project's
+# container) instead of Gemini while iterating on prompts.
+services:
+  api:
+    # !override, not a plain list: Compose *appends* list fields when
+    # merging, so without it the base file's "8000:8000" survives too.
+    ports: !override
+      - "8010:8000"
+    environment:
+      LLM_PROVIDER: split
+      # From inside this container, "localhost" means the container itself —
+      # use host.docker.internal to reach a server running on the host or in
+      # another container that publishes a host port.
+      OLLAMA_BASE_URL: http://host.docker.internal:11434/v1
+      OLLAMA_MODEL: qwen3:8b
+    extra_hosts:
+      # Docker Desktop provides this automatically, but naming it explicitly
+      # keeps the file honest about the dependency.
+      - "host.docker.internal:host-gateway"

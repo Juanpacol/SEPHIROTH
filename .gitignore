@@ -44,6 +44,10 @@ yarn-error.log
 .env.local
 .env.*.local
 
+# Local, per-developer Docker Compose overrides (ports/LLM provider tuned to
+# this machine's other running containers) — see docker-compose.override.yml.example
+docker-compose.override.yml
+
 # Database
 *.db
 *.sqlite
