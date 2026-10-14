@@ -43,7 +43,7 @@ pillow>=10.0
 boto3>=1.34
 
 # Documents & reports
-pypdf>=5.0               # PDF text extraction (clinical note upload)
+pypdf>=6.19.0               # PDF text extraction (clinical note upload)
 reportlab>=4.2           # Consultation PDF export
 python-multipart>=0.0.9  # FastAPI multipart parsing (file uploads)
 
