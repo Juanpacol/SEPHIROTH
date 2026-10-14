@@ -1,5 +1,8 @@
 # Methodology
 
+> **Retired.** The thesis/research angle is no longer part of this project's
+> direction — kept as a frozen historical record, not maintained.
+
 How the [hypotheses](hypotheses.md) get tested. Written now, before results
 exist, so the design cannot be retrofitted to whatever the numbers turn out to
 be.

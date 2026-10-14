@@ -1,5 +1,11 @@
 # Research question
 
+> **Retired.** The thesis/research angle is no longer part of this project's
+> direction — kept as a frozen historical record, not maintained. Also note:
+> this document's "Topic" below (dynamic planning, capability-based
+> multi-agent orchestration) describes the architecture Phase 14 removed
+> (`ADR-016`) — not what the system does today either way.
+
 ## Topic
 
 > Design and evaluation of an **agentic runtime** based on dynamic planning,
