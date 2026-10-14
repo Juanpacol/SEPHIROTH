@@ -27,11 +27,13 @@ Documented so the gap is a known distance rather than an unknown one:
 |---|---|
 | BAA with the model provider | None. Would mean Vertex AI, not AI Studio |
 | Data residency control | None |
-| Encryption at rest | Depends on the deployment's Postgres; not enforced here |
-| Audit logging of PHI access | Consultation audit line exists; not PHI-grade |
+| Encryption at rest | **Closed 2026-09-04.** Column-level Fernet encryption on clinical note content and patient conditions/medications/allergies/lab results (`core/crypto.py`, `ADR-014`) — independent of whatever the deployment's Postgres does |
+| Least-privilege DB access | **Closed 2026-09-04.** App connects as a dedicated role with no `CREATE`/`ALTER`/`DROP`/ownership (`migrations/roles.sql`, `ADR-012`) |
+| Audit logging of PHI access | **Closed 2026-09-04.** `platform/api/audit.py` logs every read site that touches a patient's chart (patients/portal/results routers), reviewable via the clinician-only `/api/audit` endpoint — still not a managed, tamper-evident audit log (e.g. append-only storage, retention policy), which real PHI-grade logging would need |
+| Account-takeover resistance | **Closed 2026-09-04.** TOTP MFA, password reset, lockout after 5 failed attempts, API rate limiting (`ADR-013`) — reduces the blast radius of a compromised credential, doesn't change the data-residency/BAA gap above |
 | Retention and deletion policy | None |
-| De-identification before egress | None — this is the substantive gap |
-| Access control beyond one role | Single clinician role, no RBAC |
+| De-identification before egress | None — still the substantive gap: clinical text/images still reach Gemini in the clear |
+| Access control beyond role | Two roles (clinician/patient), DB-reread every request; no fine-grained RBAC within a role |
 
 ## Design decisions that anticipate it
 
