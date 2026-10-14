@@ -205,7 +205,9 @@ Schema is Alembic-managed (`migrations/`) for both local Postgres and any cloud 
 GEMINI_API_KEY=your-key JWT_SECRET=$(openssl rand -hex 32) docker-compose up   # Postgres + API
 ```
 
-The API reaches Gemini over the internet — no host GPU or local model server required. `JWT_SECRET` is a required environment variable; compose refuses to start without it.
+The API reaches Gemini over the internet — no host GPU or local model server required. `JWT_SECRET` is a required environment variable; compose refuses to start without it. Containers are named `sephiroth-*` (`docker ps`) regardless of the checkout folder's name.
+
+Need to tweak a port or point at a locally-running LLM because of other containers on your machine? Copy `docker-compose.override.yml.example` to `docker-compose.override.yml` (gitignored, per-developer — never commit it) and edit it there; Compose merges it automatically.
 
 ## Built On
 
