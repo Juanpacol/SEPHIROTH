@@ -6,20 +6,30 @@
 
 > **Privacy notice:** clinical text and medical images are sent to the Google Gemini API (AI Studio free tier). This is **not HIPAA/GDPR-compliant as-is**, and the free tier may use submitted data to improve Google's models. Use only with synthetic or de-identified data, or migrate to Vertex AI with a Business Associate Agreement before using real patient data.
 
+**Jump to:** [Highlights](#highlights) · [Quick Start](#quick-start) · [How It Works](#architecture) · [Evaluation Results](#evaluation) · [Project Structure](#project-structure) · [Sample Data](#sample-data) · [Docker](#docker)
+
 ## Highlights
 
+**AI reasoning**
 - **Cloud LLM via Google Gemini** — `gemini-flash-latest` with native tool calling and JSON-Schema structured output; free tier, no local GPU required
 - **Vision-enabled image reasoning** — the same Gemini model describes medical images multimodally; the Radiology agent reasons over the description
 - **MCP tool layer** — clinical capabilities exposed as FastMCP servers (NLP, imaging, vision, evidence, drug safety, patient-message drafting)
 - **Single-specialist routing, not a multi-agent fan-out** — an intent router sends each consultation to exactly one specialist (Radiology, Evidence, or Drug Safety); a pure lookup (guideline search, drug interaction check) short-circuits before any model call at all
 - **Live streaming consultations** — SSE stream shows each agent and tool call as it completes
+
+**Trust & safety**
 - **Citation Guard** — every citation in an answer is verified against actual tool output; fabricated references are stripped and reported (an anti-hallucination firewall)
 - **Explainability panel** — a deterministic reasoning trace under every answer: which agent did what, with which tool, and how many citations survived the guard
 - **Rule-based clinical dashboard** — deterministic risk flags (abnormal labs, dangerous drug combinations) on every patient; each dashboard alert explains itself (the rule, the value, the threshold), shows its recent trend, and says whether it is new or recurring — with no fabricated confidence score
-- **Broader clinical workflow, not just chat** — scheduling and appointments, an alert and approval queue, exam-result sharing with a patient portal, and a follow-up flow that drafts (never sends without review) a patient-facing message
+
+**Clinical workflow**
+- **Broader than chat** — scheduling and appointments, an alert and approval queue, exam-result sharing with a patient portal, and a follow-up flow that drafts (never sends without review) a patient-facing message
 - **Auto-generated Intelligent Timeline** — paste a clinical note **or upload a PDF** and Gemini extracts structured timeline events (diagnoses, med changes, labs, imaging)
 - **PDF consultation export** — download any consultation as a shareable clinical report (query, answer, citations, reasoning trace, disclaimer)
-- **Auth + per-user history** — JWT login/registration; every consultation is persisted to Postgres under the requesting clinician
+
+**Access & security**
+- **Auth + per-user history** — JWT login/registration, TOTP MFA (two-factor login codes), password reset, and login lockout after repeated failed attempts; every consultation is persisted to Postgres under the requesting clinician
+- **Security hardening** — least-privilege database role + row-level security, API rate limiting + security headers, column-level encryption of patient data at rest, and a reviewable access audit log
 - **Structured logging** — request ids, per-LLM-call latency, and an audit line per persisted consultation
 
 ## Quick Start
@@ -122,7 +132,11 @@ See [ARCHITECTURE.md](ARCHITECTURE.md), [CLAUDE.md](CLAUDE.md), and [docs/](docs
 
 ## Evaluation
 
-The Evidence Agent's RAG pipeline is measured against a 33-question golden dataset (18 direct/"golden" clinical questions — one representative case per clinical category rather than several near-duplicate phrasings per topic, trimmed from 101 on 2026-09-20, see `docs/dev-log/2026-09-20.md` — 6 colloquial paraphrases that back specific pinned cases in [`tests/test_embeddings_matching.py`](tests/test_embeddings_matching.py), 9 adversarial questions — 5 out-of-scope, 4 with a plausible-but-wrong target to reject) over a 76-document corpus of clinical guideline excerpts (ADA, USPSTF, KDIGO, ACC/AHA, GINA, IDSA, WHO, MedlinePlus, and more).
+How well does the evidence-retrieval pipeline actually find the right guideline and avoid making things up? We test it against a fixed set of 33 questions over a 76-document corpus of real clinical guidelines (ADA, USPSTF, KDIGO, ACC/AHA, GINA, IDSA, WHO, MedlinePlus, and more):
+
+- **18 "golden" questions** — one representative case per clinical category (trimmed from 101 on 2026-09-20 to cut near-duplicate phrasings; see `docs/dev-log/2026-09-20.md`)
+- **6 colloquial paraphrases** — the same questions asked the way a real person would (pinned in [`tests/test_embeddings_matching.py`](tests/test_embeddings_matching.py))
+- **9 adversarial questions** — 5 are out-of-scope, 4 have a plausible-but-wrong answer the system should reject
 
 | Metric | Value | Threshold | What it measures |
 |---|---|---|---|
@@ -134,49 +148,12 @@ The Evidence Agent's RAG pipeline is measured against a 33-question golden datas
 | Faithfulness (LLM judge) | **0.78** | 0.25 | Fraction of answer claims a judge model rates as supported by the retrieved evidence |
 | Faithfulness (heuristic proxy, informational) | 0.33 | — | Deterministic token-overlap stand-in; runs in CI, not gated |
 
-Recall@1/@3/@5 and MRR are **live, verified numbers** from the hybrid retriever described below, run via `--mode ci` against the committed embeddings artifact (reproducible offline, no API key needed). Citation Precision and Faithfulness come from a live `--mode full --record` run against `qwen3:8b` via local Ollama (`--provider ollama --model qwen3:8b`) — the model this deployment actually runs (`LLM_PROVIDER=split`/`ollama`), not a Gemini stand-in. Note the raw per-case citation count from that same run (`intelligence/evaluation/results/latest.json`'s `citation.per_case`) shows a real, unresolved gap below this aggregate: 13 of 27 citations across cases were outright fabricated (the Evidence Agent answering from parametric memory instead of calling its retrieval tool — `avg_tool_call_count: 0.42` — a known local-model tool-calling reliability issue tracked outside this eval harness). Regenerate against Gemini instead: `--mode full --record --skip-pubmed` (defaults to `--provider gemini`).
+Recall@k and MRR are computed offline (`--mode ci`, no API key needed); Citation Precision and Faithfulness come from a live local-model run (`--mode full --record`). Retrieval combines keyword + dense-embedding search (pgvector, Reciprocal Rank Fusion) so colloquial questions ("blood thinners for AFib") still match the right guideline. Groq is an optional fallback when Gemini's free-tier quota runs out.
 
-*(Full numbers, per-case breakdown, and run metadata: [`intelligence/evaluation/results/latest.json`](intelligence/evaluation/results/latest.json).)*
-
-**How it works — two modes, one committed baseline:**
-- **`--mode ci`** (offline, deterministic, <5s): Recall@k and MRR are recomputed live against `RAGPipeline.retrieve()` and the golden dataset; Citation Precision is recomputed by replaying the Citation Guard over committed transcripts. This is what runs on every PR — **no Gemini API key required**.
-- **`--mode full`** (calls the Gemini API, burns free-tier quota): runs the real Evidence Agent end-to-end, records fresh transcripts, and scores Faithfulness with an LLM judge (per-claim: "is this supported by the retrieved evidence?"). Writes `results/latest.json`.
-- The committed results embed a SHA-256 hash of the dataset and transcripts. If either changes without a fresh `--mode full --record` run, CI fails on a **stale baseline** rather than silently trusting outdated numbers.
+Full methodology (how each number is produced, retrieval internals, Groq fallback config, honest limitations): [`docs/04-development/evaluation.md`](docs/04-development/evaluation.md). Raw run data: [`intelligence/evaluation/results/latest.json`](intelligence/evaluation/results/latest.json).
 
 ```bash
 PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode ci
-PYTHONPATH=.:platform .venv/bin/python -m intelligence.evaluation.run --mode full --record --skip-pubmed
-```
-
-### Hybrid retrieval (dense embeddings + keyword)
-
-`data/rag/RAGPipeline.retrieve()` fuses keyword-overlap scoring with dense embeddings (the committed artifact is `nomic-embed-text`, served locally via Ollama — a live Gemini fallback exists but is only used when the artifact's own `model_id` is Gemini's, see `data/embeddings/__init__.py::get_embedding_provider`) via Reciprocal Rank Fusion, closing the biggest gap in the metrics above: keyword-only Recall@1 misses colloquial paraphrases ("my kid has an ear infection" → *Acute Otitis Media*, "blood thinners for AFib" → *anticoagulation*) that share little vocabulary with the guideline text.
-
-- **Storage is pgvector, not in-memory** (Phase 15, `SPEC-030`/`ADR-017`). `RAGPipeline()` requires an `embedding_provider` and queries `guideline_documents` on every call — there is no zero-configuration/keyword-only fallback mode anymore. Populate the table once per environment: `alembic upgrade head` then `python -m data.rag.seed_pgvector`. Any test touching RAG skips automatically without a local Postgres (`docker compose up -d postgres`), same pattern as the Alembic drift guard.
-- **Deterministic query-side embeddings in CI.** A committed, hashed artifact (`data/embeddings/artifacts/seed_embeddings.json.gz`) supplies the *query* vectors for `--mode ci` and the test suite — no network, no API key needed for that part. Build/refresh it: `python -m data.embeddings.build_artifact --provider ollama` (matches the committed artifact's model; `--provider gemini`, the default, produces a different, incompatible vector space). Document-side embeddings are computed once at seed time (`seed_pgvector.py`), not re-read from this artifact at query time.
-- **Adversarial-safe by design, empirically calibrated.** A cosine-similarity floor (`retrieval_min_similarity`, **0.636**) drops low-confidence dense hits. This was tuned against real embedding scores, not guessed, and the margin is tight: the best adversarial match scores 0.6334, the weakest genuinely-relevant document scores 0.6380 — see `tests/test_embeddings_matching.py`'s floor-calibration comments. It does **not** attempt to detect "this is pseudo-scientific" from embeddings alone; that judgment belongs to the Citation Guard, which checks whether the LLM's specific claims are grounded in what a retrieved document actually says.
-- **Dense-weighted fusion.** Reciprocal Rank Fusion weights the dense signal 2x over keyword (`DENSE_WEIGHT`/`KEYWORD_WEIGHT` in `data/rag/__init__.py`) — keyword scoring here isn't IDF-weighted, so short documents sharing only generic words with the query can rank artificially high, and an equal-weight fusion let that noise (or a near-exact RRF tie) occasionally outrank a correct embedding-model result. Confirmed and fixed while building the matching-quality test suite below.
-- **Matching-quality test suite** (`tests/test_embeddings_matching.py`, `tests/test_rag_pipeline.py`) pins specific, previously-diagnosed match/no-match pairs — lay-language paraphrases, a compound multi-document query, near-duplicate topic disambiguation (`ada-2024-ckd` vs. `ada-2024-hypertension-dm`), and adversarial abstention — so a regression in one specific case fails by name, not just as a dip in an aggregate metric. All 13 real-artifact tests pass against the committed artifact; the fusion/threshold mechanics are additionally covered with synthetic vectors so they run in every CI run regardless of whether the artifact exists.
-
-**Honest limitations:**
-- Citation Precision and Faithfulness in the table above are still from the pre-Gemini baseline (generated with `llama3.2:latest` as a stand-in). Regenerating them against `gemini-flash-latest` via `--mode full --record` requires enough free-tier quota to run an agent consultation per golden case — this repo's own key hit its **daily** free-tier request quota partway through a regeneration attempt (a real, worth-knowing constraint: some Gemini model aliases carry very low free-tier daily caps, independent of the per-minute rate limit `gemini_rpm_limit` already handles). Retry on a fresh day or with a paid tier.
-- The LLM judge is the same model family as the generator on the committed baseline (a self-judging limitation); an independent judge model would be a stronger signal.
-
-### Free-tier quota management (Gemini + Groq fallback)
-
-Neither Gemini's nor Groq's free tiers are unlimited — Gemini caps requests **per minute and per day**, and newer model aliases (like `gemini-flash-latest`, which resolves to whatever Google's current flash model is) can carry much stricter daily caps than older, established models. This repo's own key hit a 20-request/day cap on the resolved model while regenerating the eval baseline above.
-
-To make that failure mode non-fatal, `src/sephiroth/models/factory.py::get_llm_client()` optionally wraps Gemini with a **Groq fallback** for text/tool-calling (`src/sephiroth/models/fallback.py::FallbackLLMClient`):
-
-- Set `GROQ_API_KEY` (free key at [console.groq.com/keys](https://console.groq.com/keys)) to enable it — unset, behavior is identical to a bare Gemini client.
-- `chat()` and `generate_json()` try Gemini first; on any failure (rate limit, daily quota exhaustion, outage) they fall through to Groq (`llama-3.3-70b-versatile` by default, configurable via `GROQ_MODEL`) — same `ChatResult` contract, so agents and timeline extraction need no changes.
-- **Vision and embeddings always stay on Gemini.** Groq has no comparable multimodal or embeddings endpoint, so `describe_medical_image` and the RAG embedding provider never fall back — they degrade to their existing `unavailable`/keyword-only paths instead.
-- Set `LLM_ENABLE_FALLBACK=false` to disable fallback even with a Groq key configured (e.g. to test Gemini-only behavior deliberately).
-
-```bash
-# .env
-GROQ_API_KEY=your-groq-key
-GROQ_MODEL=llama-3.3-70b-versatile   # default
 ```
 
 ## Project Structure
@@ -186,15 +163,20 @@ clinical-ai-copilot/
 ├── platform/          # FastAPI backend (api/, core/, auth/) + Next.js frontend
 │                      # (copilot chat, dashboard, patients, scheduling,
 │                      # alerts/approvals, results sharing, patient portal)
+│                      # — api/workflows/ holds the durable automation engine
+│                      # behind alerts, reminders, and patient follow-up
 ├── intelligence/      # mcp/ (6 FastMCP servers: nlp, imaging, rag, drug_safety,
 │                      # vision, patient_comms), agents/ (thin shim into
 │                      # src/sephiroth/), evaluation/ (RAG eval harness — see below)
 ├── src/sephiroth/     # the runtime: models/ (providers), tools/ (MCP dispatch),
 │                      # runtime/ (agents, executor), verification/, safety/,
-│                      # context/, telemetry/ — see CLAUDE.md for the full map
+│                      # context/, telemetry/, clinical/ (deterministic helpers),
+│                      # contracts/ (shared typed schemas), workflows/ (automation
+│                      # event/policy types) — see CLAUDE.md for the full map
 ├── data/              # rag/ (evidence retrieval, pgvector), schemas/ (SQLAlchemy models)
 ├── migrations/        # Alembic schema migrations (local Postgres and Supabase)
 ├── examples/          # Runnable examples per module
+├── scripts/           # Maintenance/CI scripts (commit-msg validation, PHI backfill, docs check, ...)
 ├── docs/              # Spec-Driven Development: specs, decision records,
 │                      # architecture notes, dev-log, project-state.yaml
 ├── real_data/         # Optional real/synthetic sample data — see Sample Data below

@@ -11,9 +11,11 @@ Clinical decision-support platform. LLM reasoning runs on Google Gemini API (AI 
 ```
 clinical-ai-copilot/
 ├── platform/                  # Backend + frontend (NOT a Python package — see note below)
-│   ├── api/                   # FastAPI app: main.py + routers/ + fast_path.py (0-LLM lookup tier)
-│   ├── core/                  # Settings (Gemini model/key, DB URLs, feature flags)
-│   ├── auth/                  # JWT auth: register/login, bcrypt hashing, get_current_user
+│   ├── api/                   # FastAPI app: main.py + routers/ + workflows/ (engine) + services/,
+│   │                          #   plus top-level helpers: fast_path.py (0-LLM lookup), scheduling.py,
+│   │                          #   audit.py, pdf_export.py, timeparse.py
+│   ├── core/                  # Settings, crypto.py (PHI encryption), storage.py (attachments)
+│   ├── auth/                  # JWT auth, TOTP MFA, password reset, login lockout
 │   └── frontend/              # Next.js 14 app (Nexura-derived design system)
 │
 ├── src/sephiroth/              # Model-agnostic runtime (strangler-fig target — see CLAUDE.md migration note)
@@ -23,22 +25,26 @@ clinical-ai-copilot/
 │   ├── verification/          #   claim extraction + 5-state verification, citation_guard
 │   ├── safety/                #   abstention gating (answer/partial/abstain), prompt-injection heuristic
 │   ├── context/               #   per-agent context views, MMR rerank, per-patient memory
-│   └── telemetry/             #   build_trace, traced_span → persisted ExecutionTrace
+│   ├── telemetry/             #   build_trace, traced_span → persisted ExecutionTrace
+│   ├── clinical/              #   deterministic clinical helpers: vitals, results, templates, guideline_intent
+│   ├── contracts/             #   shared typed schemas (claims, evidence, state, trace, ...) — leaf package
+│   └── workflows/              #   shared event/policy types for the durable automation engine
+│                               #   (engine itself lives in platform/api/workflows/)
 │
 ├── intelligence/
 │   ├── mcp/                   # FastMCP servers (nlp, imaging, rag, drug_safety, vision, patient_comms)
-│   ├── agents/                # __init__.py only: 3 thin Agent subclasses over the runtime registry
-│   ├── nlp/                   # timeline_extractor.py only — vendored MedCAT tree deleted Phase 5 (DEBT-001)
+│   ├── agents/                # 3 thin Agent subclasses over the runtime registry
+│   ├── nlp/                   # timeline_extractor.py — note → timeline events
 │   └── evaluation/            # RAG eval harness — Recall@k, MRR, Citation Precision, Faithfulness
 │
 ├── data/
-│   ├── rag/                   # Retrieval pipeline, queries pgvector directly (Phase 15, SPEC-030)
+│   ├── rag/                   # Retrieval pipeline, queries pgvector directly — no in-memory fallback
 │   ├── schemas/                # SQLAlchemy models (Patient, ClinicalNote, ...)
-│   └── embeddings/             # Gemini/Ollama embedding providers — vectors/ (in-memory store) was
-│                               # deleted in Phase 15; there is no non-pgvector fallback anymore
+│   └── embeddings/             # Gemini/Ollama embedding providers
 │
 ├── migrations/                 # Alembic schema migrations (Postgres + Supabase)
 ├── examples/                   # tools_example.py (no LLM), agents_example.py (full workflow)
+├── scripts/                    # Maintenance/CI scripts (commit-msg validation, PHI backfill, docs check, ...)
 ├── docs/                       # Migration charter, specs, ADRs, project-state.yaml
 └── references/                 # Cloned upstream repos (read-only)
 ```
@@ -69,7 +75,7 @@ Execution is in-process via FastMCP's in-memory client — no subprocesses/socke
 A consultation takes the cheapest matching path first:
 
 1. **`platform/api/fast_path.py`** — pure lookup (guideline search, drug interaction)? Tool result returned verbatim with its own citation. 0 LLM calls, ~4s.
-2. **`src/sephiroth/runtime/executor.py`** — otherwise: `intent_router` picks exactly ONE specialist (`SPEC-029`, Phase 14 — the only path; the multi-agent fan-out and coordinator merge it used to also support were removed as unreachable-in-production dead code, `ADR-016`); its answer is final. 1 LLM call.
+2. **`src/sephiroth/runtime/executor.py`** — otherwise: `intent_router` picks exactly one specialist (`ADR-016`); its answer is final. 1 LLM call.
 3. Citation guard (deterministic) → claim verification (1 LLM call) → abstention gate (deterministic) → trace.
 
 | Agent | Tools | Runs when |
@@ -78,11 +84,7 @@ A consultation takes the cheapest matching path first:
 | RadiologyAgent | describe_medical_image, analyze_medical_image | `context.image_path` present |
 | DrugSafetyAgent | check_drug_interactions | `context.medications` present |
 
-`LabAgent`/`ClinicalCoordinator` were removed in Phase 14 (`SPEC-029`) —
-lab-value interpretation is covered by `src/sephiroth/safety/risk.py`'s
-deterministic rules (surfaced outside the chat path) plus `EvidenceAgent`
-as the default fallback for anything `intent_router` can't confidently
-place.
+Lab-value interpretation is covered by `src/sephiroth/safety/risk.py`'s deterministic rules (outside the chat path), with `EvidenceAgent` as the default fallback for anything `intent_router` can't confidently place.
 
 Each agent is an `Agent` (`src/sephiroth/runtime/agent.py`) bound to an `AgentCapability` record: system prompt + allowed-tool whitelist + `.run(query, context)`.
 
@@ -92,6 +94,15 @@ Each agent is an `Agent` (`src/sephiroth/runtime/agent.py`) bound to an `AgentCa
 - **`src/sephiroth/safety/`** — abstention gate (`answer`/`partial`/`abstain`) on unsupported high-risk claims, contradictions, or low confidence; confidence is always derived, never self-reported.
 - **`src/sephiroth/context/`** — scopes each agent to only its declared `context_fields`; per-patient consultation memory reaches only the answering agent.
 - **`src/sephiroth/telemetry/`** — `build_trace` projects the executor's `RunState` into a persisted `ExecutionTrace` (real token/cost accounting); toggling it must not change a run's result.
+- **`src/sephiroth/clinical/`** — deterministic, non-LLM clinical helpers (vitals, result formatting, templates, guideline intent) used by routers directly, outside the agent/verification path.
+
+## Security Hardening
+
+`ADR-012`-`ADR-014`: least-privilege DB role + row-level security for the app's Postgres connection (`migrations/roles.sql`); `slowapi` rate limiting, security headers, and login lockout; column-level PHI encryption at rest (Fernet, `core/crypto.py`). `audit.py` surfaces the resulting access log for clinician review.
+
+## Automation & Workflow Layer
+
+A durable, tick-based workflow engine, separate from the per-request consultation path above. `platform/api/workflows/engine.py` advances workflow state machines (`registry.py`/`definitions.py`) on each tick, driven by `internal.py`'s unauthenticated shared-secret endpoint (meant for a cron/scheduler, never a browser). Concrete workflows: `alert_escalation.py`, `appointment_reminder.py`, `patient_followup.py` (drafts via the `patient_comms` MCP tool). `channels.py`/`subscriptions.py` handle delivery; `memory.py` is the engine's own operational memory. User-facing routers: `alerts.py`, `approvals.py` (human approval gate before an automated action fires), `followups.py`, `automation_memory.py` (observability dashboard), `notifications.py`, `encounters.py`, `result_reviews.py`.
 
 ## API Layer
 
@@ -107,8 +118,13 @@ FastAPI routers under `platform/api/routers/`:
   (why it fired), a recent trend, and recurrence (new vs. long-active) — `SPEC-031`
 - `GET /api/dashboard/rule-summary` — patients per active clinical problem, exact counts over every
   patient, feeding the "what dominates today" chart (`SPEC-031` 1.1.0)
-- `platform/api/routers/scheduling.py`, `results.py` — appointment booking, exam-result sharing (role-scoped per route)
-- Auth: JWT, roles `clinician`/`patient`, no patient self-registration (claim-code redemption only)
+- `scheduling.py`, `results.py` — appointment booking, exam-result sharing (role-scoped per route)
+- `alerts.py`, `approvals.py`, `followups.py`, `automation_memory.py`, `notifications.py`,
+  `encounters.py`, `result_reviews.py` — automation/workflow surfaces, see above
+- `audit.py` (clinician-only) — PHI access log review
+- `internal.py` — unauthenticated workflow-tick entrypoint, shared-secret header, not browser-facing
+- Auth: JWT, roles `clinician`/`patient`, no patient self-registration (claim-code redemption only),
+  TOTP MFA + password reset + login lockout
 
 ## Frontend
 
@@ -131,4 +147,4 @@ panel), `/patients`, `/patients/[id]` (timeline), `/imaging`, `/evidence`, `/sch
 
 ## Migration State
 
-Project is mid-migration from a clinical app into a model-agnostic agentic runtime (strangler-fig into `src/sephiroth/`). Current phase: 16 (`SPEC-031`, dashboard alert explainability, is the latest `Implemented` spec). Implemented-vs-planned status and tech debt items: `docs/project-state.yaml`. Frozen external contracts (SSE events, persistence shape): `docs/00-migration-charter.md`. Formal decisions: `docs/08-decisions/` (currently `ADR-001` through `ADR-019`).
+Project is mid-migration from a clinical app into a model-agnostic agentic runtime (strangler-fig into `src/sephiroth/`). Implemented-vs-planned status: `docs/project-state.yaml`. Frozen external contracts (SSE events, persistence shape): `docs/00-migration-charter.md`. Formal decisions: `docs/08-decisions/`.
