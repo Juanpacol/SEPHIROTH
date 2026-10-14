@@ -30,8 +30,16 @@ This converts each downloaded DICOM to PNG (matching the extensions `intelligenc
 
 ## Using the samples
 
+With the backend running (see README's Quick Start) and a token from `/api/auth/login`:
+
 ```bash
-PYTHONPATH=.:platform .venv/bin/python examples/imaging_example.py real_data/imaging/samples/<filename>.png
+curl -X POST http://127.0.0.1:8000/api/medical/imaging/analyze \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+  -d '{"image_path": "real_data/imaging/samples/<filename>.png"}'
+
+curl -X POST http://127.0.0.1:8000/api/medical/imaging/describe \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+  -d '{"image_path": "real_data/imaging/samples/<filename>.png"}'
 ```
 
-Demonstrates `describe_medical_image` (Gemini vision) and `analyze_medical_image` (MONAI) against a real chest X-ray for the first time in this project — until now the vision pipeline was only ever exercised against whatever a user uploaded live.
+`analyze` runs MONAI, `describe` runs the Gemini vision model — both against a real chest X-ray instead of whatever a user uploaded live.

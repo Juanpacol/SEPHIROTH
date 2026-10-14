@@ -18,4 +18,4 @@ This overwrites `sample_notes.json` with Gemini-generated notes over the same pa
 
 ## Usage
 
-`sample_notes.json` is a small, committed list of `{patient_id, note_date, content}` — used by `examples/real_data_example.py` to exercise `intelligence/nlp/timeline_extractor.py::extract_events` against realistic clinical prose instead of hand-typed test strings.
+`sample_notes.json` is a small, committed list of `{patient_id, note_date, content}` — realistic clinical prose for exercising `intelligence/nlp/timeline_extractor.py::extract_events` by hand (e.g. paste a note's `content` into a `POST /api/patients/{id}/notes` call) instead of hand-typed test strings.

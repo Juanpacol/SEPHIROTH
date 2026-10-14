@@ -175,7 +175,6 @@ clinical-ai-copilot/
 │                      # event/policy types) — see CLAUDE.md for the full map
 ├── data/              # rag/ (evidence retrieval, pgvector), schemas/ (SQLAlchemy models)
 ├── migrations/        # Alembic schema migrations (local Postgres and Supabase)
-├── examples/          # Runnable examples per module
 ├── scripts/           # Maintenance/CI scripts (commit-msg validation, PHI backfill, docs check, ...)
 ├── docs/              # Spec-Driven Development: specs, decision records,
 │                      # architecture notes, dev-log, project-state.yaml

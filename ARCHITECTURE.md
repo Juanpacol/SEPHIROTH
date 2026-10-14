@@ -43,7 +43,6 @@ clinical-ai-copilot/
 │   └── embeddings/             # Gemini/Ollama embedding providers
 │
 ├── migrations/                 # Alembic schema migrations (Postgres + Supabase)
-├── examples/                   # tools_example.py (no LLM), agents_example.py (full workflow)
 ├── scripts/                    # Maintenance/CI scripts (commit-msg validation, PHI backfill, docs check, ...)
 ├── docs/                       # Migration charter, specs, ADRs, project-state.yaml
 └── references/                 # Cloned upstream repos (read-only)
