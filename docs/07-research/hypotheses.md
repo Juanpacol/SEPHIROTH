@@ -1,5 +1,10 @@
 # Hypotheses
 
+> **Retired.** The thesis/research angle (hypotheses, RQ, methodology) is no
+> longer part of this project's direction — kept as a frozen historical
+> record, not maintained. See [project-state.yaml](../project-state.yaml) for
+> current implementation status.
+
 Each hypothesis names the mechanism, the metric that tests it, and the
 architecture phase that must exist first. Nothing here is measurable before its
 phase lands, which is why evaluation is a separate effort.

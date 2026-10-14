@@ -1,5 +1,12 @@
 # Traceability matrix
 
+> **Retired.** The thesis/research angle this matrix supported (hypotheses,
+> metrics, Chapter 7) is no longer part of this project's direction — kept as
+> a frozen historical record, not maintained past Phase 5/6. Known stale:
+> several implementation paths and statuses below no longer match the
+> current codebase. For current implementation status, use
+> [`docs/project-state.yaml`](project-state.yaml) instead.
+
 Connects each requirement to the thing that implements it, the test that proves
 it, and the metric that measures it. Read left to right, it answers *"how do you
 know?"* for any claim the thesis makes.
