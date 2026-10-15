@@ -30,38 +30,43 @@ unrelated to the spec documents and still active — regenerate it with
 
 ## Commit message format
 
-Every commit from `SF001` onward must match:
+Every commit from `AB#5` onward must match:
 
 ```
-SF<NNN> <body, max 50 words> [<type>]
+AB#<NNN> <body, max 50 words> [<type>]
 ```
 
-Example: `SF001 Add commit-msg validator script enforcing SF id, word cap, and type suffix [chore]`
+Example: `AB#5 Switch commit format to the Azure Boards work item id [chore]`
 
-- **`SF<NNN>`** — the user story/feature id, not a per-commit counter. **Every
-  commit that belongs to the same story shares the same id** (e.g. all
-  commits implementing story SF001 are `SF001 ... [chore]`, `SF001 ...
-  [docs]`, etc.). A new story gets the next id. Run `scripts/next-sf-id.sh`
-  before starting a new story for the suggested next number. This is
-  advisory, not a strict guarantee: two branches can independently start a
-  story with the same next id before either merges. That gap is accepted and
-  documented in [ADR-015](docs/08-decisions/ADR-015-commit-message-format.md)
-  — the format is a greppable audit trail, not a strict primary key.
-- **Body** — whitespace-split word count, excluding the `SF<NNN>` prefix and
-  the `[<type>]` suffix, capped at 50. Describe what changed, directly.
+- **`AB#<NNN>`** — the **Azure Boards work item id**, not a local counter.
+  Create (or get assigned) the work item in Azure Boards first, then use its
+  id. **Every commit that belongs to the same work item shares the same
+  id** (e.g. all commits implementing AB#5 are `AB#5 ... [chore]`, `AB#5
+  ... [docs]`, etc.). The repo's GitHub connection to Azure Boards (Project
+  Settings → Boards → GitHub connections) auto-links any commit or PR
+  mentioning `AB#<id>`, and `Fixes AB#<id>` / `Closes AB#<id>` transitions
+  the work item on merge. See
+  [ADR-020](docs/08-decisions/ADR-020-commit-format-azure-boards-id.md).
+- **Body** — whitespace-split word count, excluding the `AB#<NNN>` prefix
+  and the `[<type>]` suffix, capped at 50. Describe what changed, directly.
 - **`[<type>]`** — exactly one of: `feat`, `fix`, `docs`, `chore`, `refactor`,
   `test`.
+- **PR titles** must also start with the same `AB#<NNN>` as the commits
+  inside them.
 
-This applies **going forward only** — commits before `SF001` keep their
-existing Conventional Commits style and are never rewritten.
+This applies **going forward only** — commits before `AB#5` keep their
+`SF<NNN>` subjects (the format this one replaces,
+[ADR-015](docs/08-decisions/ADR-015-commit-message-format.md), itself
+introduced under the same "going forward only" rule over plain
+Conventional Commits) and are never rewritten.
 
 Dependabot's own commits are exempt from this format — it cannot produce an
-`SF<NNN> ... [<type>]` subject — via the `dependabot: ` prefix configured in
+`AB#<NNN> ... [<type>]` subject — via the `dependabot: ` prefix configured in
 `.github/dependabot.yml` and matched by the validator, plus an author-email
 check in the `commit-lint` job as a second, independent net.
 
 **This is enforced, not just documented.** A local `commit-msg` git hook
-gives fast feedback; the `commit-lint` job (part of the **Code Review** gate,
+gives fast feedback; the `commit-lint` job (part of the required CI pipeline,
 see below) is the real gate — a PR with a malformed commit cannot be merged.
 One-time setup per clone:
 
@@ -70,8 +75,8 @@ git config core.hooksPath .githooks
 ```
 
 See [`.githooks/README.md`](.githooks/README.md) and
-[ADR-015](docs/08-decisions/ADR-015-commit-message-format.md) for the full
-rationale.
+[ADR-020](docs/08-decisions/ADR-020-commit-format-azure-boards-id.md) for the
+full rationale.
 
 ## Rebase, never merge
 

@@ -2,11 +2,12 @@
 `scripts/validate_commit_msg.py`'s `_SKIP_PATTERN`.
 
 Both exemptions are deliberate holes in the commit-lint gate — Dependabot and
-the changelog bot can never produce an `SF<NNN> ... [<type>]` subject, so
+the changelog bot can never produce an `AB#<NNN> ... [<type>]` subject, so
 each gets a literal-prefix skip instead. Neither must degrade into a bare
 `^Bump ` (or similar) heuristic that would let a human-typed commit through
 unformatted, and the changelog-bot one specifically must never accept a real
-`SF<NNN>` — an earlier version did, which caused a self-triggering loop (see
+`AB#<NNN>` — an earlier version accepted a real story id here (back when the
+prefix was `SF<NNN>`), which caused a self-triggering loop (see
 `.github/workflows/changelog.yml`'s header comment for the full story).
 
 `scripts/` is not a package (see CONTRIBUTING.md), so the module is imported
@@ -56,11 +57,12 @@ def test_changelog_bot_commit_is_exempt() -> None:
     assert validate("changelog-bot: update CHANGELOG.md with entries grouped by story") == []
 
 
-def test_changelog_bot_commit_never_needs_an_sf_id() -> None:
+def test_changelog_bot_commit_never_needs_a_work_item_id() -> None:
     """The whole point of the exemption: this subject must not require (or
-    accept) a real SF<NNN> — that's what caused the loop in the first place."""
-    assert validate("SF040 update CHANGELOG.md with entries grouped by story [chore]") == []
-    # The bot's actual commit shape — no SF<NNN>, no [type] suffix — still passes.
+    accept) a real AB#<NNN> — that's what caused the loop in the first place
+    (back when the prefix was SF<NNN>)."""
+    assert validate("AB#40 update CHANGELOG.md with entries grouped by story [chore]") == []
+    # The bot's actual commit shape — no AB#<NNN>, no [type] suffix — still passes.
     assert validate("changelog-bot: update CHANGELOG.md") == []
 
 
@@ -74,12 +76,18 @@ def test_merge_commit_still_exempt() -> None:
 
 
 def test_revert_commit_still_exempt() -> None:
-    assert validate('Revert "SF001 something [chore]"') == []
+    assert validate('Revert "AB#5 something [chore]"') == []
 
 
 def test_wellformed_subject_still_passes() -> None:
-    assert validate("SF009 Add CI security tooling [chore]") == []
+    assert validate("AB#9 Add CI security tooling [chore]") == []
 
 
 def test_malformed_subject_without_suffix_still_fails() -> None:
-    assert validate("SF009 Add CI security tooling") != []
+    assert validate("AB#9 Add CI security tooling") != []
+
+
+def test_legacy_sf_prefixed_subject_no_longer_passes() -> None:
+    # SF<NNN> was the pre-AB#5 format (ADR-015, superseded by ADR-020) —
+    # a commit in that shape must not silently validate going forward.
+    assert validate("SF009 Add CI security tooling [chore]") != []

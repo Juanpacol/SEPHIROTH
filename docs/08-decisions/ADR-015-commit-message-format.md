@@ -1,6 +1,11 @@
 # ADR-015 — Enforced commit-message format
 
-**Status:** Accepted · **Date:** 2026-09-16
+**Status:** Superseded by [ADR-020](ADR-020-commit-format-azure-boards-id.md) (2026-10-15) · **Date:** 2026-09-16
+
+> The `SF<NNN>` prefix this ADR introduced was replaced by the Azure Boards
+> work item id (`AB#<NNN>`) from AB#5 onward — see ADR-020. This record is
+> kept as-is (not rewritten) for commits made under it (`SF001`-`SF081`);
+> everything below describes that retired format.
 
 ## Context
 
