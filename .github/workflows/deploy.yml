@@ -1,8 +1,10 @@
 name: Deploy
 
-# Runs after Code Review succeeds on main — never deploys a commit that
-# hasn't passed lint/commit-lint/tests/eval/docs/frontend/docker-smoke-test.
-# Single-environment (production) with the smoke test as the gate: if it
+# Runs after CI succeeds on main — never deploys a commit that hasn't
+# passed lint/commit-lint/secrets-scan/frontend build+unit (quality),
+# pytest+coverage+contract-drift (test), and the real docker build+boot+
+# smoke test under both dev and prod config (deploy-smoke). Single-
+# environment (production) with the live smoke test as the gate: if it
 # fails, we redeploy the last known-good commit automatically rather than
 # leaving a broken deploy live.
 #
@@ -11,17 +13,12 @@ name: Deploy
 # against a real Render service (none existed at authoring time) — treat
 # the first real run as a dry-run and check the Actions log carefully.
 #
-# 2026-09-20: this used to reference `workflows: ["CI"]`, a workflow
-# deleted in SF002 when CI was split into "Code Review" and "Security" —
-# meaning this trigger had silently never fired since. Points at "Code
-# Review" now, the heavier of the two required gates (it also depends on
-# docker-build-smoke-test's Trivy scan). "Security" runs independently and
-# is not awaited here; a compromise, not a full AND of both gates — a
-# fuller fix would call the Actions API to confirm both workflows are green
-# for the same commit before deploying.
+# SF081: "CI" is the single required workflow since the CI/CD compression —
+# it already contains everything that used to be split across "Code
+# Review" and "Security" (secrets scan folded into the `quality` job).
 on:
   workflow_run:
-    workflows: ["Code Review"]
+    workflows: ["CI"]
     types: [completed]
     branches: [main]
 

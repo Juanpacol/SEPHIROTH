@@ -1,0 +1,244 @@
+name: CI
+
+# SF081: 3 required gates total (branch protection lists these exact job
+# names as required status checks — renaming a job here must be mirrored
+# there). Everything that doesn't change the merge/deploy decision lives in
+# extended-checks.yml instead (nightly + manual), so it stops burning CI
+# minutes on every push/PR without changing any outcome.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # Style, commit hygiene, secrets, and the frontend build/unit-test path.
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # gitleaks diffs the PR's first commit's parent through its last
+          # commit — needs full history or it fails on multi-commit PRs.
+          fetch-depth: 0
+
+      - name: gitleaks (secret scanning)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      # Pinned, not `pip install ruff`: the formatter's output is
+      # version-dependent, so an unpinned upgrade turns main red with no
+      # code change.
+      - run: pip install ruff==0.16.3 "bandit[toml]"
+
+      - name: ruff (lint + format check)
+        run: |
+          status=0
+          ruff check . || status=1
+          ruff format --check . || status=1
+          exit $status
+
+      # -lll -iii = HIGH severity AND HIGH confidence only (the original
+      # `-ll -ii` filtered at MEDIUM+ despite the same comment claiming
+      # HIGH-only, and never actually gated anything because it piped
+      # through `tee` with no `pipefail` — both bugs fixed here, SF081).
+      - name: bandit (HIGH severity + HIGH confidence only)
+        run: bandit -c pyproject.toml -r . -lll -iii -f txt
+
+      # Validates each commit's subject against the SF<NNN> <body> [<type>]
+      # format (CONTRIBUTING.md, ADR-015). PR-only: a push to main is
+      # already-merged history, nothing left to reject.
+      - name: Validate commit messages in this PR
+        if: github.event_name == 'pull_request'
+        run: |
+          status=0
+          while IFS=$'\x1f' read -r author_email subject; do
+            if [[ "${author_email,,}" == *dependabot* ]]; then
+              echo "skipping $subject (Dependabot author)"
+              continue
+            fi
+            python3 scripts/validate_commit_msg.py --message "$subject" || status=1
+          done < <(git log --format=%ae%x1f%s "origin/${{ github.base_ref }}..HEAD")
+          exit $status
+
+      # This repo only allows "Rebase and merge" — a merge commit buried in
+      # a branch's own history can replay strangely (or fail outright)
+      # under that policy. GitHub's synthetic test-merge commit is exempt.
+      - name: No merge commits in this branch
+        if: github.event_name == 'pull_request'
+        run: |
+          merges=$(
+            git log --merges --format=%H%x1f%s "origin/${{ github.base_ref }}..HEAD" \
+              | grep -Ev $'\x1fMerge [0-9a-f]{40} into [0-9a-f]{40}$'
+          ) || true
+          if [ -n "$merges" ]; then
+            echo "Found merge commit(s) in this branch's history:"
+            echo "$merges"
+            echo "Rebase, don't merge: git rebase origin/${{ github.base_ref }}"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: platform/frontend/package-lock.json
+
+      - name: frontend lint + unit tests + build
+        working-directory: platform/frontend
+        run: |
+          npm ci
+          npm run lint
+          npm run test
+          npm run build
+
+  # Backend correctness: unit/integration suite with coverage, against a
+  # real Postgres so RAG (pgvector) queries execute for real, plus the
+  # frozen-contract drift check.
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_USER: clinical_ai
+          POSTGRES_PASSWORD: clinical_ai_password
+          POSTGRES_DB: clinical_ai_db
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U clinical_ai -d clinical_ai_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - run: pip install -e .
+      - name: Migrate + seed the RAG corpus (guideline_documents)
+        env:
+          DATABASE_URL: "postgresql+asyncpg://clinical_ai:clinical_ai_password@localhost:5433/clinical_ai_db"
+        run: |
+          PYTHONPATH=.:platform alembic upgrade head
+          PYTHONPATH=.:platform python -m data.rag.seed_pgvector
+      - name: Run tests with coverage gate
+        run: pytest --cov --cov-report=term --cov-report=xml
+      - name: Contract schema drift
+        run: python scripts/export_contracts.py --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  # Real deployability: builds the exact production image, boots it twice
+  # (dev config, then prod config) against a real Postgres, and asserts a
+  # bad prod config fails loudly rather than crash-looping silently — the
+  # regression test for the 2026-08-20 incident (a dev-only smoke test
+  # structurally can't catch it, since the JWT_SECRET validator only raises
+  # under ENVIRONMENT=production).
+  #
+  # Postgres is started by hand (not a `services:` container) and recreated
+  # between the dev and prod boots, on purpose: the dev boot's smoke test
+  # seeds PHI-encrypted demo patients under whatever key that boot used, so
+  # reusing the same database for the prod boot (a different
+  # PHI_ENCRYPTION_KEY) makes init_db() fail to decrypt its own seed data —
+  # a real failure mode this job hit once while being written, not
+  # something to work around with one shared Postgres (SF081).
+  deploy-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t sephiroth-api:ci .
+
+      - name: Boot (development) + smoke test
+        run: |
+          docker network create smoke-net
+          docker run -d --name smoke-pg --network smoke-net \
+            -e POSTGRES_USER=clinical_ai -e POSTGRES_PASSWORD=clinical_ai_password -e POSTGRES_DB=clinical_ai_db \
+            pgvector/pgvector:pg15
+          for i in $(seq 1 30); do
+            docker exec smoke-pg pg_isready -U clinical_ai -d clinical_ai_db > /dev/null 2>&1 && break
+            sleep 2
+            if [ "$i" = 30 ]; then echo "postgres never became ready"; docker logs smoke-pg; exit 1; fi
+          done
+
+          docker run -d --name sephiroth-api-dev --network smoke-net -p 8000:8000 \
+            -e DATABASE_URL="postgresql+asyncpg://clinical_ai:clinical_ai_password@smoke-pg:5432/clinical_ai_db" \
+            -e JWT_SECRET="$(openssl rand -hex 32)" \
+            -e ENVIRONMENT=development \
+            sephiroth-api:ci
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health > /dev/null; then echo "up"; break; fi
+            sleep 2
+            if [ "$i" = 30 ]; then echo "backend never became healthy"; docker logs sephiroth-api-dev; exit 1; fi
+          done
+          bash scripts/smoke_test.sh http://127.0.0.1:8000
+          docker logs sephiroth-api-dev
+          docker rm -f sephiroth-api-dev smoke-pg
+          docker network rm smoke-net
+
+      - name: Boot (production config) + health check
+        run: |
+          docker network create smoke-net
+          docker run -d --name smoke-pg --network smoke-net \
+            -e POSTGRES_USER=clinical_ai -e POSTGRES_PASSWORD=clinical_ai_password -e POSTGRES_DB=clinical_ai_db \
+            pgvector/pgvector:pg15
+          for i in $(seq 1 30); do
+            docker exec smoke-pg pg_isready -U clinical_ai -d clinical_ai_db > /dev/null 2>&1 && break
+            sleep 2
+            if [ "$i" = 30 ]; then echo "postgres never became ready"; docker logs smoke-pg; exit 1; fi
+          done
+
+          docker run -d --name sephiroth-api-prod --network smoke-net -p 8000:8000 \
+            -e ENVIRONMENT=production \
+            -e JWT_SECRET="$(openssl rand -hex 32)" \
+            -e PHI_ENCRYPTION_KEY="$(python3 -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')" \
+            -e DATABASE_URL="postgresql+asyncpg://clinical_ai:clinical_ai_password@smoke-pg:5432/clinical_ai_db" \
+            sephiroth-api:ci
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health > /dev/null; then echo "up"; break; fi
+            sleep 2
+            if [ "$i" = 30 ]; then echo "FAIL: container never became healthy under ENVIRONMENT=production"; docker logs sephiroth-api-prod; exit 1; fi
+          done
+          docker logs sephiroth-api-prod
+          docker rm -f sephiroth-api-prod smoke-pg
+          docker network rm smoke-net
+
+      - name: Assert bad config fails with a readable message
+        run: |
+          set +e
+          OUTPUT=$(docker run --rm -e ENVIRONMENT=production -e JWT_SECRET=short sephiroth-api:ci 2>&1)
+          set -e
+          echo "$OUTPUT"
+          echo "$OUTPUT" | grep -q "jwt_secret must be" \
+            || { echo "FAIL: bad-config error produced no legible message"; exit 1; }
+
+      # CRITICAL OS-package CVEs only, same reasoning as before: HIGH and
+      # Python-env CVEs are covered elsewhere (pip-audit, Dependabot) and
+      # would double-report; ignore-unfixed so an un-patchable base-image
+      # CVE can't red this permanently.
+      - name: Trivy (CRITICAL OS-package CVEs in the built image)
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:2
+        with:
+          scan-type: image
+          image-ref: sephiroth-api:ci
+          scanners: vuln
+          vuln-type: os
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
