@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Auto-generate CHANGELOG.md entries grouped by user story (SF<NNN>).
+"""Auto-generate CHANGELOG.md entries grouped by Azure Boards work item (AB#<NNN>).
 
 Reuses `validate_commit_msg`'s shape regex — the single source of truth for
-what an `SF<NNN> <body> [<type>]` subject looks like — so this can never
-group commits differently than the commit-msg hook/CI validate them.
+what an `AB#<NNN> <body> [<type>]` subject looks like — so this can never
+group commits differently than the commit-msg hook/CI validate them. Commits
+before AB#5 (ADR-020) used the project-local `SF<NNN>` id instead; those
+don't match this pattern and are skipped the same way a direct unformatted
+push to main would be (see `_group_by_story`'s docstring).
 
 State: `scripts/.changelog_cursor` holds the SHA of the last commit already
 folded into CHANGELOG.md. Each run only processes `<cursor>..HEAD`, so a
@@ -59,18 +62,19 @@ def _commits_since(cursor: str | None) -> list[tuple[str, str]]:
 
 
 def _group_by_story(commits: list[tuple[str, str]]) -> "OrderedDict[str, list[str]]":
-    """Maps SF id -> ordered list of '<body> [<type>]' lines. A commit whose
-    subject doesn't match the shape (shouldn't happen — commit-lint already
-    gates every PR merge — but a direct push to main isn't gated, see
-    `code-review.yml`'s commit-lint job condition) is silently skipped rather
-    than crashing changelog generation over it."""
+    """Maps work item id -> ordered list of '<body> [<type>]' lines. A commit
+    whose subject doesn't match the shape (shouldn't happen — commit-lint
+    already gates every PR merge — but a direct push to main isn't gated, see
+    `ci.yml`'s commit-lint job condition; a pre-AB#5 `SF<NNN>` commit also
+    falls in here) is silently skipped rather than crashing changelog
+    generation over it."""
     groups: "OrderedDict[str, list[str]]" = OrderedDict()
     for _sha, subject in commits:
         match = _SHAPE_PATTERN.match(subject)
         if not match:
             continue
         story_id, body, kind = match.group(1), match.group(2), match.group(3)
-        groups.setdefault(f"SF{story_id}", []).append(f"{body} [{kind}]")
+        groups.setdefault(f"AB#{story_id}", []).append(f"{body} [{kind}]")
     return groups
 
 
@@ -100,7 +104,7 @@ def main() -> int:
     groups = _group_by_story(_commits_since(cursor))
     if not groups:
         CURSOR_PATH.write_text(head + "\n")
-        print("No SF<NNN> commits in range (only merges/reverts?) — cursor advanced, nothing written.")
+        print("No AB#<NNN> commits in range (only merges/reverts?) — cursor advanced, nothing written.")
         return 0
 
     rendered = _render(groups)

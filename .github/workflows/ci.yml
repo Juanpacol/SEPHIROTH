@@ -51,9 +51,10 @@ jobs:
       - name: bandit (HIGH severity + HIGH confidence only)
         run: bandit -c pyproject.toml -r . -lll -iii -f txt
 
-      # Validates each commit's subject against the SF<NNN> <body> [<type>]
-      # format (CONTRIBUTING.md, ADR-015). PR-only: a push to main is
-      # already-merged history, nothing left to reject.
+      # Validates each commit's subject against the AB#<NNN> <body> [<type>]
+      # format (CONTRIBUTING.md, ADR-020 — a pre-AB#5 commit used SF<NNN>
+      # instead, ADR-015). PR-only: a push to main is already-merged
+      # history, nothing left to reject.
       - name: Validate commit messages in this PR
         if: github.event_name == 'pull_request'
         run: |

@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
 """Validate a commit subject against the SEPHIROTH commit-message format.
 
-Required shape: ``SF<NNN> <body, max 50 words> [<type>]``
+Required shape: ``AB#<NNN> <body, max 50 words> [<type>]``
+
+``<NNN>`` is the Azure Boards work item id (no zero-padding, no local
+counter) — see docs/08-decisions/ADR-020-commit-format-azure-boards-id.md.
+Superseded the project-local ``SF<NNN>`` id from AB#5 onward; commits before
+it keep their ``SF<NNN>`` subjects and are never rewritten (same "going
+forward only" rule ``SF001`` itself was introduced under).
 
 Single source of truth for both enforcement layers: the local
 ``.githooks/commit-msg`` hook (fast feedback) and the ``commit-lint`` job in
 ``.github/workflows/ci.yml`` (the real, unbypassable gate). Both call this
 script so the two layers can never drift apart.
 
-See docs/08-decisions/ADR-015-commit-message-format.md for the full
+See docs/08-decisions/ADR-020-commit-format-azure-boards-id.md for the full
 rationale, including the accepted gap: this script validates *format* only —
-it does not, and cannot, guarantee that <NNN> is globally unique across
-branches.
+it does not, and cannot, confirm that <NNN> is a real, open Azure Boards
+work item.
 
 Two automated authors are exempt from the shape check, same as merge/revert
 commits — neither can produce an `SF<NNN> ... [<type>]` subject:
@@ -37,8 +43,8 @@ ALLOWED_TYPES = ("feat", "fix", "docs", "chore", "refactor", "test")
 MAX_BODY_WORDS = 50
 
 _SKIP_PATTERN = re.compile(r'^(Merge\b|Revert "|dependabot(?:\([^)]*\))?: |changelog-bot: )')
-_SHAPE_PATTERN = re.compile(r"^SF(\d{3,})\s+(.+)\s+\[(" + "|".join(ALLOWED_TYPES) + r")\]$")
-_HAS_PREFIX = re.compile(r"^SF\d{3,}\s")
+_SHAPE_PATTERN = re.compile(r"^AB#(\d+)\s+(.+)\s+\[(" + "|".join(ALLOWED_TYPES) + r")\]$")
+_HAS_PREFIX = re.compile(r"^AB#\d+\s")
 _HAS_SUFFIX = re.compile(r"\[([^\]]*)\]\s*$")
 
 
@@ -60,8 +66,8 @@ def validate(subject: str) -> list[str]:
     errors: list[str] = []
     if not _HAS_PREFIX.match(subject):
         errors.append(
-            "Missing or malformed 'SF<NNN>' prefix (e.g. 'SF001'). "
-            "Run scripts/next-sf-id.sh for the suggested next id."
+            "Missing or malformed 'AB#<NNN>' prefix (e.g. 'AB#5'), the Azure "
+            "Boards work item id — create or find the work item first."
         )
 
     suffix_match = _HAS_SUFFIX.search(subject)
@@ -72,7 +78,7 @@ def validate(subject: str) -> list[str]:
 
     if not errors:
         errors.append(
-            f"Commit message does not match required format 'SF<NNN> <body> [<type>]'. Got: '{subject}'"
+            f"Commit message does not match required format 'AB#<NNN> <body> [<type>]'. Got: '{subject}'"
         )
 
     return errors

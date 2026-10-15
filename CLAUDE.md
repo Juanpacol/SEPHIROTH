@@ -154,7 +154,7 @@ Short version of each decision. Full rationale, if you need it, lives in `docs/0
 
 ### Process
 
-- **Commit messages must match `SF<NNN> <body, ≤50 words> [<type>]`.** Enforced by a `commit-msg` hook and a required CI job, both calling `scripts/validate_commit_msg.py`. See `CONTRIBUTING.md`.
+- **Commit messages and PR titles must match `AB#<NNN> <body, ≤50 words> [<type>]`**, `<NNN>` the Azure Boards work item id (commits before AB#5 used a local `SF<NNN>` counter instead — ADR-020 supersedes ADR-015). Enforced by a `commit-msg` hook and a required CI job, both calling `scripts/validate_commit_msg.py`. See `CONTRIBUTING.md`.
 
 ## How to Extend
 

@@ -1,7 +1,7 @@
 name: Changelog
 
-# Auto-generates CHANGELOG.md entries grouped by SF<NNN> story on every push
-# to main, then opens a PR and merges it once required checks pass.
+# Auto-generates CHANGELOG.md entries grouped by AB#<NNN> work item on every
+# push to main, then opens a PR and merges it once required checks pass.
 #
 # main has branch protection configured on GitHub (not a file in this repo):
 # no direct pushes, 2 required status checks. A PR opened with the default
@@ -23,8 +23,9 @@ name: Changelog
 # real story ids before this was caught. The fix is the `changelog-bot: `
 # prefix below, exempted in `_SKIP_PATTERN` (scripts/validate_commit_msg.py)
 # the same way Dependabot's commits are — it satisfies commit-lint WITHOUT
-# claiming an SF<NNN>, so `generate_changelog.py`'s `_SHAPE_PATTERN` match
-# (SF<NNN>-only) never sees it and the cascade has nothing to grab onto.
+# claiming a story/work-item id, so `generate_changelog.py`'s
+# `_SHAPE_PATTERN` match (AB#<NNN>-only, SF<NNN>-only pre-AB#5) never sees
+# it and the cascade has nothing to grab onto.
 on:
   push:
     branches: [main]
@@ -57,13 +58,14 @@ jobs:
           git config user.email "actions@github.com"
           git checkout -b "$BRANCH"
           git add CHANGELOG.md scripts/.changelog_cursor
-          # `changelog-bot: ` — NOT an SF<NNN> id. See the module-header
-          # comment above: claiming a real story id here is what caused the
-          # self-triggering loop. This prefix is exempted in
-          # scripts/validate_commit_msg.py's _SKIP_PATTERN (commit-lint) and
-          # is deliberately invisible to generate_changelog.py's grouping
-          # (_SHAPE_PATTERN only matches SF<NNN>), so this commit can never
-          # become material for the next run.
+          # `changelog-bot: ` — NOT an AB#<NNN> id. See the module-header
+          # comment above: claiming a real work-item id here is what caused
+          # the self-triggering loop (back when the id was SF<NNN>). This
+          # prefix is exempted in scripts/validate_commit_msg.py's
+          # _SKIP_PATTERN (commit-lint) and is deliberately invisible to
+          # generate_changelog.py's grouping (_SHAPE_PATTERN only matches
+          # AB#<NNN>), so this commit can never become material for the
+          # next run.
           git commit -m "changelog-bot: update CHANGELOG.md with entries grouped by story"
           git push -u origin "$BRANCH"
 
