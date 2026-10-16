@@ -49,8 +49,8 @@ export default function PortalAppointmentsPage() {
           .slice()
           .sort((a, b) => a.start_at.localeCompare(b.start_at))
           .map((a) => (
-            <div key={a.id} className="card flex items-center justify-between">
-              <div>
+            <div key={a.id} className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <div className="text-sm font-semibold">
                   {new Date(a.start_at + "Z").toLocaleString([], {
                     weekday: "long",
@@ -65,7 +65,7 @@ export default function PortalAppointmentsPage() {
                   {a.reason ? ` · ${a.reason}` : ""}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <StatusPill label={a.status.replace("_", " ")} />
                 {a.status === "booked" && !a.confirmed_at && (
                   <button
