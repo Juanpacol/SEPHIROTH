@@ -22,8 +22,8 @@ jobs:
       run:
         working-directory: platform/frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -33,7 +33,7 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
@@ -48,8 +48,8 @@ jobs:
   eval:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -68,8 +68,8 @@ jobs:
   type-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -88,8 +88,8 @@ jobs:
   dependency-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -101,7 +101,7 @@ jobs:
           if [ -n "$GITHUB_STEP_SUMMARY" ]; then
             { echo "## pip-audit"; cat pip-audit-report.md; } >> "$GITHUB_STEP_SUMMARY"
           fi
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -128,7 +128,7 @@ jobs:
       matrix:
         language: [python, javascript-typescript]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
@@ -144,8 +144,8 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
