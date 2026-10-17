@@ -29,6 +29,8 @@ jobs:
           cache: npm
           cache-dependency-path: platform/frontend/package-lock.json
       - run: npm ci
+      # playwright.config.ts boots `npm run start`, which needs a production build.
+      - run: npm run build
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
