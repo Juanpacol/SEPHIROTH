@@ -114,3 +114,71 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"commitId\": \"$PREV_COMMIT\"}"
           exit 1
+
+  # Frontend (Vercel). Runs only after the backend deploy above went live and
+  # passed its live smoke test (`needs: deploy`), so the frontend never ships
+  # ahead of an API it depends on, and never ships from a commit CI rejected.
+  #
+  # Vercel's own Git auto-deploy is turned OFF for `main`
+  # (platform/frontend/vercel.json), otherwise it would deploy every push
+  # without waiting for CI. Pull-request Previews still come from Vercel's Git
+  # integration. This job is therefore the only path to production.
+  #
+  # Vercel CLI is pinned. Run from the repo root, not platform/frontend: the
+  # project's Root Directory setting (platform/frontend) is applied by the CLI.
+  #
+  # NOTE: written against Vercel's documented CLI flow but not yet exercised
+  # against the real project — treat the first run as a dry run.
+  deploy-frontend:
+    needs: deploy
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      PRODUCTION_URL: ${{ vars.VERCEL_PRODUCTION_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # Fail loudly: silently skipping would leave the frontend stale with a
+      # green pipeline, which is how it went 16 days without a deploy.
+      - name: Require Vercel credentials
+        run: |
+          missing=0
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID PRODUCTION_URL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not set (repo secret/variable) — frontend not deployed"
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Pull Vercel project settings and environment
+        run: npx --yes vercel@64.3.1 pull --yes --environment=production --token "$VERCEL_TOKEN"
+
+      - name: Build
+        run: npx --yes vercel@64.3.1 build --prod --token "$VERCEL_TOKEN"
+
+      - name: Deploy to production
+        run: |
+          url=$(npx --yes vercel@64.3.1 deploy --prebuilt --prod --token "$VERCEL_TOKEN" | tail -n 1)
+          echo "deployed: $url"
+
+      - name: Smoke test the live frontend
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null "$PRODUCTION_URL/login"; then
+              echo "frontend up: $PRODUCTION_URL/login"
+              exit 0
+            fi
+            echo "attempt $i: not up yet"
+            sleep 5
+          done
+          echo "::error::$PRODUCTION_URL/login never returned 200 after the deploy"
+          exit 1

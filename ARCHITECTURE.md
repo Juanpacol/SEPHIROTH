@@ -144,6 +144,8 @@ panel), `/patients`, `/patients/[id]` (timeline), `/imaging`, `/evidence`, `/sch
 
 **Cloud database (optional):** `DATABASE_URL` can point to managed Postgres (e.g. Supabase, native pgvector). `platform/core/db.py::init_db()` runs `alembic upgrade head` + enables `pgvector` on every boot when dialect is `postgresql`. Use Supabase's **Session pooler** (port 5432), not the Transaction pooler (6543 — disables prepared statements asyncpg needs). Local `docker-compose` Postgres remains the dev default.
 
+**Production (CD):** a push to `main` runs `.github/workflows/ci.yml`; when it passes, `deploy.yml` deploys the API to Render and smoke-tests it live (rolling back on failure), then — only if that succeeded — deploys the frontend to Vercel with the Vercel CLI and smoke-tests `/login`. Vercel's own Git auto-deploy is disabled for `main` (`platform/frontend/vercel.json`) so nothing reaches production without passing CI; pull-request Previews still come from Vercel's Git integration. Needs repo secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` and variable `VERCEL_PRODUCTION_URL`; the job fails loudly if any is missing.
+
 ## Migration State
 
 Project is mid-migration from a clinical app into a model-agnostic agentic runtime (strangler-fig into `src/sephiroth/`). Implemented-vs-planned status: `docs/project-state.yaml`. Frozen external contracts (SSE events, persistence shape): `docs/00-migration-charter.md`. Formal decisions: `docs/08-decisions/`.
