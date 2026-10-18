@@ -508,6 +508,40 @@ class Consultation(Base):
     user: Mapped["User"] = relationship(back_populates="consultations")
 
 
+class ResponseRating(Base):
+    """A clinician's verdict on one consultation's answer (AB#16): useful or
+    not, with a reason and an optional comment when not. One live row per
+    (consultation, user) -- rating again replaces it.
+
+    A human signal kept apart from the automatic verification: it never
+    changes the answer or its status. A "down" rating enters the review queue
+    (`review_status="pending"`) until a clinician closes it with an outcome.
+    The free-text columns are clinical text, so they are encrypted at rest like
+    the other PHI columns.
+    """
+
+    __tablename__ = "response_ratings"
+    __table_args__ = (
+        UniqueConstraint("consultation_id", "user_id", name="uq_response_rating_consultation_user"),
+        Index("ix_response_ratings_review", "review_status", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    consultation_id: Mapped[str] = mapped_column(ForeignKey("consultations.id"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    trace_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    value: Mapped[str] = mapped_column(String(4))  # up | down
+    reason: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    comment: Mapped[str] = mapped_column(EncryptedText, default="")
+    review_status: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)  # pending | reviewed
+    review_outcome: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    review_note: Mapped[str] = mapped_column(EncryptedText, default="")
+    reviewed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class GuidelineDocument(Base):
     """The RAG corpus's live storage — `sephiroth.rag.RAGPipeline.retrieve`
     (SPEC-030/ADR-017, Phase 15) queries this table directly on every call,

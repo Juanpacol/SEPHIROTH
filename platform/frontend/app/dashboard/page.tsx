@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, ClipboardList } from "lucide-react";
+import { BarChart3, ClipboardList, ThumbsUp } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import ActionItemsList from "@/components/action-items-list";
@@ -21,6 +21,11 @@ export default function DashboardPage() {
   const { data: ruleSummary } = useQuery({
     queryKey: ["dashboard", "rule-summary"],
     queryFn: api.dashboardRuleSummary,
+    refetchInterval: 60_000,
+  });
+  const { data: quality } = useQuery({
+    queryKey: ["dashboard", "ai"],
+    queryFn: api.dashboardAI,
     refetchInterval: 60_000,
   });
   const data = bootstrap?.stats;
@@ -57,6 +62,29 @@ export default function DashboardPage() {
           hint={t("dashboard.stat.maxPriorityHint")}
         />
       </div>
+
+      {quality && (
+        <div className="card !p-4" data-testid="answer-quality">
+          <h2 className="flex items-center gap-2 text-sm font-bold">
+            <ThumbsUp size={15} className="text-primary" /> {t("dashboard.quality.title")}
+          </h2>
+          <p className="text-xs text-muted">{t("dashboard.quality.subtitle")}</p>
+          {quality.helpful_ratio === null ? (
+            <p className="mt-2 text-sm text-muted">{t("dashboard.quality.none")}</p>
+          ) : (
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="text-3xl font-extrabold text-primary">{Math.round(quality.helpful_ratio * 100)}%</span>
+              <span className="text-sm text-muted">{t("dashboard.quality.helpful")}</span>
+              <span className="text-xs text-muted">
+                {t("dashboard.quality.ratings").replace("{count}", String(quality.ratings_count))}
+              </span>
+              <span className={`text-xs font-semibold ${quality.pending_review_count > 0 ? "text-warning" : "text-muted"}`}>
+                {t("dashboard.quality.pending").replace("{count}", String(quality.pending_review_count))}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="card !p-4">

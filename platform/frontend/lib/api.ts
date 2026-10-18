@@ -159,6 +159,10 @@ export interface DashboardAI {
   requires_human_review_count: number;
   clinician_modified_count: number;
   clinician_rejected_count: number;
+  ratings_count: number;
+  helpful_count: number;
+  helpful_ratio: number | null;
+  pending_review_count: number;
 }
 
 export interface DashboardEvidence {
@@ -332,6 +336,16 @@ export interface ConsultResponse {
   disclaimer?: string;
 }
 
+export type RatingReason = "incorrect" | "incomplete" | "unsafe" | "no_sources" | "other";
+
+/** A clinician's verdict on one answer; `reason`/`comment` only exist for "down". */
+export interface Rating {
+  value: "up" | "down";
+  reason: RatingReason | null;
+  comment: string;
+  updated_at: string | null;
+}
+
 export interface HistoryItem extends ConsultResponse {
   id: string;
   query: string;
@@ -341,6 +355,7 @@ export interface HistoryItem extends ConsultResponse {
   acted_at: string | null;
   outcome: "improved" | "not_improved" | "unclear" | null;
   outcome_at: string | null;
+  rating: Rating | null;
 }
 
 export interface DrugInteraction {
@@ -846,6 +861,10 @@ export const api = {
     patch<HistoryItem>(`/api/agents/history/${id}`, { acted_on }),
   checkDrugInteractions: (medications: string[]) =>
     post<DrugCheckResult>("/api/medical/drugs/check", { medications }),
+  rateConsultation: (
+    id: string,
+    body: { value: "up" | "down"; reason?: RatingReason; comment?: string },
+  ) => post<Rating>(`/api/agents/consultations/${id}/rating`, body),
   consult: (body: { query: string; patient_id?: string; context?: Record<string, unknown> }) =>
     post<ConsultResponse>("/api/agents/consult", body),
   describeImage: (body: { image_path: string; clinical_focus?: string }) =>

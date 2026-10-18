@@ -32,6 +32,7 @@ from api.routers import (
     notifications,
     patients,
     portal,
+    quality,
     rag,
     result_reviews,
     results,
@@ -145,6 +146,7 @@ app.include_router(medical.router, prefix="/api/medical", tags=["medical"], depe
 app.include_router(
     encounters.router, prefix="/api/encounters", tags=["encounters"], dependencies=_clinician_only
 )
+app.include_router(quality.router, prefix="/api/quality", tags=["quality"], dependencies=_clinician_only)
 app.include_router(rag.router, prefix="/api/rag", tags=["rag"], dependencies=_clinician_only)
 app.include_router(
     dashboard.router, prefix="/api/dashboard", tags=["dashboard"], dependencies=_clinician_only

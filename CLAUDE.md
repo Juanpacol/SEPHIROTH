@@ -130,6 +130,7 @@ Short version of each decision. Full rationale, if you need it, lives in `docs/0
 - **Each agent sees only the context fields it declares** (`ADR-011`). Per-patient consultation memory reaches only the agent writing the final answer.
 - **Every consultation builds a persisted, replayable trace** (`ADR-009`), with real token/cost accounting, toggled by `enable_tracing`. It lists every model call (`llm_calls`: provider, model, fallback and reason code — metadata only, never content), recorded by `models/call_log.py` on the leaf clients; each log line carries the `trace_id`.
 - **A read-only review endpoint exposes those traces to a non-clinician** (`/api/review/*`, `platform/api/routers/review.py`). Own token (`REVIEW_TOKEN`, unset = 404), GET only, every read audited, output de-identified (`safety/deidentify.py`). See `docs/05-operations/review-endpoint.md`.
+- **Clinicians rate answers (useful / not useful) and "not useful" ones enter a review queue** (`ResponseRating`, `routers/quality.py`). A human signal, never part of the answer or its verification; the comment is encrypted. See `docs/05-operations/answer-ratings.md`.
 - **Explainability is derived on read, never stored.** `telemetry/explain.py` builds the reasoning trace from persisted data — template-based, no LLM call.
 - **Risk flags are computed at read-time.** `safety/risk.py` drives both the patient profile and the dashboard (`ADR-019`) — deterministic rules only, never a fabricated confidence score.
 - **Vision is one MCP tool.** `vision_server.py` does a one-shot image description; degrades gracefully if the API key is missing.
@@ -246,6 +247,8 @@ Or via Docker:
 ```bash
 GEMINI_API_KEY=your-key JWT_SECRET=$(openssl rand -hex 32) docker-compose up
 ```
+
+**Docker reads `DATABASE_URL` from `.env`, which may be Supabase (production).** Rebuilding the `api` container without overriding it runs `alembic upgrade head` against that database. For local work, override it explicitly: `DATABASE_URL=postgresql+asyncpg://clinical_ai:clinical_ai_password@postgres:5432/clinical_ai_db docker compose up -d --build api`.
 
 ## Database migrations
 

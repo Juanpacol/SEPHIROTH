@@ -34,6 +34,7 @@ from data.schemas import (
     Notification,
     Patient,
     PendingAction,
+    ResponseRating,
     ResultReview,
     User,
     Workflow,
@@ -381,8 +382,17 @@ async def dashboard_ai(session: AsyncSession = Depends(get_session)) -> Dict[str
     ).all()
     consultation_rows = (await session.execute(select(Consultation.risk_level))).all()
 
+    # The human verdicts (AB#16). Column-only again: the free-text comment is
+    # encrypted and nothing here needs it.
+    ratings = (await session.execute(select(ResponseRating.value, ResponseRating.review_status))).all()
+    helpful = sum(1 for r in ratings if r.value == "up")
+
     confidences = [e.confidence for e in evaluations if e.confidence is not None]
     return {
+        "ratings_count": len(ratings),
+        "helpful_count": helpful,
+        "helpful_ratio": round(helpful / len(ratings), 3) if ratings else None,
+        "pending_review_count": sum(1 for r in ratings if r.review_status == "pending"),
         "evaluations_count": len(evaluations),
         "consultations_count": len(consultation_rows),
         "high_risk_prediction_count": sum(1 for r in consultation_rows if r.risk_level == "high"),

@@ -377,6 +377,19 @@ const ROUTES: Record<string, unknown> = {
       },
     ],
   },
+  "/api/dashboard/ai": {
+    evaluations_count: 0,
+    consultations_count: 0,
+    high_risk_prediction_count: 0,
+    avg_confidence: null,
+    requires_human_review_count: 0,
+    clinician_modified_count: 0,
+    clinician_rejected_count: 0,
+    ratings_count: 8,
+    helpful_count: 6,
+    helpful_ratio: 0.75,
+    pending_review_count: 2,
+  },
   // What /dashboard actually fetches; without it the page renders "backend down".
   "/api/dashboard/bootstrap": {
     stats: DASHBOARD_STATS,

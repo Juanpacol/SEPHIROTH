@@ -3,7 +3,7 @@
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -19,7 +19,7 @@ from auth.deps import get_current_user
 from core.config import is_local_llm_provider, settings
 from core.db import SessionLocal, get_session
 from core.rate_limit import key_by_user_or_ip, limiter
-from data.schemas import AIEvaluation, Consultation, User
+from data.schemas import AIEvaluation, Consultation, ResponseRating, User
 from intelligence.mcp.vision_server import _active_vision_model_name
 from sephiroth.context import recent_consultation_summaries
 from sephiroth.models import get_llm_client
@@ -390,6 +390,17 @@ async def history(
             .limit(min(limit, 100))
         )
     ).all()
+    ratings = {
+        r.consultation_id: r
+        for r in (
+            await session.scalars(
+                select(ResponseRating).where(
+                    ResponseRating.user_id == user.id,
+                    ResponseRating.consultation_id.in_([c.id for c in rows]),
+                )
+            )
+        ).all()
+    }
     return [
         {
             "id": c.id,
@@ -409,6 +420,7 @@ async def history(
             "acted_at": c.acted_at.isoformat() if c.acted_at else None,
             "outcome": c.outcome,
             "outcome_at": c.outcome_at.isoformat() if c.outcome_at else None,
+            "rating": _rating_out(ratings.get(c.id)),
         }
         for c in rows
     ]
@@ -457,6 +469,87 @@ async def update_consultation_outcome(
         "outcome": consultation.outcome,
         "outcome_at": consultation.outcome_at.isoformat() if consultation.outcome_at else None,
     }
+
+
+RATING_REASONS = ("incorrect", "incomplete", "unsafe", "no_sources", "other")
+
+
+class RatingIn(BaseModel):
+    """A clinician's verdict on one answer. `reason` and `comment` only mean
+    something for "down"; an "up" drops them rather than storing text nobody
+    asked to keep."""
+
+    value: Literal["up", "down"]
+    reason: Optional[Literal["incorrect", "incomplete", "unsafe", "no_sources", "other"]] = None
+    comment: str = Field("", max_length=500)
+
+
+def _rating_out(rating: Optional[ResponseRating]) -> Optional[Dict[str, Any]]:
+    if rating is None:
+        return None
+    return {
+        "value": rating.value,
+        "reason": rating.reason,
+        "comment": rating.comment,
+        "updated_at": rating.updated_at.isoformat() if rating.updated_at else None,
+    }
+
+
+@router.post(
+    "/consultations/{consultation_id}/rating", summary="Rate a consultation's answer (useful / not useful)"
+)
+@limiter.limit("60/minute", key_func=key_by_user_or_ip)
+async def rate_consultation(
+    request: Request,
+    consultation_id: str,
+    body: RatingIn,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Save the caller's rating of their own consultation; rating again replaces it.
+
+    A "down" enters the review queue as pending; changing it (to "up", or to a
+    different "down") clears any earlier review, since that review judged a
+    verdict that no longer stands.
+    """
+    consultation = await session.scalar(
+        select(Consultation).where(Consultation.id == consultation_id, Consultation.user_id == user.id)
+    )
+    if consultation is None:
+        raise HTTPException(status_code=404, detail="Consultation not found")
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    down = body.value == "down"
+    reason = body.reason if down else None
+    comment = body.comment.strip() if down else ""
+
+    rating = await session.scalar(
+        select(ResponseRating).where(
+            ResponseRating.consultation_id == consultation.id, ResponseRating.user_id == user.id
+        )
+    )
+    if rating is None:
+        rating = ResponseRating(
+            id=str(uuid4()), consultation_id=consultation.id, user_id=user.id, created_at=now
+        )
+        session.add(rating)
+    unchanged = rating.value == body.value and rating.reason == reason and rating.comment == comment
+    rating.trace_id = consultation.trace_id
+    rating.value = body.value
+    rating.reason = reason
+    rating.comment = comment
+    rating.updated_at = now
+    if not unchanged:
+        rating.review_status = "pending" if down else None
+        rating.review_outcome = None
+        rating.review_note = ""
+        rating.reviewed_by = None
+        rating.reviewed_at = None
+    await session.commit()
+    logger.info(
+        "response_rated consultation_id=%s value=%s reason=%s", consultation.id[:8], body.value, reason or "-"
+    )
+    return _rating_out(rating) or {}
 
 
 @router.get("/recommendations/stats", summary="Effectiveness ratio across the current user's own history")
