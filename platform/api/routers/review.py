@@ -34,10 +34,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.db import get_session
 from core.rate_limit import limiter
-from data.schemas import Consultation, Patient, ResponseRating, ReviewAccessLog
+from data.schemas import AutoGrade, Consultation, Patient, ReviewAccessLog
 from sephiroth.safety.deidentify import deidentify
 
-from ..provenance import answering_call, llm_calls, provenance
+from ..provenance import answering_call, llm_calls
+from .quality import fetch_queue, queue_item
 
 router = APIRouter()
 
@@ -114,6 +115,23 @@ async def _audit(
         )
     )
     await session.commit()
+
+
+def _auto_grade_out(grade: Optional[AutoGrade], known: list[str]) -> Optional[dict[str, Any]]:
+    """The automatic grade, or why there is none. The justification is free
+    text written by a model that saw the consultation, so it is de-identified."""
+    if grade is None:
+        return None
+    return {
+        "status": grade.status,
+        "reason": grade.reason,
+        "scores": grade.scores,
+        "overall": grade.overall,
+        "justification": deidentify(grade.justification, known),
+        "grader": f"{grade.grader_provider}/{grade.grader_model}" if grade.grader_model else "",
+        "criteria_version": grade.criteria_version,
+        "review_status": grade.review_status,
+    }
 
 
 @router.get("/consultations")
@@ -193,8 +211,9 @@ async def review_queue(
     fingerprint: str = Depends(require_review_token),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
-    """The answers clinicians rated "not useful", oldest first, read-only.
-    Provenance and the reason code; the comment is de-identified."""
+    """The answers clinicians rated "not useful" or the grader scored low,
+    oldest first, read-only. Provenance and codes; free text is de-identified
+    and no id that identifies a row is returned."""
     await _audit(
         session,
         fingerprint,
@@ -202,30 +221,29 @@ async def review_queue(
         trace_id=None,
         filters={"queue": status, "limit": limit, "offset": offset},
     )
-    stmt = (
-        select(ResponseRating, Consultation)
-        .join(Consultation, Consultation.id == ResponseRating.consultation_id)
-        .where(ResponseRating.value == "down")
-        .order_by(ResponseRating.created_at.asc(), ResponseRating.id.asc())
-    )
-    if status != "all":
-        stmt = stmt.where(ResponseRating.review_status == status)
-    rows = (await session.execute(stmt.limit(limit + 1).offset(offset))).all()
+    page, has_more = await fetch_queue(session, status, limit, offset)
     items = []
-    for rating, consultation in rows[:limit]:
+    for entry, consultation in page:
+        full = queue_item(entry, consultation)
         items.append(
             {
-                "trace_id": rating.trace_id or "",
-                "created_at": rating.created_at.isoformat() if rating.created_at else None,
-                "reason": rating.reason,
-                "comment": deidentify(rating.comment),
-                "agents": list(consultation.agents or []),
-                **provenance(consultation.trace),
-                "review_status": rating.review_status,
-                "review_outcome": rating.review_outcome,
+                "source": full["source"],
+                "trace_id": full["trace_id"],
+                "created_at": full["created_at"],
+                "reason": full["reason"],
+                "comment": deidentify(full["comment"]),
+                "scores": full.get("scores"),
+                "overall": full.get("overall"),
+                "justification": deidentify(full.get("justification", "")),
+                "agents": full["agents"],
+                "provider": full["provider"],
+                "model": full["model"],
+                "fallback": full["fallback"],
+                "review_status": full["review_status"],
+                "review_outcome": full["review_outcome"],
             }
         )
-    return {"items": items, "limit": limit, "offset": offset, "has_more": len(rows) > limit}
+    return {"items": items, "limit": limit, "offset": offset, "has_more": has_more}
 
 
 @router.get("/consultations/{trace_id}")
@@ -252,6 +270,7 @@ async def get_consultation(
     def clean(text: Any) -> str:
         return deidentify(str(text or ""), known)
 
+    grade = await session.scalar(select(AutoGrade).where(AutoGrade.consultation_id == row.id))
     trace = row.trace or {}
     verification = row.verification_report or {}
     citation = row.citation_report or {}
@@ -289,6 +308,7 @@ async def get_consultation(
             "confidence": (row.abstention or {}).get("confidence"),
             "supported_claim_ratio": row.supported_claim_ratio,
         },
+        "auto_grade": _auto_grade_out(grade, known),
         "tokens": trace.get("tokens", {}),
         "cost_usd": trace.get("cost_usd", 0.0),
         "failures": [

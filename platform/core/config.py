@@ -130,6 +130,25 @@ class Settings(BaseSettings):
     # SPEC-022 section 6.5 for the list.
     ai_allow_phi: bool = False
 
+    # AB#17: automatic grading of a sample of consultations by a second model.
+    # Off by default: when on, a sampled consultation's question, answer and
+    # retrieved evidence are sent to the grading model, so that model is
+    # held to the same egress gate as every other patient-content seam
+    # (`models/egress.py`): a remote grader needs `ai_allow_phi`.
+    enable_auto_grading: bool = False
+    # Share of consultations graded, 0..1. Deterministic per trace id.
+    auto_grading_sample_rate: float = 0.0
+    # Which leaf client grades ("gemini", "groq" or "ollama") and with which
+    # model. It must not be the model that answered the consultation.
+    auto_grading_provider: Optional[Literal["gemini", "groq", "ollama"]] = None
+    auto_grading_model: Optional[str] = None
+    # A mean score below this opens a review-queue item.
+    auto_grading_low_score: float = 3.0
+    # Spend ceiling: gradings attempted in the last hour / day.
+    auto_grading_max_per_hour: int = 20
+    auto_grading_max_per_day: int = 100
+    auto_grading_timeout_seconds: float = 60.0
+
     # How long a signed encounter may be amended (SPEC-023). Matches the task
     # reopen window in later phases, so a clinician meets one number, not several.
     encounter_amend_window_days: int = 30
@@ -363,6 +382,16 @@ class Settings(BaseSettings):
                 '`python -c "from cryptography.fernet import Fernet; '
                 'print(Fernet.generate_key().decode())"`.'
             ) from exc
+        return self
+
+    @model_validator(mode="after")
+    def _check_auto_grading(self) -> "Settings":
+        if not self.enable_auto_grading:
+            return self
+        if not 0.0 <= self.auto_grading_sample_rate <= 1.0:
+            raise ValueError("auto_grading_sample_rate must be between 0 and 1.")
+        if not self.auto_grading_provider or not self.auto_grading_model:
+            raise ValueError("enable_auto_grading needs auto_grading_provider and auto_grading_model.")
         return self
 
     @model_validator(mode="after")

@@ -557,6 +557,11 @@ const EN: Record<string, string> = {
   "dashboard.quality.helpful": "rated useful",
   "dashboard.quality.ratings": "{count} ratings",
   "dashboard.quality.pending": "{count} awaiting review",
+  "dashboard.quality.autoGraded": "{count} graded automatically",
+  "dashboard.quality.criterion.grounding": "Grounding",
+  "dashboard.quality.criterion.completeness": "Completeness",
+  "dashboard.quality.criterion.safety": "Safety",
+  "dashboard.quality.criterion.abstention": "Abstention",
   "dashboard.quality.none": "No ratings yet",
 
   "explainability.title": "How this answer was produced",

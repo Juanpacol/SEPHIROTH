@@ -34,6 +34,9 @@ PHI_SEAMS = (
     # enforcement test exists -- this seam was missing from the first draft of
     # this list and the test found it.
     "api.routers.medical",
+    # The second model that grades a sampled consultation (AB#17): it receives
+    # the question, the answer and the retrieved evidence.
+    "api.services.auto_grading",
 )
 
 #: Modules that handle patient content but are only reachable *through* a

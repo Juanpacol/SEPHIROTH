@@ -117,7 +117,7 @@ async def test_changing_a_reviewed_verdict_reopens_it_but_resending_the_same_doe
     db_session.add(_consultation("C1", uid))
     await db_session.commit()
     await client.post(_url("C1"), headers=h, json={"value": "down", "reason": "incorrect"})
-    rid = (await client.get("/api/quality/queue", headers=h)).json()["items"][0]["rating_id"]
+    rid = (await client.get("/api/quality/queue", headers=h)).json()["items"][0]["item_id"]
     await client.post(f"/api/quality/queue/{rid}/review", headers=h, json={"outcome": "model_failure"})
 
     await client.post(_url("C1"), headers=h, json={"value": "down", "reason": "incorrect"})
@@ -256,7 +256,7 @@ async def test_queue_is_oldest_rating_first_and_paginates(client, db_session):
 async def test_a_clinician_reviews_an_item_and_it_leaves_the_pending_queue(client, db_session):
     h, uid = await _clinician(client, "q3@example.org")
     await _down(client, db_session, h, uid, "C1", datetime(2026, 10, 1))
-    rid = (await client.get("/api/quality/queue", headers=h)).json()["items"][0]["rating_id"]
+    rid = (await client.get("/api/quality/queue", headers=h)).json()["items"][0]["item_id"]
 
     res = await client.post(
         f"/api/quality/queue/{rid}/review",
@@ -279,7 +279,7 @@ async def test_review_rejects_bad_outcome_double_review_and_unknown_or_up_items(
     db_session.add(_consultation("C2", uid))
     await db_session.commit()
     await client.post(_url("C2"), headers=h, json={"value": "up"})
-    rid = (await client.get("/api/quality/queue", headers=h)).json()["items"][0]["rating_id"]
+    rid = (await client.get("/api/quality/queue", headers=h)).json()["items"][0]["item_id"]
     up_id = next(r.id for r in await _rows(db_session) if r.value == "up")
 
     assert (
@@ -341,7 +341,7 @@ async def test_the_review_token_reads_the_queue_without_the_clinicians_text(clie
     item = res.json()["items"][0]
     assert item["trace_id"] == "tr-C1" and item["reason"] == "unsafe"
     assert "maria@example.org" not in res.text and "[EMAIL]" in item["comment"]
-    assert "rating_id" not in item and "consultation_id" not in item
+    assert "item_id" not in item and "consultation_id" not in item
 
 
 async def test_the_review_token_cannot_rate_or_review(client, db_session):

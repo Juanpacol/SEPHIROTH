@@ -69,6 +69,21 @@ export default function DashboardPage() {
             <ThumbsUp size={15} className="text-primary" /> {t("dashboard.quality.title")}
           </h2>
           <p className="text-xs text-muted">{t("dashboard.quality.subtitle")}</p>
+          {quality.auto_graded_count > 0 && (
+            <div className="mt-3 border-t border-line/60 pt-3" data-testid="auto-grades">
+              <p className="text-xs text-muted">
+                {t("dashboard.quality.autoGraded").replace("{count}", String(quality.auto_graded_count))}
+              </p>
+              <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
+                {(["grounding", "completeness", "safety", "abstention"] as const).map((c) => (
+                  <div key={c} className="min-w-0">
+                    <dt className="truncate text-xs text-muted">{t(`dashboard.quality.criterion.${c}`)}</dt>
+                    <dd className="font-bold">{quality.auto_grade_averages[c]?.toFixed(1) ?? "—"} / 5</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
           {quality.helpful_ratio === null ? (
             <p className="mt-2 text-sm text-muted">{t("dashboard.quality.none")}</p>
           ) : (
