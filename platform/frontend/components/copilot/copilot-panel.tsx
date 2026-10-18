@@ -17,7 +17,7 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import { api, type CitationReport, type Explanation, type ToolCall } from "@/lib/api";
+import { api, type CitationReport, type Explanation, type LLMCall, type ToolCall } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import AgentBadge from "@/components/agent-badge";
@@ -38,6 +38,9 @@ interface Exchange {
   toolCalls?: ToolCall[];
   citations?: CitationReport;
   explanation?: Explanation;
+  /** From the final event's trace: which provider/model served each call. */
+  llmCalls?: LLMCall[];
+  traceId?: string;
   progress?: AgentProgress[];
   pending?: boolean;
   error?: string;
@@ -388,6 +391,8 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
               toolCalls: event.tool_calls,
               citations: event.citation_report,
               explanation: event.explanation,
+              llmCalls: (event.trace?.llm_calls as LLMCall[] | undefined) ?? [],
+              traceId: event.trace?.trace_id as string | undefined,
             });
             revealAnswer(event.answer as string);
           } else if (event.event === "persisted") {
@@ -485,7 +490,11 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                     <CitationsPanel report={exchange.citations} toolCalls={exchange.toolCalls} />
                   )}
                   {exchange.explanation && (
-                    <ExplainabilityPanel explanation={exchange.explanation} />
+                    <ExplainabilityPanel
+                      explanation={exchange.explanation}
+                      llmCalls={exchange.llmCalls}
+                      traceId={exchange.traceId}
+                    />
                   )}
                 </div>
               )}

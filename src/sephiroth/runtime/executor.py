@@ -30,6 +30,7 @@ from sephiroth.contracts import (
     AgentCapability,
     AgentResult,
     LifecycleState,
+    LlmCall,
     RecoveryAction,
     RecoveryActionType,
     RunContext,
@@ -44,6 +45,7 @@ from sephiroth.safety import check_input, check_scope
 from sephiroth.safety import decide as decide_abstention
 from sephiroth.safety.abstention import OBSERVED_BANNER, PARTIAL_BANNER
 from sephiroth.telemetry import build_trace, traced_span
+from sephiroth.telemetry.context import llm_run_scope
 from sephiroth.telemetry.explain import build_explanation
 from sephiroth.verification import (
     compute_confidence,
@@ -327,16 +329,33 @@ async def run_consultation(
     patient_id: str = "",
     context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Blocking entry point used by the non-streaming API and examples."""
+    """Blocking entry point used by the non-streaming API and examples.
+
+    Opens the run's scope first: every model call made below is recorded on
+    the trace, and every log line carries its `trace_id`.
+    """
+    trace_id = uuid.uuid4().hex
+    with llm_run_scope(trace_id) as llm_calls:
+        return await _run_consultation(client, query, patient_id, context, trace_id, llm_calls)
+
+
+async def _run_consultation(
+    client: ModelProvider,
+    query: str,
+    patient_id: str,
+    context: Optional[Dict[str, Any]],
+    trace_id: str,
+    llm_calls: List[LlmCall],
+) -> Dict[str, Any]:
     context = _initial_context(context)
     run_context = RunContext.from_dict(context)
-    state = RunState(trace_id=uuid.uuid4().hex, request=query, patient_id=patient_id, patient_context=context)
+    state = RunState(trace_id=trace_id, request=query, patient_id=patient_id, patient_context=context)
 
     early = _early_reject(query)
     if early is not None:
         state.abstention = early
         state.final_answer = early.message
-        trace = build_trace(state, model=getattr(client, "model", ""))
+        trace = build_trace(state, model=getattr(client, "model", ""), llm_calls=llm_calls)
         return {
             "patient_id": patient_id,
             "query": query,
@@ -363,7 +382,7 @@ async def run_consultation(
 
     agents_involved = state.agents_involved
     tool_calls_wire = [_tool_call_wire(tc) for tc in state.tool_calls]
-    trace = build_trace(state, model=getattr(client, "model", ""))
+    trace = build_trace(state, model=getattr(client, "model", ""), llm_calls=llm_calls)
 
     return {
         "patient_id": patient_id,
@@ -398,9 +417,23 @@ async def stream_consultation(
       {"event": "final", "answer", "agents_involved", "tool_calls", "citation_report",
        "explanation", "verification_report", "abstention", "trace"}
     """
+    trace_id = uuid.uuid4().hex
+    with llm_run_scope(trace_id) as llm_calls:
+        async for event in _stream_consultation(client, query, patient_id, context, trace_id, llm_calls):
+            yield event
+
+
+async def _stream_consultation(
+    client: ModelProvider,
+    query: str,
+    patient_id: str,
+    context: Optional[Dict[str, Any]],
+    trace_id: str,
+    llm_calls: List[LlmCall],
+) -> AsyncIterator[Dict[str, Any]]:
     context = _initial_context(context)
     run_context = RunContext.from_dict(context)
-    state = RunState(trace_id=uuid.uuid4().hex, request=query, patient_id=patient_id, patient_context=context)
+    state = RunState(trace_id=trace_id, request=query, patient_id=patient_id, patient_context=context)
 
     early = _early_reject(query)
     if early is not None:
@@ -411,7 +444,7 @@ async def stream_consultation(
         state.abstention = early
         state.final_answer = early.message
         yield {"event": "routing", "agents": []}
-        trace = build_trace(state, model=getattr(client, "model", ""))
+        trace = build_trace(state, model=getattr(client, "model", ""), llm_calls=llm_calls)
         yield {
             "event": "final",
             "answer": early.message,
@@ -460,7 +493,7 @@ async def stream_consultation(
 
     agents_involved = state.agents_involved
     tool_calls_wire = [_tool_call_wire(tc) for tc in state.tool_calls]
-    trace = build_trace(state, model=getattr(client, "model", ""))
+    trace = build_trace(state, model=getattr(client, "model", ""), llm_calls=llm_calls)
 
     yield {
         "event": "final",

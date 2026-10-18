@@ -13,7 +13,7 @@ SPEC-005.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -53,6 +53,40 @@ class TokenUsage(BaseModel):
     @property
     def total_tokens(self) -> int:
         return self.prompt_tokens + self.completion_tokens
+
+
+class LlmCall(BaseModel):
+    """One call to a model provider, as it actually happened.
+
+    Exists because the run-level `model_versions` could only say what the
+    client was *configured* with: behind a fallback client that is always the
+    primary, so a run answered by the secondary still read as the primary.
+    One record per call, because a single consultation makes several (the
+    answer, the verification, sometimes the routing) and each can fall back on
+    its own.
+
+    **Metadata only.** Same redaction contract as `Span.attributes`: no prompt,
+    no answer, no tool arguments, and `error` is a short code, never the
+    provider's own text.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["chat", "generate_json", "describe_image", "describe_image_stream"]
+    provider: str
+    model: str
+    ok: bool = True
+    #: A reason code (`rate_limited`, `no_api_key`, ...) when `ok` is False.
+    error: str = ""
+    #: True when this call served a request an earlier provider could not.
+    fallback: bool = False
+    #: Who failed first and why, only when `fallback` is True.
+    fallback_from: str = ""
+    fallback_reason: str = ""
+    duration_ms: int = Field(default=0, ge=0)
+    #: 0 where the provider reports no usage (`generate_json` does not yet).
+    prompt_tokens: int = Field(default=0, ge=0)
+    completion_tokens: int = Field(default=0, ge=0)
 
 
 class Span(BaseModel):
@@ -115,10 +149,16 @@ class ExecutionTrace(BaseModel):
 
     #: Provider and model identifiers active for this run. Reproducibility
     #: depends on it: the same benchmark on a different model must not look
-    #: like the same result.
+    #: like the same result. When `llm_calls` is present this is the provider
+    #: and model of the call that produced the answer, not just the configured
+    #: primary.
     model_versions: dict[str, str] = Field(default_factory=dict)
+
+    #: Every model call the run made, in order. Empty for a run with no model
+    #: call (the fast path) and for traces persisted before this field existed.
+    llm_calls: list[LlmCall] = Field(default_factory=list)
 
     final_answer: str = ""
 
 
-__all__ = ["ALLOWED_SPAN_ATTRIBUTES", "ExecutionTrace", "Span", "TokenUsage"]
+__all__ = ["ALLOWED_SPAN_ATTRIBUTES", "ExecutionTrace", "LlmCall", "Span", "TokenUsage"]

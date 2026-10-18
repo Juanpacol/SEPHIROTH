@@ -470,6 +470,80 @@
       "title": "FailureCategory",
       "type": "string"
     },
+    "LlmCall": {
+      "additionalProperties": false,
+      "description": "One call to a model provider, as it actually happened.\n\nExists because the run-level `model_versions` could only say what the\nclient was *configured* with: behind a fallback client that is always the\nprimary, so a run answered by the secondary still read as the primary.\nOne record per call, because a single consultation makes several (the\nanswer, the verification, sometimes the routing) and each can fall back on\nits own.\n\n**Metadata only.** Same redaction contract as `Span.attributes`: no prompt,\nno answer, no tool arguments, and `error` is a short code, never the\nprovider's own text.",
+      "properties": {
+        "completion_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Completion Tokens",
+          "type": "integer"
+        },
+        "duration_ms": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "error": {
+          "default": "",
+          "title": "Error",
+          "type": "string"
+        },
+        "fallback": {
+          "default": false,
+          "title": "Fallback",
+          "type": "boolean"
+        },
+        "fallback_from": {
+          "default": "",
+          "title": "Fallback From",
+          "type": "string"
+        },
+        "fallback_reason": {
+          "default": "",
+          "title": "Fallback Reason",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "chat",
+            "generate_json",
+            "describe_image",
+            "describe_image_stream"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "ok": {
+          "default": true,
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "prompt_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Prompt Tokens",
+          "type": "integer"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "provider",
+        "model"
+      ],
+      "title": "LlmCall",
+      "type": "object"
+    },
     "PlanStep": {
       "additionalProperties": false,
       "description": "One agent invocation within a plan.",
@@ -1003,6 +1077,13 @@
       "minimum": 0,
       "title": "Latency Ms",
       "type": "integer"
+    },
+    "llm_calls": {
+      "items": {
+        "$ref": "#/$defs/LlmCall"
+      },
+      "title": "Llm Calls",
+      "type": "array"
     },
     "model_versions": {
       "additionalProperties": {

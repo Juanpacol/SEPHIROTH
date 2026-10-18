@@ -18,13 +18,13 @@ import asyncio
 import base64
 import json
 import logging
-import time
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 import httpx
 
 from ._throttle import RateLimiter, backoff_delay
 from .base import ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor, _is_local_endpoint
+from .call_log import record_llm_call
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +135,7 @@ class GroqClient:
         out.extend(messages)
         return out
 
+    @record_llm_call("chat")
     async def chat(
         self,
         messages: List[Dict[str, Any]],
@@ -147,7 +148,6 @@ class GroqClient:
     ) -> ChatResult:
         history = self._to_messages(messages, system_prompt)
         executed_calls: List[Dict[str, Any]] = []
-        started = time.perf_counter()
         prompt_tokens = 0
         completion_tokens = 0
 
@@ -182,16 +182,6 @@ class GroqClient:
             completion_tokens += usage.get("completion_tokens") or 0
 
             if not tool_calls or tool_executor is None:
-                logger.info(
-                    "llm=chat provider=groq model=%s rounds=%s tool_calls=%s duration_ms=%s "
-                    "prompt_tokens=%s completion_tokens=%s",
-                    self.model,
-                    round_idx + 1,
-                    len(executed_calls),
-                    round((time.perf_counter() - started) * 1000),
-                    prompt_tokens,
-                    completion_tokens,
-                )
                 return ChatResult(
                     content=message.get("content") or "",
                     tool_calls=executed_calls,
@@ -235,6 +225,7 @@ class GroqClient:
             completion_tokens=completion_tokens,
         )
 
+    @record_llm_call("generate_json")
     async def generate_json(
         self,
         prompt: str,
@@ -280,6 +271,7 @@ class GroqClient:
             "max_tokens": max_output_tokens,
         }
 
+    @record_llm_call("describe_image")
     async def describe_image(
         self,
         image_bytes: bytes,
@@ -300,6 +292,7 @@ class GroqClient:
         data = await self._post(self._vision_payload(image_bytes, mime_type, prompt, max_output_tokens))
         return (data["choices"][0]["message"].get("content") or "").strip()
 
+    @record_llm_call("describe_image_stream")
     async def describe_image_stream(
         self,
         image_bytes: bytes,

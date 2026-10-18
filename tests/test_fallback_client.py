@@ -4,7 +4,7 @@ fallback logic itself."""
 
 import pytest
 
-from sephiroth.models import ChatResult, LLMUnavailableError
+from sephiroth.models import ChatResult, LLMUnavailableError, ProviderInfo
 from sephiroth.models.fallback import FallbackLLMClient
 
 
@@ -41,6 +41,9 @@ class _FakeClient:
         self.health_calls = 0
         self.vision_calls = 0
         self.vision_stream_calls = 0
+
+    def describe(self):
+        return ProviderInfo(provider="fake", model=self.model)
 
     async def chat(self, **kwargs):
         self.chat_calls += 1

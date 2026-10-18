@@ -11,6 +11,7 @@ See `docs/specs/SPEC-001-model-provider.md`.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Protocol, runtime_checkable
 
@@ -33,6 +34,45 @@ class PHINotAllowedError(LLMUnavailableError):
     that same path rather than needing a second one written at each site. A
     caller that wants to tell the two apart still can.
     """
+
+
+_REASON_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("no_api_key", re.compile(r"is not configured")),
+    # A configured-but-wrong key: expired, revoked, or pasted with a typo.
+    (
+        "auth_error",
+        re.compile(r"\b40[13]\b|unauthori[sz]ed|invalid api key|api key not valid|permission[_ ]denied"),
+    ),
+    ("no_vision_support", re.compile(r"no vision[_ ]model")),
+    ("model_not_found", re.compile(r"not found on this ollama")),
+    # `\brate\b` alone would also match "generate"; the limit has to be named.
+    ("rate_limited", re.compile(r"\b429\b|rate[- ]?limit|too many requests|quota|resource_exhausted")),
+    ("timeout", re.compile(r"time[- ]?out|timed out|deadline exceeded")),
+    (
+        "unreachable",
+        re.compile(r"could not reach|connection (?:refused|error|reset)|connect(?:ion)? (?:failed|error)"),
+    ),
+    ("server_error", re.compile(r"\b5\d\d\b|internal server error|service unavailable|overloaded")),
+)
+
+
+def classify_unavailable(exc: BaseException) -> str:
+    """A short, stable reason code for why a provider could not serve a call.
+
+    Keyword-based on purpose: a dozen sites raise `LLMUnavailableError` with a
+    message that is the client's own or the provider's verbatim, and
+    structuring all of them would mean changing every client's error handling
+    for a label. The label is what gets recorded in a trace and a log line --
+    never the message itself, which can echo a provider's response text.
+    Anything unrecognised is `unavailable`.
+    """
+    if isinstance(exc, PHINotAllowedError):
+        return "phi_not_allowed"
+    text = str(exc).lower()
+    for reason, pattern in _REASON_PATTERNS:
+        if pattern.search(text):
+            return reason
+    return "unavailable"
 
 
 @dataclass
@@ -164,6 +204,7 @@ class ModelProvider(Protocol):
 
 __all__ = [
     "ChatResult",
+    "classify_unavailable",
     "LLMUnavailableError",
     "ModelProvider",
     "PHINotAllowedError",

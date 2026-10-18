@@ -128,7 +128,7 @@ Short version of each decision. Full rationale, if you need it, lives in `docs/0
 - **A perception tool's own output can ground a claim** (`ADR-018`). `VerificationStatus.OBSERVED` applies when a claim's only evidence is vision/imaging tool output, weighted lower than independently retrieved evidence.
 - **Every answer must cite sources** — baked into the EvidenceAgent/RAG pipeline.
 - **Each agent sees only the context fields it declares** (`ADR-011`). Per-patient consultation memory reaches only the agent writing the final answer.
-- **Every consultation builds a persisted, replayable trace** (`ADR-009`), with real token/cost accounting, toggled by `enable_tracing`.
+- **Every consultation builds a persisted, replayable trace** (`ADR-009`), with real token/cost accounting, toggled by `enable_tracing`. It lists every model call (`llm_calls`: provider, model, fallback and reason code — metadata only, never content), recorded by `models/call_log.py` on the leaf clients; each log line carries the `trace_id`.
 - **Explainability is derived on read, never stored.** `telemetry/explain.py` builds the reasoning trace from persisted data — template-based, no LLM call.
 - **Risk flags are computed at read-time.** `safety/risk.py` drives both the patient profile and the dashboard (`ADR-019`) — deterministic rules only, never a fabricated confidence score.
 - **Vision is one MCP tool.** `vision_server.py` does a one-shot image description; degrades gracefully if the API key is missing.

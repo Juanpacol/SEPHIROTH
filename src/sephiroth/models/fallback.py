@@ -13,7 +13,9 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from .base import ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor
+from sephiroth.telemetry.context import fallback_scope
+
+from .base import ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor, classify_unavailable
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +31,27 @@ class FallbackLLMClient:
         self.secondary = secondary
         # Exposed for logging/error messages that reference `client.model`.
         self.model = primary.model
+
+    def _primary_failed(self, kind: str, exc: LLMUnavailableError, *, label: str = "LLM") -> tuple[str, str]:
+        """Log that the primary could not serve this call and say who and why.
+
+        Keeps the "primary … unavailable; falling back to secondary" wording
+        that existing log searches use, and appends the fields that identify
+        the call. Returns `(failed_provider, reason)` for `fallback_scope`, so
+        the secondary's call is recorded as the fallback it is.
+        """
+        provider = self.primary.describe().provider
+        reason = classify_unavailable(exc)
+        logger.warning(
+            "primary %s (%s) unavailable (%s); falling back to secondary kind=%s from_provider=%s reason=%s",
+            label,
+            self.primary.model,
+            exc,
+            kind,
+            provider,
+            reason,
+        )
+        return provider, reason
 
     @property
     def supports_vision(self) -> bool:
@@ -58,17 +81,15 @@ class FallbackLLMClient:
                 tool_choice=tool_choice,
             )
         except LLMUnavailableError as exc:
-            logger.warning(
-                "primary LLM (%s) unavailable (%s); falling back to secondary", self.primary.model, exc
-            )
-            return await self.secondary.chat(
-                messages=messages,
-                system_prompt=system_prompt,
-                tools=tools,
-                tool_executor=tool_executor,
-                think=think,
-                tool_choice=tool_choice,
-            )
+            with fallback_scope(*self._primary_failed("chat", exc)):
+                return await self.secondary.chat(
+                    messages=messages,
+                    system_prompt=system_prompt,
+                    tools=tools,
+                    tool_executor=tool_executor,
+                    think=think,
+                    tool_choice=tool_choice,
+                )
 
     async def generate_json(
         self,
@@ -80,10 +101,8 @@ class FallbackLLMClient:
         try:
             return await self.primary.generate_json(prompt, schema, system_prompt=system_prompt)
         except LLMUnavailableError as exc:
-            logger.warning(
-                "primary LLM (%s) unavailable (%s); falling back to secondary", self.primary.model, exc
-            )
-            return await self.secondary.generate_json(prompt, schema, system_prompt=system_prompt)
+            with fallback_scope(*self._primary_failed("generate_json", exc)):
+                return await self.secondary.generate_json(prompt, schema, system_prompt=system_prompt)
 
     async def describe_image(
         self,
@@ -108,15 +127,13 @@ class FallbackLLMClient:
             # anyone who hasn't opted in is unchanged from before.
             if not getattr(self.secondary, "supports_vision", False):
                 raise
-            logger.warning(
-                "primary vision (%s) unavailable (%s); falling back to secondary", self.primary.model, exc
-            )
-            return await self.secondary.describe_image(
-                image_bytes=image_bytes,
-                mime_type=mime_type,
-                prompt=prompt,
-                max_output_tokens=max_output_tokens,
-            )
+            with fallback_scope(*self._primary_failed("describe_image", exc, label="vision")):
+                return await self.secondary.describe_image(
+                    image_bytes=image_bytes,
+                    mime_type=mime_type,
+                    prompt=prompt,
+                    max_output_tokens=max_output_tokens,
+                )
 
     async def describe_image_stream(
         self,
@@ -145,16 +162,14 @@ class FallbackLLMClient:
         except LLMUnavailableError as exc:
             if started or not getattr(self.secondary, "supports_vision", False):
                 raise
-            logger.warning(
-                "primary vision (%s) unavailable (%s); falling back to secondary", self.primary.model, exc
-            )
-            async for chunk in self.secondary.describe_image_stream(
-                image_bytes=image_bytes,
-                mime_type=mime_type,
-                prompt=prompt,
-                max_output_tokens=max_output_tokens,
-            ):
-                yield chunk
+            with fallback_scope(*self._primary_failed("describe_image_stream", exc, label="vision")):
+                async for chunk in self.secondary.describe_image_stream(
+                    image_bytes=image_bytes,
+                    mime_type=mime_type,
+                    prompt=prompt,
+                    max_output_tokens=max_output_tokens,
+                ):
+                    yield chunk
 
     def describe(self) -> ProviderInfo:
         """`local` is the conjunction: a fallback that can reach out to Groq
