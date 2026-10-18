@@ -554,6 +554,15 @@ export interface VitalSpecOut {
   decimals: number;
 }
 
+/** The latest recorded value of one vital, from an earlier signed or amended
+ * visit. A reference for the form, never a value the client stores. */
+export interface LastVitalReading {
+  value: number;
+  /** `started_at` of the visit it came from, verbatim from the API. */
+  at: string;
+  encounter_id: string;
+}
+
 export interface NoteDraft {
   /** `llm` when the model organised the text; `template` for every degraded
    *  path, so the UI never presents the clinician's own words as a draft. */
@@ -997,6 +1006,11 @@ export const api = {
     }
     const query = qs.toString();
     return get<{ items: Encounter[] }>(`/api/encounters${query ? `?${query}` : ""}`);
+  },
+  lastVitals: (patientId: string, excludeEncounterId?: string) => {
+    const qs = new URLSearchParams({ patient_id: patientId });
+    if (excludeEncounterId) qs.set("exclude_encounter_id", excludeEncounterId);
+    return get<{ readings: Record<string, LastVitalReading> }>(`/api/encounters/last-vitals?${qs}`);
   },
   encounter: (id: string) => get<Encounter>(`/api/encounters/${id}`),
   updateEncounter: (id: string, body: Partial<Encounter>) =>

@@ -470,8 +470,42 @@ const ROUTES: Record<string, unknown> = {
         normal_high: 200,
         decimals: 0,
       },
+      ...[
+        ["systolic", "Systolic pressure", "mmHg", 40, 300, 90, 130, 0],
+        ["diastolic", "Diastolic pressure", "mmHg", 20, 200, 60, 85, 0],
+        ["heart_rate", "Heart rate", "bpm", 20, 250, 60, 100, 0],
+        ["respiratory_rate", "Respiratory rate", "rpm", 4, 60, 12, 20, 0],
+        ["temperature", "Body temperature", "°C", 30, 45, 36, 37.5, 1],
+        ["oxygen_saturation", "Oxygen saturation", "%", 50, 100, 94, 100, 0],
+        ["glucose", "Capillary glucose", "mg/dL", 10, 900, 70, 140, 0],
+        ["pain_score", "Pain score (0-10)", "", 0, 10, 0, 3, 0],
+      ].map(([key, label, unit, min, max, normal_low, normal_high, decimals]) => ({
+        key,
+        label,
+        unit,
+        min,
+        max,
+        normal_low,
+        normal_high,
+        decimals,
+      })),
     ],
     specialties: ["internal_medicine"],
+  },
+  // Latest earlier reading per vital, as GET /api/encounters/last-vitals returns it.
+  // Oxygen saturation and respiratory rate are left out on purpose, so the page
+  // also renders the "no previous reading" line. Pressure is one visit.
+  "/api/encounters/last-vitals": {
+    readings: {
+      systolic: { value: 132, at: iso(-30), encounter_id: "e-000" },
+      diastolic: { value: 86, at: iso(-30), encounter_id: "e-000" },
+      heart_rate: { value: 64, at: iso(-30), encounter_id: "e-000" },
+      temperature: { value: 36.6, at: iso(-75), encounter_id: "e-prev" },
+      glucose: { value: 118, at: iso(-75), encounter_id: "e-prev" },
+      pain_score: { value: 0, at: iso(-30), encounter_id: "e-000" },
+      weight: { value: 70.5, at: iso(-30), encounter_id: "e-000" },
+      height: { value: 164, at: iso(-400), encounter_id: "e-old" },
+    },
   },
   "/api/encounters": {
     items: [
@@ -555,7 +589,7 @@ const ROUTES: Record<string, unknown> = {
   },
 };
 
-function bodyFor(pathname: string): unknown | undefined {
+export function bodyFor(pathname: string): unknown | undefined {
   const match = Object.keys(ROUTES)
     .filter((prefix) => pathname === prefix || pathname.startsWith(prefix + "/") || pathname.startsWith(prefix + "?"))
     .sort((a, b) => b.length - a.length)[0];
