@@ -389,6 +389,8 @@ const ROUTES: Record<string, unknown> = {
     helpful_count: 6,
     helpful_ratio: 0.75,
     pending_review_count: 2,
+    auto_graded_count: 5,
+    auto_grade_averages: { grounding: 4.2, completeness: 3.8, safety: 4.6, abstention: 4.0 },
   },
   // What /dashboard actually fetches; without it the page renders "backend down".
   "/api/dashboard/bootstrap": {

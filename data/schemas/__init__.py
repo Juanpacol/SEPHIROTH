@@ -542,6 +542,43 @@ class ResponseRating(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class AutoGrade(Base):
+    """A second model's grade of one consultation (AB#17), or the recorded
+    reason it was not graded.
+
+    Apart from the answer's own verification and from the clinician's rating
+    (`ResponseRating`): it never changes the answer or its status. `status` is
+    `graded`, `skipped` (with a reason such as `budget`, `same_model`,
+    `phi_not_allowed`) or `failed` (the grader errored or returned something
+    invalid; no score is invented). A low mean enters the review queue
+    (`review_status="pending"`) next to the human ratings.
+    """
+
+    __tablename__ = "auto_grades"
+    __table_args__ = (
+        UniqueConstraint("consultation_id", name="uq_auto_grade_consultation"),
+        Index("ix_auto_grades_review", "review_status", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    consultation_id: Mapped[str] = mapped_column(ForeignKey("consultations.id"))
+    trace_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(10), index=True)  # graded | skipped | failed
+    reason: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    criteria_version: Mapped[str] = mapped_column(String(10))
+    grader_provider: Mapped[str] = mapped_column(String(20), default="")
+    grader_model: Mapped[str] = mapped_column(String(80), default="")
+    scores: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    overall: Mapped[Optional[float]] = mapped_column(nullable=True)
+    justification: Mapped[str] = mapped_column(EncryptedText, default="")
+    review_status: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)  # pending | reviewed
+    review_outcome: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    review_note: Mapped[str] = mapped_column(EncryptedText, default="")
+    reviewed_by: Mapped[Optional[str]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+
+
 class GuidelineDocument(Base):
     """The RAG corpus's live storage — `sephiroth.rag.RAGPipeline.retrieve`
     (SPEC-030/ADR-017, Phase 15) queries this table directly on every call,

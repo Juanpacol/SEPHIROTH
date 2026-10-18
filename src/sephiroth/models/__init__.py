@@ -11,7 +11,7 @@ from .base import (
     ProviderInfo,
     ToolExecutor,
 )
-from .factory import get_llm_client, reset_llm_client
+from .factory import build_grader_client, get_llm_client, reset_llm_client
 from .fallback import FallbackLLMClient
 from .gemini import GeminiClient
 from .groq import GroqClient, GroqToolUseFailedError
@@ -31,6 +31,7 @@ __all__ = [
     "ProviderInfo",
     "ToolExecutor",
     "VisionChatSplitClient",
+    "build_grader_client",
     "get_llm_client",
     "reset_llm_client",
 ]

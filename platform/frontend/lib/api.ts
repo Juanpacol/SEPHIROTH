@@ -163,6 +163,9 @@ export interface DashboardAI {
   helpful_count: number;
   helpful_ratio: number | null;
   pending_review_count: number;
+  auto_graded_count: number;
+  /** Mean 1-5 per criterion over graded consultations; empty with none graded. */
+  auto_grade_averages: Partial<Record<"grounding" | "completeness" | "safety" | "abstention", number>>;
 }
 
 export interface DashboardEvidence {

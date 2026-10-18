@@ -25,6 +25,7 @@ from core.db import get_session
 from data.schemas import (
     AIEvaluation,
     Alert,
+    AutoGrade,
     Consultation,
     Encounter,
     EncounterOrder,
@@ -387,8 +388,23 @@ async def dashboard_ai(session: AsyncSession = Depends(get_session)) -> Dict[str
     ratings = (await session.execute(select(ResponseRating.value, ResponseRating.review_status))).all()
     helpful = sum(1 for r in ratings if r.value == "up")
 
+    # The grader's scores (AB#17), column-only for the same reason.
+    grades = (
+        await session.execute(select(AutoGrade.status, AutoGrade.scores).where(AutoGrade.status == "graded"))
+    ).all()
+    criteria_avg = (
+        {
+            c: round(sum(g.scores[c] for g in grades) / len(grades), 2)
+            for c in ("grounding", "completeness", "safety", "abstention")
+        }
+        if grades
+        else {}
+    )
+
     confidences = [e.confidence for e in evaluations if e.confidence is not None]
     return {
+        "auto_graded_count": len(grades),
+        "auto_grade_averages": criteria_avg,
         "ratings_count": len(ratings),
         "helpful_count": helpful,
         "helpful_ratio": round(helpful / len(ratings), 3) if ratings else None,

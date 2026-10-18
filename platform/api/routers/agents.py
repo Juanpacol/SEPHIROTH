@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.fast_path import try_fast_path
 from api.pdf_export import render_consultation_pdf
+from api.services.auto_grading import schedule_auto_grade
 from auth.deps import get_current_user
 from core.config import is_local_llm_provider, settings
 from core.db import SessionLocal, get_session
@@ -136,6 +137,8 @@ async def _persist(
     session.add(ai_eval)
     await session.commit()
     logger.info("ai_eval_persisted ai_eval_id=%s", ai_eval.id[:8])
+    # Detached: grading a sample must never slow or fail the clinician's answer.
+    schedule_auto_grade(consultation.id)
     # Audit trail: one line per persisted consultation.
     logger.info(
         "consultation_id=%s user=%s patient=%s agents=%s tool_calls=%s fabricated_citations=%s",

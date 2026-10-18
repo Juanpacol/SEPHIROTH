@@ -160,4 +160,49 @@ def reset_llm_client() -> None:
     _hinted_clients.clear()
 
 
-__all__ = ["get_llm_client", "reset_llm_client"]
+def build_grader_client() -> Optional[Any]:
+    """The leaf client that grades consultations (AB#17), or None when grading
+    is not configured.
+
+    A single provider, never a `FallbackLLMClient`: a grade has to say which
+    model produced it, and a silent fallback to another model would make the
+    stored provider and model wrong. Built per call, not cached -- grading is
+    occasional, and the settings it reads can change between runs.
+    """
+    provider, model = settings.auto_grading_provider, settings.auto_grading_model
+    if not provider or not model:
+        return None
+    if provider == "gemini":
+        return GeminiClient(
+            api_key=settings.gemini_api_key,
+            model=model,
+            vision_model=settings.gemini_vision_model,
+            max_output_tokens=settings.gemini_max_output_tokens,
+            timeout_seconds=settings.gemini_timeout_seconds,
+            max_retries=settings.gemini_max_retries,
+            rpm_limit=settings.gemini_rpm_limit,
+            max_tool_rounds=settings.llm_max_tool_rounds,
+        )
+    if provider == "groq":
+        return GroqClient(
+            api_key=settings.groq_api_key,
+            model=model,
+            max_output_tokens=settings.groq_max_output_tokens,
+            timeout_seconds=settings.groq_timeout_seconds,
+            max_retries=settings.groq_max_retries,
+            max_tool_rounds=settings.llm_max_tool_rounds,
+            rpm_limit=settings.groq_rpm_limit,
+        )
+    return OllamaClient(
+        model=model,
+        base_url=settings.ollama_base_url,
+        api_key=settings.ollama_api_key,
+        max_output_tokens=settings.ollama_max_output_tokens,
+        timeout_seconds=settings.ollama_timeout_seconds,
+        max_retries=settings.ollama_max_retries,
+        max_tool_rounds=settings.llm_max_tool_rounds,
+        rpm_limit=settings.ollama_rpm_limit,
+    )
+
+
+__all__ = ["build_grader_client", "get_llm_client", "reset_llm_client"]

@@ -558,6 +558,11 @@ const ES: Record<string, string> = {
   "dashboard.quality.helpful": "calificadas como útiles",
   "dashboard.quality.ratings": "{count} calificaciones",
   "dashboard.quality.pending": "{count} pendientes de revisión",
+  "dashboard.quality.autoGraded": "{count} evaluadas automáticamente",
+  "dashboard.quality.criterion.grounding": "Fundamentación",
+  "dashboard.quality.criterion.completeness": "Completitud",
+  "dashboard.quality.criterion.safety": "Seguridad",
+  "dashboard.quality.criterion.abstention": "Abstención",
   "dashboard.quality.none": "Aún no hay calificaciones",
 
   "explainability.title": "Cómo se produjo esta respuesta",
