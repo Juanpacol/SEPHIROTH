@@ -272,6 +272,30 @@ const TIMELINE = [
   },
 ];
 
+/** The patient page's timeline, oldest first like the real API (the portal
+ * keeps using TIMELINE above). Eight older events on top of those two make 10,
+ * so the folded view hides 5 behind the "earlier events" toggle. Long strings
+ * on purpose: a title that fits is not a test. */
+const PATIENT_TIMELINE = [
+  ...[
+    ["diagnosis", "Type 2 diabetes mellitus diagnosed after fasting glucose and HbA1c screening"],
+    ["medication", "Metformin 850 mg twice daily started with dietary counselling and follow-up"],
+    ["lab", "Baseline renal function: creatinine 1.4 mg/dL, eGFR 48 mL/min/1.73m²"],
+    ["imaging", "Renal ultrasound: bilateral cortical thinning, no obstruction or hydronephrosis"],
+    ["event", "Admission for hypertensive urgency with acute kidney injury, observed 48 hours"],
+    ["note", "Cardiology review: add an ACE inhibitor and recheck potassium within one week"],
+    ["medication", "Lisinopril 10 mg started; potassium and creatinine monitoring scheduled"],
+    ["lab", "Potassium 5.6 mmol/L after the ACE inhibitor start, dose held pending repeat"],
+  ].map(([type, title], i) => ({
+    date: iso(-120 + i * 10),
+    type,
+    title,
+    detail: "Recorded in the clinical timeline with the supporting result and the decision taken.",
+  })),
+  TIMELINE[1],
+  TIMELINE[0],
+];
+
 const DASHBOARD_STATS = {
   critical_patients: PATIENTS.filter((p) => p.risk_level !== "low").map((p, i) => ({
     id: p.id,
@@ -405,7 +429,7 @@ const ROUTES: Record<string, unknown> = {
     ...PATIENTS[0],
     medications: ["Lisinopril 10 mg daily", "Spironolactone 25 mg daily", "Metformin 1 g twice daily"],
     allergies: ["Penicillin"],
-    timeline: TIMELINE,
+    timeline: PATIENT_TIMELINE,
     lab_results: { Potassium: "6.4 mmol/L", Creatinine: "2.1 mg/dL", HbA1c: "8.2 %" },
     risk_flags: [
       {
