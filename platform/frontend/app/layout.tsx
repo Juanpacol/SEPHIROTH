@@ -1,15 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import AppShell from "@/components/app-shell";
 import Providers from "@/components/providers";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import { AUTH_GATE_SCRIPT } from "@/lib/auth-gate";
 
-const manrope = Manrope({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+// Self-hosted (see app/fonts/README.md): next/font/google downloads the font
+// during `next build`, and when that fetch fails the whole build fails.
+const manrope = localFont({
+  src: "./fonts/Manrope-latin-wght.woff2",
+  weight: "200 800",
   variable: "--font-manrope",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
