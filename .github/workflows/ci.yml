@@ -158,6 +158,9 @@ jobs:
   # something to work around with one shared Postgres (SF081).
   deploy-smoke:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
       - name: Build image
@@ -230,10 +233,21 @@ jobs:
       # Python-env CVEs are covered elsewhere (pip-audit, Dependabot) and
       # would double-report; ignore-unfixed so an un-patchable base-image
       # CVE can't red this permanently.
+      #
+      # The vulnerability DB comes from GHCR, authenticated with the
+      # workflow's own GITHUB_TOKEN (needs `packages: read`, set on the job).
+      # Anonymous pulls are what kept failing: the previous setting pinned the
+      # public ECR mirror, which answers `TOOMANYREQUESTS: Data limit
+      # exceeded` for shared GitHub runner IPs (failed on main on 2026-10-15
+      # and twice on a Dependabot PR on 2026-10-18). A comma-separated
+      # fallback list does NOT help: Trivy 0.70.0 aborts on the first
+      # repository's error instead of trying the next (verified with Docker).
       - name: Trivy (CRITICAL OS-package CVEs in the built image)
         uses: aquasecurity/trivy-action@v0.36.0
         env:
-          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:2
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:
           scan-type: image
           image-ref: sephiroth-api:ci
