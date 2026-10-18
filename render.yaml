@@ -44,6 +44,10 @@ services:
         value: "true"
       - key: INTERNAL_TICK_TOKEN
         sync: false # set manually in the Render dashboard — never committed
+      # AB#15 read-only review endpoint (/api/review/*). Unset = routes 404. >=32 chars:
+      # openssl rand -hex 32. See docs/05-operations/review-endpoint.md
+      - key: REVIEW_TOKEN
+        sync: false
       # Daily synthetic-data pipeline (sephiroth.safety.synthetic_daily) --
       # every patient in this DB is confirmed synthetic (portfolio MVP), so
       # this nudges their labs forward each day to keep dashboard trend

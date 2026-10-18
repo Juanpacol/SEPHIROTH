@@ -35,6 +35,7 @@ from api.routers import (
     rag,
     result_reviews,
     results,
+    review,
     scheduling,
 )
 from api.workflows.subscriptions import register_subscriptions
@@ -177,6 +178,9 @@ app.include_router(notifications.router, prefix="/api/notifications", tags=["not
 # The workflow tick: no /api prefix, no JWT-based dependency — see
 # internal.py's docstring for why. Guarded by its own shared-secret check.
 app.include_router(internal.router, tags=["internal"])
+# Read-only consultation review (AB#15): its own token, not a user JWT -- see
+# review.py. 404 until `review_token` is set.
+app.include_router(review.router, prefix="/api/review", tags=["review"])
 
 
 @app.get("/health")

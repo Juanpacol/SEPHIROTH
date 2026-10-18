@@ -85,6 +85,24 @@ class User(Base):
     patient: Mapped[Optional["Patient"]] = relationship()
 
 
+class ReviewAccessLog(Base):
+    """Append-only record of every read made with the review token
+    (`platform/api/routers/review.py`). Separate from `PhiAccessLog` on
+    purpose: that table needs a `users` row and a `patients` row, and a token
+    reader is neither. `token_fingerprint` identifies *which* token read,
+    never the token itself, so a rotated token stays distinguishable."""
+
+    __tablename__ = "review_access_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    token_fingerprint: Mapped[str] = mapped_column(String(16), index=True)
+    route: Mapped[str] = mapped_column(String(200))
+    method: Mapped[str] = mapped_column(String(10))
+    trace_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    filters: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+
+
 class Patient(Base):
     __tablename__ = "patients"
 

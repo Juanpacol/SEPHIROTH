@@ -288,6 +288,10 @@ class Settings(BaseSettings):
     # an error.
     enable_workflow_engine: bool = False
     internal_tick_token: Optional[str] = None
+    # AB#15: read-only review endpoint (`/api/review/*`). Unset = the routes
+    # answer 404, so nothing is exposed by default. A reader holds this token
+    # and nothing else: it opens no other route.
+    review_token: Optional[str] = None
     workflow_tick_batch_size: int = 25
     # Daily synthetic-data pipeline (sephiroth.safety.synthetic_daily) --
     # every patient in this database is confirmed synthetic (portfolio MVP),
@@ -359,6 +363,16 @@ class Settings(BaseSettings):
                 '`python -c "from cryptography.fernet import Fernet; '
                 'print(Fernet.generate_key().decode())"`.'
             ) from exc
+        return self
+
+    @model_validator(mode="after")
+    def _check_review_token(self) -> "Settings":
+        if (
+            self.review_token
+            and self.environment in ("staging", "production")
+            and len(self.review_token) < 32
+        ):
+            raise ValueError("review_token must be a random value >=32 chars, e.g. `openssl rand -hex 32`.")
         return self
 
     @model_validator(mode="after")

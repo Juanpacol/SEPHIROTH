@@ -129,6 +129,7 @@ Short version of each decision. Full rationale, if you need it, lives in `docs/0
 - **Every answer must cite sources** — baked into the EvidenceAgent/RAG pipeline.
 - **Each agent sees only the context fields it declares** (`ADR-011`). Per-patient consultation memory reaches only the agent writing the final answer.
 - **Every consultation builds a persisted, replayable trace** (`ADR-009`), with real token/cost accounting, toggled by `enable_tracing`. It lists every model call (`llm_calls`: provider, model, fallback and reason code — metadata only, never content), recorded by `models/call_log.py` on the leaf clients; each log line carries the `trace_id`.
+- **A read-only review endpoint exposes those traces to a non-clinician** (`/api/review/*`, `platform/api/routers/review.py`). Own token (`REVIEW_TOKEN`, unset = 404), GET only, every read audited, output de-identified (`safety/deidentify.py`). See `docs/05-operations/review-endpoint.md`.
 - **Explainability is derived on read, never stored.** `telemetry/explain.py` builds the reasoning trace from persisted data — template-based, no LLM call.
 - **Risk flags are computed at read-time.** `safety/risk.py` drives both the patient profile and the dashboard (`ADR-019`) — deterministic rules only, never a fabricated confidence score.
 - **Vision is one MCP tool.** `vision_server.py` does a one-shot image description; degrades gracefully if the API key is missing.
