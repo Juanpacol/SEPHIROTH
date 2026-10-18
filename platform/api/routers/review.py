@@ -34,8 +34,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.db import get_session
 from core.rate_limit import limiter
-from data.schemas import Consultation, Patient, ReviewAccessLog
+from data.schemas import Consultation, Patient, ResponseRating, ReviewAccessLog
 from sephiroth.safety.deidentify import deidentify
+
+from ..provenance import answering_call, llm_calls, provenance
 
 router = APIRouter()
 
@@ -68,13 +70,7 @@ def _pseudonym(patient_id: Optional[str]) -> str:
 
 
 def _calls(row: Consultation) -> list[dict[str, Any]]:
-    return list((row.trace or {}).get("llm_calls") or [])
-
-
-def _answering_call(calls: list[dict[str, Any]]) -> dict[str, Any]:
-    """The last successful chat call, else the last call, else nothing."""
-    chats = [c for c in calls if c.get("kind") == "chat" and c.get("ok")]
-    return (chats or calls or [{}])[-1]
+    return llm_calls(row.trace)
 
 
 def _status(row: Consultation) -> str:
@@ -84,7 +80,7 @@ def _status(row: Consultation) -> str:
 
 def _summary(row: Consultation) -> dict[str, Any]:
     calls = _calls(row)
-    answering = _answering_call(calls)
+    answering = answering_call(calls)
     return {
         "trace_id": row.trace_id or "",
         "created_at": row.created_at.isoformat() if row.created_at else None,
@@ -185,6 +181,51 @@ async def list_consultations(
         # a narrower date range finds the rest.
         "complete": exhausted or len(matched) > wanted,
     }
+
+
+@router.get("/queue")
+@limiter.limit("60/minute")
+async def review_queue(
+    request: Request,
+    status: str = Query(default="pending", pattern="^(pending|reviewed|all)$"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    fingerprint: str = Depends(require_review_token),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """The answers clinicians rated "not useful", oldest first, read-only.
+    Provenance and the reason code; the comment is de-identified."""
+    await _audit(
+        session,
+        fingerprint,
+        request,
+        trace_id=None,
+        filters={"queue": status, "limit": limit, "offset": offset},
+    )
+    stmt = (
+        select(ResponseRating, Consultation)
+        .join(Consultation, Consultation.id == ResponseRating.consultation_id)
+        .where(ResponseRating.value == "down")
+        .order_by(ResponseRating.created_at.asc(), ResponseRating.id.asc())
+    )
+    if status != "all":
+        stmt = stmt.where(ResponseRating.review_status == status)
+    rows = (await session.execute(stmt.limit(limit + 1).offset(offset))).all()
+    items = []
+    for rating, consultation in rows[:limit]:
+        items.append(
+            {
+                "trace_id": rating.trace_id or "",
+                "created_at": rating.created_at.isoformat() if rating.created_at else None,
+                "reason": rating.reason,
+                "comment": deidentify(rating.comment),
+                "agents": list(consultation.agents or []),
+                **provenance(consultation.trace),
+                "review_status": rating.review_status,
+                "review_outcome": rating.review_outcome,
+            }
+        )
+    return {"items": items, "limit": limit, "offset": offset, "has_more": len(rows) > limit}
 
 
 @router.get("/consultations/{trace_id}")

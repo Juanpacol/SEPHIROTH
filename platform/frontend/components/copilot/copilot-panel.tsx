@@ -22,6 +22,7 @@ import { authHeaders } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import AgentBadge from "@/components/agent-badge";
 import AnswerText from "@/components/copilot/answer-text";
+import AnswerRating from "@/components/answer-rating";
 import ExplainabilityPanel from "@/components/explainability-panel";
 
 interface AgentProgress {
@@ -496,6 +497,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                       traceId={exchange.traceId}
                     />
                   )}
+                  {exchange.id && <AnswerRating key={exchange.id} consultationId={exchange.id} />}
                 </div>
               )}
             </div>
