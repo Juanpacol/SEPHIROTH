@@ -22,7 +22,8 @@ import ShareResultSheet from "@/components/results/share-result-sheet";
 import InteractionCheckerCard from "@/components/patients/interaction-checker-card";
 import FollowupCard from "@/components/patients/followup-card";
 import LabTrendCard from "@/components/patients/lab-trend-card";
-import TimelineEventSheet, { iconForEventType } from "@/components/patients/timeline-event-sheet";
+import TimelineEventSheet from "@/components/patients/timeline-event-sheet";
+import TimelineList from "@/components/patients/timeline-list";
 import { useToast } from "@/components/ui/toast";
 
 function MedicationsCard({ patientId, medications }: { patientId: string; medications: string[] }) {
@@ -340,32 +341,7 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
               </div>
             </div>
             <p className="mb-4 text-xs text-muted">{t("patientDetail.timeline.subtitle")}</p>
-            <ol className="relative ml-3 space-y-5 border-l-2 border-line/60 pl-6">
-              {patient.timeline.map((event, i) => {
-                const Icon = iconForEventType(event.type);
-                return (
-                  <li key={i} className="relative">
-                    <span className="absolute -left-[31px] flex h-5 w-5 items-center justify-center rounded-full bg-primary-soft">
-                      <Icon size={11} className="text-primary" />
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedEvent(event)}
-                      className="tap w-full rounded-lg text-left transition-colors hover:bg-surface"
-                    >
-                      <div className="text-xs text-muted">{event.date}</div>
-                      <div className="flex items-center gap-2 font-semibold">
-                        {event.title}
-                        {event.ai_generated && (
-                          <AgentBadge name={t("patientDetail.timeline.aiExtracted")} />
-                        )}
-                      </div>
-                      {event.detail && <div className="text-sm text-muted">{event.detail}</div>}
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
+            <TimelineList events={patient.timeline} onSelect={setSelectedEvent} />
           </div>
         </div>
 
