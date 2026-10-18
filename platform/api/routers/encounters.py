@@ -181,6 +181,24 @@ async def vitals_spec() -> Dict[str, Any]:
     }
 
 
+@router.get("/last-vitals", summary="The latest recorded value of each vital, from earlier visits")
+async def last_vitals_for_patient(
+    patient_id: str,
+    exclude_encounter_id: Optional[str] = None,
+    clinician: User = Depends(require_clinician),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """A reference for the form, never a value to store: nothing here is copied
+    into an encounter by the client. Declared before `/{encounter_id}` so the
+    path is not read as an encounter id."""
+    if await session.get(Patient, patient_id) is None:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    readings = await svc.last_vitals(session, patient_id, exclude_encounter_id=exclude_encounter_id)
+    add_phi_access(session, clinician.id, patient_id, "/api/encounters/last-vitals", "GET")
+    await session.commit()
+    return {"readings": readings}
+
+
 @router.post("", summary="Start an encounter")
 async def create_encounter(
     body: CreateEncounterRequest,

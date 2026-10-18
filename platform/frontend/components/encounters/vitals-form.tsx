@@ -9,20 +9,25 @@
  * The ranges come from `GET /api/encounters/vitals/spec` rather than being
  * restated here. A range the UI validates against and a range the API enforces
  * have to be the same range, and two copies of a clinical bound drift.
+ *
+ * Two different things come from the patient's history, and they are kept
+ * apart on purpose. The autofill button copies weight and height, which do not
+ * change between visits. Under every field, `lastReadings` shows the previous
+ * reading as plain text: a reference, never a value that can be copied, because
+ * every other vital is a measurement of the moment.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
-import { type Encounter, type VitalSpecOut } from "@/lib/api";
-import { useLanguage } from "@/lib/language";
+import { type Encounter, type LastVitalReading, type VitalSpecOut } from "@/lib/api";
+import { type Lang, useLanguage } from "@/lib/language";
 
 export interface VitalsAutofill {
-  /** Pressed → the page applies the prior values and saves. */
+  /** Pressed → the page writes weight/height into the empty fields and saves. */
   onApply: () => void;
-  /** The prior-encounter query is in flight. */
-  loading: boolean;
-  /** `started_at` of the source encounter, or null when none qualifies. */
-  sourceDate: string | null;
+  /** loading: history in flight · none: no earlier weight or height ·
+   * filled: both fields already have a value · ready: there is something to fill. */
+  status: "loading" | "none" | "filled" | "ready";
 }
 
 interface Props {
@@ -32,6 +37,9 @@ interface Props {
   disabled?: boolean;
   onChange: (vitals: Record<string, number | "">) => void;
   autofill?: VitalsAutofill;
+  /** Latest earlier reading per vital. Omit it (not editable, or still
+   * loading) and no reference is shown; pass `{}` for "no history at all". */
+  lastReadings?: Record<string, LastVitalReading>;
 }
 
 /** Rendered as one field even though it is stored as two columns. */
@@ -46,9 +54,57 @@ function parseBloodPressure(text: string): { systolic: number; diastolic: number
   return { systolic, diastolic };
 }
 
-export default function VitalsForm({ vitals, specs, findings, disabled, onChange, autofill }: Props) {
-  const { t } = useLanguage();
+const AUTOFILL_STATUS_KEY = {
+  loading: "encounter.vitals.autofillLoading",
+  none: "encounter.vitals.autofillEmpty",
+  filled: "encounter.vitals.autofillDone",
+  ready: "encounter.vitals.autofillHint",
+} as const;
+
+const HAS_ZONE = /(?:[zZ]|[+-]\d{2}:?\d{2})$/;
+
+/** Backend datetimes are naive UTC, so a zone-less string gets `Z` appended
+ * (same convention as `lib/relative-time.ts`). */
+function visitDate(iso: string, lang: Lang): string {
+  const date = new Date(HAS_ZONE.test(iso) ? iso : `${iso}Z`);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(lang, { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatReading(spec: VitalSpecOut, value: number): string {
+  return `${value.toFixed(spec.decimals)}${spec.unit ? ` ${spec.unit}` : ""}`;
+}
+
+export default function VitalsForm({ vitals, specs, findings, disabled, onChange, autofill, lastReadings }: Props) {
+  const { t, lang } = useLanguage();
   const [bp, setBp] = useState("");
+  const uid = useId();
+
+  /** "Last: 70.0 kg · 1 Oct 2026", or the no-history line; null when no reference applies. */
+  function lastReadingText(key: string): string | null {
+    if (lastReadings === undefined) return null;
+    const reading = lastReadings[key];
+    if (!reading) return t("encounter.vitals.noLastReading");
+    const spec = specs.find((s) => s.key === key);
+    if (!spec) return null;
+    return t("encounter.vitals.lastReading")
+      .replace("{value}", formatReading(spec, reading.value))
+      .replace("{date}", visitDate(reading.at, lang));
+  }
+
+  /** Blood pressure is one reading: shown only when both halves came from the
+   * same visit (the API guarantees it; this is the second lock). */
+  function lastBloodPressureText(): string | null {
+    if (lastReadings === undefined) return null;
+    const systolic = lastReadings.systolic;
+    const diastolic = lastReadings.diastolic;
+    if (!systolic || !diastolic || systolic.encounter_id !== diastolic.encounter_id) {
+      return t("encounter.vitals.noLastReading");
+    }
+    return t("encounter.vitals.lastReading")
+      .replace("{value}", `${systolic.value}/${diastolic.value} mmHg`)
+      .replace("{date}", visitDate(systolic.at, lang));
+  }
 
   useEffect(() => {
     const { systolic, diastolic } = vitals;
@@ -72,6 +128,7 @@ export default function VitalsForm({ vitals, specs, findings, disabled, onChange
   }
 
   const bpFinding = flagged.get("systolic") ?? flagged.get("diastolic");
+  const bpReference = lastBloodPressureText();
   const showAutofill =
     autofill !== undefined &&
     !disabled &&
@@ -84,21 +141,12 @@ export default function VitalsForm({ vitals, specs, findings, disabled, onChange
           <button
             type="button"
             onClick={autofill.onApply}
-            disabled={disabled || autofill.loading || autofill.sourceDate === null}
+            disabled={disabled || autofill.status !== "ready"}
             className="btn-secondary tap self-start"
           >
             {t("encounter.vitals.autofill")}
           </button>
-          <span className="text-xs text-muted">
-            {autofill.loading
-              ? t("encounter.vitals.autofillLoading")
-              : autofill.sourceDate === null
-                ? t("encounter.vitals.autofillEmpty")
-                : t("encounter.vitals.autofillHint").replace(
-                    "{date}",
-                    new Date(autofill.sourceDate).toLocaleDateString()
-                  )}
-          </span>
+          <span className="text-xs text-muted">{t(AUTOFILL_STATUS_KEY[autofill.status])}</span>
           <span className="text-xs text-muted">{t("encounter.vitals.autofillNote")}</span>
         </div>
       ) : null}
@@ -110,6 +158,7 @@ export default function VitalsForm({ vitals, specs, findings, disabled, onChange
             inputMode="numeric"
             placeholder="120/80"
             aria-label={t("encounter.vitals.bp")}
+            aria-describedby={bpReference !== null ? `${uid}-bp-last` : undefined}
             value={bp}
             disabled={disabled}
             onChange={(event) => setBp(event.target.value)}
@@ -124,11 +173,17 @@ export default function VitalsForm({ vitals, specs, findings, disabled, onChange
           ) : (
             <span className="text-xs text-ink/40">mmHg</span>
           )}
+          {bpReference !== null ? (
+            <span id={`${uid}-bp-last`} className="text-xs text-muted">
+              {bpReference}
+            </span>
+          ) : null}
         </label>
 
         {others.map((spec) => {
           const finding = flagged.get(spec.key);
           const value = vitals[spec.key];
+          const reference = lastReadingText(spec.key);
           return (
             <label key={spec.key} className="flex flex-col gap-1">
               <span className="text-xs font-medium text-ink/70">{spec.label}</span>
@@ -144,6 +199,7 @@ export default function VitalsForm({ vitals, specs, findings, disabled, onChange
                 // and a screen reader announcing "Frecuencia cardíaca 60 a 100"
                 // as the field's name buries the name in the hint.
                 aria-label={spec.label}
+                aria-describedby={reference !== null ? `${uid}-${spec.key}-last` : undefined}
                 onChange={(event) =>
                   onChange({
                     [spec.key]: event.target.value === "" ? "" : Number(event.target.value),
@@ -161,6 +217,11 @@ export default function VitalsForm({ vitals, specs, findings, disabled, onChange
                   {spec.unit || `${spec.normal_low}–${spec.normal_high}`}
                 </span>
               )}
+              {reference !== null ? (
+                <span id={`${uid}-${spec.key}-last`} className="text-xs text-muted">
+                  {reference}
+                </span>
+              ) : null}
             </label>
           );
         })}

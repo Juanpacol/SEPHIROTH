@@ -19,7 +19,7 @@ import { CheckCircle2, Lock } from "lucide-react";
 
 import { api, type Encounter, type NoteDraft, type OrderKind } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
-import { pickPriorVitals } from "@/lib/vitals-autofill";
+import { autofillPlan } from "@/lib/vitals-autofill";
 import Dialog from "@/components/ui/dialog";
 import NoteDraftPanel from "@/components/encounters/note-draft-panel";
 import OrdersEditor from "@/components/encounters/orders-editor";
@@ -127,19 +127,19 @@ export default function EncounterPage() {
 
   // Declared above the early return below so hook order stays stable on the
   // loading render; `enabled` gates the actual fetch on the encounter being
-  // loaded and editable.
-  const priorQuery = useQuery({
-    queryKey: ["prior-vitals", encounter?.patient_id],
+  // loaded and editable. The encounter itself is excluded server-side, so an
+  // amended visit being edited is never its own source.
+  const lastVitalsQuery = useQuery({
+    queryKey: ["last-vitals", encounter?.patient_id, encounter?.id],
     enabled: Boolean(encounter?.patient_id) && Boolean(encounter?.editable),
-    queryFn: () => api.encounters({ patient_id: encounter!.patient_id, limit: 10 }),
+    queryFn: () => api.lastVitals(encounter!.patient_id, encounter!.id),
   });
-  const priorSource = useMemo(
-    () =>
-      priorQuery.data && encounter
-        ? pickPriorVitals(priorQuery.data.items, { excludeEncounterId: encounter.id })
-        : null,
-    [priorQuery.data, encounter],
+  const lastReadings = lastVitalsQuery.data?.readings;
+  const plan = useMemo(
+    () => (encounter ? autofillPlan(lastReadings, encounter.vitals) : null),
+    [lastReadings, encounter],
   );
+  const hasAutofillValues = plan !== null && Object.keys(plan.values).length > 0;
 
   if (encounterQuery.isLoading || !encounter || !draft) {
     return <div className="h-40 animate-pulse rounded-xl bg-surface" aria-busy="true" />;
@@ -234,11 +234,17 @@ export default function EncounterPage() {
           findings={encounter.vital_findings}
           disabled={!editable || save.isPending}
           onChange={applyVitals}
+          lastReadings={editable ? lastReadings : undefined}
           autofill={{
-            loading: priorQuery.isLoading,
-            sourceDate: priorSource?.startedAt ?? null,
+            status: lastVitalsQuery.isLoading
+              ? "loading"
+              : !plan?.hasHistory
+                ? "none"
+                : hasAutofillValues
+                  ? "ready"
+                  : "filled",
             onApply: () => {
-              if (priorSource) applyVitals(priorSource.vitals);
+              if (plan && hasAutofillValues) applyVitals(plan.values);
             },
           }}
         />

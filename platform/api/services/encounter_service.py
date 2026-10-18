@@ -27,10 +27,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from data.schemas import ClinicalNote, Encounter, EncounterOrder, User
 from sephiroth.clinical.templates import render_note
-from sephiroth.clinical.vitals import VitalError, validate_vitals
+from sephiroth.clinical.vitals import VITAL_SPECS, VitalError, validate_vitals
 
 OPEN_STATUSES = ("draft", "amended")
+#: Visits whose vitals count as the patient's history. A draft was never
+#: committed, so nothing in it is a record yet.
+RECORDED_STATUSES = ("signed", "amended")
 NARRATIVE_FIELDS = ("chief_complaint", "subjective", "objective", "assessment", "plan")
+
+#: The only vitals copied into a new encounter: body measurements that do not
+#: change between visits. Every other vital is a measurement of the moment, and
+#: carrying one forward would put a number in the chart that nobody took (a
+#: later trend, rule or average would take it seriously -- see
+#: `sephiroth.clinical.vitals`).
+CARRY_FORWARD_VITALS = ("weight", "height")
+
+#: Recorded as one reading: a lone systolic is a number nobody can act on.
+_BLOOD_PRESSURE = ("systolic", "diastolic")
 
 #: Fields a `PATCH` may write. Everything else about an encounter is set by a
 #: transition -- an allow-list rather than a deny-list, so a column added later
@@ -98,6 +111,66 @@ def has_content(encounter: Encounter) -> bool:
     return any((getattr(encounter, field) or "").strip() for field in NARRATIVE_FIELDS)
 
 
+def _plausible(key: str, value: Any) -> Optional[float]:
+    """The number, if a body could produce it for this vital; otherwise None.
+
+    Zero is plausible only where the range allows it (a pain score of 0 is a
+    real answer; a weight of 0 is a blank).
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    low, high = VITAL_SPECS[key].physiological
+    return float(value) if low <= value <= high else None
+
+
+async def last_vitals(
+    session: AsyncSession,
+    patient_id: str,
+    *,
+    exclude_encounter_id: Optional[str] = None,
+) -> Dict[str, Dict[str, Any]]:
+    """The latest recorded value of each vital, from the patient's whole history.
+
+    Each vital is looked up on its own, so a weight from last week and a height
+    from two years ago both come back. Blood pressure is the exception: systolic
+    and diastolic are taken together from the same visit, never mixed.
+
+    Only signed or amended visits count, and `exclude_encounter_id` keeps an
+    amended encounter being edited from being its own source.
+    """
+    rows = (
+        await session.execute(
+            select(Encounter.id, Encounter.started_at, Encounter.vitals)
+            .where(Encounter.patient_id == patient_id, Encounter.status.in_(RECORDED_STATUSES))
+            .order_by(Encounter.started_at.desc())
+        )
+    ).all()
+
+    latest: Dict[str, Dict[str, Any]] = {}
+    for encounter_id, started_at, vitals in rows:
+        if encounter_id == exclude_encounter_id:
+            continue
+        vitals = vitals or {}
+
+        def reading(value: float) -> Dict[str, Any]:
+            return {"value": value, "at": started_at.isoformat(), "encounter_id": encounter_id}
+
+        systolic, diastolic = (_plausible(key, vitals.get(key)) for key in _BLOOD_PRESSURE)
+        if "systolic" not in latest and systolic is not None and diastolic is not None:
+            latest["systolic"], latest["diastolic"] = reading(systolic), reading(diastolic)
+
+        for key in VITAL_SPECS:
+            if key in _BLOOD_PRESSURE or key in latest:
+                continue
+            value = _plausible(key, vitals.get(key))
+            if value is not None:
+                latest[key] = reading(value)
+
+        if len(latest) == len(VITAL_SPECS):
+            break
+    return latest
+
+
 async def create_encounter(
     session: AsyncSession,
     *,
@@ -109,6 +182,7 @@ async def create_encounter(
     now: Optional[datetime] = None,
 ) -> Encounter:
     moment = now or _now()
+    carried = await last_vitals(session, patient_id)
     encounter = Encounter(
         id=str(uuid4()),
         patient_id=patient_id,
@@ -116,6 +190,7 @@ async def create_encounter(
         appointment_id=appointment_id or None,
         specialty=specialty or "general",
         chief_complaint=chief_complaint,
+        vitals={key: carried[key]["value"] for key in CARRY_FORWARD_VITALS if key in carried},
         status="draft",
         started_at=moment,
         created_at=moment,
@@ -345,7 +420,9 @@ async def list_encounters(
 __all__ = [
     "EDITABLE_FIELDS",
     "NARRATIVE_FIELDS",
+    "CARRY_FORWARD_VITALS",
     "OPEN_STATUSES",
+    "RECORDED_STATUSES",
     "ORDER_TASK_CATEGORY",
     "ORDER_TASK_SEVERITY",
     "EncounterTransitionError",
@@ -356,6 +433,7 @@ __all__ = [
     "get_encounter",
     "has_content",
     "is_editable",
+    "last_vitals",
     "list_encounters",
     "list_orders",
     "remove_order",
