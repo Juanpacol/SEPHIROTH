@@ -28,7 +28,6 @@ import base64
 import io
 import json
 import logging
-import time
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 import httpx
@@ -36,6 +35,7 @@ from PIL import Image
 
 from ._throttle import RateLimiter, backoff_delay
 from .base import ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor, _is_local_endpoint
+from .call_log import record_llm_call
 
 logger = logging.getLogger(__name__)
 
@@ -153,6 +153,7 @@ class OllamaClient:
         out.extend(messages)
         return out
 
+    @record_llm_call("chat")
     async def chat(
         self,
         messages: List[Dict[str, Any]],
@@ -165,7 +166,6 @@ class OllamaClient:
     ) -> ChatResult:
         history = self._to_messages(messages, system_prompt)
         executed_calls: List[Dict[str, Any]] = []
-        started = time.perf_counter()
         prompt_tokens = 0
         completion_tokens = 0
         native = _is_local_endpoint(self.base_url)
@@ -218,16 +218,6 @@ class OllamaClient:
             tool_calls = message.get("tool_calls") or []
 
             if not tool_calls or tool_executor is None:
-                logger.info(
-                    "llm=chat provider=ollama model=%s rounds=%s tool_calls=%s duration_ms=%s "
-                    "prompt_tokens=%s completion_tokens=%s",
-                    self.model,
-                    round_idx + 1,
-                    len(executed_calls),
-                    round((time.perf_counter() - started) * 1000),
-                    prompt_tokens,
-                    completion_tokens,
-                )
                 return ChatResult(
                     content=message.get("content") or "",
                     tool_calls=executed_calls,
@@ -271,6 +261,7 @@ class OllamaClient:
             completion_tokens=completion_tokens,
         )
 
+    @record_llm_call("generate_json")
     async def generate_json(
         self,
         prompt: str,
@@ -369,6 +360,7 @@ class OllamaClient:
             },
         }
 
+    @record_llm_call("describe_image")
     async def describe_image(
         self,
         image_bytes: bytes,
@@ -396,6 +388,7 @@ class OllamaClient:
             raise LLMUnavailableError(f"{response.status_code}: {response.text}")
         return (response.json()["message"].get("content") or "").strip()
 
+    @record_llm_call("describe_image_stream")
     async def describe_image_stream(
         self,
         image_bytes: bytes,

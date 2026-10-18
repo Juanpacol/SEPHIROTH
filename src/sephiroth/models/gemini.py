@@ -28,6 +28,7 @@ from google.genai import errors, types
 
 from ._throttle import RateLimiter, backoff_delay
 from .base import ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor
+from .call_log import record_llm_call
 
 logger = logging.getLogger(__name__)
 
@@ -216,6 +217,7 @@ class GeminiClient:
                 raise LLMUnavailableError(str(exc)) from exc
         raise LLMUnavailableError(str(last_exc) if last_exc else "gemini request failed")
 
+    @record_llm_call("chat")
     async def chat(
         self,
         messages: List[Dict[str, Any]],
@@ -265,7 +267,6 @@ class GeminiClient:
             config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_budget=0)
 
         executed_calls: List[Dict[str, Any]] = []
-        started = time.perf_counter()
         prompt_tokens = 0
         completion_tokens = 0
 
@@ -294,16 +295,6 @@ class GeminiClient:
             function_calls = [p.function_call for p in (parts or []) if getattr(p, "function_call", None)]
 
             if not function_calls or tool_executor is None:
-                logger.info(
-                    "llm=chat model=%s rounds=%s tool_calls=%s duration_ms=%s prompt_tokens=%s "
-                    "completion_tokens=%s",
-                    self.model,
-                    round_idx + 1,
-                    len(executed_calls),
-                    round((time.perf_counter() - started) * 1000),
-                    prompt_tokens,
-                    completion_tokens,
-                )
                 return ChatResult(
                     content=_extract_text(response),
                     tool_calls=executed_calls,
@@ -339,6 +330,7 @@ class GeminiClient:
             completion_tokens=completion_tokens,
         )
 
+    @record_llm_call("generate_json")
     async def generate_json(
         self,
         prompt: str,
@@ -359,15 +351,10 @@ class GeminiClient:
             # verification, dynamic routing), not creative generation.
             temperature=0,
         )
-        started = time.perf_counter()
         response = await self._generate(contents, config)
-        logger.info(
-            "llm=generate_json model=%s duration_ms=%s",
-            self.model,
-            round((time.perf_counter() - started) * 1000),
-        )
         return json.loads(response.text)
 
+    @record_llm_call("describe_image")
     async def describe_image(
         self,
         image_bytes: bytes,
@@ -397,6 +384,7 @@ class GeminiClient:
         response = await self._generate(contents, config, model=self.vision_model)
         return _extract_text(response).strip()
 
+    @record_llm_call("describe_image_stream")
     async def describe_image_stream(
         self,
         image_bytes: bytes,

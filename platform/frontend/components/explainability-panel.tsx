@@ -13,7 +13,7 @@ import {
   ScanEye,
   type LucideIcon,
 } from "lucide-react";
-import type { Explanation } from "@/lib/api";
+import type { Explanation, LLMCall } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 
 const toolIcons: Record<string, LucideIcon> = {
@@ -27,11 +27,46 @@ const toolIcons: Record<string, LucideIcon> = {
   summarize_clinical_note: FileSearch,
 };
 
-/** Collapsible "why did the AI say that" trace under each answer. */
-export default function ExplainabilityPanel({ explanation }: { explanation: Explanation }) {
+const PROVIDER_NAMES: Record<string, string> = { gemini: "Gemini", groq: "Groq", ollama: "Ollama" };
+
+/** Reason codes the API can send; anything else is shown as-is. */
+const KNOWN_REASONS = new Set([
+  "rate_limited",
+  "no_api_key",
+  "auth_error",
+  "timeout",
+  "unreachable",
+  "server_error",
+  "model_not_found",
+  "no_vision_support",
+  "phi_not_allowed",
+  "cancelled",
+  "internal_error",
+  "unavailable",
+]);
+
+/** Collapsible "why did the AI say that" trace under each answer.
+ *
+ * `llmCalls` says which provider and model really served each model call
+ * (from the consultation's trace); `undefined` means the trace is not known
+ * here, an empty list means no model was called. It is kept apart from
+ * `explanation` on purpose: that one is a pure function of the persisted
+ * agents, tool calls and citations (charter §2.4) and must not start
+ * depending on the trace. */
+export default function ExplainabilityPanel({
+  explanation,
+  llmCalls,
+  traceId,
+}: {
+  explanation: Explanation;
+  llmCalls?: LLMCall[];
+  traceId?: string;
+}) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
-  if (!explanation.steps?.length) return null;
+  if (!explanation.steps?.length && !llmCalls?.length) return null;
+
+  const reasonText = (code: string) => (KNOWN_REASONS.has(code) ? t(`explainability.reason.${code}`) : code);
 
   return (
     <div className="rounded-xl bg-surface p-3 text-xs text-muted">
@@ -58,6 +93,40 @@ export default function ExplainabilityPanel({ explanation }: { explanation: Expl
             );
           })}
         </ol>
+      )}
+      {open && llmCalls !== undefined && (
+        <div className="mt-3 border-t border-line/60 pt-2">
+          <div className="font-semibold">{t("explainability.models")}</div>
+          {llmCalls.length === 0 ? (
+            <p className="mt-1">{t("explainability.noModel")}</p>
+          ) : (
+            <ul className="mt-1 space-y-1">
+              {llmCalls.map((call, i) => (
+                <li key={i} className="flex flex-wrap items-baseline gap-x-1.5">
+                  <span className="font-semibold">{t(`explainability.kind.${call.kind}`)}</span>
+                  <span>
+                    {PROVIDER_NAMES[call.provider] ?? call.provider} · {call.model}
+                  </span>
+                  {call.fallback && (
+                    <span className="rounded bg-primary-soft px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                      {t("explainability.fallback")}
+                    </span>
+                  )}
+                  {!call.ok && (
+                    <span className="rounded bg-danger/10 px-1.5 py-0.5 text-[10px] font-semibold text-danger">
+                      {t("explainability.failed").replace("{reason}", reasonText(call.error))}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      {open && traceId && (
+        <p className="mt-2 break-all">
+          {t("explainability.traceId")}: <span className="select-all font-mono">{traceId}</span>
+        </p>
       )}
     </div>
   );

@@ -3,6 +3,10 @@
 Example output:
     2026-07-06T17:41:43Z level=INFO logger=api.request request_id=1f3a…
     method=POST path=/api/agents/consult status=200 duration_ms=171904
+
+Inside a consultation every line also carries `trace_id=…` (right after the
+logger), so one consultation's lines -- including each model call and any
+fallback -- can be pulled out of a mixed log with a single search.
 """
 
 from __future__ import annotations
@@ -10,13 +14,18 @@ from __future__ import annotations
 import logging
 import sys
 
+from sephiroth.telemetry.context import current_trace_id
+
 
 class KeyValueFormatter(logging.Formatter):
-    """`timestamp level=… logger=… <message>` — messages are key=value pairs."""
+    """`timestamp level=… logger=… [trace_id=…] <message>` — messages are
+    key=value pairs; `trace_id` appears only inside a consultation."""
 
     def format(self, record: logging.LogRecord) -> str:
         timestamp = self.formatTime(record, "%Y-%m-%dT%H:%M:%SZ")
-        base = f"{timestamp} level={record.levelname} logger={record.name} {record.getMessage()}"
+        trace_id = current_trace_id()
+        trace = f" trace_id={trace_id}" if trace_id else ""
+        base = f"{timestamp} level={record.levelname} logger={record.name}{trace} {record.getMessage()}"
         if record.exc_info:
             base += "\n" + self.formatException(record.exc_info)
         return base

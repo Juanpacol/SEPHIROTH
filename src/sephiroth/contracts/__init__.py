@@ -41,7 +41,7 @@ from .results import AgentResult, Failure, RecoveryAction, ToolCall
 from .safety import AbstentionDecision, SafetyFlag
 from .state import RunState
 from .task import TaskAnalysis
-from .trace import ALLOWED_SPAN_ATTRIBUTES, ExecutionTrace, Span, TokenUsage
+from .trace import ALLOWED_SPAN_ATTRIBUTES, ExecutionTrace, LlmCall, Span, TokenUsage
 
 #: Every model whose JSON Schema is exported and drift-checked. Adding a public
 #: model means adding it here — `tests/test_contracts_schema.py` asserts this
@@ -59,6 +59,7 @@ PUBLIC_MODELS = (
     ExecutionSpec,
     ExecutionTrace,
     Failure,
+    LlmCall,
     PlanStep,
     RecoveryAction,
     RiskSpec,
@@ -76,6 +77,7 @@ PUBLIC_MODELS = (
 __all__ = [
     "ALLOWED_SPAN_ATTRIBUTES",
     "OBSERVED_WEIGHT",
+    "LlmCall",
     "PUBLIC_MODELS",
     "AbstentionDecision",
     "AbstentionReason",

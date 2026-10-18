@@ -305,6 +305,23 @@ export interface Explanation {
   citations_removed: number;
 }
 
+/** One model call a consultation made, as recorded on its trace. Metadata
+ * only: which provider and model really served it, never the content. */
+export interface LLMCall {
+  kind: "chat" | "generate_json" | "describe_image" | "describe_image_stream";
+  provider: string;
+  model: string;
+  ok: boolean;
+  /** Reason code when `ok` is false, e.g. `rate_limited`. */
+  error: string;
+  fallback: boolean;
+  fallback_from: string;
+  fallback_reason: string;
+  duration_ms: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+}
+
 export interface ConsultResponse {
   id?: string;
   answer: string;
