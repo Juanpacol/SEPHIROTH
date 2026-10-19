@@ -18,7 +18,7 @@ services:
       - key: PYTHONUNBUFFERED
         value: "1" # belt-and-braces with the Dockerfile ENV -- keeps crash tracebacks from being lost to buffering
       - key: ALLOW_BOOTSTRAP_REGISTRATION
-        value: "false" # this DB already has real clinicians; open self-registration is not a dev-only default anymore
+        value: "false" # stated on purpose even though staging/production already default to closed (ADR-021): a test fails if this stops being "false"
       - key: JWT_SECRET
         sync: false # set manually in the Render dashboard — never committed
       - key: PHI_ENCRYPTION_KEY

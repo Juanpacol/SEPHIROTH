@@ -44,6 +44,10 @@ Today the app connects as the project owner, so it can run DDL. To narrow that:
 
 Reset it in Supabase (Project Settings, Database), update `DATABASE_URL` in Render, redeploy. If the app cannot connect afterwards, the old value is the only thing to restore; the data is not touched by a password change. Rotate `INSPECT_DATABASE_URL` the same way for the read-only role (`ALTER ROLE clinical_ai_readonly PASSWORD '...'`).
 
+## Who can sign up, and what is in the data
+
+Production and staging hold synthetic data only, and a clinician account is created by a clinician who is already signed in: `ALLOW_BOOTSTRAP_REGISTRATION` defaults to closed there (and to open in development and test). All clinicians see all patients; see `docs/08-decisions/ADR-021-single-shared-clinic.md` for why that is accepted today and what makes it stop being so.
+
 ## Not covered
 
 A staging environment with its own Supabase project and encryption key is a separate story.
