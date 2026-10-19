@@ -11,7 +11,7 @@
  * without rendering anything.
  */
 
-import { type LabHistoryTest, type PatientLabHistory } from "@/lib/api";
+import { type LabHistoryTest, type LabReviewState, type PatientLabHistory } from "@/lib/api";
 import { normalizeTestKey } from "@/lib/clinical-text";
 
 export type LabStatus = "critical" | "high" | "low" | "abnormal" | "normal" | "unknown";
@@ -36,6 +36,8 @@ export interface LabRow {
   /** Oldest first, ready to draw. */
   readings: LabReading[];
   hasHistory: boolean;
+  /** Where the latest reading stands in its review; null when it has none. */
+  review: LabReviewState | null;
 }
 
 /** Blood pressure is a vital sign, not a lab: it belongs with the vitals. */
@@ -86,6 +88,7 @@ function fromHistory(test: LabHistoryTest): LabRow {
     high: latest.reference_high ?? null,
     readings: test.entries.map((e) => ({ value: e.value, takenAt: e.taken_at })).reverse(),
     hasHistory: true,
+    review: test.review ?? null,
   };
 }
 
@@ -117,6 +120,7 @@ export function buildLabRows(
       high: null,
       readings: [],
       hasHistory: false,
+      review: null,
     });
   }
 

@@ -280,11 +280,26 @@ export interface LabHistoryEntry {
   reference_high: number | null;
 }
 
+/** Where a lab result stands in its review. Clinician-side only: the private
+ * note of the review is never part of it. */
+export interface LabReviewState {
+  id: string;
+  status: ResultReviewStatus;
+  disposition: Disposition | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  communicated_at: string | null;
+}
+
 export interface LabHistoryTest {
   test_name: string;
   unit: string;
   /** Newest first. */
   entries: LabHistoryEntry[];
+  /** The latest reading, the one the card shows. */
+  result_id?: number;
+  /** Null when that reading has no review (the daily simulation writes none). */
+  review?: LabReviewState | null;
 }
 
 export interface PatientLabHistory {
