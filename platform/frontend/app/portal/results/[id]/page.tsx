@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, FileDown, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import AgentBadge from "@/components/agent-badge";
+import LabResultCard from "@/components/portal/lab-result-card";
 import { useLanguage } from "@/lib/language";
 import { useToast } from "@/components/ui/toast";
 
@@ -56,6 +57,12 @@ export default function PortalResultDetailPage() {
           {downloadingPdf ? t("portal.result.downloadingPdf") : t("portal.result.downloadPdf")}
         </button>
       </div>
+
+      {share.lab && (
+        <div className="card">
+          <LabResultCard lab={share.lab} showMessage={false} />
+        </div>
+      )}
 
       {share.message && (
         <div className="card border border-primary/20 bg-primary-soft/60">

@@ -73,6 +73,7 @@ export const PATIENT_NAV: NavGroup[] = [
       { href: "/portal", id: "portalHome", icon: LayoutDashboard, primary: true },
       { href: "/portal/appointments", id: "portalAppointments", icon: ClipboardList, primary: true },
       { href: "/portal/results", id: "portalResults", icon: FileText, primary: true },
+      { href: "/portal/labs", id: "portalLabs", icon: FlaskConical, primary: true },
     ],
   },
 ];

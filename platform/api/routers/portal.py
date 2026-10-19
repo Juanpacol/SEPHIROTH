@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.audit import log_phi_access
+from api.patient_labs import communicated_labs
 from auth.deps import current_patient_record, require_patient
 from core.db import get_session
 from data.schemas import Patient, TimelineEvent, User
@@ -78,5 +79,8 @@ async def portal_labs(
     user: User = Depends(require_patient),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
+    """Only the lab results a clinician reviewed and communicated to this patient
+    (AB#23). It used to return the whole `Patient.lab_results` snapshot, values
+    no clinician had looked at; nothing unreviewed is shown to a patient."""
     await log_phi_access(session, user, patient.id, "/api/portal/labs", "GET")
-    return {"patient_id": patient.id, "lab_results": patient.lab_results}
+    return {"patient_id": patient.id, "labs": await communicated_labs(session, patient.id)}
