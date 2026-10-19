@@ -51,7 +51,8 @@ export default function LabsCard({
   const date = (iso: string) => new Date(iso).toLocaleDateString(lang);
 
   function range(row: LabRow): string | null {
-    const unit = row.unit ? ` ${row.unit}` : "";
+    // A non-breaking space keeps "5.7 %" from wrapping with the unit alone on a line.
+    const unit = row.unit ? `\u00a0${row.unit}` : "";
     if (row.low != null && row.high != null) return `${row.low}–${row.high}${unit}`;
     if (row.high != null) return `≤ ${row.high}${unit}`;
     if (row.low != null) return `≥ ${row.low}${unit}`;
@@ -72,36 +73,48 @@ export default function LabsCard({
             const name = friendlyTestName(row.testName, t);
             const reference = range(row);
             return (
-              <li key={row.key} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                <div className="min-w-0 flex-1 basis-40">
-                  <div className="truncate text-sm font-semibold">{name}</div>
-                  <div className="text-xs text-muted">
-                    {row.hasHistory && row.takenAt
-                      ? `${date(row.takenAt)}${
-                          row.readings.length > 1 ? ` · ${row.readings.length} ${t("labs.card.readings")}` : ""
-                        }`
-                      : t("labs.card.noHistory")}
-                  </div>
-                  {reference && (
-                    <div className="text-xs text-muted">{t("labs.card.reference").replace("{range}", reference)}</div>
-                  )}
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <MiniTrend
-                    values={row.readings.map((r) => r.value)}
-                    lastTone={row.status === "critical" ? "danger" : row.status === "normal" ? "neutral" : "warning"}
-                    label={`${name}: ${row.readings.map((r) => `${r.value} (${date(r.takenAt)})`).join(" → ")}`}
-                  />
-                  <span className={`text-sm font-semibold ${VALUE_STYLE[row.status]}`}>
+              <li key={row.key}>
+                {/* Same two lines for every row, at every width: what it is and its
+                    value, then when, against what, and how it is doing. */}
+                <div className="flex items-baseline justify-between gap-3">
+                  <div className="min-w-0 text-sm font-semibold">{name}</div>
+                  <span className={`shrink-0 text-sm font-semibold ${VALUE_STYLE[row.status]}`}>
                     {row.value}
                     {row.unit ? ` ${row.unit}` : ""}
                   </span>
+                </div>
+                <div className="mt-0.5 flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 text-xs text-muted">
+                    <span>
+                      {row.hasHistory && row.takenAt
+                        ? `${date(row.takenAt)}${
+                            row.readings.length > 1 ? ` · ${row.readings.length} ${t("labs.card.readings")}` : ""
+                          }`
+                        : t("labs.card.noHistory")}
+                    </span>
+                    {reference && (
+                      <>
+                        <span aria-hidden="true"> · </span>
+                        <span>
+                          {t("labs.card.reference").split("{range}")[0]}
+                          <span className="whitespace-nowrap">{reference}</span>
+                        </span>
+                      </>
+                    )}
+                  </div>
                   {row.status !== "unknown" && (
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_STYLE[row.status]}`}>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_STYLE[row.status]}`}
+                    >
                       {t(`labs.status.${row.status}`)}
                     </span>
                   )}
                 </div>
+                <MiniTrend
+                  values={row.readings.map((r) => r.value)}
+                  lastTone={row.status === "critical" ? "danger" : row.status === "normal" ? "neutral" : "warning"}
+                  label={`${name}: ${row.readings.map((r) => `${r.value} (${date(r.takenAt)})`).join(" → ")}`}
+                />
               </li>
             );
           })}

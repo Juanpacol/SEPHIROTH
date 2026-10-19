@@ -42,6 +42,11 @@ function renderCard(snapshot: Record<string, string> = {}) {
   );
 }
 
+/** The reference range is split across two spans (the range itself never wraps),
+ * and holds a non-breaking space before the unit: match on the whole text. */
+const wholeText = (text: string) => (_: string, el: Element | null) =>
+  el?.tagName === "SPAN" && el.children.length <= 1 && (el.textContent ?? "").replace(/\u00a0/g, " ") === text;
+
 const rows = () => within(screen.getByRole("list")).getAllByRole("listitem");
 const mockHistory = (data: PatientLabHistory | Promise<PatientLabHistory>) =>
   vi.spyOn(api, "patientLabHistory").mockImplementation(() => Promise.resolve(data));
@@ -73,11 +78,11 @@ describe("LabsCard", () => {
     const [potassium, ldl, sodium] = rows();
     expect(within(potassium).getByText("6.4 mmol/L")).toBeInTheDocument();
     expect(within(potassium).getByText("Critical")).toBeInTheDocument();
-    expect(within(potassium).getByText("Reference 3.5–5.1 mmol/L")).toBeInTheDocument();
+    expect(within(potassium).getByText(wholeText("Reference 3.5–5.1 mmol/L"))).toBeInTheDocument();
     expect(within(potassium).getByText(/2 readings/)).toBeInTheDocument();
 
     expect(within(ldl).getByText("High")).toBeInTheDocument();
-    expect(within(ldl).getByText("Reference ≤ 100 mg/dL")).toBeInTheDocument();
+    expect(within(ldl).getByText(wholeText("Reference ≤ 100 mg/dL"))).toBeInTheDocument();
 
     expect(within(sodium).getByText("Normal")).toBeInTheDocument();
     expect(within(sodium).queryByText(/readings/)).not.toBeInTheDocument();
@@ -147,7 +152,7 @@ describe("LabsCard", () => {
     expect(await screen.findByText("Laboratorios")).toBeInTheDocument();
     await waitFor(() => expect(rows()).toHaveLength(4));
     expect(screen.getByText("Crítico")).toBeInTheDocument();
-    expect(screen.getByText("Referencia 3.5–5.1 mmol/L")).toBeInTheDocument();
+    expect(screen.getByText(wholeText("Referencia 3.5–5.1 mmol/L"))).toBeInTheDocument();
     expect(screen.getByText("Sin historial")).toBeInTheDocument();
     expect(screen.getByText(/2 lecturas/)).toBeInTheDocument();
   });
