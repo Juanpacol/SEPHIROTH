@@ -455,18 +455,38 @@ const ROUTES: Record<string, unknown> = {
       },
     ],
   },
+  // Real shape: the reference range rides on each reading, not on the test.
+  // Creatinine and HbA1c are in the patient snapshot above but have no history.
   "/api/patients/p-001/labs": {
-    patient_id: "p-001",
     tests: [
       {
-        test_name: "Potassium",
+        test_name: "potassium",
         unit: "mmol/L",
-        reference_low: 3.5,
-        reference_high: 5.1,
         entries: [
-          { value: 4.8, taken_at: iso(-60) },
-          { value: 5.1, taken_at: iso(-30) },
-          { value: 6.4, taken_at: iso(-1) },
+          { value: 6.4, taken_at: iso(-1), is_abnormal: true, is_critical: true, reference_low: 3.5, reference_high: 5.1 },
+          { value: 5.1, taken_at: iso(-30), is_abnormal: false, is_critical: false, reference_low: 3.5, reference_high: 5.1 },
+          { value: 4.8, taken_at: iso(-60), is_abnormal: false, is_critical: false, reference_low: 3.5, reference_high: 5.1 },
+        ],
+      },
+      {
+        test_name: "sodium",
+        unit: "mmol/L",
+        entries: [
+          { value: 139, taken_at: iso(-3), is_abnormal: false, is_critical: false, reference_low: 135, reference_high: 145 },
+        ],
+      },
+      {
+        test_name: "ldl",
+        unit: "mg/dL",
+        entries: [
+          { value: 162, taken_at: iso(-5), is_abnormal: true, is_critical: false, reference_low: null, reference_high: 100 },
+        ],
+      },
+      {
+        test_name: "bp_systolic",
+        unit: "mmHg",
+        entries: [
+          { value: 150, taken_at: iso(-2), is_abnormal: true, is_critical: false, reference_low: 90, reference_high: 140 },
         ],
       },
     ],

@@ -178,6 +178,11 @@ async def get_lab_history(
                 "taken_at": r.taken_at.isoformat(),
                 "is_abnormal": r.is_abnormal,
                 "is_critical": r.is_critical,
+                # The range this reading was judged against, so the card can say
+                # "high" or "low" instead of only "abnormal". Null when none was
+                # known when it was recorded.
+                "reference_low": r.reference_low,
+                "reference_high": r.reference_high,
             }
         )
 

@@ -21,7 +21,7 @@ import AgentBadge from "@/components/agent-badge";
 import ShareResultSheet from "@/components/results/share-result-sheet";
 import InteractionCheckerCard from "@/components/patients/interaction-checker-card";
 import FollowupCard from "@/components/patients/followup-card";
-import LabTrendCard from "@/components/patients/lab-trend-card";
+import LabsCard from "@/components/patients/labs-card";
 import TimelineEventSheet from "@/components/patients/timeline-event-sheet";
 import TimelineList from "@/components/patients/timeline-list";
 import { useToast } from "@/components/ui/toast";
@@ -390,24 +390,7 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
 
           <InteractionCheckerCard medications={patient.medications} />
 
-          <LabTrendCard patientId={patient.id} />
-
-          <div className="card">
-            <h2 className="mb-1 font-bold">{t("patientDetail.labResults.title")}</h2>
-            <p className="mb-3 text-xs text-muted">{t("patientDetail.labResults.subtitle")}</p>
-            <ul className="space-y-2 text-sm">
-              {Object.entries(patient.lab_results).map(([key, value]) => (
-                <li key={key} className="flex justify-between gap-3">
-                  <span className="text-muted">
-                    {t(`patientDetail.labResults.key.${key}`) === `patientDetail.labResults.key.${key}`
-                      ? key.toUpperCase()
-                      : t(`patientDetail.labResults.key.${key}`)}
-                  </span>
-                  <span className="font-semibold">{value}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <LabsCard patientId={patient.id} snapshot={patient.lab_results} />
 
           <MedicationsCard patientId={patient.id} medications={patient.medications} />
 
