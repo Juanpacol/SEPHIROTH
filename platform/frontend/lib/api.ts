@@ -1102,8 +1102,11 @@ export const api = {
   resultReview: (id: string) => get<ResultReview>(`/api/results/reviews/${id}`),
   reviewResult: (id: string, body: { disposition: Disposition; note: string }) =>
     post<ResultReview>(`/api/results/reviews/${id}/review`, body),
-  communicateResult: (id: string, body: { message: string; timeline_event_id: number }) =>
-    post<ResultReview>(`/api/results/reviews/${id}/communicate`, body),
+  /** Leave `timeline_event_id` out and the server makes the entry the portal
+   * renders from the result itself. `patient_notified` is false when the patient
+   * has no portal account: the telling is recorded, but nobody was told. */
+  communicateResult: (id: string, body: { message: string; timeline_event_id?: number }) =>
+    post<ResultReview & { patient_notified: boolean }>(`/api/results/reviews/${id}/communicate`, body),
   closeResult: (id: string) => post<ResultReview>(`/api/results/reviews/${id}/close`, {}),
   reopenResult: (id: string) => post<ResultReview>(`/api/results/reviews/${id}/reopen`, {}),
 };
