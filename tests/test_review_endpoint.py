@@ -391,9 +391,18 @@ async def test_reading_does_not_modify_consultations(client, db_session):
 
 
 def test_a_short_review_token_is_refused_in_production():
+    from cryptography.fernet import Fernet
+
     from core.config import Settings
 
-    with pytest.raises(ValueError, match="review_token"):
-        Settings(
-            environment="production", review_token="short", phi_encryption_key="x" * 44, jwt_secret="y" * 40
-        )
+    valid = dict(
+        environment="production",
+        phi_encryption_key=Fernet.generate_key().decode(),
+        jwt_secret="y" * 40,
+    )
+    # Everything else valid, so the only possible complaint is the token. (This
+    # test once matched the echoed *input* instead of the message and passed
+    # while checking nothing; startup errors no longer echo their input.)
+    with pytest.raises(ValueError, match="review_token must be"):
+        Settings(**valid, review_token="short")
+    assert Settings(**valid, review_token="r" * 32).review_token == "r" * 32

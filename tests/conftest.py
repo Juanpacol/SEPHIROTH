@@ -8,8 +8,18 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from core.config import assert_local_database, settings
 from data.schemas import Base
 from sephiroth.models import ChatResult
+
+
+def pytest_sessionstart(session):
+    """Refuse to run anywhere near a remote database (AB#18). `ALLOW_REMOTE_DB`
+    does not apply here: it is for a person, not for a test run."""
+    try:
+        assert_local_database(settings.database_url, settings.migration_database_url)
+    except RuntimeError as exc:
+        pytest.exit(str(exc), returncode=3)
 
 
 @pytest_asyncio.fixture
