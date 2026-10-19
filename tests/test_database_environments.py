@@ -153,7 +153,10 @@ def test_docker_compose_does_not_inherit_the_env_files_database_url():
 
 
 def test_no_versioned_file_names_a_production_database_host():
+    # `docker-compose.override.yml` is local-only and absent in CI.
     for name in (".env.example", "docker-compose.yml", "docker-compose.override.yml", "render.yaml"):
+        if not (REPO / name).exists():
+            continue
         text = (REPO / name).read_text()
         assert "supabase.com" not in text.replace("supabase.com`", ""), name
         assert "pooler.supabase" not in text, name
