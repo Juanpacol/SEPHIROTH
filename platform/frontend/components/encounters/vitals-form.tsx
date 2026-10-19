@@ -21,13 +21,16 @@ import { useEffect, useId, useMemo, useState } from "react";
 
 import { type Encounter, type LastVitalReading, type VitalSpecOut } from "@/lib/api";
 import { type Lang, useLanguage } from "@/lib/language";
+import { type AutofillSummary } from "@/lib/vitals-autofill";
 
 export interface VitalsAutofill {
   /** Pressed → the page writes weight/height into the empty fields and saves. */
   onApply: () => void;
   /** loading: history in flight · none: no earlier weight or height ·
-   * filled: both fields already have a value · ready: there is something to fill. */
+   * filled: nothing left to copy · ready: there is something to fill. */
   status: "loading" | "none" | "filled" | "ready";
+  /** Field by field, so the line under the button can say *why*. */
+  summary: AutofillSummary;
 }
 
 interface Props {
@@ -53,13 +56,6 @@ function parseBloodPressure(text: string): { systolic: number; diastolic: number
   if (!Number.isFinite(systolic) || !Number.isFinite(diastolic)) return null;
   return { systolic, diastolic };
 }
-
-const AUTOFILL_STATUS_KEY = {
-  loading: "encounter.vitals.autofillLoading",
-  none: "encounter.vitals.autofillEmpty",
-  filled: "encounter.vitals.autofillDone",
-  ready: "encounter.vitals.autofillHint",
-} as const;
 
 const HAS_ZONE = /(?:[zZ]|[+-]\d{2}:?\d{2})$/;
 
@@ -127,6 +123,39 @@ export default function VitalsForm({ vitals, specs, findings, disabled, onChange
     onChange({ systolic: parsed?.systolic ?? "", diastolic: parsed?.diastolic ?? "" });
   }
 
+  /** The one line under the button: what it will do, or why it will not. */
+  function autofillMessage(auto: VitalsAutofill): string {
+    if (auto.status === "loading") return t("encounter.vitals.autofillLoading");
+    const { copy, filled, missing } = auto.summary;
+    if (copy.length === 0 && filled.length === 0) return t("encounter.vitals.autofillEmpty");
+
+    const word = (key: string) => t(`encounter.vitals.${key}Word`);
+    const list = (items: string[]) =>
+      new Intl.ListFormat(lang, { style: "long", type: "conjunction" }).format(items);
+    const sentences: string[] = [];
+
+    if (copy.length > 0) {
+      const items = copy.map(({ key, value, at }) => {
+        const spec = specs.find((s) => s.key === key);
+        const shown = spec ? formatReading(spec, value) : String(value);
+        const visit = t("encounter.vitals.autofillVisit").replace("{date}", visitDate(at, lang));
+        return `${word(key)} ${shown} (${visit})`;
+      });
+      sentences.push(t("encounter.vitals.autofillWillCopy").replace("{items}", list(items)));
+    }
+    if (filled.length > 0) {
+      // A value that matches an earlier visit says which; one that was typed does not.
+      const items = filled.map(({ key, at }) =>
+        at ? `${word(key)} (${t("encounter.vitals.autofillVisit").replace("{date}", visitDate(at, lang))})` : word(key),
+      );
+      sentences.push(t("encounter.vitals.autofillFilled").replace("{items}", list(items)));
+    }
+    for (const key of missing) {
+      sentences.push(t("encounter.vitals.autofillMissing").replace("{item}", word(key)));
+    }
+    return sentences.join(" ");
+  }
+
   const bpFinding = flagged.get("systolic") ?? flagged.get("diastolic");
   const bpReference = lastBloodPressureText();
   const showAutofill =
@@ -142,12 +171,17 @@ export default function VitalsForm({ vitals, specs, findings, disabled, onChange
             type="button"
             onClick={autofill.onApply}
             disabled={disabled || autofill.status !== "ready"}
+            aria-describedby={`${uid}-autofill-status ${uid}-autofill-note`}
             className="btn-secondary tap self-start"
           >
             {t("encounter.vitals.autofill")}
           </button>
-          <span className="text-xs text-muted">{t(AUTOFILL_STATUS_KEY[autofill.status])}</span>
-          <span className="text-xs text-muted">{t("encounter.vitals.autofillNote")}</span>
+          <span id={`${uid}-autofill-status`} className="text-xs text-muted">
+            {autofillMessage(autofill)}
+          </span>
+          <span id={`${uid}-autofill-note`} className="text-xs text-muted">
+            {t("encounter.vitals.autofillNote")}
+          </span>
         </div>
       ) : null}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
