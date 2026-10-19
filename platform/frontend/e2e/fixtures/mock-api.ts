@@ -257,6 +257,37 @@ const RESULT_REVIEWS = [
   },
 ];
 
+/** A lab a clinician communicated, as the portal gets it. */
+const PORTAL_LAB = {
+  share_id: "rs-001",
+  test_name: "potassium",
+  value: 6.4,
+  unit: "mmol/L",
+  taken_at: iso(-1),
+  reference_low: 3.5,
+  reference_high: 5.1,
+  standing: "needs_attention" as const,
+  direction: "above" as const,
+  message: "Your potassium came back high. Please call the clinic today to book a repeat test.",
+  shared_at: iso(-1),
+  viewed_at: null,
+};
+
+const PORTAL_LAB_NORMAL = {
+  share_id: "rs-002",
+  test_name: "sodium",
+  value: 139,
+  unit: "mmol/L",
+  taken_at: iso(-20),
+  reference_low: 135,
+  reference_high: 145,
+  standing: "inside" as const,
+  direction: null,
+  message: "",
+  shared_at: iso(-19),
+  viewed_at: iso(-18),
+};
+
 const TIMELINE = [
   {
     date: iso(-4),
@@ -426,6 +457,7 @@ const ROUTES: Record<string, unknown> = {
     viewed_at: null,
     event: TIMELINE[0],
     attachments: [],
+    lab: PORTAL_LAB,
   },
   "/api/results/shares": [
     {
@@ -437,6 +469,7 @@ const ROUTES: Record<string, unknown> = {
       viewed_at: null,
       event: TIMELINE[0],
       attachments: [],
+      lab: PORTAL_LAB,
     },
   ],
   "/api/results/inbox": { items: RESULT_REVIEWS },
@@ -506,7 +539,7 @@ const ROUTES: Record<string, unknown> = {
     allergies: ["Penicillin"],
   },
   "/api/portal/timeline": { patient_id: "p-001", events: TIMELINE },
-  "/api/portal/labs": { patient_id: "p-001", lab_results: { Potassium: "6.4 mmol/L" } },
+  "/api/portal/labs": { patient_id: "p-001", labs: [PORTAL_LAB, PORTAL_LAB_NORMAL] },
   "/api/encounters/vitals/spec": {
     vitals: [
       {

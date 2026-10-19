@@ -109,11 +109,15 @@ async def test_portal_timeline_event_type_filter(client, patient_token):
         assert res_empty.json()["events"] == []
 
 
-async def test_portal_labs(client, patient_token):
+async def test_portal_labs_shows_only_what_a_clinician_communicated(client, patient_token):
+    """The patient's chart holds an `a1c` value in its snapshot, but nobody has
+    reviewed or communicated it, so the portal does not show it (AB#23). The
+    full behaviour is in `test_portal_labs.py`."""
     async with client:
         res = await client.get("/api/portal/labs", headers={"Authorization": f"Bearer {patient_token}"})
         assert res.status_code == 200
-        assert res.json()["lab_results"] == {"a1c": "6.1%"}
+        assert res.json() == {"patient_id": res.json()["patient_id"], "labs": []}
+        assert "a1c" not in res.text
 
 
 async def test_portal_404_when_bound_chart_deleted(client, db_session):

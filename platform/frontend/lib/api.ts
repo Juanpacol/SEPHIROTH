@@ -494,6 +494,24 @@ export interface Attachment {
   size_bytes: number;
 }
 
+/** A lab result a clinician communicated to the patient. Only ever this: the
+ * server sends nothing about the review behind it, and `standing` is the
+ * patient-safe form of how it was classified. */
+export interface PortalLab {
+  share_id: string;
+  test_name: string;
+  value: number;
+  unit: string;
+  taken_at: string;
+  reference_low: number | null;
+  reference_high: number | null;
+  standing: "inside" | "outside" | "needs_attention" | "unknown";
+  direction: "below" | "above" | null;
+  message: string;
+  shared_at: string;
+  viewed_at: string | null;
+}
+
 export interface ResultShare {
   id: string;
   patient_id: string;
@@ -503,6 +521,9 @@ export interface ResultShare {
   viewed_at: string | null;
   event: TimelineEvent;
   attachments: Attachment[];
+  /** Patient side only: the structured result, when this share came from a
+   * communicated lab. Null for any other share. */
+  lab?: PortalLab | null;
 }
 
 // --- Portal ---------------------------------------------------------------
@@ -979,7 +1000,7 @@ export const api = {
   // --- Portal ---------------------------------------------------------------
   portalMe: () => get<PortalMe>("/api/portal/me"),
   portalTimeline: () => get<{ patient_id: string; events: TimelineEvent[] }>("/api/portal/timeline"),
-  portalLabs: () => get<{ patient_id: string; lab_results: Record<string, string> }>("/api/portal/labs"),
+  portalLabs: () => get<{ patient_id: string; labs: PortalLab[] }>("/api/portal/labs"),
   claimInvite: (body: { code: string; email: string; name: string; password: string }) =>
     post<AuthResponse>("/api/auth/portal/claim", body),
 

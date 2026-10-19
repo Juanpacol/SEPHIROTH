@@ -24,6 +24,7 @@ export const ROUTES: { path: string; role: Role | null }[] = [
   { path: "/portal", role: "patient" },
   { path: "/portal/appointments", role: "patient" },
   { path: "/portal/results", role: "patient" },
+  { path: "/portal/labs", role: "patient" },
   { path: "/portal/results/rs-001", role: "patient" },
 ];
 

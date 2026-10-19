@@ -23,6 +23,7 @@ from sqlalchemy.orm import selectinload
 from starlette.responses import Response
 
 from api.audit import log_phi_access
+from api.patient_labs import labs_for_shares
 from api.pdf_export import render_result_share_pdf
 from auth.deps import get_current_user, require_clinician
 from core.db import get_session
@@ -249,7 +250,10 @@ async def list_shares(
             raise HTTPException(status_code=422, detail="patient_id is required")
         stmt = stmt.where(ResultShare.patient_id == patient_id)
     shares = (await session.scalars(stmt.order_by(ResultShare.shared_at.desc()))).all()
-    return [_share_out(s) for s in shares]
+    if user.role != "patient":
+        return [_share_out(s) for s in shares]
+    labs = await labs_for_shares(session, shares)
+    return [{**_share_out(s), "lab": labs.get(s.id)} for s in shares]
 
 
 async def _get_own_share(session: AsyncSession, user: User, share_id: str) -> ResultShare:
@@ -278,6 +282,8 @@ async def get_share(
         share.viewed_at = datetime.now(timezone.utc).replace(tzinfo=None)
         await session.commit()
     await log_phi_access(session, user, share.patient_id, "/api/results/shares/{share_id}", "GET")
+    if user.role == "patient":
+        return {**_share_out(share), "lab": (await labs_for_shares(session, [share])).get(share.id)}
     return _share_out(share)
 
 
