@@ -13,6 +13,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, type Disposition, type ResultReview } from "@/lib/api";
@@ -32,8 +33,14 @@ export default function ResultsPage() {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("inbox");
-  const [filter, setFilter] = useState<Filter>("open");
-  const [patientId, setPatientId] = useState("");
+  // A link from a patient's lab card arrives with the patient and which list the
+  // result is in already chosen.
+  const linked = useSearchParams();
+  const linkedFilter = linked.get("filter");
+  const [filter, setFilter] = useState<Filter>(
+    linkedFilter === "closed" || linkedFilter === "critical" ? linkedFilter : "open",
+  );
+  const [patientId, setPatientId] = useState(linked.get("patient") ?? "");
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [informing, setInforming] = useState<ResultReview | null>(null);

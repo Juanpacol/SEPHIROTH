@@ -46,4 +46,25 @@ test.describe("patient lab card", () => {
   test("shows each test once", async ({ page }) => {
     await expect(page.getByTestId("labs-card").getByText("Potassium")).toHaveCount(1);
   });
+
+  test("shows where each result is in its review, and nothing for one with no review", async ({ page }) => {
+    const card = page.getByTestId("labs-card");
+
+    const potassium = card.getByRole("listitem").filter({ hasText: "Potassium" });
+    await expect(potassium.getByTestId("lab-review")).toContainText("Patient told");
+    await expect(potassium.getByTestId("lab-review")).toContainText("The patient needs to be told");
+    await expect(potassium.getByTestId("lab-review")).toContainText("Dr. Ana Ruiz");
+    await expect(card.getByRole("listitem").filter({ hasText: "LDL" }).getByTestId("lab-review")).toContainText(
+      "Not reviewed",
+    );
+    // Sodium has no review: no state, and not the words "not reviewed" either.
+    await expect(card.getByRole("listitem").filter({ hasText: "Sodium" }).getByTestId("lab-review")).toHaveCount(0);
+  });
+
+  test("the link opens the results inbox on that patient", async ({ page }) => {
+    await page.getByTestId("labs-card").getByRole("link", { name: "Open in results" }).first().click();
+
+    await expect(page).toHaveURL(/\/results\?patient=p-001&filter=open$/);
+    await expect(page.getByRole("heading", { name: "Results", level: 1 })).toBeVisible();
+  });
 });

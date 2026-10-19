@@ -500,6 +500,16 @@ const ROUTES: Record<string, unknown> = {
           { value: 5.1, taken_at: iso(-30), is_abnormal: false, is_critical: false, reference_low: 3.5, reference_high: 5.1 },
           { value: 4.8, taken_at: iso(-60), is_abnormal: false, is_critical: false, reference_low: 3.5, reference_high: 5.1 },
         ],
+        // Reviewed and told: the full line (decision, who, when, told).
+        result_id: 101,
+        review: {
+          id: "rv-101",
+          status: "communicated",
+          disposition: "needs_patient_contact",
+          reviewed_at: iso(-1),
+          reviewed_by: "Dr. Ana Ruiz",
+          communicated_at: iso(-1),
+        },
       },
       {
         test_name: "sodium",
@@ -514,6 +524,16 @@ const ROUTES: Record<string, unknown> = {
         entries: [
           { value: 162, taken_at: iso(-5), is_abnormal: true, is_critical: false, reference_low: null, reference_high: 100 },
         ],
+        // Received and not reviewed yet. Sodium below has no review at all.
+        result_id: 103,
+        review: {
+          id: "rv-103",
+          status: "received",
+          disposition: null,
+          reviewed_at: null,
+          reviewed_by: null,
+          communicated_at: null,
+        },
       },
       {
         test_name: "bp_systolic",

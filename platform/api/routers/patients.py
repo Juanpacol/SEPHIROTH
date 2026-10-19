@@ -18,7 +18,16 @@ from api.workflows.channels import get_channel
 from auth.deps import get_current_user
 from auth.security import hash_password
 from core.db import SessionLocal, get_session
-from data.schemas import ClinicalNote, LabResult, Patient, PatientInvite, TimelineEvent, User
+from data.schemas import (
+    ClinicalNote,
+    LabResult,
+    Patient,
+    PatientInvite,
+    ResultReview,
+    ResultShare,
+    TimelineEvent,
+    User,
+)
 from sephiroth.models import get_llm_client
 from sephiroth.safety.risk import RISK_ORDER, assess_patient_risk, assess_risk_level
 
@@ -168,8 +177,12 @@ async def get_lab_history(
     ).all()
 
     by_test: Dict[str, Dict[str, Any]] = {}
+    latest_ids: Dict[str, int] = {}
     for r in rows:
         group = by_test.setdefault(r.test_name, {"test_name": r.test_name, "unit": r.unit, "entries": []})
+        # Rows come newest first, so the first one seen for a test is the one
+        # the card shows.
+        latest_ids.setdefault(r.test_name, r.id)
         if len(group["entries"]) >= _LAB_HISTORY_LIMIT_PER_TEST:
             continue
         group["entries"].append(
@@ -195,8 +208,76 @@ async def get_lab_history(
             group["test_name"],
         )
 
+    reviews = await _review_states(session, latest_ids)
+    for name, group in by_test.items():
+        group["result_id"] = latest_ids[name]
+        group["review"] = reviews.get(latest_ids[name])
+
     tests = sorted(by_test.values(), key=_rank)
     return {"tests": tests}
+
+
+async def _review_states(session: AsyncSession, result_ids: Dict[str, int]) -> Dict[int, Dict[str, Any]]:
+    """Where each of these lab results stands in its review, keyed by result id.
+
+    Column-only selects, so the review's private note is never read here, and a
+    fixed number of queries however many tests there are. A result with no review
+    row (everything the daily simulation writes) is simply absent: the card says
+    nothing about it rather than "not reviewed".
+    """
+    if not result_ids:
+        return {}
+    reviews = (
+        await session.execute(
+            select(
+                ResultReview.id,
+                ResultReview.result_id,
+                ResultReview.status,
+                ResultReview.disposition,
+                ResultReview.reviewed_at,
+                ResultReview.reviewed_by,
+                ResultReview.share_id,
+            ).where(
+                ResultReview.result_type == "lab",
+                ResultReview.result_id.in_([str(i) for i in result_ids.values()]),
+            )
+        )
+    ).all()
+    reviewers = {r.reviewed_by for r in reviews if r.reviewed_by}
+    names = (
+        {
+            uid: name
+            for uid, name in (
+                await session.execute(select(User.id, User.name).where(User.id.in_(reviewers)))
+            ).all()
+        }
+        if reviewers
+        else {}
+    )
+    share_ids = {r.share_id for r in reviews if r.share_id}
+    told = (
+        {
+            sid: at
+            for sid, at in (
+                await session.execute(
+                    select(ResultShare.id, ResultShare.shared_at).where(ResultShare.id.in_(share_ids))
+                )
+            ).all()
+        }
+        if share_ids
+        else {}
+    )
+    return {
+        int(r.result_id): {
+            "id": r.id,
+            "status": r.status,
+            "disposition": r.disposition,
+            "reviewed_at": r.reviewed_at.isoformat() if r.reviewed_at else None,
+            "reviewed_by": names.get(r.reviewed_by),
+            "communicated_at": told[r.share_id].isoformat() if r.share_id in told else None,
+        }
+        for r in reviews
+    }
 
 
 class NoteCreate(BaseModel):

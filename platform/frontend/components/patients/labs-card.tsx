@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { friendlyTestName } from "@/lib/clinical-text";
 import { buildLabRows, type LabRow, type LabStatus } from "@/lib/lab-rows";
+import { type LabReviewState } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import MiniTrend from "@/components/dashboard/mini-trend";
 
@@ -25,6 +27,51 @@ const VALUE_STYLE: Record<LabStatus, string> = {
   normal: "",
   unknown: "",
 };
+
+const REVIEW_STYLE: Record<LabReviewState["status"], string> = {
+  received: "bg-warning/10 text-warning",
+  reviewed: "bg-primary-soft text-primary",
+  communicated: "bg-success/10 text-success",
+  closed: "bg-surface text-muted",
+};
+
+/** Where a result stands in its review, in words, with a way to the inbox. A
+ * result nobody has reviewed yet stands out when it is critical. Nothing is
+ * drawn for a result with no review: "not reviewed" would promise an inbox
+ * item that does not exist. */
+function ReviewLine({ row, patientId }: { row: LabRow; patientId: string }) {
+  const { t, lang } = useLanguage();
+  const review = row.review;
+  if (!review) return null;
+  const date = (iso: string) => new Date(iso).toLocaleDateString(lang);
+  const urgent = review.status === "received" && row.status === "critical";
+  const details = [
+    review.disposition ? t(`results.disposition.${review.disposition}`) : null,
+    review.reviewed_by,
+    review.reviewed_at ? date(review.reviewed_at) : null,
+    review.communicated_at ? t("labs.review.told").replace("{date}", date(review.communicated_at)) : null,
+  ].filter(Boolean);
+  const filter = review.status === "closed" ? "closed" : "open";
+
+  return (
+    <div className="mt-1 space-y-0.5 text-xs" data-testid="lab-review">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span
+          className={`rounded-full px-2 py-0.5 font-semibold ${urgent ? "bg-danger/10 text-danger ring-1 ring-danger/30" : REVIEW_STYLE[review.status]}`}
+        >
+          {t(`labs.review.${review.status}`)}
+        </span>
+        <Link
+          href={`/results?patient=${encodeURIComponent(patientId)}&filter=${filter}`}
+          className="tap inline-flex items-center font-semibold text-primary"
+        >
+          {t("labs.review.open")}
+        </Link>
+      </div>
+      {details.length > 0 ? <div className="text-muted">{details.join(" · ")}</div> : null}
+    </div>
+  );
+}
 
 /** One patient's labs, one row per test, worst first. Replaces the two cards
  * that used to describe the same thing from different sources: see
@@ -115,6 +162,7 @@ export default function LabsCard({
                   lastTone={row.status === "critical" ? "danger" : row.status === "normal" ? "neutral" : "warning"}
                   label={`${name}: ${row.readings.map((r) => `${r.value} (${date(r.takenAt)})`).join(" → ")}`}
                 />
+                <ReviewLine row={row} patientId={patientId} />
               </li>
             );
           })}

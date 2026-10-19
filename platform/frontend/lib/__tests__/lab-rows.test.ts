@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type LabHistoryEntry, type PatientLabHistory } from "@/lib/api";
+import { type LabHistoryEntry, type LabReviewState, type PatientLabHistory } from "@/lib/api";
 import { buildLabRows, isBloodPressure, labStatus, parseSnapshotValue } from "@/lib/lab-rows";
 
 const entry = (value: number, over: Partial<LabHistoryEntry> = {}): LabHistoryEntry => ({
@@ -181,5 +181,44 @@ describe("buildLabRows", () => {
     const rows = buildLabRows(history, undefined, (n) => spanish[n]);
 
     expect(rows.map((r) => r.key)).toEqual(["sodium", "potassium"]);
+  });
+});
+
+describe("buildLabRows: review state", () => {
+  const review: LabReviewState = {
+    id: "rv-1",
+    status: "reviewed",
+    disposition: "action_taken",
+    reviewed_at: "2026-10-11T08:00:00",
+    reviewed_by: "Dra. Ruiz",
+    communicated_at: null,
+  };
+
+  it("carries the review of the latest reading onto its row", () => {
+    const history = { tests: [{ ...test("potassium", [entry(6.4)], "mmol/L"), review }] };
+
+    expect(buildLabRows(history, undefined, name)[0].review).toEqual(review);
+  });
+
+  it("has no review for a test without one, and none for a snapshot-only test", () => {
+    const history = { tests: [test("sodium", [entry(139)])] };
+
+    const rows = buildLabRows(history, { creatinine: "2.1 mg/dL" }, name);
+
+    expect(rows.map((r) => [r.key, r.review])).toEqual([
+      ["sodium", null],
+      ["creatinine", null],
+    ]);
+  });
+
+  it("does not change the order: critical first, whatever the review says", () => {
+    const history = {
+      tests: [
+        { ...test("sodium", [entry(139)]), review: { ...review, status: "received" as const } },
+        { ...test("potassium", [entry(6.4, { is_critical: true })]), review: { ...review, status: "closed" as const } },
+      ],
+    };
+
+    expect(buildLabRows(history, undefined, name).map((r) => r.key)).toEqual(["potassium", "sodium"]);
   });
 });
