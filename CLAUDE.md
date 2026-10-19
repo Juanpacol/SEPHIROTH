@@ -141,6 +141,7 @@ Short version of each decision. Full rationale, if you need it, lives in `docs/0
 
 - **Auth = JWT, two roles, MFA, lockout, reset.** Role is re-read from the DB on every request, never trusted from the token. Clinician-only routers enforce `require_clinician` at the router level. `platform/auth/router.py` also has TOTP MFA (`pyotp`), password reset, and lockout after 5 failed attempts.
 - **Security hardening: DB role, rate limiting, PHI encryption** (`ADR-012`, `ADR-013`, `ADR-014`). Least-privilege Postgres role + row-level security, `slowapi` rate limiting, Fernet column encryption (`core/crypto.py`). `audit.py` exposes the resulting access log.
+- **One shared clinic, by decision** (`ADR-021`). Every clinician sees every patient; nothing is isolated per clinician. Acceptable only while data is synthetic and accounts in staging/production are created by an existing clinician: `allow_bootstrap_registration` therefore defaults to closed outside development/test. Revisit before real patient data, a second clinic, external clinicians or `AI_ALLOW_PHI`.
 - **No patient self-registration — ever.** Patient accounts exist only by redeeming a clinician-issued, one-time claim code.
 - **Frontend role gating is UX only, not the security boundary.** Every backend route enforces its own role check independently.
 

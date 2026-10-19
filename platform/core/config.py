@@ -133,12 +133,14 @@ class Settings(BaseSettings):
 
     # POST /api/auth/register is clinician-only once a clinician account
     # exists (a patient account is created only via the invite/claim
-    # flow — see PatientInvite). This flag lets the *first* account on a
-    # fresh database be created without one; default on in dev/test so
-    # local setup and the test suite don't need a bootstrap step, off in
-    # staging/production where an operator provisions the first account
-    # out of band.
-    allow_bootstrap_registration: bool = True
+    # flow — see PatientInvite). This flag lets an account be created without
+    # being signed in. Unset, it follows the environment: open in
+    # development/test so local setup and the test suite need no bootstrap
+    # step, closed in staging/production, where a clinician who already exists
+    # creates the next account (AB#22, ADR-021). It used to default open and
+    # rely on the deployment file to close it, which made a missing variable
+    # an open door. An explicit value always wins.
+    allow_bootstrap_registration: Optional[bool] = None
 
     # LLM — Google Gemini API (AI Studio free tier). PHI leaves the machine;
     # see README's privacy notice. Requests are unauthenticated/degraded
@@ -441,6 +443,12 @@ class Settings(BaseSettings):
                 '`python -c "from cryptography.fernet import Fernet; '
                 'print(Fernet.generate_key().decode())"`.'
             ) from exc
+        return self
+
+    @model_validator(mode="after")
+    def _resolve_bootstrap_registration(self) -> "Settings":
+        if self.allow_bootstrap_registration is None:
+            self.allow_bootstrap_registration = self.environment in ("development", "test")
         return self
 
     @model_validator(mode="after")

@@ -58,9 +58,9 @@ async def require_clinician_for_registration(
     session: AsyncSession = Depends(get_session),
 ) -> None:
     """Guards `POST /api/auth/register`. When
-    `settings.allow_bootstrap_registration` is on (the dev/test default),
-    registration is open — there's no clinician yet on a fresh database to
-    gate behind. When it's off, a valid clinician bearer token is
+    `settings.allow_bootstrap_registration` is on (the default in
+    development and test only, ADR-021), registration is open — there's no
+    clinician yet on a fresh database to gate behind. When it's off, a valid clinician bearer token is
     required, so account creation can't be self-service in a deployed
     environment. Never lets a patient token through, even with the flag
     off — a patient account is created only via `PatientInvite` claim."""
