@@ -109,6 +109,8 @@ does not always get `pgvector.sqlalchemy.Vector` right on the first pass.
 `tests/test_alembic_migration.py` is the drift guard; it self-skips when no
 local Postgres is reachable.
 
+> Looking at production, and the read-only role for it: `docs/05-operations/database-environments.md`.
+
 ## Database roles
 
 By default (zero-config local dev) the app connects as `clinical_ai`, the

@@ -198,6 +198,8 @@ git clone --depth 1 https://github.com/langchain-ai/langgraph.git references/ref
 
 Schema is Alembic-managed (`migrations/`) for both local Postgres and any cloud Postgres (e.g. Supabase) — see CLAUDE.md's "Database migrations" section before changing a model in `data/schemas/`.
 
+Each environment has its own database and local work can never reach production by accident: see `docs/05-operations/database-environments.md`.
+
 ## Docker
 
 ```bash

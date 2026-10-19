@@ -1,5 +1,6 @@
 """Configuration management for SEPHIROTH."""
 
+import ipaddress
 import logging
 from typing import Literal, Optional
 
@@ -39,6 +40,54 @@ def is_local_llm_provider(provider: object) -> bool:
     return provider in LOCAL_LLM_PROVIDERS
 
 
+def database_host(url: str) -> Optional[str]:
+    """The host a SQLAlchemy URL connects to; None for file/in-memory SQLite."""
+    from sqlalchemy.engine import make_url  # noqa: PLC0415 -- config must import cheaply
+
+    try:
+        return make_url(url).host
+    except Exception:  # noqa: BLE001 -- an unparsable URL is judged by the caller
+        return None
+
+
+def is_local_database_host(host: Optional[str]) -> bool:
+    """True when `host` is this machine or its own container network.
+
+    Loopback, private addresses, `host.docker.internal`, `.local`/`.internal`
+    names, and a bare name with no dot (a compose service such as `postgres`,
+    or `smoke-pg` in CI). A name with a dot that is none of those -- a managed
+    Postgres like Supabase -- is remote.
+    """
+    if not host:
+        return True
+    h = host.lower().rstrip(".")
+    if h in {"localhost", "host.docker.internal"} or h.endswith((".localhost", ".local", ".internal")):
+        return True
+    try:
+        ip = ipaddress.ip_address(h)
+    except ValueError:
+        return "." not in h
+    return ip.is_loopback or ip.is_private
+
+
+def assert_local_database(*urls: Optional[str]) -> None:
+    """Raise if any of `urls` is on a remote host, whatever `ALLOW_REMOTE_DB`
+    says. The test suite calls this: a test run has no business on a remote
+    database, and the escape hatch exists for a person at a keyboard, not for
+    a fixture."""
+    remote = remote_database_hosts(*urls)
+    if remote:
+        raise RuntimeError(
+            f"the test suite would connect to a remote database ({', '.join(remote)}); refusing."
+        )
+
+
+def remote_database_hosts(*urls: Optional[str]) -> list[str]:
+    """The distinct remote hosts among `urls` (unset ones are skipped)."""
+    hosts = {database_host(u) for u in urls if u}
+    return sorted(h for h in hosts if h and not is_local_database_host(h))
+
+
 class Settings(BaseSettings):
     """Application settings (overridable via environment / .env)."""
 
@@ -53,6 +102,13 @@ class Settings(BaseSettings):
     # a least-privilege role (no DDL, no ALTER/DROP; see migrations/roles.sql)
     # once one exists, rather than the schema-owning role migrations run as.
     database_url: str = "postgresql+asyncpg://clinical_ai:clinical_ai_password@localhost:5433/clinical_ai_db"
+
+    # AB#18: development and test never talk to a remote database by accident.
+    # A `database_url` (or `migration_database_url`) on a remote host is refused
+    # at startup unless `environment` is staging/production or this is set on
+    # purpose. It exists for the rare, deliberate case; the safe way to look at
+    # production is `scripts/inspect_db.py` with a read-only role.
+    allow_remote_db: bool = False
 
     # Optional: a separate, schema-owning connection string used ONLY for
     # `alembic upgrade head` (`core/db.py::init_db`, `migrations/env.py`).
@@ -333,6 +389,9 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        # A startup error must never echo the values that failed (a database
+        # URL carries its password, JWT_SECRET is a secret).
+        hide_input_in_errors = True
 
     @model_validator(mode="after")
     def _check_jwt_secret(self) -> "Settings":
@@ -382,6 +441,21 @@ class Settings(BaseSettings):
                 '`python -c "from cryptography.fernet import Fernet; '
                 'print(Fernet.generate_key().decode())"`.'
             ) from exc
+        return self
+
+    @model_validator(mode="after")
+    def _check_database_is_local(self) -> "Settings":
+        if self.environment in ("staging", "production") or self.allow_remote_db:
+            return self
+        remote = remote_database_hosts(self.database_url, self.migration_database_url)
+        if remote:
+            raise ValueError(
+                f"database_url points at a remote host ({', '.join(remote)}) while "
+                f"environment={self.environment!r}. Point DATABASE_URL at the local database "
+                "(docker compose up -d postgres), or set ALLOW_REMOTE_DB=true if you really "
+                "mean to run this process against it. To inspect production, use "
+                "scripts/inspect_db.py with a read-only role."
+            )
         return self
 
     @model_validator(mode="after")

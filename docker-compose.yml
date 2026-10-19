@@ -30,17 +30,19 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Defaults to the local postgres service below; set DATABASE_URL in
-      # .env (e.g. to a Supabase pooler URL) to point this container at a
-      # different database instead — see ARCHITECTURE.md's "Cloud database"
-      # note. Without this override the api and frontend containers see a
-      # separate, empty-by-default database from any bare-metal (non-docker)
-      # backend run using .env directly.
-      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://clinical_ai:clinical_ai_password@postgres:5432/clinical_ai_db}
+      # Always the local postgres service below, on purpose. This is NOT read
+      # from `DATABASE_URL`: that is the variable a developer's `.env` and a
+      # bare-metal `uvicorn` use, and when it once held the production URL a
+      # plain `docker compose up --build` migrated production (AB#16, AB#18).
+      # To point this container somewhere else you have to say so by name:
+      # `API_DATABASE_URL=... docker compose up` (a remote host also needs
+      # API_ALLOW_REMOTE_DB=true while ENVIRONMENT is development).
+      DATABASE_URL: ${API_DATABASE_URL:-postgresql+asyncpg://clinical_ai:clinical_ai_password@postgres:5432/clinical_ai_db}
+      ALLOW_REMOTE_DB: ${API_ALLOW_REMOTE_DB:-false}
       # Must match whatever key encrypted the data at DATABASE_URL above —
       # a mismatch fails closed with a clear error rather than returning
       # garbage (see platform/core/crypto.py). Only needed here when
-      # DATABASE_URL is overridden to a database with real encrypted data.
+      # API_DATABASE_URL is overridden to a database with real encrypted data.
       PHI_ENCRYPTION_KEY: ${PHI_ENCRYPTION_KEY:-}
       ENVIRONMENT: ${ENVIRONMENT:-development}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required — generate one with `openssl rand -hex 32`}
