@@ -19,7 +19,7 @@ import { CheckCircle2, Lock } from "lucide-react";
 
 import { api, type Encounter, type NoteDraft, type OrderKind } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
-import { autofillPlan } from "@/lib/vitals-autofill";
+import { autofillPlan, autofillSummary } from "@/lib/vitals-autofill";
 import Dialog from "@/components/ui/dialog";
 import NoteDraftPanel from "@/components/encounters/note-draft-panel";
 import OrdersEditor from "@/components/encounters/orders-editor";
@@ -139,6 +139,10 @@ export default function EncounterPage() {
     () => (encounter ? autofillPlan(lastReadings, encounter.vitals) : null),
     [lastReadings, encounter],
   );
+  const autofillWhy = useMemo(
+    () => (encounter ? autofillSummary(lastReadings, encounter.vitals) : null),
+    [lastReadings, encounter],
+  );
   const hasAutofillValues = plan !== null && Object.keys(plan.values).length > 0;
 
   if (encounterQuery.isLoading || !encounter || !draft) {
@@ -243,6 +247,7 @@ export default function EncounterPage() {
                 : hasAutofillValues
                   ? "ready"
                   : "filled",
+            summary: autofillWhy ?? { copy: [], filled: [], missing: [] },
             onApply: () => {
               if (plan && hasAutofillValues) applyVitals(plan.values);
             },

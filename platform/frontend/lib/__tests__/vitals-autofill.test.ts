@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AUTOFILL_VITAL_KEYS, autofillPlan, type Readings } from "@/lib/vitals-autofill";
+import { AUTOFILL_VITAL_KEYS, autofillPlan, autofillSummary, type Readings } from "@/lib/vitals-autofill";
 
 const reading = (value: number, at = "2026-06-01T09:00:00") => ({ value, at, encounter_id: `e-${value}` });
 
@@ -63,5 +63,62 @@ describe("autofillPlan", () => {
     const readings: Readings = { weight: reading(70) };
 
     expect(autofillPlan(readings, { height: 170 }).values).toEqual({ weight: 70 });
+  });
+});
+
+describe("autofillSummary", () => {
+  const readings: Readings = {
+    weight: reading(70, "2026-10-01T09:00:00"),
+    height: reading(170, "2025-01-01T09:00:00"),
+  };
+
+  it("lists what would be copied, each with the visit it comes from", () => {
+    expect(autofillSummary(readings, {})).toEqual({
+      copy: [
+        { key: "weight", value: 70, at: "2026-10-01T09:00:00" },
+        { key: "height", value: 170, at: "2025-01-01T09:00:00" },
+      ],
+      filled: [],
+      missing: [],
+    });
+  });
+
+  it("says which fields have no earlier value at all", () => {
+    expect(autofillSummary({ weight: reading(70) }, {}).missing).toEqual(["height"]);
+    expect(autofillSummary({}, {}).missing).toEqual(["weight", "height"]);
+    expect(autofillSummary(undefined, {})).toEqual({ copy: [], filled: [], missing: ["weight", "height"] });
+  });
+
+  it("treats a value that is not a usable reading as missing", () => {
+    const bad: Readings = { weight: reading(0), height: reading(Number.NaN) };
+
+    expect(autofillSummary(bad, {}).missing).toEqual(["weight", "height"]);
+  });
+
+  it("names the visit only for filled values that match it, not for typed ones", () => {
+    const summary = autofillSummary(readings, { weight: 70, height: 181 });
+
+    expect(summary.filled).toEqual([
+      { key: "weight", at: "2026-10-01T09:00:00" },
+      { key: "height", at: null },
+    ]);
+    expect(summary.copy).toEqual([]);
+  });
+
+  it("filled with no earlier value is filled, with no visit, and not missing", () => {
+    const summary = autofillSummary({}, { weight: 70 });
+
+    expect(summary.filled).toEqual([{ key: "weight", at: null }]);
+    expect(summary.missing).toEqual(["height"]);
+  });
+
+  it("agrees with autofillPlan about what is copyable", () => {
+    const cases: Record<string, number>[] = [{}, { weight: 82 }, { weight: 82, height: 160 }];
+    for (const current of cases) {
+      const plan = autofillPlan(readings, current);
+      const summary = autofillSummary(readings, current);
+
+      expect(summary.copy.map((c) => c.key)).toEqual(Object.keys(plan.values));
+    }
   });
 });

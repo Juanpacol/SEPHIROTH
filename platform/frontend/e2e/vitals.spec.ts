@@ -42,6 +42,8 @@ test.describe("encounter vitals: last readings and autofill", () => {
     });
 
     await expect(page.getByLabel("Weight")).toHaveValue("");
+    // Before pressing it, the page says exactly what the button will do.
+    await expect(page.getByText(/^Will copy weight 70\.5 kg \(visit of .+\) and height 164 cm \(visit of .+\)\.$/)).toBeVisible();
     await page.getByRole("button", { name: "Autofill weight & height" }).click();
 
     await expect(page.getByLabel("Weight")).toHaveValue("70.5");
@@ -51,7 +53,7 @@ test.describe("encounter vitals: last readings and autofill", () => {
     expect(sent!.vitals).toEqual({ systolic: 158, diastolic: 94, heart_rate: 58, weight: 70.5, height: 164 });
 
     // Both fields are filled now, so there is nothing left to fill.
-    await expect(page.getByText("Weight and height are already filled.")).toBeVisible();
+    await expect(page.getByText(/^Already filled: weight \(visit of .+\) and height \(visit of .+\)\.$/)).toBeVisible();
     await expect(page.getByRole("button", { name: "Autofill weight & height" })).toBeDisabled();
   });
 });

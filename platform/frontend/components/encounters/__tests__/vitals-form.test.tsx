@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import VitalsForm, { type VitalsAutofill } from "@/components/encounters/vitals-form";
+import { type AutofillSummary } from "@/lib/vitals-autofill";
 import { type LastVitalReading, type VitalSpecOut } from "@/lib/api";
 import { LanguageProvider } from "@/lib/language";
 
@@ -64,6 +65,15 @@ function renderForm({
 
 const BUTTON = "Autofill weight & height";
 
+const EMPTY = { copy: [], filled: [], missing: [] } as AutofillSummary;
+const ready = (copy: AutofillSummary["copy"], rest: Partial<AutofillSummary> = {}): VitalsAutofill => ({
+  onApply: vi.fn(),
+  status: "ready",
+  summary: { ...EMPTY, copy, ...rest },
+});
+const WEIGHT_78 = { key: "weight" as const, value: 78, at: "2026-07-12T09:00:00" };
+const HEIGHT_170 = { key: "height" as const, value: 170, at: "2026-03-03T09:00:00" };
+
 describe("VitalsForm autofill", () => {
   it("shows no button when autofill is not provided", () => {
     renderForm();
@@ -71,54 +81,141 @@ describe("VitalsForm autofill", () => {
   });
 
   it("shows no button when specs lack weight and height, even with autofill", () => {
-    renderForm({
-      specs: [spec("heart_rate", "Heart rate", "bpm")],
-      autofill: { onApply: vi.fn(), status: "ready" },
-    });
+    renderForm({ specs: [spec("heart_rate", "Heart rate", "bpm")], autofill: ready([WEIGHT_78]) });
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("is enabled and explains it only fills empty fields when there is something to fill", () => {
-    renderForm({ autofill: { onApply: vi.fn(), status: "ready" } });
-    expect(screen.getByRole("button", { name: BUTTON })).toBeEnabled();
-    expect(screen.getByText("Fills only the empty fields, from the latest recorded values.")).toBeInTheDocument();
-  });
-
-  it("calls onApply once when clicked", () => {
-    const onApply = vi.fn();
-    renderForm({ autofill: { onApply, status: "ready" } });
-    fireEvent.click(screen.getByRole("button", { name: BUTTON }));
-    expect(onApply).toHaveBeenCalledTimes(1);
-  });
-
   it("honours the disabled prop by hiding the control entirely", () => {
-    renderForm({ disabled: true, autofill: { onApply: vi.fn(), status: "ready" } });
+    renderForm({ disabled: true, autofill: ready([WEIGHT_78]) });
     expect(screen.queryByRole("button", { name: BUTTON })).not.toBeInTheDocument();
   });
 
-  it("shows the empty hint and a disabled button when no earlier visit has weight or height", () => {
-    renderForm({ autofill: { onApply: vi.fn(), status: "none" } });
-    expect(screen.getByText("No weight or height recorded in earlier visits.")).toBeInTheDocument();
+  it("calls onApply once when clicked", () => {
+    const autofill = ready([WEIGHT_78, HEIGHT_170]);
+    renderForm({ autofill });
+    fireEvent.click(screen.getByRole("button", { name: BUTTON }));
+    expect(autofill.onApply).toHaveBeenCalledTimes(1);
+  });
+
+  it("says exactly what it will copy, and from which visit, when there is something to fill", () => {
+    renderForm({ autofill: ready([WEIGHT_78, HEIGHT_170]) });
+
+    expect(screen.getByRole("button", { name: BUTTON })).toBeEnabled();
+    expect(
+      screen.getByText("Will copy weight 78.0 kg (visit of Jul 12, 2026) and height 170 cm (visit of Mar 3, 2026)."),
+    ).toBeInTheDocument();
+  });
+
+  it("copies the one value there is and says which one has no earlier reading", () => {
+    renderForm({ autofill: ready([WEIGHT_78], { missing: ["height"] }) });
+
+    expect(screen.getByRole("button", { name: BUTTON })).toBeEnabled();
+    expect(
+      screen.getByText("Will copy weight 78.0 kg (visit of Jul 12, 2026). No earlier height recorded."),
+    ).toBeInTheDocument();
+  });
+
+  it("explains that nothing can be copied when the patient has no signed visit with either", () => {
+    renderForm({ autofill: { onApply: vi.fn(), status: "none", summary: { ...EMPTY, missing: ["weight", "height"] } } });
+
+    expect(
+      screen.getByText(
+        "This patient has no signed visit with weight or height yet. They will be recorded when you sign this one.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: BUTTON })).toBeDisabled();
   });
 
-  it("says so, and disables the button, when both fields are already filled", () => {
-    renderForm({ autofill: { onApply: vi.fn(), status: "filled" } });
-    expect(screen.getByText("Weight and height are already filled.")).toBeInTheDocument();
+  it("says they are already filled, and from which visit when the values match it", () => {
+    renderForm({
+      autofill: {
+        onApply: vi.fn(),
+        status: "filled",
+        summary: {
+          ...EMPTY,
+          filled: [
+            { key: "weight", at: "2026-07-12T09:00:00" },
+            { key: "height", at: "2026-07-12T09:00:00" },
+          ],
+        },
+      },
+    });
+
+    expect(
+      screen.getByText("Already filled: weight (visit of Jul 12, 2026) and height (visit of Jul 12, 2026)."),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: BUTTON })).toBeDisabled();
+  });
+
+  it("names each field's own visit when they come from different ones", () => {
+    renderForm({
+      autofill: {
+        onApply: vi.fn(),
+        status: "filled",
+        summary: {
+          ...EMPTY,
+          filled: [
+            { key: "weight", at: "2026-07-12T09:00:00" },
+            { key: "height", at: "2026-03-03T09:00:00" },
+          ],
+        },
+      },
+    });
+
+    expect(
+      screen.getByText("Already filled: weight (visit of Jul 12, 2026) and height (visit of Mar 3, 2026)."),
+    ).toBeInTheDocument();
+  });
+
+  it("does not claim a visit for values the clinician typed", () => {
+    renderForm({
+      autofill: {
+        onApply: vi.fn(),
+        status: "filled",
+        summary: { ...EMPTY, filled: [{ key: "weight", at: null }], missing: ["height"] },
+      },
+    });
+
+    const line = screen.getByText(/Already filled: weight\./);
+    expect(line.textContent).toBe("Already filled: weight. No earlier height recorded.");
+    expect(line.textContent).not.toMatch(/visit of/);
+  });
+
+  it("explains a half-filled visit: one field filled, the other copied", () => {
+    renderForm({ autofill: ready([HEIGHT_170], { filled: [{ key: "weight", at: null }] }) });
+
+    expect(
+      screen.getByText("Will copy height 170 cm (visit of Mar 3, 2026). Already filled: weight."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: BUTTON })).toBeEnabled();
   });
 
   it("shows the loading hint and a disabled button while loading", () => {
-    renderForm({ autofill: { onApply: vi.fn(), status: "loading" } });
+    renderForm({ autofill: { onApply: vi.fn(), status: "loading", summary: EMPTY } });
     expect(screen.getByText("Looking for a previous visit…")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: BUTTON })).toBeDisabled();
   });
 
-  it("always shows the static note alongside the control", () => {
-    renderForm({ autofill: { onApply: vi.fn(), status: "none" } });
-    expect(
-      screen.getByText("Only weight and height are copied. Every other vital must be measured at this visit."),
-    ).toBeInTheDocument();
+  it("always shows the note that only weight and height are copied, whatever the state", () => {
+    const note =
+      "Only weight and height are copied. The other vitals show the last reading as a reference and must be measured at this visit.";
+    for (const status of ["none", "loading", "filled", "ready"] as const) {
+      const { unmount } = renderForm({ autofill: { onApply: vi.fn(), status, summary: EMPTY } });
+      expect(screen.getByText(note)).toBeVisible();
+      unmount();
+    }
+  });
+
+  it("ties the disabled button to its reason and to the note for screen readers", () => {
+    renderForm({ autofill: { onApply: vi.fn(), status: "none", summary: { ...EMPTY, missing: ["weight", "height"] } } });
+
+    const button = screen.getByRole("button", { name: BUTTON });
+    const described = (button.getAttribute("aria-describedby") ?? "").split(" ");
+    const texts = described.map((id) => document.getElementById(id)?.textContent ?? "");
+
+    expect(button).toBeDisabled();
+    expect(texts[0]).toMatch(/no signed visit with weight or height/);
+    expect(texts[1]).toMatch(/Only weight and height are copied/);
   });
 
   it("still fires onChange for manual weight input and blood pressure (regression)", () => {
@@ -132,6 +229,46 @@ describe("VitalsForm autofill", () => {
     fireEvent.change(bp, { target: { value: "120/80" } });
     fireEvent.blur(bp);
     expect(onChange).toHaveBeenCalledWith({ systolic: 120, diastolic: 80 });
+  });
+});
+
+describe("VitalsForm autofill in Spanish", () => {
+  afterEach(() => localStorage.removeItem("cac_lang"));
+
+  it("explains each state in Spanish, with Spanish dates and the same facts", async () => {
+    localStorage.setItem("cac_lang", "es");
+
+    renderForm({ autofill: ready([WEIGHT_78], { missing: ["height"] }) });
+    expect(
+      await screen.findByText("Copiará peso 78.0 kg (visita del 12 jul 2026). Sin talla en visitas anteriores."),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Solo se copian el peso y la talla\./)).toBeInTheDocument();
+  });
+
+  it("says in Spanish why nothing can be copied", async () => {
+    localStorage.setItem("cac_lang", "es");
+
+    renderForm({ autofill: { onApply: vi.fn(), status: "none", summary: { ...EMPTY, missing: ["weight", "height"] } } });
+
+    expect(
+      await screen.findByText(
+        "Este paciente aún no tiene una consulta firmada con peso o talla. Se registrarán al firmar esta.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("joins the names the Spanish way", async () => {
+    localStorage.setItem("cac_lang", "es");
+
+    renderForm({
+      autofill: {
+        onApply: vi.fn(),
+        status: "filled",
+        summary: { ...EMPTY, filled: [{ key: "weight", at: null }, { key: "height", at: null }] },
+      },
+    });
+
+    expect(await screen.findByText("Ya están rellenos: peso y talla.")).toBeInTheDocument();
   });
 });
 

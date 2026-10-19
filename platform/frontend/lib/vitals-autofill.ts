@@ -41,3 +41,38 @@ export function autofillPlan(readings: Readings | undefined, current: Record<str
 
   return { values, hasHistory };
 }
+
+export type AutofillKey = (typeof AUTOFILL_VITAL_KEYS)[number];
+
+export interface AutofillSummary {
+  /** What the button would write now: empty fields that have an earlier value. */
+  copy: { key: AutofillKey; value: number; at: string }[];
+  /** Fields that already have a value. `at` is the earlier visit those values
+   * match, when they do: a value the clinician typed is not "from" any visit. */
+  filled: { key: AutofillKey; at: string | null }[];
+  /** Fields with no earlier value at all. */
+  missing: AutofillKey[];
+}
+
+/** Why the button is, or is not, going to do something, field by field.
+ * `autofillPlan` says what to write; this says what to tell the clinician. */
+export function autofillSummary(readings: Readings | undefined, current: Record<string, number>): AutofillSummary {
+  const summary: AutofillSummary = { copy: [], filled: [], missing: [] };
+
+  for (const key of AUTOFILL_VITAL_KEYS) {
+    const reading = readings?.[key];
+    const earlier = reading?.value;
+    const hasEarlier = typeof earlier === "number" && Number.isFinite(earlier) && earlier > 0;
+    const present = current[key];
+    const isFilled = typeof present === "number" && Number.isFinite(present);
+
+    if (isFilled) {
+      summary.filled.push({ key, at: hasEarlier && present === earlier ? reading!.at : null });
+    } else if (hasEarlier) {
+      summary.copy.push({ key, value: earlier, at: reading!.at });
+    } else {
+      summary.missing.push(key);
+    }
+  }
+  return summary;
+}
