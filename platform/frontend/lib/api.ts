@@ -275,6 +275,9 @@ export interface LabHistoryEntry {
   taken_at: string;
   is_abnormal: boolean;
   is_critical: boolean;
+  /** The range this reading was judged against; null when none was known. */
+  reference_low: number | null;
+  reference_high: number | null;
 }
 
 export interface LabHistoryTest {

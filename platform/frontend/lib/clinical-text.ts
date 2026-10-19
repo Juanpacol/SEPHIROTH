@@ -70,7 +70,7 @@ const _TEST_KEY_ALIASES: Record<string, string> = {
   "colesterol ldl": "ldl",
 };
 
-function normalizeTestKey(testName: string): string {
+export function normalizeTestKey(testName: string): string {
   const cleaned = (testName ?? "").toLowerCase().trim();
   return _TEST_KEY_ALIASES[cleaned] ?? cleaned;
 }
