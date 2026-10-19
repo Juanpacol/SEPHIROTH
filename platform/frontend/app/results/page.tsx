@@ -7,20 +7,19 @@
  * list stays a tab away: what was sent and what is still unread is a different
  * question, and it already had a good answer.
  *
- * Communicating a result opens the patient's chart rather than sending from
- * here. The share needs the timeline entry the portal will render, and picking
- * that is a decision about which of a patient's entries this result *is* —
- * guessing it would show somebody the wrong result.
+ * Telling the patient is done from here too (`InformPatientSheet`): the clinician
+ * writes the message, and the server makes the entry the portal renders from the
+ * result unless they pick one of the patient's own.
  */
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, type Disposition, type ResultReview } from "@/lib/api";
 import { Search } from "lucide-react";
 import { useLanguage } from "@/lib/language";
 import SegmentedControl from "@/components/ui/segmented-control";
+import InformPatientSheet from "@/components/results/inform-patient-sheet";
 import ResultReviewCard from "@/components/results/result-review-card";
 import SharedResultsList from "@/components/results/shared-results-list";
 
@@ -31,13 +30,13 @@ const INBOX_QUERY_KEY = ["results", "inbox"] as const;
 
 export default function ResultsPage() {
   const { t } = useLanguage();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("inbox");
   const [filter, setFilter] = useState<Filter>("open");
   const [patientId, setPatientId] = useState("");
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [informing, setInforming] = useState<ResultReview | null>(null);
 
   const params = useMemo(() => {
     const base: { status?: readonly ["closed"]; severity?: "critical"; patient_id?: string } = {};
@@ -168,7 +167,7 @@ export default function ResultsPage() {
                   review={item}
                   busy={busy}
                   onReview={(body) => review.mutate({ id: item.id, ...body })}
-                  onCommunicate={() => router.push(`/patients/${item.patient_id}`)}
+                  onCommunicate={() => setInforming(item)}
                   onClose={() => close.mutate(item.id)}
                   onReopen={() => reopen.mutate(item.id)}
                 />
@@ -177,6 +176,14 @@ export default function ResultsPage() {
           )}
         </>
       )}
+      <InformPatientSheet
+        review={informing}
+        onClose={() => setInforming(null)}
+        onDone={(updated) => {
+          settle(updated);
+          setInforming(null);
+        }}
+      />
     </div>
   );
 }

@@ -11,9 +11,11 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.audit import add_phi_access
@@ -22,7 +24,8 @@ from api.timeparse import optional_aware
 from auth.deps import require_clinician
 from core.config import settings
 from core.db import get_session
-from data.schemas import Patient, ResultReview, TimelineEvent, User
+from data.schemas import Notification, Patient, ResultReview, ResultShare, TimelineEvent, User
+from sephiroth.workflows import events as workflow_events
 
 router = APIRouter(dependencies=[Depends(require_clinician)])
 
@@ -58,10 +61,11 @@ class ReviewRequest(BaseModel):
 
 class CommunicateRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
-    #: The timeline entry the portal renders. Required rather than derived: a
-    #: result and its narrative entry are separate rows, and guessing which
-    #: entry belongs to which result is how a patient sees the wrong one.
-    timeline_event_id: int
+    #: The timeline entry the portal renders. Optional: leave it out and one is
+    #: made from the result itself (a lab is not a timeline entry, so a result
+    #: recorded on its own has none to point at). Send one to attach the
+    #: patient's own existing entry instead.
+    timeline_event_id: Optional[int] = None
 
 
 def _review_out(review: ResultReview, result: Any, *, patient_name: Optional[str] = None) -> Dict[str, Any]:
@@ -226,6 +230,28 @@ async def review_result(
     return await _out(session, review)
 
 
+def _timeline_entry_for(review: ResultReview, result: Any) -> TimelineEvent:
+    """The entry the portal renders for a result that has none of its own.
+    Title only: the value and the unit, nothing the clinician did not record."""
+    if review.result_type == "lab" and result is not None:
+        name = result.test_name.replace("_", " ").strip()
+        value = f"{result.value:g}" + (f" {result.unit}" if result.unit else "")
+        return TimelineEvent(
+            patient_id=review.patient_id,
+            date=result.taken_at.date(),
+            type="lab",
+            title=f"{name[:1].upper()}{name[1:]}: {value}"[:200],
+        )
+    modality = (getattr(result, "modality", "") or "").upper()
+    part = getattr(result, "body_part", "") or ""
+    return TimelineEvent(
+        patient_id=review.patient_id,
+        date=getattr(result, "study_date", None) or _now().date(),
+        type="imaging",
+        title=f"{modality} {part}".strip()[:200] or "Imaging result",
+    )
+
+
 @router.post("/reviews/{review_id}/communicate", summary="Tell the patient")
 async def communicate(
     review_id: str,
@@ -233,28 +259,75 @@ async def communicate(
     clinician: User = Depends(require_clinician),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
+    """Tell the patient, record it, and notify them.
+
+    One transaction: the share, the notification and the workflow event land
+    together or not at all. A result is told once -- a second attempt is a 409,
+    so a double click never sends two messages or two notifications.
+    """
     review = await _get(session, review_id)
 
-    event = await session.get(TimelineEvent, body.timeline_event_id)
-    if event is None or event.patient_id != review.patient_id:
-        # The same check `results.py` makes when sharing: an event belonging to
-        # someone else would show one patient another patient's result.
-        raise HTTPException(status_code=404, detail="Timeline entry not found for this patient")
+    if body.timeline_event_id is not None:
+        event = await session.get(TimelineEvent, body.timeline_event_id)
+        if event is None or event.patient_id != review.patient_id:
+            # The same check `results.py` makes when sharing: an event belonging
+            # to someone else would show one patient another patient's result.
+            raise HTTPException(status_code=404, detail="Timeline entry not found for this patient")
+        already = await session.scalar(
+            select(ResultShare.id).where(
+                ResultShare.timeline_event_id == event.id, ResultShare.patient_id == review.patient_id
+            )
+        )
+        if already is not None:
+            raise HTTPException(status_code=409, detail="That timeline entry has already been shared")
+    else:
+        # Checked here too, before a timeline entry is made for nothing.
+        if review.share_id is not None:
+            raise HTTPException(status_code=409, detail="This result has already been communicated")
+        if review.status not in ("reviewed", "communicated"):
+            raise HTTPException(
+                status_code=409, detail="a result has to be reviewed before it is communicated"
+            )
+        event = _timeline_entry_for(review, await svc.load_result(session, review))
+        session.add(event)
+        await session.flush()
 
     try:
-        await svc.communicate_result(
+        share = await svc.communicate_result(
             session,
             review,
             actor=clinician,
             message=body.message,
-            timeline_event_id=body.timeline_event_id,
+            timeline_event_id=event.id,
             now=_now(),
         )
     except svc.ResultTransitionError as exc:
         await session.rollback()
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    if review.result_type == "lab":
+        workflow_events.emit(
+            session,
+            workflow_events.LAB_RESULT_AVAILABLE,
+            "result_share",
+            share.id,
+            patient_id=review.patient_id,
+        )
+    patient_login = await session.scalar(select(User).where(User.patient_id == review.patient_id))
+    if patient_login is not None:
+        session.add(
+            Notification(
+                id=str(uuid4()),
+                user_id=patient_login.id,
+                type="result_shared",
+                message="A new result has been shared with you.",
+            )
+        )
+    add_phi_access(
+        session, clinician.id, review.patient_id, f"/api/results/reviews/{review.id}/communicate", "POST"
+    )
     await session.commit()
-    return await _out(session, review)
+    return {**await _out(session, review), "patient_notified": patient_login is not None}
 
 
 @router.post("/reviews/{review_id}/close", summary="Close the loop")

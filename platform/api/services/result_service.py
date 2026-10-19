@@ -333,6 +333,9 @@ async def communicate_result(
     """
     if review.status not in ("reviewed", "communicated"):
         raise ResultTransitionError("a result has to be reviewed before it is communicated")
+    if review.share_id is not None:
+        # Told once. A retry or a double click must not send a second message.
+        raise ResultTransitionError("this result has already been communicated")
 
     moment = now or _now()
     share = ResultShare(
