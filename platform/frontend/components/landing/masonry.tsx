@@ -8,6 +8,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import { placeItems } from "@/lib/masonry-layout";
 import { gsap } from "gsap";
 import styles from "./masonry.module.css";
 
@@ -134,19 +135,7 @@ export default function Masonry({
   const grid = useMemo<GridItem[]>(() => {
     if (!width) return [];
 
-    const colHeights = new Array(columns).fill(0);
-    const columnWidth = width / columns;
-
-    return items.map((child) => {
-      const col = colHeights.indexOf(Math.min(...colHeights));
-      const x = columnWidth * col;
-      const height = child.height / 2;
-      const y = colHeights[col];
-
-      colHeights[col] += height;
-
-      return { ...child, x, y, w: columnWidth, h: height };
-    });
+    return placeItems(items, columns, width).map(({ item, x, y, w, h }) => ({ ...item, x, y, w, h }));
   }, [columns, items, width]);
 
   useEffect(() => {
