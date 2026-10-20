@@ -658,6 +658,24 @@ export type ResultReviewStatus = "received" | "reviewed" | "communicated" | "clo
 export type ResultSeverity = "critical" | "abnormal" | "normal" | "unclassified";
 export type Disposition = "normal" | "abnormal_expected" | "action_taken" | "needs_patient_contact";
 
+/** One test the record-a-result form offers, with what it is judged against. */
+export interface LabCatalogEntry {
+  test_name: string;
+  unit: string;
+  reference_low: number;
+  reference_high: number;
+  plausible_low: number;
+  plausible_high: number;
+}
+
+/** How a value would be classified, before anything is saved. */
+export interface LabPreview {
+  severity: ResultSeverity;
+  reason: string;
+  reference_low: number | null;
+  reference_high: number | null;
+}
+
 export interface ResultReview {
   id: string;
   result_type: "lab" | "imaging";
@@ -1117,6 +1135,13 @@ export const api = {
     reference_low?: number | null;
     reference_high?: number | null;
   }) => post<ResultReview>("/api/results/labs", body),
+  labCatalog: () => get<{ tests: LabCatalogEntry[] }>("/api/results/labs/catalog"),
+  previewLab: (body: {
+    test_name: string;
+    value: number;
+    reference_low?: number | null;
+    reference_high?: number | null;
+  }) => post<LabPreview>("/api/results/labs/preview", body),
   recordImaging: (body: {
     patient_id: string;
     modality: string;

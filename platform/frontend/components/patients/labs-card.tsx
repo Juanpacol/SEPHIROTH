@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -9,6 +9,7 @@ import { buildLabRows, type LabRow, type LabStatus } from "@/lib/lab-rows";
 import { type LabReviewState } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import MiniTrend from "@/components/dashboard/mini-trend";
+import RecordLabSheet from "@/components/patients/record-lab-sheet";
 
 const STATUS_STYLE: Record<LabStatus, string> = {
   critical: "bg-danger/10 text-danger",
@@ -85,6 +86,7 @@ export default function LabsCard({
   snapshot: Record<string, string>;
 }) {
   const { t, lang } = useLanguage();
+  const [recording, setRecording] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ["patient-lab-history", patientId],
     queryFn: () => api.patientLabHistory(patientId),
@@ -108,7 +110,12 @@ export default function LabsCard({
 
   return (
     <div className="card" data-testid="labs-card">
-      <h2 className="mb-1 font-bold">{t("labs.card.title")}</h2>
+      <div className="mb-1 flex items-center justify-between gap-3">
+        <h2 className="min-w-0 font-bold">{t("labs.card.title")}</h2>
+        <button type="button" onClick={() => setRecording(true)} className="btn-ghost tap shrink-0 text-sm">
+          {t("recordLab.open")}
+        </button>
+      </div>
       <p className="mb-3 text-xs text-muted">{t("labs.card.subtitle")}</p>
       {isLoading ? (
         <p className="text-sm text-muted">{t("labs.card.loading")}</p>
@@ -168,6 +175,9 @@ export default function LabsCard({
           })}
         </ul>
       )}
+      {/* Mounted only while open: it needs the toast provider and the catalog, and
+          a closed sheet has no use for either. */}
+      {recording ? <RecordLabSheet patientId={patientId} open onClose={() => setRecording(false)} /> : null}
     </div>
   );
 }
