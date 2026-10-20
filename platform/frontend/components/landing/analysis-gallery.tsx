@@ -64,7 +64,7 @@ export default function AnalysisGallery() {
           animateFrom="bottom"
           blurToFocus
           scaleOnHover
-          hoverScale={0.96}
+          hoverScale={1.02}
           duration={0.5}
           stagger={0.08}
           onLayout={handleLayout}

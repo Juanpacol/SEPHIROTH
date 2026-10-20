@@ -73,7 +73,7 @@ export default function Masonry({
   stagger = 0.05,
   animateFrom = "bottom",
   scaleOnHover = true,
-  hoverScale = 0.95,
+  hoverScale = 1.02,
   blurToFocus = true,
   colorShiftOnHover = false,
   onLayout,
@@ -89,6 +89,11 @@ export default function Masonry({
   // The entrance choreography is decoration; honouring the OS setting costs one
   // branch. `globals.css` already does the same for smooth scrolling.
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+
+  // Hover only exists on a device with a pointer. On a touch screen
+  // `mouseenter` fires after a tap and the card stays in its hovered state until
+  // the next tap somewhere else, so the scale is skipped there entirely.
+  const canHover = useMediaQuery("(hover: hover)");
 
   const [containerRef, { width }] = useMeasure<HTMLDivElement>();
   const [imagesReady, setImagesReady] = useState(false);
@@ -198,6 +203,7 @@ export default function Masonry({
   }, [grid, imagesReady, stagger, animateFrom, blurToFocus, duration, ease, reduceMotion]);
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>, item: GridItem) => {
+    if (!canHover) return;
     const selector = `[data-key="${item.id}"]`;
     if (scaleOnHover) {
       gsap.to(selector, { scale: hoverScale, duration: 0.3, ease: "power2.out" });
@@ -209,6 +215,7 @@ export default function Masonry({
   };
 
   const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>, item: GridItem) => {
+    if (!canHover) return;
     const selector = `[data-key="${item.id}"]`;
     if (scaleOnHover) {
       gsap.to(selector, { scale: 1, duration: 0.3, ease: "power2.out" });
@@ -225,7 +232,12 @@ export default function Masonry({
         <div
           key={item.id}
           data-key={item.id}
-          className={styles.itemWrapper}
+          className={`${styles.itemWrapper} ${item.url ? styles.link : ""}`}
+          // Focusable so a keyboard user can reach the caption that a mouse user
+          // gets by hovering; a group with a name, not a control.
+          tabIndex={0}
+          role="group"
+          aria-label={item.title ?? item.caption ?? "Medical imaging analysis example"}
           onClick={() => item.url && window.open(item.url, "_blank", "noopener")}
           onMouseEnter={(e) => handleMouseEnter(e, item)}
           onMouseLeave={(e) => handleMouseLeave(e, item)}
