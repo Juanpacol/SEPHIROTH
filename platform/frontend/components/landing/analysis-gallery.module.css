@@ -1,0 +1,36 @@
+/* The gallery's height, reserved up front.
+ *
+ * Card heights are fixed, so the gallery's height depends only on the column
+ * count, which steps with the viewport (see COLUMN_BREAKPOINTS in
+ * lib/masonry-layout.ts). Stating it here, per breakpoint, means the space is
+ * already the right size on the server's first paint, so nothing below the
+ * gallery moves when the cards are measured and placed. These numbers come from
+ * `layoutHeight(ITEMS, columns)`; gallery-height.test.ts fails if they drift. */
+.stage {
+  position: relative;
+  height: 2635px;
+}
+
+@media (min-width: 400px) {
+  .stage {
+    height: 1420px;
+  }
+}
+
+@media (min-width: 600px) {
+  .stage {
+    height: 930px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .stage {
+    height: 750px;
+  }
+}
+
+@media (min-width: 1500px) {
+  .stage {
+    height: 630px;
+  }
+}
