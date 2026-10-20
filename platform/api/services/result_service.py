@@ -203,11 +203,13 @@ async def record_lab_result(
             now=moment,
         )
 
-    await _update_patient_panel(session, patient_id, test_name, value)
+    await _update_patient_panel(session, patient_id, test_name, value, unit)
     return result, review, True
 
 
-async def _update_patient_panel(session: AsyncSession, patient_id: str, test_name: str, value: float) -> None:
+async def _update_patient_panel(
+    session: AsyncSession, patient_id: str, test_name: str, value: float, unit: str = ""
+) -> None:
     """Keep `Patient.lab_results` in step with the row just recorded.
 
     Two representations of one lab value exist -- the JSON panel the risk engine
@@ -223,7 +225,9 @@ async def _update_patient_panel(session: AsyncSession, patient_id: str, test_nam
     from sephiroth.clinical.results import _normalise
 
     panel = dict(patient.lab_results or {})
-    panel[_normalise(test_name)] = str(value)
+    # With its unit: "3.4 mEq/L", not "3.4". The risk engine reads the number out
+    # of the text, and a reader of the panel is told what the number is in.
+    panel[_normalise(test_name)] = f"{value:g}" + (f" {unit.strip()}" if unit.strip() else "")
     patient.lab_results = panel
 
 

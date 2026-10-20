@@ -9,12 +9,12 @@ router is how a route ends up protected by accident.
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,6 +25,7 @@ from auth.deps import require_clinician
 from core.config import settings
 from core.db import get_session
 from data.schemas import Notification, Patient, ResultReview, ResultShare, TimelineEvent, User
+from sephiroth.clinical.results import classify_lab, implausible_reason, lab_catalog
 from sephiroth.workflows import events as workflow_events
 
 router = APIRouter(dependencies=[Depends(require_clinician)])
@@ -34,14 +35,40 @@ def _now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-class LabIntake(BaseModel):
-    patient_id: str
+class _LabValue(BaseModel):
+    """A lab value as typed. Refused as a typo when no real measurement could be
+    it (a slipped decimal, a negative), before anything is stored or classified."""
+
     test_name: str = Field(min_length=1, max_length=60)
     value: float
-    unit: str = Field("", max_length=20)
-    taken_at: Optional[datetime] = None
     reference_low: Optional[float] = None
     reference_high: Optional[float] = None
+
+    @model_validator(mode="after")
+    def _plausible(self) -> "_LabValue":
+        reason = implausible_reason(self.test_name, self.value)
+        if reason:
+            raise ValueError(reason)
+        return self
+
+
+class LabIntake(_LabValue):
+    patient_id: str
+    unit: str = Field("", max_length=20)
+    taken_at: Optional[datetime] = None
+
+    @model_validator(mode="after")
+    def _not_in_the_future(self) -> "LabIntake":
+        # A draw cannot have happened yet. A few minutes of slack for clocks that
+        # disagree; a naive time is left for `optional_aware` to refuse, as before.
+        if self.taken_at is not None and self.taken_at.tzinfo is not None:
+            if self.taken_at.astimezone(timezone.utc) > datetime.now(timezone.utc) + timedelta(minutes=5):
+                raise ValueError("taken_at cannot be in the future.")
+        return self
+
+
+class LabPreview(_LabValue):
+    """What the form asks before saving: how would this value be classified?"""
 
 
 class ImagingIntake(BaseModel):
@@ -110,6 +137,27 @@ async def _patient_name(session: AsyncSession, patient_id: str) -> Optional[str]
 async def _out(session: AsyncSession, review: ResultReview) -> Dict[str, Any]:
     result = await svc.load_result(session, review)
     return _review_out(review, result, patient_name=await _patient_name(session, review.patient_id))
+
+
+@router.get("/labs/catalog", summary="The lab tests the form offers, with unit and reference range")
+async def lab_tests() -> Dict[str, Any]:
+    return {"tests": lab_catalog()}
+
+
+@router.post("/labs/preview", summary="How a lab value would be classified, without saving it")
+async def preview_lab(body: LabPreview) -> Dict[str, Any]:
+    """The same rules that classify a result when it is recorded, run on what the
+    form has so far, so the clinician sees the outcome before saving. Nothing is
+    written."""
+    result = classify_lab(
+        body.test_name, body.value, reference_low=body.reference_low, reference_high=body.reference_high
+    )
+    return {
+        "severity": result.severity,
+        "reason": result.reason,
+        "reference_low": result.reference_low,
+        "reference_high": result.reference_high,
+    }
 
 
 @router.post("/labs", status_code=201, summary="Record a lab result")

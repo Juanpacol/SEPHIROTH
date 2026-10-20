@@ -83,6 +83,95 @@ _ALIASES = {
 }
 
 
+#: The unit each known test is reported in, so the form can fill it in and the
+#: patient panel can keep it. These are the units `REFERENCE_RANGES` and
+#: `LAB_RULES` are written in: a range in mg/dL means nothing next to a value
+#: typed in mmol/L, so the unit is part of the definition, not decoration.
+LAB_UNITS: Dict[str, str] = {
+    "potassium": "mEq/L",
+    "sodium": "mEq/L",
+    "creatinine": "mg/dL",
+    "glucose": "mg/dL",
+    "hba1c": "%",
+    "inr": "",
+    "hemoglobin": "g/dL",
+    "platelets": "x10^3/uL",
+    "leukocytes": "x10^3/uL",
+    "tsh": "mIU/L",
+    "ldl": "mg/dL",
+    "alt": "U/L",
+    "ast": "U/L",
+    "calcium": "mg/dL",
+    "magnesium": "mg/dL",
+    "bnp": "pg/mL",
+    "cholesterol": "mg/dL",
+    "bmi": "kg/m2",
+    "ef": "%",
+}
+
+#: What a person could conceivably measure, wide on purpose: it is here to catch
+#: a slipped decimal (a potassium of 62) or a unit typed into the value field,
+#: not to second-guess a very sick patient. A value outside it is refused as a
+#: typo; one inside it that is dangerous is `critical`, which is a different thing.
+LAB_PLAUSIBLE: Dict[str, Tuple[float, float]] = {
+    "potassium": (0.5, 12.0),
+    "sodium": (90.0, 190.0),
+    "creatinine": (0.1, 25.0),
+    "glucose": (10.0, 1500.0),
+    "hba1c": (2.0, 20.0),
+    "inr": (0.5, 15.0),
+    "hemoglobin": (2.0, 25.0),
+    "platelets": (1.0, 2000.0),
+    "leukocytes": (0.1, 500.0),
+    "tsh": (0.001, 500.0),
+    "ldl": (1.0, 1000.0),
+    "alt": (0.0, 10000.0),
+    "ast": (0.0, 10000.0),
+    "calcium": (3.0, 20.0),
+    "magnesium": (0.3, 10.0),
+    "bnp": (0.0, 35000.0),
+    "cholesterol": (30.0, 1500.0),
+    "bmi": (8.0, 100.0),
+    "ef": (5.0, 90.0),
+}
+
+
+def lab_catalog() -> list:
+    """The tests the form offers, with the unit and the reference range each one
+    is judged against. Every test here has all of a unit, a range and a plausible
+    span; a test is not offered without them."""
+    return [
+        {
+            "test_name": name,
+            "unit": LAB_UNITS[name],
+            "reference_low": low,
+            "reference_high": high,
+            "plausible_low": LAB_PLAUSIBLE[name][0],
+            "plausible_high": LAB_PLAUSIBLE[name][1],
+        }
+        for name, (low, high) in REFERENCE_RANGES.items()
+    ]
+
+
+def implausible_reason(test_name: str, value: float) -> Optional[str]:
+    """Why this number cannot be a real measurement of this test, or None.
+
+    Only tests with a known span are judged: an unknown test is never refused
+    (see the module docstring), except for a negative or non-finite value, which
+    no laboratory produces."""
+    import math
+
+    if not math.isfinite(value) or value < 0:
+        return f"{value} is not a possible laboratory value."
+    span = LAB_PLAUSIBLE.get(_normalise(test_name))
+    if span is not None and not span[0] <= value <= span[1]:
+        return (
+            f"{value} is outside what {test_name} can measure ({span[0]}-{span[1]}). "
+            "Check the decimal point and the unit."
+        )
+    return None
+
+
 def _normalise(test_name: str) -> str:
     cleaned = " ".join((test_name or "").lower().split())
     return _ALIASES.get(cleaned, cleaned)
