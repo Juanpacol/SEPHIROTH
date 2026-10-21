@@ -42,6 +42,9 @@ from sephiroth.tools import get_tool_runtime
 router = APIRouter()
 
 # Browser-renderable formats only — this is not a general file-download route.
+# Some Python builds (the slim container among them) do not know .webp, and the
+# preview would then go out as application/octet-stream.
+mimetypes.add_type("image/webp", ".webp")
 _PREVIEWABLE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
 _MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20 MB
 # System temp dir, not a repo path: this whole imaging flow is explicitly a
@@ -57,10 +60,31 @@ _UPLOAD_DIR = Path(tempfile.gettempdir()) / "sephiroth-imaging-uploads"
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _ALLOWED_IMAGE_DIRS = [_UPLOAD_DIR.resolve(), (_REPO_ROOT / "real_data" / "imaging").resolve()]
 
+# The demo studies that ship with the deployment (`scripts/generate_imaging_demo.py`
+# writes the analyses next to them). A study refers to one as `demo:<file>` rather
+# than by a path, so the same row works on any machine and in the container. Only
+# files listed in `analyses.json` can be named: the prefix is not a way to read
+# whatever sits in that folder.
+_DEMO_DIR = Path(__file__).resolve().parents[1] / "static" / "imaging-demo"
+_DEMO_PREFIX = "demo:"
+
+
+def _demo_files() -> set[str]:
+    try:
+        return {a["file"] for a in json.loads((_DEMO_DIR / "analyses.json").read_text())}
+    except (OSError, ValueError, KeyError, TypeError):
+        return set()
+
 
 def _resolve_allowed_image_path(raw_path: str) -> Path:
     """Resolve `raw_path` and reject it (404, not 403 — don't confirm files
-    exist outside the allow-list) unless it lands inside `_ALLOWED_IMAGE_DIRS`."""
+    exist outside the allow-list) unless it lands inside `_ALLOWED_IMAGE_DIRS`
+    or names one of the bundled demo studies as `demo:<file>`."""
+    if raw_path.startswith(_DEMO_PREFIX):
+        name = raw_path[len(_DEMO_PREFIX) :]
+        if name not in _demo_files():
+            raise HTTPException(status_code=404, detail="File not found")
+        return (_DEMO_DIR / name).resolve()
     resolved = Path(raw_path).expanduser().resolve()
     if not any(resolved.is_relative_to(base) for base in _ALLOWED_IMAGE_DIRS):
         raise HTTPException(status_code=404, detail="File not found")
@@ -270,6 +294,27 @@ async def preview_image(path: str, user: User = Depends(get_current_user)) -> Fi
 _IMAGE_PATH_RE = re.compile(r"^\[image_path:([^\]]+)\]\s*(?:\[model:([^\]]+)\]\s*)?(.*)$", re.DOTALL)
 
 
+@router.get("/imaging/demo", summary="The bundled demo studies and their analyses")
+async def demo_imaging_analyses(user: User = Depends(get_current_user)) -> List[Dict[str, Any]]:
+    """What the Imaging page's "What this looks like" panel shows: a study whose
+    image ships with the deployment, and the analysis the Vision AI wrote for it.
+    The `image` is a `demo:<file>` name for `/imaging/preview`."""
+    try:
+        analyses = json.loads((_DEMO_DIR / "analyses.json").read_text())
+    except (OSError, ValueError):
+        return []
+    return [
+        {
+            "image": f"{_DEMO_PREFIX}{a['file']}",
+            "modality": a["modality"],
+            "region": a["region"],
+            "description": a["description"],
+            "model": a["model"],
+        }
+        for a in analyses
+    ]
+
+
 @router.get("/imaging/recent", summary="Recently AI-analyzed imaging studies, with preview + description")
 async def recent_imaging_analyses(
     limit: int = 12,
@@ -294,15 +339,26 @@ async def recent_imaging_analyses(
         image_path: Optional[str] = None
         model: Optional[str] = None
         description = event.detail
+        # Why there is no image, when there is none: the page says it instead of a
+        # bare "No preview". `None` when there is an image.
+        unavailable: Optional[str] = "no_image"
 
         match = _IMAGE_PATH_RE.match(event.detail)
         if match:
             candidate = match.group(1)
             model = match.group(2)
             description = match.group(3).strip()
-            candidate_path = Path(candidate)
-            if candidate_path.suffix.lower() in _PREVIEWABLE_EXTENSIONS and candidate_path.is_file():
-                image_path = candidate
+            if candidate.startswith(_DEMO_PREFIX):
+                # A demo study: the file ships with the deployment, so a name that is
+                # not one of them is a bad row, not a missing upload.
+                known = candidate[len(_DEMO_PREFIX) :] in _demo_files()
+                image_path, unavailable = (candidate, None) if known else (None, "file_missing")
+            elif Path(candidate).suffix.lower() not in _PREVIEWABLE_EXTENSIONS:
+                unavailable = "unsupported_format"
+            elif Path(candidate).is_file():
+                image_path, unavailable = candidate, None
+            else:
+                unavailable = "file_missing"
 
         results.append(
             {
@@ -312,6 +368,7 @@ async def recent_imaging_analyses(
                 "title": event.title,
                 "date": event.date.isoformat(),
                 "image_path": image_path,
+                "preview_unavailable": unavailable,
                 "model": model,
                 "description": description,
                 "ai_generated": event.ai_generated,

@@ -690,8 +690,6 @@ const ES: Record<string, string> = {
   "imaging.sample": "Ejemplo",
   "imaging.sampleDescription":
     "Sube una imagen a la izquierda y este panel se llena con el mismo tipo de descripción de visión en vivo y evidencia citada que se muestra abajo — de una consulta real, no una maqueta.",
-  "imaging.sampleAlt":
-    "Ejemplo de un Análisis de Imágenes completo: una descripción de visión en vivo junto a evidencia de guías citada",
   "imaging.visionDescription": "Descripción de visión",
   "imaging.visionAiBadge": "Visión IA",
   "imaging.generatedByDisclaimer":
@@ -709,7 +707,10 @@ const ES: Record<string, string> = {
   "imaging.aiGenerated": "Generado por IA",
   "imaging.loadingRecent": "Cargando análisis recientes…",
   "imaging.noneYet": "Aún no hay análisis de imágenes — corre uno arriba y aparecerá aquí.",
-  "imaging.noPreview": "Sin vista previa",
+  "imaging.unavailable": "Imagen no disponible",
+  "imaging.unavailable.file_missing": "El archivo de este estudio no está en este servidor.",
+  "imaging.unavailable.unsupported_format": "Este tipo de archivo no se puede mostrar como imagen.",
+  "imaging.unavailable.no_image": "Este estudio no tiene imagen adjunta.",
   "imaging.modelLabel": "Modelo: {model}",
   "imaging.viewFull": "Ver análisis completo",
   "imaging.analyzePrecisely": "Reabrir con Visión IA",

@@ -250,6 +250,15 @@ export interface TimelineEvent {
   ai_generated?: boolean;
 }
 
+/** A study whose image ships with the deployment, with the analysis written for it. */
+export interface DemoImagingStudy {
+  image: string;
+  modality: string;
+  region: string;
+  description: string;
+  model: string;
+}
+
 export interface RecentImagingAnalysis {
   id: number;
   patient_id: string;
@@ -257,6 +266,8 @@ export interface RecentImagingAnalysis {
   title: string;
   date: string;
   image_path: string | null;
+  /** Why `image_path` is null, so the page can say it. Null when there is an image. */
+  preview_unavailable: "file_missing" | "unsupported_format" | "no_image" | null;
   model: string | null;
   description: string;
   ai_generated: boolean;
@@ -934,6 +945,7 @@ export const api = {
   imagePreviewBlob: (path: string) => getBlob(`/api/medical/imaging/preview?path=${encodeURIComponent(path)}`),
   detectModality: (imagePath: string) =>
     post<{ modality: string }>("/api/medical/imaging/detect-modality", { image_path: imagePath }),
+  demoImagingStudies: () => get<DemoImagingStudy[]>("/api/medical/imaging/demo"),
   recentImagingAnalyses: (limit = 12) =>
     get<RecentImagingAnalysis[]>(`/api/medical/imaging/recent?limit=${limit}`),
   addTimelineEvent: (patientId: string, body: { type: string; title: string; detail?: string }) =>

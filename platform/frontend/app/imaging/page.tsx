@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpenCheck, Bot, CalendarPlus, Clock, Eye, Loader2 } from "lucide-react";
+import { BookOpenCheck, Bot, CalendarPlus, Clock, Eye, ImageOff, Loader2 } from "lucide-react";
 import { api, type RecentImagingAnalysis } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
@@ -94,6 +94,12 @@ export default function ImagingPage() {
   const [expandedAnalysis, setExpandedAnalysis] = useState<RecentImagingAnalysis | null>(null);
 
   const { data: patients } = useQuery({ queryKey: ["patients"], queryFn: () => api.patients() });
+  const { data: demoStudies } = useQuery({
+    queryKey: ["imaging-demo"],
+    queryFn: () => api.demoImagingStudies(),
+    staleTime: Infinity,
+  });
+  const sample = demoStudies?.[0];
   const { data: recentAnalyses, isLoading: recentLoading } = useQuery({
     queryKey: ["imaging-recent"],
     queryFn: () => api.recentImagingAnalyses(12),
@@ -206,7 +212,7 @@ export default function ImagingPage() {
             .replace("{description}", describeText)
             .replace("{focus}", focus),
         },
-      })
+      }),
     );
   };
 
@@ -278,12 +284,17 @@ export default function ImagingPage() {
                 </span>
               </div>
               <p className="text-sm text-muted">{t("imaging.sampleDescription")}</p>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/landing/imaging-vision.jpg"
-                alt={t("imaging.sampleAlt")}
-                className="w-full rounded-xl border border-line/60"
-              />
+              {sample ? (
+                <div className="space-y-3" data-testid="imaging-sample">
+                  <div className="aspect-[4/3] w-full overflow-hidden rounded-xl border border-line/60 bg-surface">
+                    <AuthenticatedPreview path={sample.image} alt={`${sample.modality} ${sample.region}`} />
+                  </div>
+                  <p className="line-clamp-6 text-sm leading-relaxed text-ink/80">{sample.description}</p>
+                  <p className="text-[10px] text-muted">
+                    {t("imaging.modelLabel").replace("{model}", sample.model)}
+                  </p>
+                </div>
+              ) : null}
             </div>
           )}
 
@@ -360,7 +371,6 @@ export default function ImagingPage() {
               )}
             </div>
           )}
-
         </div>
       </div>
 
@@ -389,15 +399,20 @@ export default function ImagingPage() {
                   {a.image_path ? (
                     <AuthenticatedPreview path={a.image_path} alt={a.title} />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xs text-muted">
-                      {t("imaging.noPreview")}
+                    <div
+                      className="flex h-full w-full flex-col items-center justify-center gap-1 px-4 text-center text-xs text-muted"
+                      data-testid="preview-unavailable"
+                    >
+                      <ImageOff size={18} aria-hidden="true" />
+                      <span className="font-semibold">{t("imaging.unavailable")}</span>
+                      <span>{t(`imaging.unavailable.${a.preview_unavailable ?? "no_image"}`)}</span>
                     </div>
                   )}
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-bold">{a.title}</p>
-                    <span className="whitespace-nowrap text-[10px] text-muted">{a.date}</span>
+                    <p className="min-w-0 text-sm font-bold">{a.title}</p>
+                    <span className="shrink-0 whitespace-nowrap text-[10px] text-muted">{a.date}</span>
                   </div>
                   <p className="text-xs font-semibold text-primary">{a.patient_name}</p>
                   <p className="line-clamp-4 text-xs leading-relaxed text-ink/80">{a.description}</p>
@@ -410,14 +425,14 @@ export default function ImagingPage() {
                 <div className="flex gap-2 border-t border-line/60 pt-2">
                   <button
                     onClick={() => setExpandedAnalysis(a)}
-                    className="flex-1 rounded-lg border border-line/70 px-2 py-1.5 text-xs font-semibold text-ink/80 hover:bg-surface"
+                    className="tap flex-1 rounded-lg border border-line/70 px-2 py-1.5 text-xs font-semibold text-ink/80 hover:bg-surface"
                   >
                     {t("imaging.viewFull")}
                   </button>
                   <button
                     onClick={() => openInAnalyzer(a)}
                     disabled={!a.image_path}
-                    className="flex-1 rounded-lg bg-primary px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+                    className="tap flex-1 rounded-lg bg-primary px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
                   >
                     {t("imaging.analyzePrecisely")}
                   </button>
