@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint --max-warnings=0",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:fast": "playwright test --project=desktop --project=narrow",
+    "test:e2e:changed": "bash ../../scripts/check-changed.sh --e2e-only"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.2",

@@ -10,16 +10,39 @@ on:
     branches: [main]
   pull_request:
 
+# A newer push to a PR cancels that PR's older run: nobody reads its result. Runs on main
+# are never cancelled: each one gates a deploy.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# AB#47: the three jobs below keep their names (branch protection lists them), but what
+# they run depends on what the change touches, decided by scripts/ci_scope.py (see
+# docs/04-development/fast-loop.md). A push to main always runs everything, and a file
+# the script does not recognise turns everything on. Each job also has a time limit: a hung
+# step used to hold a PR for 25 minutes.
+
 jobs:
   # Style, commit hygiene, secrets, and the frontend build/unit-test path.
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
         with:
           # gitleaks diffs the PR's first commit's parent through its last
-          # commit — needs full history or it fails on multi-commit PRs.
+          # commit — needs full history or it fails on multi-commit PRs. The scope
+          # step below needs it too.
           fetch-depth: 0
+
+      - name: What does this change touch?
+        id: scope
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python3 scripts/ci_scope.py --base "origin/${{ github.base_ref }}"
+          else
+            python3 scripts/ci_scope.py --all
+          fi
 
       - name: gitleaks (secret scanning)
         uses: gitleaks/gitleaks-action@v3
@@ -85,13 +108,16 @@ jobs:
             exit 1
           fi
 
+      # Only when the change touches the frontend (or something unrecognised).
       - uses: actions/setup-node@v7
+        if: steps.scope.outputs.frontend == 'true'
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: platform/frontend/package-lock.json
 
       - name: frontend lint + unit tests + build
+        if: steps.scope.outputs.frontend == 'true'
         working-directory: platform/frontend
         run: |
           npm ci
@@ -99,11 +125,16 @@ jobs:
           npm run test
           npm run build
 
+      - name: frontend checks skipped
+        if: steps.scope.outputs.frontend != 'true'
+        run: 'echo "No frontend file changed (scripts/ci_scope.py): lint, unit tests and build skipped."'
+
   # Backend correctness: unit/integration suite with coverage, against a
   # real Postgres so RAG (pgvector) queries execute for real, plus the
   # frozen-contract drift check.
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     services:
       postgres:
         image: pgvector/pgvector:pg15
@@ -120,27 +151,47 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: What does this change touch?
+        id: scope
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python3 scripts/ci_scope.py --base "origin/${{ github.base_ref }}"
+          else
+            python3 scripts/ci_scope.py --all
+          fi
       - uses: actions/setup-python@v7
+        if: steps.scope.outputs.backend == 'true'
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: requirements-dev.txt
-      - run: pip install -r requirements-dev.txt
-      - run: pip install -e .
+      - if: steps.scope.outputs.backend == 'true'
+        run: pip install -r requirements-dev.txt
+      - if: steps.scope.outputs.backend == 'true'
+        run: pip install -e .
       - name: Migrate + seed the RAG corpus (guideline_documents)
+        if: steps.scope.outputs.backend == 'true'
         env:
           DATABASE_URL: "postgresql+asyncpg://clinical_ai:clinical_ai_password@localhost:5433/clinical_ai_db"
         run: |
           PYTHONPATH=.:platform alembic upgrade head
           PYTHONPATH=.:platform python -m data.rag.seed_pgvector
       - name: Run tests with coverage gate
+        if: steps.scope.outputs.backend == 'true'
         run: pytest --cov --cov-report=term --cov-report=xml
       - name: Contract schema drift
+        if: steps.scope.outputs.backend == 'true'
         run: python scripts/export_contracts.py --check
       - uses: actions/upload-artifact@v7
+        if: steps.scope.outputs.backend == 'true'
         with:
           name: coverage-report
           path: coverage.xml
+      - name: backend tests skipped
+        if: steps.scope.outputs.backend != 'true'
+        run: 'echo "No backend file changed (scripts/ci_scope.py): tests and contract check skipped."'
 
   # Real deployability: builds the exact production image, boots it twice
   # (dev config, then prod config) against a real Postgres, and asserts a
@@ -158,15 +209,28 @@ jobs:
   # something to work around with one shared Postgres (SF081).
   deploy-smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
       packages: read
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: What does this change touch?
+        id: scope
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python3 scripts/ci_scope.py --base "origin/${{ github.base_ref }}"
+          else
+            python3 scripts/ci_scope.py --all
+          fi
       - name: Build image
+        if: steps.scope.outputs.image == 'true'
         run: docker build -t sephiroth-api:ci .
 
       - name: Boot (development) + smoke test
+        if: steps.scope.outputs.image == 'true'
         run: |
           docker network create smoke-net
           docker run -d --name smoke-pg --network smoke-net \
@@ -194,6 +258,7 @@ jobs:
           docker network rm smoke-net
 
       - name: Boot (production config) + health check
+        if: steps.scope.outputs.image == 'true'
         run: |
           docker network create smoke-net
           docker run -d --name smoke-pg --network smoke-net \
@@ -221,6 +286,7 @@ jobs:
           docker network rm smoke-net
 
       - name: Assert bad config fails with a readable message
+        if: steps.scope.outputs.image == 'true'
         run: |
           set +e
           OUTPUT=$(docker run --rm -e ENVIRONMENT=production -e JWT_SECRET=short sephiroth-api:ci 2>&1)
@@ -243,6 +309,7 @@ jobs:
       # fallback list does NOT help: Trivy 0.70.0 aborts on the first
       # repository's error instead of trying the next (verified with Docker).
       - name: Trivy (CRITICAL OS-package CVEs in the built image)
+        if: steps.scope.outputs.image == 'true'
         uses: aquasecurity/trivy-action@v0.36.0
         env:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
@@ -257,3 +324,7 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
           format: table
+
+      - name: image checks skipped
+        if: steps.scope.outputs.image != 'true'
+        run: 'echo "Nothing that reaches the production image changed (scripts/ci_scope.py): build, boots and scan skipped."'
