@@ -19,6 +19,17 @@ test.describe("landing: agents", () => {
     await expect(section.getByText(/Coordinator|Laboratory|Radiology|Drug Safety/)).toHaveCount(0);
   });
 
+  test("the three cards line up: icons and titles sit at the same height", async ({ page }) => {
+    const titles = page.locator("#agents h3");
+    await expect(titles).toHaveCount(3);
+    const tops = await titles.evaluateAll((els) =>
+      els.map((e) => Math.round(e.getBoundingClientRect().top + window.scrollY)),
+    );
+    // One row at tablet and up; stacked on a phone, where alignment does not apply.
+    const sameRow = await page.evaluate(() => window.innerWidth >= 768);
+    if (sameRow) expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(1);
+  });
+
   test("the section fits the screen at every width", async ({ page }) => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);

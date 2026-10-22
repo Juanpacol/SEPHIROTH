@@ -45,25 +45,26 @@ const PAIN_POINTS = [
 ];
 
 // The three agents that exist (SPEC-029 removed Coordinator and Laboratory). Named
-// by what they do; see `lib/agents.ts` for the same names inside the app.
+// by what they do; see `lib/agents.ts` for the same names inside the app. Cards
+// are top-aligned so icons and titles share a height whatever the text length.
 const AGENTS = [
   {
     nameKey: "marketing.agentName.radiology",
     Icon: ScanEye,
     bodyKey: "marketing.agentsSection.radiology.body",
-    className: "col-span-3 md:col-span-1",
+    className: "col-span-3 justify-start md:col-span-1",
   },
   {
     nameKey: "marketing.agentName.drugSafety",
     Icon: Pill,
     bodyKey: "marketing.agentsSection.drugSafety.body",
-    className: "col-span-3 md:col-span-1",
+    className: "col-span-3 justify-start md:col-span-1",
   },
   {
     nameKey: "marketing.agentName.evidence",
     Icon: BookOpen,
     bodyKey: "marketing.agentsSection.evidence.body",
-    className: "col-span-3 md:col-span-1",
+    className: "col-span-3 justify-start md:col-span-1",
   },
 ];
 
