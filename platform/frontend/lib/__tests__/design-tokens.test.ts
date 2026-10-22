@@ -112,7 +112,7 @@ describe("contrast (WCAG AA, 4.5:1 for text)", () => {
   it("white text on the primary button fill clears AA (it was 3.65:1 on the brand blue)", () => {
     expect(contrast(WHITE, BRAND)).toBeLessThan(4.5);
     expect(contrast(WHITE, rgb(light, "color-primary-fill"))).toBeGreaterThanOrEqual(4.5);
-    expect(css).toMatch(/\.btn-primary\s*\{\s*@apply btn bg-primary-fill text-white/);
+    expect(css).toMatch(/\.btn-primary\s*\{[^}]*@apply btn bg-primary-fill text-white/);
   });
 });
 

@@ -14,6 +14,10 @@ import type { Config } from "tailwindcss";
  */
 const config: Config = {
   darkMode: "class",
+  // `hover:` utilities apply only where the device can hover (`@media (hover: hover)`).
+  // On a touch screen a tap leaves the element "hovered" until the next tap, so
+  // buttons and cards stay lifted and tinted; this makes that impossible app-wide.
+  future: { hoverOnlyWhenSupported: true },
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
@@ -82,6 +86,20 @@ const config: Config = {
           from: { opacity: "0", transform: "translateY(-4px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        // Entrances travel a few pixels and fade; they never slide in from off screen.
+        toastIn: {
+          from: { opacity: "0", transform: "translateY(6px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        toastOut: { to: { opacity: "0", transform: "translateY(4px)" } },
+        scrimIn: { from: { opacity: "0" } },
+        scrimOut: { to: { opacity: "0" } },
+        sheetInRight: { from: { opacity: "0", transform: "translateX(24px)" } },
+        sheetOutRight: { to: { opacity: "0", transform: "translateX(24px)" } },
+        sheetInLeft: { from: { opacity: "0", transform: "translateX(-24px)" } },
+        sheetOutLeft: { to: { opacity: "0", transform: "translateX(-24px)" } },
+        sheetInBottom: { from: { opacity: "0", transform: "translateY(24px)" } },
+        sheetOutBottom: { to: { opacity: "0", transform: "translateY(24px)" } },
         thinkingDot: {
           "0%, 60%, 100%": { opacity: "0.25", transform: "translateY(0)" },
           "30%": { opacity: "1", transform: "translateY(-1.5px)" },
@@ -109,6 +127,17 @@ const config: Config = {
       },
       animation: {
         fadeIn: "fadeIn 0.3s ease-out",
+        // Enter at the slow duration and leave faster: leaving should not make anyone wait.
+        "toast-in": "toastIn var(--duration-normal) var(--ease-emphasized) both",
+        "toast-out": "toastOut var(--duration-fast) var(--ease-standard) both",
+        "scrim-in": "scrimIn var(--duration-slow) var(--ease-standard) both",
+        "scrim-out": "scrimOut var(--duration-normal) var(--ease-standard) both",
+        "sheet-in-right": "sheetInRight var(--duration-slow) var(--ease-sheet) both",
+        "sheet-out-right": "sheetOutRight var(--duration-normal) var(--ease-standard) both",
+        "sheet-in-left": "sheetInLeft var(--duration-slow) var(--ease-sheet) both",
+        "sheet-out-left": "sheetOutLeft var(--duration-normal) var(--ease-standard) both",
+        "sheet-in-bottom": "sheetInBottom var(--duration-slow) var(--ease-sheet) both",
+        "sheet-out-bottom": "sheetOutBottom var(--duration-normal) var(--ease-standard) both",
         thinkingDot: "thinkingDot 1.2s ease-in-out infinite",
         marquee: "marquee var(--duration, 40s) infinite linear",
         "marquee-vertical": "marquee-vertical var(--duration, 40s) linear infinite",

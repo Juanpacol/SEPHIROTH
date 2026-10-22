@@ -63,6 +63,15 @@ test.describe("inform the patient from the results inbox", () => {
     await page.getByRole("button", { name: "Tell the patient" }).click();
     const panel = page.getByRole("dialog");
     await expect(panel).toBeVisible();
+    // Measure at rest: the panel slides in a few pixels, and mid-slide it overhangs.
+    await page.evaluate(() =>
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime as number))
+          .map((a) => a.finished.catch(() => undefined)),
+      ),
+    );
 
     const fits = await panel.evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
     expect(fits).toBe(true);

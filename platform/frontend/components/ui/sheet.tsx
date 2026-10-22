@@ -22,6 +22,24 @@ import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 
 export type SheetSide = "right" | "left" | "bottom";
 
+/** How long the leave animation runs (`--duration-normal`). The sheet stays in the
+ * page that long after `open` goes false so it can fade out instead of vanishing. */
+const EXIT_MS = 200;
+
+/** Zero when the leave animation cannot or should not run: reduced motion, or no
+ * `matchMedia` (jsdom). Then the sheet goes at once, as it always did. */
+function exitDelay(): number {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return 0;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : EXIT_MS;
+}
+
+/** Enter and leave animation per side, by name (see `animation` in tailwind.config.ts). */
+const MOTION: Record<SheetSide, { in: string; out: string }> = {
+  right: { in: "animate-sheet-in-right", out: "animate-sheet-out-right" },
+  left: { in: "animate-sheet-in-left", out: "animate-sheet-out-left" },
+  bottom: { in: "animate-sheet-in-bottom", out: "animate-sheet-out-bottom" },
+};
+
 /** Where the panel sits inside the fixed overlay, and what shape it takes. */
 const SIDE: Record<SheetSide, { align: string; panel: string }> = {
   right: { align: "justify-end", panel: "h-full w-full max-w-md border-l" },
@@ -60,17 +78,42 @@ export default function Sheet({
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  if (!open) return null;
+  // Mounted while open, and for the leave animation after it. `shown` is set when
+  // `open` turns true and cleared once the animation has had time to finish; there is
+  // no frame in which the sheet is neither open nor leaving.
+  const [shown, setShown] = useState(open);
+  useEffect(() => {
+    if (open) {
+      setShown(true);
+      return;
+    }
+    const id = setTimeout(() => setShown(false), exitDelay());
+    return () => clearTimeout(id);
+  }, [open]);
+
+  if (!open && !shown) return null;
 
   const { align, panel } = SIDE[side];
+  const motion = MOTION[side];
 
   return (
     <Portal>
-      <div className={`fixed inset-0 z-50 flex ${align}`} role="dialog" aria-modal="true">
-        <div className="absolute inset-0 bg-ink/30 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div
+        className={`fixed inset-0 z-50 flex overflow-hidden ${align} ${open ? "" : "pointer-events-none"}`}
+        role="dialog"
+        aria-modal="true"
+        data-state={open ? "open" : "closed"}
+      >
+        <div
+          className={`absolute inset-0 bg-ink/30 backdrop-blur-sm ${open ? "animate-scrim-in" : "animate-scrim-out"}`}
+          onClick={onClose}
+          aria-hidden="true"
+        />
         <div
           ref={setPanelEl}
-          className={`relative flex animate-fadeIn flex-col border-line/60 bg-card shadow-card-lg ${panel}`}
+          className={`relative flex flex-col border-line/60 bg-card shadow-card-lg ${
+            open ? motion.in : motion.out
+          } ${panel}`}
         >
           <div className="flex items-center justify-between border-b border-line/60 px-5 py-4">
             <h2 className="text-base font-bold">{title}</h2>
