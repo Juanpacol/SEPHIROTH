@@ -91,19 +91,6 @@ test.describe("hero", () => {
   });
 });
 
-test.describe("how it works", () => {
-  test("carries the five-step walkthrough the hero used to", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
-
-    const section = page.locator("#how-it-works");
-    await expect(section.getByRole("tablist")).toBeVisible();
-    await expect(section.getByRole("tab")).toHaveCount(5);
-    await expect(section).toContainText("tabs below");
-    await expect(page.locator("[data-hero]").getByRole("tab", { name: /Pick a specialist/ })).toHaveCount(0);
-  });
-});
-
 test.describe("reduced motion", () => {
   test.use({ reducedMotion: "reduce" });
 

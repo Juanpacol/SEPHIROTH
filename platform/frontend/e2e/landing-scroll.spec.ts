@@ -107,7 +107,7 @@ test.describe("hero", () => {
   test("moving the hero never moves the page: it is only a transform", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
-    const next = page.locator("#analysis-demo, #features").first();
+    const next = page.locator("#features");
     const top = () => next.evaluate((el) => Math.round(el.getBoundingClientRect().top + window.scrollY));
     const before = await top();
 

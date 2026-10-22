@@ -12,90 +12,18 @@
  */
 
 import Link from "next/link";
-import {
-  Layers,
-  Link as LinkIcon,
-  ShieldCheck,
-  ScanEye,
-  Pill,
-  BookOpen,
-  LayoutDashboard,
-  CalendarClock,
-  UserCheck,
-  Share2,
-} from "lucide-react";
+import { ScanEye } from "lucide-react";
 import WingMark from "@/components/brand/wing-mark";
 import AuthRedirectGate from "@/components/landing/auth-redirect-gate";
-import ConsultationWalkthrough from "@/components/landing/consultation-walkthrough";
-import ClaimVerifier from "@/components/landing/claim-verifier";
-import CitationGuardToggle from "@/components/landing/citation-guard-toggle";
-import AbstentionGate from "@/components/landing/abstention-gate";
-import AnalysisDemo from "@/components/landing/analysis-demo";
 import ScrollEffects from "@/components/landing/scroll-effects";
 import AnswerCard from "@/components/landing/answer-card";
 import FeatureShowcase from "@/components/landing/feature-showcase";
-import { BentoGrid, BentoCard } from "@/components/magicui/bento-grid";
-import { BorderBeam } from "@/components/magicui/border-beam";
+import HowItWorksStory from "@/components/landing/how-it-works-story";
+import TrustCarousel from "@/components/landing/trust-carousel";
+import ChapterStrip from "@/components/landing/chapter-strip";
 import { TextAnimate } from "@/components/magicui/text-animate";
 import { ShimmerButton } from "@/components/magicui/shimmer-button";
 import { useLanguage } from "@/lib/language";
-
-const PAIN_POINTS = [
-  {
-    icon: Layers,
-    problemKey: "marketing.painPoints.lookups.problem",
-    solutionKey: "marketing.painPoints.lookups.solution",
-  },
-  {
-    icon: LinkIcon,
-    problemKey: "marketing.painPoints.trust.problem",
-    solutionKey: "marketing.painPoints.trust.solution",
-  },
-  {
-    icon: ShieldCheck,
-    problemKey: "marketing.painPoints.confidence.problem",
-    solutionKey: "marketing.painPoints.confidence.solution",
-  },
-];
-
-// The three agents that exist (SPEC-029 removed Coordinator and Laboratory). Named
-// by what they do; see `lib/agents.ts` for the same names inside the app. Cards
-// are top-aligned so icons and titles share a height whatever the text length.
-const AGENTS = [
-  {
-    nameKey: "marketing.agentName.radiology",
-    Icon: ScanEye,
-    bodyKey: "marketing.agentsSection.radiology.body",
-    className: "col-span-3 justify-start md:col-span-1",
-  },
-  {
-    nameKey: "marketing.agentName.drugSafety",
-    Icon: Pill,
-    bodyKey: "marketing.agentsSection.drugSafety.body",
-    className: "col-span-3 justify-start md:col-span-1",
-  },
-  {
-    nameKey: "marketing.agentName.evidence",
-    Icon: BookOpen,
-    bodyKey: "marketing.agentsSection.evidence.body",
-    className: "col-span-3 justify-start md:col-span-1",
-  },
-];
-
-const PLATFORM_FEATURES = [
-  {
-    icon: LayoutDashboard,
-    titleKey: "marketing.platform.dashboard.title",
-    bodyKey: "marketing.platform.dashboard.body",
-  },
-  {
-    icon: CalendarClock,
-    titleKey: "marketing.platform.scheduling.title",
-    bodyKey: "marketing.platform.scheduling.body",
-  },
-  { icon: UserCheck, titleKey: "marketing.platform.portal.title", bodyKey: "marketing.platform.portal.body" },
-  { icon: Share2, titleKey: "marketing.platform.results.title", bodyKey: "marketing.platform.results.body" },
-];
 
 const FAQS = [
   { qKey: "marketing.faq.q1", aKey: "marketing.faq.a1" },
@@ -162,119 +90,39 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pain points — what actually costs a clinician time and trust, and how SEPHIROTH answers it */}
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <h2 className="text-center font-display text-title font-semibold">
-          {t("marketing.painPoints.title")}
-        </h2>
-        <p className="mx-auto mt-3 max-w-xl text-center text-muted">{t("marketing.painPoints.subtitle")}</p>
-        <div className="mt-10 space-y-5">
-          {PAIN_POINTS.map((v) => (
-            <div key={v.problemKey} className="card grid gap-4 md:grid-cols-[auto_1fr_1fr] md:items-center">
-              <div className="inline-flex rounded-2xl bg-primary-soft p-2.5 text-primary md:self-start">
-                <v.icon size={20} />
-              </div>
-              <div>
-                <span className="eyebrow text-danger">{t("marketing.painPoints.problemLabel")}</span>
-                <p className="mt-1 text-sm text-muted">{t(v.problemKey)}</p>
-              </div>
-              <div className="border-t border-line/60 pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
-                <span className="eyebrow text-primary-ink">{t("marketing.painPoints.solutionLabel")}</span>
-                <p className="mt-1 text-sm">{t(v.solutionKey)}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Imaging demo: pick a study, read the analysis written for it */}
-      <section id="analysis-demo" className="mx-auto max-w-6xl scroll-mt-24 px-6 pb-24">
-        <h2 className="text-center font-display text-title font-semibold">{t("marketing.demo.title")}</h2>
-        <p className="mx-auto mt-3 max-w-xl text-center text-muted">{t("marketing.demo.subtitle")}</p>
-        <div className="mt-8">
-          <AnalysisDemo />
-        </div>
-      </section>
-
-      {/* How it works — the mechanics, for the reader who wants to know before trusting it */}
-      <section
-        id="how-it-works"
-        className="scroll-mt-24 overflow-hidden border-t border-line/60 bg-primary-soft/30"
-      >
-        <div className="mx-auto max-w-4xl px-6 py-24">
+      {/* How it works: the five stages of a consultation, told while you scroll */}
+      <section id="how-it-works" className="scroll-mt-24">
+        <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
           <span className="eyebrow text-primary-ink">{t("marketing.howItWorks.eyebrow")}</span>
-          <h2 className="mt-2 font-display text-title font-semibold">{t("marketing.howItWorks.title")}</h2>
-          <p className="mt-3 max-w-2xl text-muted">
-            {t("marketing.howItWorks.bodyPre")}{" "}
-            <span className="font-semibold text-primary">{t("marketing.walkthrough.runIt")}</span>{" "}
-            {t("marketing.howItWorks.bodyPost")}
-          </p>
-          <div className="relative mt-10 rounded-squircle text-left">
-            <BorderBeam size={90} duration={8} colorFrom="#3683F8" colorTo="#8C92AC" />
-            <ConsultationWalkthrough />
+          <h2 className="mt-3 max-w-4xl font-display text-[clamp(2.25rem,1.5rem+3vw,4rem)] font-light leading-[1.05]">
+            {t("marketing.howItWorks.title")}
+          </h2>
+          <p className="mt-6 max-w-2xl text-lg text-muted">{t("marketing.howItWorks.body")}</p>
+          <div className="mt-12 md:mt-16">
+            <HowItWorksStory />
           </div>
         </div>
       </section>
 
-      {/* Safeguards */}
-      <section id="safeguards" className="scroll-mt-24 mx-auto max-w-6xl px-6 py-24">
-        <h2 className="font-display text-title font-semibold">{t("marketing.safeguards.title")}</h2>
-        <p className="mt-3 max-w-2xl text-muted">{t("marketing.safeguards.subtitle")}</p>
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <div>
-            <h3 className="mb-2 font-bold">{t("marketing.safeguards.claimVerifierTitle")}</h3>
-            <p className="mb-3 text-sm text-muted">{t("marketing.safeguards.claimVerifierBody")}</p>
-            <ClaimVerifier />
-          </div>
-          <div>
-            <h3 className="mb-2 font-bold">{t("marketing.safeguards.citationGuardTitle")}</h3>
-            <p className="mb-3 text-sm text-muted">{t("marketing.safeguards.citationGuardBody")}</p>
-            <CitationGuardToggle />
-            <h3 className="mb-2 mt-8 font-bold">{t("marketing.safeguards.abstentionGateTitle")}</h3>
-            <p className="mb-3 text-sm text-muted">{t("marketing.safeguards.abstentionGateBody")}</p>
-            <AbstentionGate />
-          </div>
+      {/* Safeguards: three checks before an answer reaches you, each one you can try */}
+      <section id="safeguards" className="band-dark scroll-mt-24 overflow-hidden">
+        <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
+          <h2 className="max-w-4xl font-display text-[clamp(2.25rem,1.5rem+3vw,4rem)] font-light leading-[1.05]">
+            {t("marketing.safeguards.title")}
+          </h2>
+          <p className="mb-12 mt-6 max-w-2xl text-lg text-muted">{t("marketing.safeguards.subtitle")}</p>
+          <TrustCarousel />
         </div>
       </section>
 
-      {/* Agents */}
-      <section id="agents" className="band-dark scroll-mt-24">
-        <div className="mx-auto max-w-6xl px-6 py-24">
-          <h2 className="font-display text-title font-semibold">{t("marketing.agentsSection.title")}</h2>
-          <p className="mt-3 max-w-2xl text-muted">{t("marketing.agentsSection.subtitle")}</p>
-          <BentoGrid className="mt-8 auto-rows-[14rem] md:grid-cols-3">
-            {AGENTS.map((a) => (
-              <BentoCard
-                key={a.nameKey}
-                name={t(a.nameKey)}
-                Icon={a.Icon}
-                description={t(a.bodyKey)}
-                className={a.className}
-              />
-            ))}
-          </BentoGrid>
-        </div>
-      </section>
-
-      {/* Platform — the clinician's daily workflow around the AI consult:
-          patient dashboard/risk alerts, scheduling, patient portal, shared
-          results. Kept plain (card grid, no bento/magicui flourish) since
-          this is scope disclosure, not a hype section. */}
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <h2 className="font-display text-title font-semibold">{t("marketing.platform.title")}</h2>
-        <p className="mt-3 max-w-2xl text-muted">{t("marketing.platform.subtitle")}</p>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2">
-          {PLATFORM_FEATURES.map((f) => (
-            <div key={f.titleKey} className="card flex items-start gap-3">
-              <div className="inline-flex rounded-2xl bg-primary-soft p-2.5 text-primary">
-                <f.icon size={20} />
-              </div>
-              <div>
-                <h3 className="font-bold">{t(f.titleKey)}</h3>
-                <p className="mt-1 text-sm text-muted">{t(f.bodyKey)}</p>
-              </div>
-            </div>
-          ))}
+      {/* Agents and platform: one row to choose from, one panel that says what it is */}
+      <section id="agents" className="scroll-mt-24">
+        <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
+          <h2 className="max-w-4xl font-display text-[clamp(2.25rem,1.5rem+3vw,4rem)] font-light leading-[1.05]">
+            {t("marketing.chapters.title")}
+          </h2>
+          <p className="mb-12 mt-6 max-w-2xl text-lg text-muted">{t("marketing.chapters.subtitle")}</p>
+          <ChapterStrip />
         </div>
       </section>
 

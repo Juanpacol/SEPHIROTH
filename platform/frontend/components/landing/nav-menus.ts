@@ -29,12 +29,6 @@ export const NAV_MENUS: NavMenu[] = [
     id: "product",
     labelKey: "marketing.nav.product",
     eyebrowKey: "marketing.nav.product.eyebrow",
-    promo: {
-      href: "#analysis-demo",
-      titleKey: "marketing.nav.demo.title",
-      bodyKey: "marketing.nav.demo.body",
-      section: "analysis-demo",
-    },
     items: [
       {
         href: "#features",
