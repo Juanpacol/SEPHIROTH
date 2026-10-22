@@ -1,4 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures/test";
+import { scrollToEnd, scrollToTop, scrollToY } from "./fixtures/scroll";
 
 /** The landing's scroll-linked motion in a real browser: the footer that comes up as you
  * reach it, the hero that drifts away, and the feature panel that follows the list. The
@@ -6,23 +8,7 @@ import { expect, test, type Page } from "@playwright/test";
 const cssVar = (page: Page, name: string) =>
   page.evaluate((n) => document.documentElement.style.getPropertyValue(n).trim(), name);
 
-/** (The site scrolls smoothly, and a second `scrollTo` during a smooth one can be dropped in
- * WebKit, so these tests ask for `instant`.)
- *
- * Scrolls to the very end. Pictures further up load as the page is scrolled and make it
- * taller, so keep going until the page has stopped growing under us. */
-async function toEnd(page: Page) {
-  let last = -1;
-  for (let i = 0; i < 20; i++) {
-    const height = await page.evaluate(() => {
-      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" });
-      return document.documentElement.scrollHeight;
-    });
-    if (height === last) return;
-    last = height;
-    await page.waitForTimeout(150);
-  }
-}
+const toEnd = scrollToEnd;
 
 test.describe("footer", () => {
   test.beforeEach(async ({ page }) => {
@@ -50,13 +36,11 @@ test.describe("footer", () => {
     await expect.poll(() => cssVar(page, "--footer-progress")).not.toBe("");
     // Load everything first (the page grows as pictures arrive), then go back to the top and let it settle.
     await toEnd(page);
-    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await scrollToTop(page);
     await expect.poll(async () => Number(await cssVar(page, "--footer-progress"))).toBeLessThan(0.01);
 
     // One jump to the end, then watch the footer catch up with it.
-    await page.evaluate(() =>
-      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }),
-    );
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     const seen = new Set<string>();
     for (let i = 0; i < 12; i++) {
       seen.add(await cssVar(page, "--footer-progress"));
@@ -112,7 +96,7 @@ test.describe("hero", () => {
     await page.waitForTimeout(600);
     expect(Number(await content.evaluate((el) => getComputedStyle(el).opacity))).toBeGreaterThan(0.99);
 
-    await page.evaluate(() => window.scrollTo({ top: 500, behavior: "instant" }));
+    await scrollToY(page, 500);
 
     await expect.poll(async () => parseFloat(await cssVar(page, "--hero-shift"))).toBeGreaterThan(100);
     await expect
@@ -127,7 +111,7 @@ test.describe("hero", () => {
     const top = () => next.evaluate((el) => Math.round(el.getBoundingClientRect().top + window.scrollY));
     const before = await top();
 
-    await page.evaluate(() => window.scrollTo({ top: 600, behavior: "instant" }));
+    await scrollToY(page, 600);
     await page.waitForTimeout(800);
 
     expect(Math.abs((await top()) - before)).toBeLessThanOrEqual(1);
@@ -143,7 +127,7 @@ test.describe("reduced motion", () => {
 
     expect(await cssVar(page, "--footer-progress")).toBe("1");
     expect(await cssVar(page, "--hero-shift")).toBe("0px");
-    await page.evaluate(() => window.scrollTo({ top: 600, behavior: "instant" }));
+    await scrollToY(page, 600);
     await page.waitForTimeout(400);
     expect(await cssVar(page, "--hero-shift")).toBe("0px");
     expect(
