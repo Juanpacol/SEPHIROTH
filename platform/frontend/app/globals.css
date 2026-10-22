@@ -116,8 +116,13 @@ input:-webkit-autofill:focus {
   .card {
     @apply bg-card rounded-squircle shadow-card p-5;
   }
+  /* Small uppercase label above a group, a table column or a field: mono, wide
+     tracking, 11 px. Colour comes from the element (`text-muted`, `text-primary-ink`). */
+  .eyebrow {
+    @apply font-mono text-label font-medium uppercase;
+  }
   .nav-group-label {
-    @apply px-3 pt-5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted;
+    @apply eyebrow px-3 pt-5 pb-1 text-muted;
   }
   .nav-item {
     @apply flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-ink/70 transition-colors hover:bg-primary-soft hover:text-primary;

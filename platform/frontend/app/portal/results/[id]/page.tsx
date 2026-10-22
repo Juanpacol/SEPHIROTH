@@ -66,7 +66,7 @@ export default function PortalResultDetailPage() {
 
       {share.message && (
         <div className="card border border-primary/20 bg-primary-soft/60">
-          <div className="mb-1 text-xs font-semibold uppercase text-primary">{t("portal.results.fromClinician")}</div>
+          <div className="mb-1 eyebrow text-primary-ink">{t("portal.results.fromClinician")}</div>
           <p className="text-sm">{share.message}</p>
         </div>
       )}

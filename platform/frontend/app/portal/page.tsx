@@ -100,11 +100,11 @@ export default function PortalHomePage() {
           <div className="mb-3 text-sm font-semibold">{t("portal.home.summaryTitle")}</div>
           <div className="grid gap-4 text-sm sm:grid-cols-3">
             <div>
-              <div className="text-xs font-semibold uppercase text-muted">{t("portal.home.conditions")}</div>
+              <div className="eyebrow text-muted">{t("portal.home.conditions")}</div>
               <p>{me.conditions.length ? me.conditions.join(", ") : t("portal.home.noneOnFile")}</p>
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase text-muted">{t("portal.home.medications")}</div>
+              <div className="eyebrow text-muted">{t("portal.home.medications")}</div>
               <p>
                 {me.medications.length
                   ? uniqueByCasefold(me.medications).join(", ")
@@ -112,7 +112,7 @@ export default function PortalHomePage() {
               </p>
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase text-muted">{t("portal.home.allergies")}</div>
+              <div className="eyebrow text-muted">{t("portal.home.allergies")}</div>
               <p>{me.allergies.length ? me.allergies.join(", ") : t("portal.home.noneOnFile")}</p>
             </div>
           </div>

@@ -19,7 +19,7 @@ export default function LandingFooter() {
           </div>
 
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted">
+            <div className="eyebrow text-muted">
               {t("marketing.footer.product")}
             </div>
             <ul className="mt-2 space-y-1.5 text-sm">
@@ -42,7 +42,7 @@ export default function LandingFooter() {
           </div>
 
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted">
+            <div className="eyebrow text-muted">
               {t("marketing.footer.getStarted")}
             </div>
             <ul className="mt-2 space-y-1.5 text-sm">

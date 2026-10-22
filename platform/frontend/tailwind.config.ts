@@ -45,6 +45,21 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-manrope)", "sans-serif"],
+        // Display: tall and condensed, for the landing's big headings only.
+        display: ["var(--font-display)", "Impact", "sans-serif"],
+        // Labels: small uppercase eyebrows. See `.eyebrow` in globals.css.
+        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+      },
+      // The type scale. Sizes that were repeated as loose `text-2xl md:text-3xl`
+      // or `text-[11px]` are named here; see docs/04-development/design-tokens.md.
+      fontSize: {
+        // Landing headline: fluid, so it fits 320 px and still reads large on a desk.
+        display: ["clamp(2.75rem, 1.6rem + 5.5vw, 5.5rem)", { lineHeight: "1", letterSpacing: "-0.01em" }],
+        // Section headings.
+        title: ["clamp(1.5rem, 1.2rem + 1.2vw, 2rem)", { lineHeight: "1.2", letterSpacing: "-0.01em" }],
+        subtitle: ["1.125rem", { lineHeight: "1.5rem" }],
+        // 11 px is the floor: below it small caps stop being legible.
+        label: ["0.6875rem", { lineHeight: "1rem", letterSpacing: "0.08em" }],
       },
       spacing: {
         // Height of MobileTabBar (`components/mobile-tab-bar.tsx`). Named so
