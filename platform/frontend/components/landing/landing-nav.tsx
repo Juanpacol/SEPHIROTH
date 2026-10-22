@@ -2,19 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Menu } from "lucide-react";
+import { ArrowUpRight, Menu } from "lucide-react";
 import WingMark from "@/components/brand/wing-mark";
 import ThemeToggle from "@/components/theme-toggle";
 import Sheet from "@/components/ui/sheet";
 import { ShimmerButton } from "@/components/magicui/shimmer-button";
 import { useLanguage } from "@/lib/language";
-
-const LINKS = [
-  { href: "#how-it-works", labelKey: "marketing.nav.howItWorks" },
-  { href: "#safeguards", labelKey: "marketing.nav.safeguards" },
-  { href: "#agents", labelKey: "marketing.nav.agents" },
-  { href: "#faq", labelKey: "marketing.nav.faq" },
-];
+import NavMenuBar from "./nav-menu-bar";
+import { NAV_MENUS } from "./nav-menus";
 
 export default function LandingNav() {
   const { t } = useLanguage();
@@ -40,13 +35,7 @@ export default function LandingNav() {
           <span className="text-[15px] font-bold tracking-tight">SEPHIROTH</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium text-muted md:flex">
-          {LINKS.map((link) => (
-            <a key={link.href} href={link.href} className="link-underline">
-              {t(link.labelKey)}
-            </a>
-          ))}
-        </nav>
+        <NavMenuBar />
 
         <div className="flex items-center gap-2 md:gap-3">
           {/* The toggle moves into the sheet on a phone: logo + toggle + CTA
@@ -66,21 +55,39 @@ export default function LandingNav() {
         </div>
       </div>
 
-      {/* An action sheet rather than a side drawer: these are jumps within one
-          page, not navigation into a section of an app. */}
+      {/* An action sheet rather than a side drawer: these are jumps and links out of one
+          page, not navigation into a section of an app. The same groups as the desktop menus,
+          each item with its line. */}
       <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} side="bottom" title={t("nav.menu")}>
-        <nav className="flex flex-col gap-1">
-          {LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              onClick={() => setMenuOpen(false)}
-              className="nav-item tap"
-            >
-              {t(link.labelKey)}
-            </a>
+        <div className="flex flex-col gap-4">
+          {NAV_MENUS.map((menu) => (
+            <nav key={menu.id} aria-label={t(menu.labelKey)}>
+              <div className="eyebrow px-3 pb-1 text-muted">{t(menu.eyebrowKey)}</div>
+              {[...(menu.promo ? [menu.promo] : []), ...menu.items].map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                  className="tap flex items-start gap-3 rounded-inner px-3 py-2.5 hover:bg-primary-soft"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5 text-sm font-semibold">
+                      {t(item.titleKey)}
+                      {item.external ? (
+                        <>
+                          <ArrowUpRight size={13} aria-hidden="true" className="text-muted" />
+                          <span className="sr-only">{t("marketing.nav.external")}</span>
+                        </>
+                      ) : null}
+                    </span>
+                    <span className="mt-0.5 block text-xs leading-relaxed text-muted">{t(item.bodyKey)}</span>
+                  </span>
+                </a>
+              ))}
+            </nav>
           ))}
-        </nav>
+        </div>
         <div className="mt-4 flex justify-center border-t border-line/60 pt-4">
           <ThemeToggle />
         </div>
