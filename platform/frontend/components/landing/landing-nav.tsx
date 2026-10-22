@@ -31,7 +31,7 @@ export default function LandingNav() {
   return (
     <header
       className={`sticky top-0 z-20 transition-all duration-200 ${
-        scrolled ? "glass-surface border-b border-line/60 shadow-card" : ""
+        scrolled ? "glass-surface border-b border-line/60 shadow-raised" : ""
       }`}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">

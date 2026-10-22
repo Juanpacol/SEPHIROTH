@@ -63,7 +63,7 @@ export default function Dialog({
         <div className="absolute inset-0 bg-ink/30 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
         <div
           ref={setPanelEl}
-          className="card relative w-full max-w-md animate-fadeIn border border-line/60 shadow-card-lg"
+          className="card relative w-full max-w-md animate-fadeIn border border-line/60 shadow-raised-lg"
         >
           <h2 className="text-base font-bold">{title}</h2>
           {description && <p className="mt-1 text-sm text-muted">{description}</p>}

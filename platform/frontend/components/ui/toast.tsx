@@ -42,7 +42,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`card pointer-events-auto flex items-center gap-2 py-3 pr-4 text-sm font-medium shadow-card ${
+            className={`card pointer-events-auto flex items-center gap-2 py-3 pr-4 text-sm font-medium shadow-raised ${
               t.leaving ? "animate-toast-out" : "animate-toast-in"
             } ${
               t.kind === "error" ? "text-danger" : "text-ink"

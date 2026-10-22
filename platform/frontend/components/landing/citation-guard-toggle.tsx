@@ -21,7 +21,7 @@ export default function CitationGuardToggle() {
             aria-checked={mode === value}
             onClick={() => setMode(value)}
             className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-              mode === value ? "bg-card text-primary shadow-sm" : "text-muted hover:text-primary"
+              mode === value ? "bg-card text-primary shadow-hairline" : "text-muted hover:text-primary"
             }`}
           >
             {value === "raw" ? t("marketing.citationToggle.raw") : t("marketing.citationToggle.guarded")}

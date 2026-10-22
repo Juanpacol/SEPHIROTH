@@ -122,7 +122,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="glass-surface fixed inset-x-3 top-16 z-20 max-h-[70dvh] overflow-y-auto rounded-squircle border border-line/60 shadow-card md:absolute md:inset-x-auto md:right-0 md:top-full md:mt-2 md:max-h-none md:w-80 md:overflow-visible">
+        <div className="glass-surface fixed inset-x-3 top-16 z-20 max-h-[70dvh] overflow-y-auto rounded-squircle border border-line/60 shadow-raised md:absolute md:inset-x-auto md:right-0 md:top-full md:mt-2 md:max-h-none md:w-80 md:overflow-visible">
           <div className="border-b border-line/60 px-4 py-3 text-sm font-semibold">
             {t("notifications.title")}
           </div>

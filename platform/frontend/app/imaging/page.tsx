@@ -75,7 +75,7 @@ function AuthenticatedPreview({ path, alt }: { path: string; alt: string }) {
     );
   }
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={objectUrl} alt={alt} className="h-full w-full object-cover" />;
+  return <img src={objectUrl} alt={alt} className="media-edge h-full w-full object-cover" />;
 }
 
 export default function ImagingPage() {
@@ -286,7 +286,7 @@ export default function ImagingPage() {
               <p className="text-sm text-muted">{t("imaging.sampleDescription")}</p>
               {sample ? (
                 <div className="space-y-3" data-testid="imaging-sample">
-                  <div className="aspect-[4/3] w-full overflow-hidden rounded-xl border border-line/60 bg-surface">
+                  <div className="aspect-[4/3] w-full overflow-hidden rounded-inner bg-surface">
                     <AuthenticatedPreview path={sample.image} alt={`${sample.modality} ${sample.region}`} />
                   </div>
                   <p className="line-clamp-6 text-sm leading-relaxed text-ink/80">{sample.description}</p>
@@ -395,7 +395,7 @@ export default function ImagingPage() {
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
             {recentAnalyses.map((a) => (
               <div key={a.id} className="card flex flex-col gap-3 !p-3">
-                <div className="aspect-square w-full overflow-hidden rounded-lg bg-surface">
+                <div className="aspect-square w-full overflow-hidden rounded-inner bg-surface">
                   {a.image_path ? (
                     <AuthenticatedPreview path={a.image_path} alt={a.title} />
                   ) : (
@@ -449,7 +449,7 @@ export default function ImagingPage() {
           onClick={() => setExpandedAnalysis(null)}
         >
           <div
-            className="max-h-[85dvh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-card p-5 shadow-xl"
+            className="max-h-[85dvh] w-full max-w-2xl overflow-y-auto rounded-card bg-card p-5 shadow-popover"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-start justify-between gap-3">

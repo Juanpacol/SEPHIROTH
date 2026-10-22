@@ -142,7 +142,7 @@ function PdfPreviewModal({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-card shadow-card"
+        className="flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-card shadow-raised"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-line/60 p-4">
@@ -440,7 +440,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                 border around every answer. The AI-provenance signal that ring
                 carried (design decision #4) still ships on each answer via
                 AgentBadge, which uses the same Sephiroth gradient. */}
-            <div className="max-w-[95%] rounded-squircle bg-card p-4 text-sm shadow-card">
+            <div className="max-w-[95%] rounded-squircle bg-card p-4 text-sm shadow-raised">
               {exchange.pending ? (
                 <div className="space-y-2">
                   <span className="eyebrow text-muted">
@@ -509,7 +509,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
       {/* `shrink-0`: the transcript above is `flex-1` and must give up the
           space, never the composer. */}
       <div
-        className={`flex shrink-0 cursor-text flex-col rounded-squircle bg-card shadow-card ring-1 ring-line/70 transition-all duration-200 ${
+        className={`flex shrink-0 cursor-text flex-col rounded-squircle bg-card shadow-raised ring-1 ring-line/70 transition-all duration-200 ${
           inputFocused ? "ring-primary/50" : ""
         }`}
         onClick={() => textareaRef.current?.focus()}
