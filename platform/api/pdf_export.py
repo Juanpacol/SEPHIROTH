@@ -12,6 +12,8 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from sephiroth.runtime.registry import agent_display_name
+
 PRIMARY = colors.HexColor("#3683F8")
 INK = colors.HexColor("#060606")
 MUTED = colors.HexColor("#6B7280")
@@ -74,7 +76,7 @@ def render_consultation_pdf(consultation: Any, explanation: Dict[str, Any]) -> b
     if consultation.agents:
         story += [
             Paragraph("Agents involved", h2),
-            _para(", ".join(consultation.agents), body),
+            _para(", ".join(agent_display_name(a) for a in consultation.agents), body),
             Spacer(1, 3 * mm),
         ]
 
@@ -97,7 +99,9 @@ def render_consultation_pdf(consultation: Any, explanation: Dict[str, Any]) -> b
     if steps:
         story.append(Paragraph("Reasoning trace", h2))
         for step in steps:
-            story.append(_para(f"[{step.get('agent', '?')}] {step.get('action', '')}", small))
+            story.append(
+                _para(f"[{agent_display_name(step.get('agent', '?'))}] {step.get('action', '')}", small)
+            )
         story.append(Spacer(1, 5 * mm))
 
     story.append(

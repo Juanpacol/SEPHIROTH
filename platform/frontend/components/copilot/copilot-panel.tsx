@@ -21,6 +21,7 @@ import { api, type CitationReport, type Explanation, type LLMCall, type ToolCall
 import { authHeaders } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import AgentBadge from "@/components/agent-badge";
+import { agentLabel } from "@/lib/agents";
 import AnswerText from "@/components/copilot/answer-text";
 import AnswerRating from "@/components/answer-rating";
 import ExplainabilityPanel from "@/components/explainability-panel";
@@ -455,7 +456,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                         }`}
                       >
                         {agent.done ? <CheckCircle2 size={11} /> : <ThinkingDots />}
-                        {agent.name}
+                        {agentLabel(agent.name, t)}
                         {agent.toolCalls.length > 0 &&
                           ` · ${agent.toolCalls.map((t) => t.name).join(", ")}`}
                       </span>
@@ -468,7 +469,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-1.5">
                     {exchange.agents?.map((agent) => (
-                      <AgentBadge key={agent} name={agent} />
+                      <AgentBadge key={agent} name={agentLabel(agent, t)} />
                     ))}
                     {exchange.id && (
                       <button

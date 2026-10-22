@@ -122,11 +122,12 @@ describe("ExplainabilityPanel: which model answered", () => {
     expect(screen.queryByRole("button", { name: /How this answer was produced/ })).not.toBeInTheDocument();
   });
 
-  it("keeps the explanation steps exactly as they were", () => {
+  it("names the agent of each step by what it does, and keeps the action as it was", () => {
     renderPanel({ llmCalls: [call()] });
     open();
 
-    expect(screen.getByText("evidence")).toBeInTheDocument();
+    expect(screen.getByText("Guidelines & Literature")).toBeInTheDocument();
+    expect(screen.queryByText("evidence")).not.toBeInTheDocument();
     expect(screen.getByText(/Searched clinical guidelines/)).toBeInTheDocument();
   });
 });
