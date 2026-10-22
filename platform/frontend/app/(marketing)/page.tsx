@@ -33,6 +33,7 @@ import AbstentionGate from "@/components/landing/abstention-gate";
 import AnalysisGallery from "@/components/landing/analysis-gallery";
 import AnalysisDemo from "@/components/landing/analysis-demo";
 import ScrollEffects from "@/components/landing/scroll-effects";
+import AnswerCard from "@/components/landing/answer-card";
 import FeatureShowcase from "@/components/landing/feature-showcase";
 import { Marquee } from "@/components/magicui/marquee";
 import { BentoGrid, BentoCard } from "@/components/magicui/bento-grid";
@@ -118,39 +119,39 @@ export default function LandingPage() {
       <AuthRedirectGate />
       <ScrollEffects />
 
-      {/* Hero */}
+      {/* Hero: the headline and the way in on one side, an answer as the product gives it on the other */}
       <section data-hero className="band-dark relative overflow-hidden">
         <div
           data-hero-content
-          className="relative mx-auto max-w-6xl translate-y-[calc(var(--hero-shift,0px)*0.45)] px-6 py-24 text-center opacity-[calc(1-var(--hero-progress,0)*0.7)] md:py-32"
+          className="relative mx-auto grid max-w-7xl translate-y-[calc(var(--hero-shift,0px)*0.45)] items-center gap-14 px-6 py-24 opacity-[calc(1-var(--hero-progress,0)*0.7)] md:py-32 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-16"
         >
           <WingMark
             size={420}
             className="pointer-events-none absolute left-1/2 top-0 -z-10 -translate-x-1/2 text-ink/[0.04]"
           />
-          <span className="inline-flex items-center rounded-full border border-line/70 px-3 py-1 text-xs font-medium text-muted">
-            {t("marketing.hero.badge")}
-          </span>
-          <TextAnimate
-            as="h1"
-            by="word"
-            animation="blurInUp"
-            duration={0.5}
-            className="mx-auto mt-5 max-w-3xl font-display text-display font-semibold"
-          >
-            {t("marketing.hero.title")}
-          </TextAnimate>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-muted">{t("marketing.hero.subtitle")}</p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <ShimmerButton href="/login">{t("marketing.openApp")}</ShimmerButton>
-            <a href="#how-it-works" className="btn-ghost">
-              {t("marketing.hero.seeHowItWorks")}
-            </a>
+          <div className="min-w-0 text-center lg:text-left">
+            <span className="inline-flex items-center rounded-full border border-line/70 px-3 py-1 text-xs font-medium text-muted">
+              {t("marketing.hero.badge")}
+            </span>
+            <TextAnimate
+              as="h1"
+              by="word"
+              animation="blurInUp"
+              duration={0.5}
+              className="mt-5 max-w-3xl font-display text-display font-semibold lg:max-w-none lg:text-[clamp(3rem,1rem+4vw,4.5rem)]"
+            >
+              {t("marketing.hero.title")}
+            </TextAnimate>
+            <p className="mx-auto mt-4 max-w-xl text-lg text-muted lg:mx-0">{t("marketing.hero.subtitle")}</p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+              <ShimmerButton href="/login">{t("marketing.openApp")}</ShimmerButton>
+              <a href="#how-it-works" className="btn-ghost">
+                {t("marketing.hero.seeHowItWorks")}
+              </a>
+            </div>
           </div>
-
-          <div className="relative mx-auto mt-16 max-w-2xl rounded-squircle text-left">
-            <BorderBeam size={90} duration={8} colorFrom="#3683F8" colorTo="#8C92AC" />
-            <ConsultationWalkthrough />
+          <div className="flex min-w-0 justify-center lg:justify-end">
+            <AnswerCard />
           </div>
         </div>
       </section>
@@ -227,7 +228,10 @@ export default function LandingPage() {
       </section>
 
       {/* How it works — the mechanics, for the reader who wants to know before trusting it */}
-      <section id="how-it-works" className="scroll-mt-24 border-t border-line/60 bg-primary-soft/30">
+      <section
+        id="how-it-works"
+        className="scroll-mt-24 overflow-hidden border-t border-line/60 bg-primary-soft/30"
+      >
         <div className="mx-auto max-w-4xl px-6 py-24">
           <span className="eyebrow text-primary-ink">{t("marketing.howItWorks.eyebrow")}</span>
           <h2 className="mt-2 font-display text-title font-semibold">{t("marketing.howItWorks.title")}</h2>
@@ -236,6 +240,10 @@ export default function LandingPage() {
             <span className="font-semibold text-primary">{t("marketing.walkthrough.runIt")}</span>{" "}
             {t("marketing.howItWorks.bodyPost")}
           </p>
+          <div className="relative mt-10 rounded-squircle text-left">
+            <BorderBeam size={90} duration={8} colorFrom="#3683F8" colorTo="#8C92AC" />
+            <ConsultationWalkthrough />
+          </div>
         </div>
       </section>
 

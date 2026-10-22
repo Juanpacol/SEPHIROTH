@@ -35,9 +35,10 @@ test.describe("landing: agents", () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
-  test("the hero walkthrough routes to one specialist out of three", async ({ page }) => {
-    // The first stage is a tab panel whether or not autoplay has moved on from it.
-    const stage = page.getByRole("tabpanel", { includeHidden: true }).first();
+  test("the walkthrough routes to one specialist out of three", async ({ page }) => {
+    // The first stage is a tab panel whether or not autoplay has moved on from it. The
+    // walkthrough lives in "How it works".
+    const stage = page.locator("#how-it-works").getByRole("tabpanel", { includeHidden: true }).first();
 
     for (const name of ["Guidelines & Literature", "Image Analysis", "Medication Interactions"]) {
       await expect(stage).toContainText(name);
