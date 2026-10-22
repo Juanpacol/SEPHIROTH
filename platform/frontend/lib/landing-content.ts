@@ -25,7 +25,6 @@ export const SAMPLE_QUESTION_KEY = "marketing.sample.question";
 
 export const SAMPLE_SPECIALISTS = [
   { nameKey: "marketing.agentName.evidence", findingKey: "marketing.sample.evidenceFinding" },
-  { nameKey: "marketing.agentName.laboratory", findingKey: "marketing.sample.laboratoryFinding" },
 ];
 
 export const SAMPLE_DRAFT_KEY = "marketing.sample.draft";

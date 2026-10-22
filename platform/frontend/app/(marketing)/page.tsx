@@ -17,10 +17,8 @@ import {
   Link as LinkIcon,
   ShieldCheck,
   ScanEye,
-  FlaskConical,
   Pill,
   BookOpen,
-  Users,
   LayoutDashboard,
   CalendarClock,
   UserCheck,
@@ -46,23 +44,13 @@ const PAIN_POINTS = [
   { icon: ShieldCheck, problemKey: "marketing.painPoints.confidence.problem", solutionKey: "marketing.painPoints.confidence.solution" },
 ];
 
+// The three agents that exist (SPEC-029 removed Coordinator and Laboratory). Named
+// by what they do; see `lib/agents.ts` for the same names inside the app.
 const AGENTS = [
-  {
-    nameKey: "marketing.agentName.coordinator",
-    Icon: Users,
-    bodyKey: "marketing.agentsSection.coordinator.body",
-    className: "col-span-3 md:col-span-2 md:row-span-2",
-  },
   {
     nameKey: "marketing.agentName.radiology",
     Icon: ScanEye,
     bodyKey: "marketing.agentsSection.radiology.body",
-    className: "col-span-3 md:col-span-1",
-  },
-  {
-    nameKey: "marketing.agentName.laboratory",
-    Icon: FlaskConical,
-    bodyKey: "marketing.agentsSection.laboratory.body",
     className: "col-span-3 md:col-span-1",
   },
   {
@@ -232,7 +220,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-6 py-24">
           <h2 className="text-2xl font-extrabold md:text-3xl">{t("marketing.agentsSection.title")}</h2>
           <p className="mt-3 max-w-2xl text-muted">{t("marketing.agentsSection.subtitle")}</p>
-          <BentoGrid className="mt-8 auto-rows-[14rem] md:grid-cols-4">
+          <BentoGrid className="mt-8 auto-rows-[14rem] md:grid-cols-3">
             {AGENTS.map((a) => (
               <BentoCard
                 key={a.nameKey}

@@ -27,13 +27,13 @@ import {
 } from "@/lib/landing-content";
 import { useLanguage } from "@/lib/language";
 
+// The three agents that exist; the router picks exactly one of them.
 const ROUTING_TAG_KEYS = [
   "marketing.agentName.evidence",
-  "marketing.agentName.laboratory",
   "marketing.agentName.radiology",
   "marketing.agentName.drugSafety",
 ] as const;
-const ROUTED_TAG_KEYS = new Set(["marketing.agentName.evidence", "marketing.agentName.laboratory"]);
+const ROUTED_TAG_KEYS = new Set(["marketing.agentName.evidence"]);
 
 type Translate = (key: string) => string;
 
@@ -65,7 +65,7 @@ function StageBody({ render, t }: { render: string; t: Translate }) {
 
       {render === "specialists" && (
         <div className="space-y-3">
-          <p className="mb-2 text-sm text-muted">{t("marketing.walkthrough.specialistsRunIndependently")}</p>
+          <p className="mb-2 text-sm text-muted">{t("marketing.walkthrough.specialistLooks")}</p>
           {SAMPLE_SPECIALISTS.map((s) => (
             <div key={s.nameKey} className="card border border-line/70">
               <div className="mb-1 flex items-center gap-2">
@@ -79,10 +79,10 @@ function StageBody({ render, t }: { render: string; t: Translate }) {
 
       {render === "synthesize" && (
         <div>
-          <p className="mb-2 text-sm text-muted">{t("marketing.walkthrough.coordinatorMerges")}</p>
+          <p className="mb-2 text-sm text-muted">{t("marketing.walkthrough.specialistWrites")}</p>
           <div className="card border border-primary/30 ai-ring">
             <div className="mb-2">
-              <AgentBadge name={t("marketing.walkthrough.coordinatorDraft")} />
+              <AgentBadge name={t("marketing.walkthrough.draftAnswer")} />
             </div>
             <p className="text-sm">{t(SAMPLE_DRAFT_KEY)}</p>
           </div>
