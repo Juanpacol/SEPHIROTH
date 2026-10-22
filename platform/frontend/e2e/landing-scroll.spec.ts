@@ -52,8 +52,15 @@ test.describe("footer", () => {
     const link = footer.getByRole("link", { name: "Repository" });
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute("href", "https://github.com/Juanpacol/SEPHIROTH");
-    const box = (await link.boundingBox())!;
-    expect(box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+    // The footer is still settling for a moment after the scroll stops, so wait for it.
+    await expect
+      .poll(async () => {
+        // Pictures further up load as the page is scrolled and make it taller, so keep going to the end.
+        await toEnd(page);
+        const box = (await link.boundingBox())!;
+        return box.y + box.height <= page.viewportSize()!.height;
+      })
+      .toBe(true);
   });
 
   test("the wordmark behind it is decoration only", async ({ page }) => {
