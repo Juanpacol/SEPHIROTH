@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { clamp01, damp, footerLift, footerProgress, heroProgress, heroShift } from "@/lib/scroll-effects";
+import {
+  clamp01,
+  damp,
+  footerLift,
+  footerProgress,
+  heroProgress,
+  heroShift,
+  parallaxShift,
+} from "@/lib/scroll-effects";
 
 /** The maths of the landing's scroll-linked motion. */
 describe("footerProgress", () => {
@@ -96,5 +104,32 @@ describe("damp", () => {
 
   it("clamp01 pins to 0..1", () => {
     expect([clamp01(-1), clamp01(0.4), clamp01(7)]).toEqual([0, 0.4, 1]);
+  });
+});
+
+describe("parallaxShift", () => {
+  const frame = { frameHeight: 500, viewportHeight: 900 };
+
+  it("is 0 when the frame is centred on the screen", () => {
+    expect(parallaxShift({ ...frame, frameTop: 900 / 2 - 250 })).toBeCloseTo(0, 6);
+  });
+
+  it("holds the picture back as the frame enters from below and pulls it forward as it leaves above", () => {
+    const entering = parallaxShift({ ...frame, frameTop: 900 });
+    const leaving = parallaxShift({ ...frame, frameTop: -500 });
+    expect(entering).toBeLessThan(0);
+    expect(leaving).toBeGreaterThan(0);
+    expect(entering).toBeCloseTo(-leaving, 6);
+  });
+
+  it("never drifts further than its strength of the frame's height, which is what the picture's extra size covers", () => {
+    for (const frameTop of [-9000, -500, 0, 200, 900, 9000]) {
+      expect(Math.abs(parallaxShift({ ...frame, frameTop }))).toBeLessThanOrEqual(500 * 0.1 + 1e-9);
+    }
+    expect(Math.abs(parallaxShift({ ...frame, frameTop: 9000, strength: 0.2 }))).toBeCloseTo(100, 6);
+  });
+
+  it("survives a frame of no height", () => {
+    expect(Number.isFinite(parallaxShift({ frameTop: 100, frameHeight: 0, viewportHeight: 900 }))).toBe(true);
   });
 });

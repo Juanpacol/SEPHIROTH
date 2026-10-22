@@ -123,53 +123,80 @@ test.describe("reduced motion", () => {
 });
 
 test.describe("features", () => {
-  test("have a numbered entry each, in the order the reader meets them", async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
+  });
 
-    const eyebrows = await page.locator("#features article .border-l-2 .eyebrow").allInnerTexts();
+  test("six cells, numbered, in the order the reader meets them", async ({ page }) => {
+    const labels = await page.locator("#features article .eyebrow").allInnerTexts();
 
-    expect(eyebrows.map((t) => t.replace(/\s+/g, " "))).toEqual([
-      "01 · ASK",
-      "02 · CITE",
-      "03 · VERIFY",
-      "04 · SEE",
-      "05 · FOLLOW UP",
-      "06 · SHARE",
+    expect(labels.map((t) => t.replace(/\s+/g, " "))).toEqual([
+      "#1 ASK",
+      "#2 CITE",
+      "#3 VERIFY",
+      "#4 SEE",
+      "#5 FOLLOW UP",
+      "#6 SHARE",
     ]);
   });
 
-  test("on a wide screen the panel stays in view and follows the list", async ({ page }) => {
-    test.skip(page.viewportSize()!.width < 1024, "the sticky panel is for lg and up");
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
-    const panel = page.getByTestId("feature-panel");
+  test("the title is in the display face and the section is a navy band", async ({ page }) => {
+    const heading = page.locator("#features h2");
 
-    await page.locator("#feature-see").scrollIntoViewIfNeeded();
-    await page.locator("#feature-see").evaluate((el) => el.scrollIntoView({ block: "center" }));
-    await page.waitForTimeout(900);
-
-    await expect(page.locator("[data-layer='see']")).toHaveAttribute("aria-hidden", "false");
-    await expect(page.locator("[data-layer='ask']")).toHaveAttribute("aria-hidden", "true");
-    const box = (await panel.boundingBox())!;
-    expect(box.y).toBeGreaterThanOrEqual(0);
-    expect(box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+    expect(await heading.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/antonio/i);
+    expect(await page.locator("#features").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
+      "rgb(18, 27, 44)",
+    );
   });
 
-  test("on a phone each feature carries its own media and there is no sticky panel", async ({ page }) => {
-    test.skip(page.viewportSize()!.width >= 1024, "that is the wide layout");
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
+  test("three columns on a wide screen, two on a tablet, one on a phone", async ({ page }) => {
+    const width = page.viewportSize()!.width;
+    const tops = await page
+      .locator("#features article")
+      .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top + window.scrollY)));
+    const perRow = tops.filter((t) => Math.abs(t - tops[0]) <= 2).length;
 
-    await expect(page.getByTestId("feature-panel")).toBeHidden();
-    const first = page.locator("#feature-ask .aspect-\\[4\\/3\\]");
-    await first.scrollIntoViewIfNeeded();
-    await expect(first).toBeVisible();
+    expect(perRow).toBe(width >= 1024 ? 3 : width >= 768 ? 2 : 1);
+  });
+
+  test("each cell's picture is square, and every cell is the same size as its neighbours", async ({
+    page,
+  }) => {
+    const frames = await page
+      .locator("#features [data-parallax-frame]")
+      .evaluateAll((els) =>
+        els.map((el) => ({ w: el.getBoundingClientRect().width, h: el.getBoundingClientRect().height })),
+      );
+
+    expect(frames).toHaveLength(6);
+    for (const { w, h } of frames) expect(Math.abs(w - h)).toBeLessThanOrEqual(1);
+    expect(Math.abs(frames[0].w - frames[1].w)).toBeLessThanOrEqual(1);
+  });
+
+  test("a picture drifts inside its frame as you scroll, and never leaves a gap", async ({ page }) => {
+    test.skip(page.viewportSize()!.width < 768, "the picture with a drift is the X-ray in the fourth cell");
+    const img = page.locator("#feature-see img[data-parallax]");
+    await img.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(900);
+
+    const shift = async () =>
+      parseFloat(await img.evaluate((el) => getComputedStyle(el).getPropertyValue("--py-img") || "0"));
+    const first = await shift();
+    await page.evaluate(() => window.scrollBy(0, 220));
+    await page.waitForTimeout(900);
+    const second = await shift();
+
+    expect(second).not.toBe(first);
+    const { frame, picture } = await img.evaluate((el) => ({
+      frame: el.closest("[data-parallax-frame]")!.getBoundingClientRect(),
+      picture: el.getBoundingClientRect(),
+    }));
+    expect(picture.top).toBeLessThanOrEqual(frame.top + 0.5);
+    expect(picture.bottom).toBeGreaterThanOrEqual(frame.bottom - 0.5);
   });
 
   test("the page does not overflow sideways with all of this on it", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
   });

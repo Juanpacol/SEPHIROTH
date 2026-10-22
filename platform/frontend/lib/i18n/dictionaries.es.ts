@@ -406,7 +406,7 @@ const ES: Record<string, string> = {
   "marketing.painPoints.confidence.solution": "Por debajo de su umbral de confianza, SEPHIROTH devuelve una advertencia o se abstiene directamente en vez de adivinar — la herramienta te dice cuándo seguir investigando, en lugar de fingir que lo sabe.",
 
   "marketing.features.eyebrow": "Funciones",
-  "marketing.features.title": "Qué hace, paso a paso",
+  "marketing.features.title": "Funciones",
   "marketing.features.ask.verb": "Preguntar",
   "marketing.features.ask.title": "Una pregunta, el especialista adecuado",
   "marketing.features.ask.body": "Imágenes, medicamentos o guías: cada pregunta va al único especialista que necesita, así una consulta de medicamentos nunca espera al análisis de imagen.",

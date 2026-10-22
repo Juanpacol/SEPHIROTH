@@ -166,12 +166,16 @@ export default function LandingPage() {
         </Marquee>
       </section>
 
-      {/* Features: what it does, one step at a time, with a media panel beside the list */}
-      <section id="features" className="mx-auto max-w-6xl scroll-mt-24 px-6 pt-24">
-        <span className="eyebrow text-primary-ink">{t("marketing.features.eyebrow")}</span>
-        <h2 className="mt-2 font-display text-title font-semibold">{t("marketing.features.title")}</h2>
-        <div className="mt-8">
-          <FeatureShowcase />
+      {/* Features: what it does, in a grid of numbered cells with a picture under each */}
+      <section id="features" className="band-dark scroll-mt-24">
+        <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
+          <h2 className="flex items-start gap-3 font-display text-[clamp(4rem,2rem+9vw,9rem)] font-light leading-[0.95]">
+            {t("marketing.features.title")}
+            <ScanEye aria-hidden="true" className="mt-[0.35em] size-[0.28em] shrink-0 text-primary-ink" />
+          </h2>
+          <div className="mt-16 md:mt-20">
+            <FeatureShowcase />
+          </div>
         </div>
       </section>
 

@@ -407,7 +407,7 @@ const EN: Record<string, string> = {
   "marketing.painPoints.confidence.solution": "Below its confidence threshold, SEPHIROTH hands back a caveat or declines outright instead of guessing — the tool tells you when to keep digging, instead of pretending it knows.",
 
   "marketing.features.eyebrow": "Features",
-  "marketing.features.title": "What it does, one step at a time",
+  "marketing.features.title": "Features",
   "marketing.features.ask.verb": "Ask",
   "marketing.features.ask.title": "One question, the right specialist",
   "marketing.features.ask.body": "Images, medications or guidelines: each question goes to the one specialist it needs, so a drug question never waits on image analysis.",
