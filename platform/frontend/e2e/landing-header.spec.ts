@@ -49,7 +49,9 @@ test.describe("desktop menus", () => {
     await page.getByRole("button", { name: "For patients" }).focus();
     await page.keyboard.press("Enter");
     await page.keyboard.press("Tab");
-    await expect(page.getByRole("link", { name: /Set up your portal account/ })).toBeFocused();
+    await expect(
+      page.locator("header").getByRole("link", { name: /Set up your portal account/ }),
+    ).toBeFocused();
 
     await page.getByRole("link", { name: "SEPHIROTH" }).focus();
 
@@ -70,12 +72,16 @@ test.describe("desktop menus", () => {
   test("the header says where you are: the section in view is marked in the Product menu", async ({
     page,
   }) => {
-    await page.locator("#faq").scrollIntoViewIfNeeded();
-    await page.waitForTimeout(700);
+    // The reader is "in" a section while it crosses the middle of the screen.
+    await page.locator("#faq").evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(900);
 
     await page.getByRole("button", { name: "Product" }).click();
 
-    await expect(page.getByRole("link", { name: /FAQ/ })).toHaveAttribute("aria-current", "location");
+    await expect(page.locator("header").getByRole("link", { name: /FAQ/ })).toHaveAttribute(
+      "aria-current",
+      "location",
+    );
     await expect(page.getByRole("button", { name: "Product" })).toHaveAttribute("data-here", "true");
   });
 
