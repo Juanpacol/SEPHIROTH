@@ -228,6 +228,22 @@ input:-webkit-autofill:focus {
 }
 
 @layer utilities {
+  /* A navy band on a light page. It sets the dark theme's colour tokens on itself, so
+     everything inside (text-ink, bg-card, text-muted, cards, buttons) renders in the
+     dark palette with no per-element change, in either theme. The values are the
+     `.dark` ones; lib/__tests__/bands.test.ts fails if they drift. */
+  .band-dark {
+    --color-ink: 242 244 250;
+    --color-surface: 18 27 44;
+    --color-card: 32 41 57;
+    --color-line: 51 59 74;
+    --color-muted: 150 160 185;
+    --color-primary-soft: 24 46 81;
+    --color-primary-ink: 120 165 250;
+    --shadow-ink: 0 0 0;
+    --shadow-strength: 3.5;
+    @apply bg-surface text-ink;
+  }
   /* A fine edge on a picture, drawn over it (an outline, not a border, so the
      picture keeps its size): dark studies (X-rays, CT) are otherwise lost against a
      dark surface, and white ones against a light one. */

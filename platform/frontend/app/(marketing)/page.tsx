@@ -31,6 +31,7 @@ import ClaimVerifier from "@/components/landing/claim-verifier";
 import CitationGuardToggle from "@/components/landing/citation-guard-toggle";
 import AbstentionGate from "@/components/landing/abstention-gate";
 import AnalysisGallery from "@/components/landing/analysis-gallery";
+import AnalysisDemo from "@/components/landing/analysis-demo";
 import { Marquee } from "@/components/magicui/marquee";
 import { BentoGrid, BentoCard } from "@/components/magicui/bento-grid";
 import { BorderBeam } from "@/components/magicui/border-beam";
@@ -39,9 +40,21 @@ import { ShimmerButton } from "@/components/magicui/shimmer-button";
 import { useLanguage } from "@/lib/language";
 
 const PAIN_POINTS = [
-  { icon: Layers, problemKey: "marketing.painPoints.lookups.problem", solutionKey: "marketing.painPoints.lookups.solution" },
-  { icon: LinkIcon, problemKey: "marketing.painPoints.trust.problem", solutionKey: "marketing.painPoints.trust.solution" },
-  { icon: ShieldCheck, problemKey: "marketing.painPoints.confidence.problem", solutionKey: "marketing.painPoints.confidence.solution" },
+  {
+    icon: Layers,
+    problemKey: "marketing.painPoints.lookups.problem",
+    solutionKey: "marketing.painPoints.lookups.solution",
+  },
+  {
+    icon: LinkIcon,
+    problemKey: "marketing.painPoints.trust.problem",
+    solutionKey: "marketing.painPoints.trust.solution",
+  },
+  {
+    icon: ShieldCheck,
+    problemKey: "marketing.painPoints.confidence.problem",
+    solutionKey: "marketing.painPoints.confidence.solution",
+  },
 ];
 
 // The three agents that exist (SPEC-029 removed Coordinator and Laboratory). Named
@@ -71,18 +84,19 @@ const AGENTS = [
 // The real sources RAGPipeline's seeded corpus draws from (data/rag/__init__.py) —
 // not decorative logos, the actual organizations behind the evidence. Org
 // names/acronyms are proper nouns and stay unlocalized.
-const SOURCES = [
-  "American Diabetes Association",
-  "ACC / AHA",
-  "GOLD",
-  "KDIGO",
-  "USPSTF",
-  "PubMed / NCBI",
-];
+const SOURCES = ["American Diabetes Association", "ACC / AHA", "GOLD", "KDIGO", "USPSTF", "PubMed / NCBI"];
 
 const PLATFORM_FEATURES = [
-  { icon: LayoutDashboard, titleKey: "marketing.platform.dashboard.title", bodyKey: "marketing.platform.dashboard.body" },
-  { icon: CalendarClock, titleKey: "marketing.platform.scheduling.title", bodyKey: "marketing.platform.scheduling.body" },
+  {
+    icon: LayoutDashboard,
+    titleKey: "marketing.platform.dashboard.title",
+    bodyKey: "marketing.platform.dashboard.body",
+  },
+  {
+    icon: CalendarClock,
+    titleKey: "marketing.platform.scheduling.title",
+    bodyKey: "marketing.platform.scheduling.body",
+  },
   { icon: UserCheck, titleKey: "marketing.platform.portal.title", bodyKey: "marketing.platform.portal.body" },
   { icon: Share2, titleKey: "marketing.platform.results.title", bodyKey: "marketing.platform.results.body" },
 ];
@@ -102,34 +116,36 @@ export default function LandingPage() {
       <AuthRedirectGate />
 
       {/* Hero */}
-      <section className="relative mx-auto max-w-6xl overflow-hidden px-6 py-24 text-center md:py-32">
-        <WingMark
-          size={420}
-          className="pointer-events-none absolute left-1/2 top-0 -z-10 -translate-x-1/2 text-ink/[0.04]"
-        />
-        <span className="inline-flex items-center rounded-full border border-line/70 px-3 py-1 text-xs font-medium text-muted">
-          {t("marketing.hero.badge")}
-        </span>
-        <TextAnimate
-          as="h1"
-          by="word"
-          animation="blurInUp"
-          duration={0.5}
-          className="mx-auto mt-5 max-w-3xl font-display text-display font-semibold"
-        >
-          {t("marketing.hero.title")}
-        </TextAnimate>
-        <p className="mx-auto mt-4 max-w-xl text-lg text-muted">{t("marketing.hero.subtitle")}</p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <ShimmerButton href="/login">{t("marketing.openApp")}</ShimmerButton>
-          <a href="#how-it-works" className="btn-ghost">
-            {t("marketing.hero.seeHowItWorks")}
-          </a>
-        </div>
+      <section className="band-dark relative overflow-hidden">
+        <div className="relative mx-auto max-w-6xl px-6 py-24 text-center md:py-32">
+          <WingMark
+            size={420}
+            className="pointer-events-none absolute left-1/2 top-0 -z-10 -translate-x-1/2 text-ink/[0.04]"
+          />
+          <span className="inline-flex items-center rounded-full border border-line/70 px-3 py-1 text-xs font-medium text-muted">
+            {t("marketing.hero.badge")}
+          </span>
+          <TextAnimate
+            as="h1"
+            by="word"
+            animation="blurInUp"
+            duration={0.5}
+            className="mx-auto mt-5 max-w-3xl font-display text-display font-semibold"
+          >
+            {t("marketing.hero.title")}
+          </TextAnimate>
+          <p className="mx-auto mt-4 max-w-xl text-lg text-muted">{t("marketing.hero.subtitle")}</p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <ShimmerButton href="/login">{t("marketing.openApp")}</ShimmerButton>
+            <a href="#how-it-works" className="btn-ghost">
+              {t("marketing.hero.seeHowItWorks")}
+            </a>
+          </div>
 
-        <div className="relative mx-auto mt-16 max-w-2xl rounded-squircle text-left">
-          <BorderBeam size={90} duration={8} colorFrom="#3683F8" colorTo="#8C92AC" />
-          <ConsultationWalkthrough />
+          <div className="relative mx-auto mt-16 max-w-2xl rounded-squircle text-left">
+            <BorderBeam size={90} duration={8} colorFrom="#3683F8" colorTo="#8C92AC" />
+            <ConsultationWalkthrough />
+          </div>
         </div>
       </section>
 
@@ -146,7 +162,9 @@ export default function LandingPage() {
 
       {/* Pain points — what actually costs a clinician time and trust, and how SEPHIROTH answers it */}
       <section className="mx-auto max-w-6xl px-6 py-24">
-        <h2 className="text-center font-display text-title font-semibold">{t("marketing.painPoints.title")}</h2>
+        <h2 className="text-center font-display text-title font-semibold">
+          {t("marketing.painPoints.title")}
+        </h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-muted">{t("marketing.painPoints.subtitle")}</p>
         <div className="mt-10 space-y-5">
           {PAIN_POINTS.map((v) => (
@@ -155,15 +173,11 @@ export default function LandingPage() {
                 <v.icon size={20} />
               </div>
               <div>
-                <span className="eyebrow text-danger">
-                  {t("marketing.painPoints.problemLabel")}
-                </span>
+                <span className="eyebrow text-danger">{t("marketing.painPoints.problemLabel")}</span>
                 <p className="mt-1 text-sm text-muted">{t(v.problemKey)}</p>
               </div>
               <div className="border-t border-line/60 pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
-                <span className="eyebrow text-primary-ink">
-                  {t("marketing.painPoints.solutionLabel")}
-                </span>
+                <span className="eyebrow text-primary-ink">{t("marketing.painPoints.solutionLabel")}</span>
                 <p className="mt-1 text-sm">{t(v.solutionKey)}</p>
               </div>
             </div>
@@ -171,10 +185,23 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Imaging demo: pick a study, read the analysis written for it */}
+      <section id="analysis-demo" className="mx-auto max-w-6xl scroll-mt-24 px-6 pb-24">
+        <h2 className="text-center font-display text-title font-semibold">{t("marketing.demo.title")}</h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-muted">{t("marketing.demo.subtitle")}</p>
+        <div className="mt-8">
+          <AnalysisDemo />
+        </div>
+      </section>
+
       {/* Imaging analysis gallery — one real sample per supported modality */}
       <section className="mx-auto max-w-6xl px-6 pb-24">
-        <h2 className="text-center font-display text-title font-semibold">{t("marketing.analysisGallery.title")}</h2>
-        <p className="mx-auto mt-3 max-w-xl text-center text-muted">{t("marketing.analysisGallery.subtitle")}</p>
+        <h2 className="text-center font-display text-title font-semibold">
+          {t("marketing.analysisGallery.title")}
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-muted">
+          {t("marketing.analysisGallery.subtitle")}
+        </p>
         <div className="mt-8">
           <AnalysisGallery />
         </div>
@@ -183,9 +210,7 @@ export default function LandingPage() {
       {/* How it works — the mechanics, for the reader who wants to know before trusting it */}
       <section id="how-it-works" className="scroll-mt-24 border-t border-line/60 bg-primary-soft/30">
         <div className="mx-auto max-w-4xl px-6 py-24">
-          <span className="eyebrow text-primary-ink">
-            {t("marketing.howItWorks.eyebrow")}
-          </span>
+          <span className="eyebrow text-primary-ink">{t("marketing.howItWorks.eyebrow")}</span>
           <h2 className="mt-2 font-display text-title font-semibold">{t("marketing.howItWorks.title")}</h2>
           <p className="mt-3 max-w-2xl text-muted">
             {t("marketing.howItWorks.bodyPre")}{" "}
@@ -217,7 +242,7 @@ export default function LandingPage() {
       </section>
 
       {/* Agents */}
-      <section id="agents" className="scroll-mt-24 border-t border-line/60 bg-primary-soft/30">
+      <section id="agents" className="band-dark scroll-mt-24">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <h2 className="font-display text-title font-semibold">{t("marketing.agentsSection.title")}</h2>
           <p className="mt-3 max-w-2xl text-muted">{t("marketing.agentsSection.subtitle")}</p>
@@ -283,14 +308,16 @@ export default function LandingPage() {
       </section>
 
       {/* Closing CTA */}
-      <section className="mx-auto max-w-3xl px-6 py-24 text-center">
-        <h2 className="font-display text-title font-semibold">{t("marketing.cta.title")}</h2>
-        <p className="mt-3 text-muted">{t("marketing.cta.subtitle")}</p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <ShimmerButton href="/login">{t("marketing.openApp")}</ShimmerButton>
-          <Link href="/portal/claim" className="btn-ghost">
-            {t("marketing.footer.patientPortalSetup")}
-          </Link>
+      <section className="band-dark">
+        <div className="mx-auto max-w-3xl px-6 py-24 text-center">
+          <h2 className="font-display text-display font-semibold">{t("marketing.cta.title")}</h2>
+          <p className="mt-3 text-muted">{t("marketing.cta.subtitle")}</p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <ShimmerButton href="/login">{t("marketing.openApp")}</ShimmerButton>
+            <Link href="/portal/claim" className="btn-ghost">
+              {t("marketing.footer.patientPortalSetup")}
+            </Link>
+          </div>
         </div>
       </section>
     </>
