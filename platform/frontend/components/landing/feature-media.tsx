@@ -10,7 +10,7 @@
  * itself stays as it was made. A picture drifts a little against the scroll (see
  * `components/landing/scroll-effects.tsx`), inside its frame. */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/lib/language";
 import type { FeatureMedia, TilePattern } from "@/lib/landing-features";
 
@@ -91,6 +91,65 @@ function Duotone({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** The pictures of a `slides` feature, taking turns. They are stacked in the one square and
+ * cross-fade; the one on show carries the label. Only the current one is announced. */
+/** The blue tint unless the feature asked for its pictures as they are. */
+function Tint({ tone, children }: { tone?: "duotone" | "natural"; children: React.ReactNode }) {
+  return tone === "natural" ? <>{children}</> : <Duotone>{children}</Duotone>;
+}
+
+function Slides({ media, playing }: { media: Extract<FeatureMedia, { kind: "slides" }>; playing: boolean }) {
+  const { t } = useLanguage();
+  const [index, setIndex] = useState(0);
+  const [held, setHeld] = useState(false);
+
+  useEffect(() => {
+    if (!playing || held || prefersReducedMotion() || media.slides.length < 2) return;
+    const id = setTimeout(() => setIndex((i) => (i + 1) % media.slides.length), media.intervalMs ?? 3400);
+    return () => clearTimeout(id);
+  }, [index, playing, held, media.slides.length, media.intervalMs]);
+
+  const current = media.slides[index];
+  return (
+    <span
+      data-slides
+      className="relative block h-full w-full overflow-hidden"
+      onMouseEnter={() => setHeld(true)}
+      onMouseLeave={() => setHeld(false)}
+    >
+      {/* The stack of pictures is larger than the square and drifts inside it as the page
+          scrolls (see `scroll-effects.tsx`). It is tinted on its own so the label above it is
+          not: a label inside the tint would be a blue word on blue. */}
+      <Tint tone={media.tone}>
+        <span data-parallax className="absolute inset-0 block scale-[1.2] [translate:0_var(--py-img,0px)]">
+          {media.slides.map((slide, i) => (
+            // Static files from /public, optimised when they were made.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={slide.src}
+              src={slide.src}
+              alt={t(slide.captionKey)}
+              aria-hidden={i !== index}
+              loading={i === 0 ? "eager" : "lazy"}
+              data-slide={i === index ? "current" : undefined}
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-slow ease-standard ${
+                i === index ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          ))}
+        </span>
+      </Tint>
+      <span
+        data-slide-label
+        aria-hidden="true"
+        className="eyebrow pointer-events-none absolute bottom-4 left-4 z-10 text-white/90 [text-shadow:0_1px_8px_rgb(0_0_0/0.6)]"
+      >
+        {t(current.titleKey)} · {t(current.captionKey)}
+      </span>
+    </span>
+  );
+}
+
 function Video({ media, playing }: { media: Extract<FeatureMedia, { kind: "video" }>; playing: boolean }) {
   const { t } = useLanguage();
   const ref = useRef<HTMLVideoElement>(null);
@@ -145,6 +204,9 @@ export default function FeatureMediaView({
       </span>
     );
   }
+
+  // Slides tint their own pictures (so their label is not tinted too).
+  if (media.kind === "slides") return <Slides media={media} playing={playing} />;
 
   const natural = media.tone === "natural";
   const picture =

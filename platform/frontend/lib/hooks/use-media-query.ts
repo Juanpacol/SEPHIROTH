@@ -8,7 +8,7 @@
  * spells out why — no layout shift on hydration, no client/server mismatch, and
  * the two shapes cannot drift apart. This hook is for the cases where
  * JavaScript has to branch on *logic* rather than presentation: computing
- * absolute positions (the landing masonry), or genuinely not mounting an
+ * absolute positions, or genuinely not mounting an
  * expensive subtree.
  *
  * `useSyncExternalStore` rather than useEffect+useState: it takes an explicit

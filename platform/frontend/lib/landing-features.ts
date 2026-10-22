@@ -15,9 +15,19 @@ export type FeatureMedia =
   /** `tone: "duotone"` (the default) tints it to the page's blue, like the rest of the
    * grid; `"natural"` leaves it as it is. */
   | { kind: "image"; src: string; altKey: string; tone?: FeatureTone }
+  /** Several pictures that take turns in the same square, cross-fading. Only while the cell is on
+   * screen, and never under reduced motion, where the first one stays. Each carries a short
+   * description (`altKey`) and a label shown on it (`titleKey`, `captionKey`). */
+  | { kind: "slides"; slides: FeatureSlide[]; intervalMs?: number; tone?: FeatureTone }
   /** A short, silent loop. `poster` is what shows before it loads, and the whole time under
    * reduced motion. Keep it under 3 MB; mp4 (H.264) for Safari plus webm if you can. */
   | { kind: "video"; src: string; poster: string; altKey: string; webm?: string; tone?: FeatureTone };
+
+export interface FeatureSlide {
+  src: string;
+  titleKey: string;
+  captionKey: string;
+}
 
 export type TilePattern = "rays" | "lines" | "checks" | "dots" | "frames" | "waves";
 
@@ -60,7 +70,62 @@ export const LANDING_FEATURES: LandingFeature[] = [
     verbKey: "marketing.features.see.verb",
     titleKey: "marketing.features.see.title",
     bodyKey: "marketing.features.see.body",
-    media: { kind: "image", src: "/landing/analysis/xray.webp", altKey: "marketing.features.see.alt" },
+    // The ten example studies, one after another: X-ray, CT, MRI, ultrasound and pathology.
+    media: {
+      kind: "slides",
+      slides: [
+        {
+          src: "/landing/analysis/xray.webp",
+          titleKey: "marketing.analysisGallery.xray.title",
+          captionKey: "marketing.analysisGallery.xray.caption",
+        },
+        {
+          src: "/landing/analysis/ct-brain.webp",
+          titleKey: "marketing.analysisGallery.ct.title",
+          captionKey: "marketing.analysisGallery.ct.caption",
+        },
+        {
+          src: "/landing/analysis/mri-brain.webp",
+          titleKey: "marketing.analysisGallery.mri.title",
+          captionKey: "marketing.analysisGallery.mri.caption",
+        },
+        {
+          src: "/landing/analysis/ultrasound.webp",
+          titleKey: "marketing.analysisGallery.ultrasound.title",
+          captionKey: "marketing.analysisGallery.ultrasound.caption",
+        },
+        {
+          src: "/landing/analysis/pathology.webp",
+          titleKey: "marketing.analysisGallery.pathology.title",
+          captionKey: "marketing.analysisGallery.pathology.caption",
+        },
+        {
+          src: "/landing/analysis/xray-2.webp",
+          titleKey: "marketing.analysisGallery.xray2.title",
+          captionKey: "marketing.analysisGallery.xray2.caption",
+        },
+        {
+          src: "/landing/analysis/xray-3.webp",
+          titleKey: "marketing.analysisGallery.xray3.title",
+          captionKey: "marketing.analysisGallery.xray3.caption",
+        },
+        {
+          src: "/landing/analysis/xray-4.webp",
+          titleKey: "marketing.analysisGallery.xray4.title",
+          captionKey: "marketing.analysisGallery.xray4.caption",
+        },
+        {
+          src: "/landing/analysis/ultrasound-2.webp",
+          titleKey: "marketing.analysisGallery.ultrasound2.title",
+          captionKey: "marketing.analysisGallery.ultrasound2.caption",
+        },
+        {
+          src: "/landing/analysis/pathology-2.webp",
+          titleKey: "marketing.analysisGallery.pathology2.title",
+          captionKey: "marketing.analysisGallery.pathology2.caption",
+        },
+      ],
+    },
   },
   {
     // `clinical/results.py` and the results inbox: reference ranges, critical values, review.

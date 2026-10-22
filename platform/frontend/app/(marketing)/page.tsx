@@ -30,12 +30,10 @@ import ConsultationWalkthrough from "@/components/landing/consultation-walkthrou
 import ClaimVerifier from "@/components/landing/claim-verifier";
 import CitationGuardToggle from "@/components/landing/citation-guard-toggle";
 import AbstentionGate from "@/components/landing/abstention-gate";
-import AnalysisGallery from "@/components/landing/analysis-gallery";
 import AnalysisDemo from "@/components/landing/analysis-demo";
 import ScrollEffects from "@/components/landing/scroll-effects";
 import AnswerCard from "@/components/landing/answer-card";
 import FeatureShowcase from "@/components/landing/feature-showcase";
-import { Marquee } from "@/components/magicui/marquee";
 import { BentoGrid, BentoCard } from "@/components/magicui/bento-grid";
 import { BorderBeam } from "@/components/magicui/border-beam";
 import { TextAnimate } from "@/components/magicui/text-animate";
@@ -83,11 +81,6 @@ const AGENTS = [
     className: "col-span-3 justify-start md:col-span-1",
   },
 ];
-
-// The real sources RAGPipeline's seeded corpus draws from (data/rag/__init__.py) —
-// not decorative logos, the actual organizations behind the evidence. Org
-// names/acronyms are proper nouns and stay unlocalized.
-const SOURCES = ["American Diabetes Association", "ACC / AHA", "GOLD", "KDIGO", "USPSTF", "PubMed / NCBI"];
 
 const PLATFORM_FEATURES = [
   {
@@ -156,17 +149,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Evidence sources — real orgs the RAG corpus cites, not logos */}
-      <section className="border-y border-line/60 bg-primary-soft/20 py-6">
-        <Marquee pauseOnHover className="[--duration:32s]">
-          {SOURCES.map((s) => (
-            <span key={s} className="mx-2 whitespace-nowrap text-sm font-semibold text-muted">
-              {s}
-            </span>
-          ))}
-        </Marquee>
-      </section>
-
       {/* Features: what it does, in a grid of numbered cells with a picture under each */}
       <section id="features" className="band-dark scroll-mt-24">
         <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
@@ -211,19 +193,6 @@ export default function LandingPage() {
         <p className="mx-auto mt-3 max-w-xl text-center text-muted">{t("marketing.demo.subtitle")}</p>
         <div className="mt-8">
           <AnalysisDemo />
-        </div>
-      </section>
-
-      {/* Imaging analysis gallery — one real sample per supported modality */}
-      <section className="mx-auto max-w-6xl px-6 pb-24">
-        <h2 className="text-center font-display text-title font-semibold">
-          {t("marketing.analysisGallery.title")}
-        </h2>
-        <p className="mx-auto mt-3 max-w-xl text-center text-muted">
-          {t("marketing.analysisGallery.subtitle")}
-        </p>
-        <div className="mt-8">
-          <AnalysisGallery />
         </div>
       </section>
 
