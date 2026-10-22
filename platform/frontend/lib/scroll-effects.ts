@@ -42,6 +42,23 @@ export function footerLift(progress: number, distance: number): number {
   return distance * (1 - clamp01(progress)) ** 2;
 }
 
+/** How far a picture drifts inside its frame, in px, given where the frame is on screen.
+ * At the middle of the screen it is 0; entering from below it is held `strength` of the
+ * frame's height back, and leaving at the top it is that far forward, so the picture
+ * moves a little slower than the page. The picture has to be larger than its frame by at
+ * least `strength` on each side, or the drift would show an edge. */
+export function parallaxShift(args: {
+  frameTop: number;
+  frameHeight: number;
+  viewportHeight: number;
+  strength?: number;
+}): number {
+  const { frameTop, frameHeight, viewportHeight, strength = 0.1 } = args;
+  const offset = frameTop + frameHeight / 2 - viewportHeight / 2;
+  const range = viewportHeight / 2 + frameHeight / 2;
+  return -(clamp(offset / Math.max(1, range), -1, 1) * frameHeight * strength);
+}
+
 /** One step of exponential smoothing toward `target`, frame-rate independent: the value
  * covers the same share of the remaining distance per second whatever `dt` is. This is
  * the "delay": the page does not jump to where the scroll is, it follows it. */

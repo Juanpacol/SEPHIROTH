@@ -6,6 +6,7 @@
  *   --hero-progress   0..1, how far the hero has scrolled away
  *   --footer-progress 0..1, how far the footer has come into view
  *   --footer-lift     px the footer still has to rise
+ *   --py-img          on each `[data-parallax]` picture: px it has drifted inside its frame
  *
  * One loop, started by a scroll or resize and stopped when every value has settled, so
  * a page nobody is scrolling costs nothing. The values follow the scroll with a little
@@ -16,7 +17,15 @@
  * page that has not run this yet, or never will, looks finished. */
 
 import { useEffect } from "react";
-import { clamp01, damp, footerLift, footerProgress, heroProgress, heroShift } from "@/lib/scroll-effects";
+import {
+  clamp01,
+  damp,
+  footerLift,
+  footerProgress,
+  heroProgress,
+  heroShift,
+  parallaxShift,
+} from "@/lib/scroll-effects";
 
 const SETTLED = 0.002;
 const RATE = 9;
@@ -44,6 +53,12 @@ export default function ScrollEffects() {
 
     const hero = document.querySelector<HTMLElement>("[data-hero]");
     const footer = document.querySelector<HTMLElement>("[data-footer-reveal]");
+    // Each picture that drifts, with the frame it drifts in and where it is now.
+    const pictures = Array.from(document.querySelectorAll<HTMLElement>("[data-parallax]")).map((el) => ({
+      el,
+      frame: el.closest<HTMLElement>("[data-parallax-frame]") ?? el.parentElement ?? el,
+      shown: 0,
+    }));
     // What the page is showing now, which chases the target below.
     const shown = { shift: 0, hero: 0, footer: footer ? 0 : 1 };
     let frame = 0;
@@ -82,7 +97,21 @@ export default function ScrollEffects() {
       set("--footer-progress", clamp01(shown.footer).toFixed(3));
       set("--footer-lift", `${footerLift(shown.footer, target.footerHeight * 0.18).toFixed(1)}px`);
 
+      let picturesSettled = true;
+      for (const picture of pictures) {
+        const box = picture.frame.getBoundingClientRect();
+        const want = parallaxShift({
+          frameTop: box.top,
+          frameHeight: box.height,
+          viewportHeight: window.innerHeight,
+        });
+        picture.shown = damp(picture.shown, want, dt, RATE);
+        picture.el.style.setProperty("--py-img", `${picture.shown.toFixed(1)}px`);
+        if (Math.abs(picture.shown - want) > 0.5) picturesSettled = false;
+      }
+
       const settled =
+        picturesSettled &&
         Math.abs(shown.shift - target.shift) < SETTLED * 100 &&
         Math.abs(shown.hero - target.hero) < SETTLED &&
         Math.abs(shown.footer - target.footer) < SETTLED;
