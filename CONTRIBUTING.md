@@ -103,35 +103,32 @@ the commit-format rule itself is enforced.
 
 ## Required PR gates
 
-`main` is branch-protected with exactly two required status checks — no
-approval requirement, since this is a solo-maintainer repo and GitHub refuses
-to count a PR author's own approval toward a required-review count:
+`main` is branch-protected with three required status checks, and a PR has to be
+up to date with `main`. There is no approval requirement, since this is a
+solo-maintainer repo and GitHub refuses to count a PR author's own approval
+toward a required-review count. All three live in `.github/workflows/ci.yml`:
 
-- **Security** (`.github/workflows/security.yml`, `security-gate`) —
-  gitleaks (secret scanning) + bandit HIGH-severity/HIGH-confidence findings.
-  Blocking. `dependency-audit` (pip-audit/npm audit) runs in the same
-  workflow but stays advisory — third-party CVEs with no available fix must
-  never turn `main` permanently red. The same workflow also runs CodeQL
-  (Python, JavaScript/TypeScript) and Semgrep (`platform/frontend`),
-  advisory, both publishing SARIF to the repo's Security tab.
-- **Code Review** (`.github/workflows/code-review.yml`, `code-review-gate`)
-  — the automated stand-in for a human reviewer: lint, commit format,
-  tests + coverage gate, the SDD spec-conformance check (every `Implemented`
-  spec's acceptance criteria must exist in the test tree, contracts must not
-  have drifted — see [the migration charter](docs/00-migration-charter.md)),
-  frontend lint/test/build/e2e, and a real Docker build + boot smoke test
-  under both dev and prod config. `docker-build-smoke-test` also fails on a
-  CRITICAL OS-package CVE in the built image (Trivy, `vuln-type: os`,
-  `ignore-unfixed: true`). `type-check` (mypy) runs alongside but is
-  excluded from this gate — a pre-existing error baseline across the repo
-  (DEBT-012, `docs/project-state.yaml`) blocks that promotion; see the
-  job's own comment in `.github/workflows/code-review.yml` for the current
-  count, and `pyproject.toml`'s `[tool.mypy-ratchet]` for the files that
-  are held clean in the meantime.
+- **`quality`**: gitleaks (secret scanning), ruff lint and format, bandit
+  (HIGH severity and HIGH confidence only), the commit-message format, no merge
+  commits, and the frontend's lint, unit tests and build.
+- **`test`**: the pytest suite with its coverage gate, against a real Postgres
+  with pgvector so RAG queries run for real, plus the contract-schema drift check.
+- **`deploy-smoke`**: builds the production image, boots it under dev and prod
+  config, checks that a bad prod config fails with a readable message, and fails
+  on a CRITICAL OS-package CVE (Trivy, `ignore-unfixed`).
+
+Which steps of those three run depends on the files in the PR (a frontend-only
+change skips the backend tests and the image build, a docs-only change skips
+both and the frontend build), and a push to `main` always runs everything. The
+rules, and what was deliberately not removed, are in
+[docs/04-development/fast-loop.md](docs/04-development/fast-loop.md). The full
+browser suite and the other slow checks run nightly (`extended-checks.yml`).
 
 ## Before opening a pull request
 
-Run the same gate CI runs:
+Run the same gate CI runs. While you work, `scripts/check-changed.sh` runs only what your
+change can break, and `scripts/check-changed.sh --full` does everything below plus the
+build and every viewport ([the fast loop](docs/04-development/fast-loop.md)):
 
 ```bash
 .venv/bin/ruff check . && .venv/bin/ruff format --check .

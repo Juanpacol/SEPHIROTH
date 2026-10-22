@@ -2,6 +2,8 @@
 
 ## Running
 
+While you work, run only what your change can break: see [the fast loop](fast-loop.md).
+
 ```bash
 PYTHONPATH=.:platform .venv/bin/pytest                        # unit suite
 PYTHONPATH=.:platform .venv/bin/pytest --cov --cov-report=term  # with the 87% gate
