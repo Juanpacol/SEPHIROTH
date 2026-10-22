@@ -9,20 +9,46 @@
   --color-line: 216 216 216;
   --color-muted: 138 148 166;
   --color-primary-soft: 234 242 254;
+  /* Primary as a button fill (white text on it clears AA, 4.5:1) and as text or a
+     link on a surface (also AA). `primary` itself, #3683F8, stays the brand
+     colour for icons, rings and large shapes: 3.7:1 on white, not enough for
+     small text. */
+  --color-primary-fill: 48 115 218;
+  --color-primary-ink: 37 99 201;
+
+  /* Motion. Three durations and a few curves; components take them by name
+     (`duration-fast|normal|slow`, `ease-standard|emphasized|sheet|ios`) so the
+     whole app moves at one pace. See docs/04-development/design-tokens.md. */
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* iOS "Dark Mode" palette (systemBackground / secondarySystemBackground / label / separator). */
+/* Dark mode: navy, not grey. Every surface is the brand blue (#3683F8) mixed with
+   black, then a little white for each step up, so the dark theme is the same
+   colour as the light one in less light. The values are the result of that recipe
+   (Tailwind's `<alpha-value>` needs plain channel triples, which `color-mix`
+   cannot give); lib/__tests__/design-tokens.test.ts recomputes them from the
+   recipe and fails if one drifts.
+     surface = brand 14% + black 86%, then 4% white   -> #121b2c
+     card    = surface + 6% white                     -> #202939
+     line    = surface + 14% white                    -> #333b4a
+     primary-soft = brand 18% over surface            -> #182e51 */
 .dark {
-  --color-ink: 245 245 247;
-  --color-surface: 8 8 10;
-  --color-card: 28 28 30;
-  --color-line: 56 56 60;
-  --color-muted: 152 152 157;
-  --color-primary-soft: 24 38 66;
+  --color-ink: 242 244 250;
+  --color-surface: 18 27 44;
+  --color-card: 32 41 57;
+  --color-line: 51 59 74;
+  --color-muted: 150 160 185;
+  --color-primary-soft: 24 46 81;
+  --color-primary-ink: 120 165 250;
 }
 
 body {
-  @apply bg-surface text-ink antialiased transition-colors duration-200;
+  @apply bg-surface text-ink antialiased transition-colors duration-normal;
 }
 
 /* Set by AUTH_GATE_SCRIPT (lib/auth-gate.ts) the instant it decides to
@@ -53,6 +79,21 @@ input:-webkit-autofill:focus {
   transition: background-color 9999s ease-in-out 0s;
 }
 
+/* With reduced motion requested, nothing travels: animations and transitions
+   finish at once (a hair above zero so `animationend`/`transitionend` still
+   fire). Spinners and the typing dots stay: they are feedback that work is
+   happening, not decoration. */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin):not(.animate-thinkingDot),
+  *:not(.animate-spin):not(.animate-thinkingDot)::before,
+  *:not(.animate-spin):not(.animate-thinkingDot)::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer components {
   .card {
     @apply bg-card rounded-squircle shadow-card p-5;
@@ -81,10 +122,10 @@ input:-webkit-autofill:focus {
      applied everywhere something responds to touch/hover, not just
      buttons, so the whole app feels like one system. */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 ease-ios active:scale-[0.97] active:duration-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-normal ease-ios active:scale-[0.97] active:duration-fast disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
   }
   .btn-primary {
-    @apply btn bg-primary text-white shadow-sm hover:-translate-y-0.5 hover:bg-primary-dark hover:shadow-md;
+    @apply btn bg-primary-fill text-white shadow-sm hover:-translate-y-0.5 hover:bg-primary-dark hover:shadow-md;
   }
   .btn-secondary {
     @apply btn bg-primary-soft text-primary hover:-translate-y-0.5 hover:brightness-95;
@@ -93,24 +134,24 @@ input:-webkit-autofill:focus {
     @apply btn bg-transparent text-ink/70 hover:-translate-y-0.5 hover:bg-primary-soft hover:text-primary;
   }
   .input {
-    @apply w-full rounded-2xl border border-line bg-card px-4 py-2.5 text-sm text-ink placeholder:text-muted transition-colors duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+    @apply w-full rounded-2xl border border-line bg-card px-4 py-2.5 text-sm text-ink placeholder:text-muted transition-colors duration-normal focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
   }
 
   /* Cards that respond to hover/tap — the landing page's value/agent
      tiles, not every `.card` app-wide (a dashboard KPI card sitting still
      reads as more trustworthy than one that wobbles under the cursor). */
   .card-interactive {
-    @apply cursor-default transition-all duration-300 ease-ios hover:-translate-y-1 hover:shadow-card-lg active:translate-y-0 active:scale-[0.98] active:duration-100;
+    @apply cursor-default transition-all duration-slow ease-ios hover:-translate-y-1 hover:shadow-card-lg active:translate-y-0 active:scale-[0.98] active:duration-fast;
   }
 
   /* Underline that grows from the center on hover, iOS-tab-bar style —
      used on the landing nav's section links instead of a flat color swap. */
   .link-underline {
-    @apply relative text-muted transition-colors duration-200 hover:text-primary;
+    @apply relative text-muted transition-colors duration-normal hover:text-primary;
   }
   .link-underline::after {
     content: "";
-    @apply absolute -bottom-1 left-1/2 h-px w-0 -translate-x-1/2 bg-primary transition-all duration-200 ease-ios;
+    @apply absolute -bottom-1 left-1/2 h-px w-0 -translate-x-1/2 bg-primary transition-all duration-normal ease-ios;
   }
   .link-underline:hover::after {
     @apply w-full;

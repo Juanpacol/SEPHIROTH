@@ -22,6 +22,9 @@ const config: Config = {
           DEFAULT: "#3683F8",
           soft: "rgb(var(--color-primary-soft) / <alpha-value>)",
           dark: "#1E62D0",
+          // Button fill and text-on-surface shades that clear AA; see globals.css.
+          fill: "rgb(var(--color-primary-fill) / <alpha-value>)",
+          ink: "rgb(var(--color-primary-ink) / <alpha-value>)",
         },
         ink: "rgb(var(--color-ink) / <alpha-value>)",
         surface: "rgb(var(--color-surface) / <alpha-value>)",
@@ -57,9 +60,18 @@ const config: Config = {
         card: "0 1px 3px rgba(16, 42, 83, 0.06), 0 8px 24px rgba(16, 42, 83, 0.06)",
         "card-lg": "0 4px 10px rgba(16, 42, 83, 0.08), 0 16px 40px rgba(16, 42, 83, 0.12)",
       },
+      // Motion tokens (values live in globals.css `:root`).
+      transitionDuration: {
+        fast: "var(--duration-fast)",
+        normal: "var(--duration-normal)",
+        slow: "var(--duration-slow)",
+      },
       transitionTimingFunction: {
         // UIKit's default spring-ish curve: a slight overshoot then settle.
         ios: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        standard: "var(--ease-standard)",
+        emphasized: "var(--ease-emphasized)",
+        sheet: "var(--ease-sheet)",
       },
       backgroundImage: {
         // Metallic pauldron gradient — marks AI-generated content.
