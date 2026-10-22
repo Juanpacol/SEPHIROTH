@@ -14,6 +14,7 @@ from sephiroth.runtime.registry import (
     DRUG_SAFETY,
     EVIDENCE,
     RADIOLOGY,
+    agent_display_name,
     get_capability,
 )
 
@@ -81,3 +82,25 @@ def test_every_specialist_shares_the_clinician_voice(capability):
     answer directly on a text-only misroute (intent_router.py's keyword
     rules match on question text, not on whether an image was provided)."""
     assert "Voice: write in plain, everyday language" in capability.role_prompt
+
+
+@pytest.mark.parametrize(
+    "agent,expected",
+    [
+        ("radiology", "Image Analysis"),
+        ("drug-safety", "Medication Interactions"),
+        ("drug_safety", "Medication Interactions"),
+        ("evidence", "Guidelines & Literature"),
+    ],
+)
+def test_an_agent_is_named_by_what_it_does_whichever_form_of_its_id_arrives(agent, expected):
+    """AB#37: the id is for the wire, the name is for people. Both spellings of
+    drug safety exist on the wire (docs/00-migration-charter.md §2.1)."""
+    assert agent_display_name(agent) == expected
+
+
+@pytest.mark.parametrize("agent", ["coordinator", "laboratory", "something-new", ""])
+def test_an_unknown_or_removed_agent_is_shown_as_given_and_never_raises(agent):
+    """A consultation saved before SPEC-029 still lists `coordinator`: it must
+    render, not fail."""
+    assert agent_display_name(agent) == agent

@@ -43,3 +43,27 @@ def test_render_consultation_pdf_no_patient_id():
     consultation = _consultation(patient_id=None, agents=[])
     pdf_bytes = render_consultation_pdf(consultation, explanation={})
     assert pdf_bytes.startswith(b"%PDF")
+
+
+def test_the_pdf_names_agents_by_function_not_by_id():
+    """AB#37. Page text is compressed in the file, so check the strings the
+    renderer is handed rather than the bytes."""
+    from api import pdf_export
+
+    seen = []
+    original = pdf_export._para
+    pdf_export._para = lambda text, style: (seen.append(text), original(text, style))[1]
+    try:
+        consultation = _consultation(agents=["drug-safety", "evidence", "coordinator"])
+        pdf_export.render_consultation_pdf(
+            consultation, {"steps": [{"agent": "radiology", "action": "Described the image"}]}
+        )
+    finally:
+        pdf_export._para = original
+
+    joined = " | ".join(seen)
+    assert "Medication Interactions, Guidelines &amp; Literature, coordinator" in joined or (
+        "Medication Interactions, Guidelines & Literature, coordinator" in joined
+    )
+    assert "[Image Analysis] Described the image" in joined
+    assert "drug-safety" not in joined

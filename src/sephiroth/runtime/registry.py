@@ -54,7 +54,7 @@ CLINICIAN_VOICE = (
 RADIOLOGY = AgentCapability(
     id="radiology",
     node_name="radiology",
-    name="Radiology Agent",
+    name="Image Analysis",
     description="Analyzes medical images through the imaging + vision MCP servers.",
     role_prompt=(
         "You are the radiology specialist. When the patient context includes "
@@ -74,7 +74,7 @@ RADIOLOGY = AgentCapability(
 DRUG_SAFETY = AgentCapability(
     id="drug-safety",
     node_name="drug_safety",
-    name="Drug Safety Agent",
+    name="Medication Interactions",
     description="Screens medication lists for interactions via the drug-safety server.",
     role_prompt=(
         "You are the medication safety specialist. Screen the patient's "
@@ -91,7 +91,7 @@ DRUG_SAFETY = AgentCapability(
 EVIDENCE = AgentCapability(
     id="evidence",
     node_name="evidence",
-    name="Evidence Agent",
+    name="Guidelines & Literature",
     description="Retrieves clinical guidelines and PubMed evidence — always cited.",
     role_prompt=(
         "You are the clinical evidence specialist. Ground every statement in "
@@ -160,10 +160,22 @@ def get_capability(node_name: str) -> AgentCapability:
     return AGENTS[node_name]
 
 
+def agent_display_name(agent: str) -> str:
+    """The name a person reads for an agent, by what it does ("Image Analysis"),
+    not its id. Takes either form on the wire (`drug-safety` or `drug_safety`).
+    An unknown id comes back as it was given: a name to show is never worth an
+    error, and a consultation saved before a rename must still render."""
+    for capability in AGENTS.values():
+        if agent in (capability.id, capability.node_name):
+            return capability.name
+    return agent
+
+
 __all__ = [
     "AGENTS",
     "DRUG_SAFETY",
     "EVIDENCE",
     "RADIOLOGY",
+    "agent_display_name",
     "get_capability",
 ]

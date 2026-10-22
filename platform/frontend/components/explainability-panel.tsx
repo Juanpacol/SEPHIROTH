@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Explanation, LLMCall } from "@/lib/api";
+import { agentLabel } from "@/lib/agents";
 import { useLanguage } from "@/lib/language";
 
 const toolIcons: Record<string, LucideIcon> = {
@@ -87,7 +88,7 @@ export default function ExplainabilityPanel({
               <li key={i} className="flex items-start gap-1.5">
                 <Icon size={12} className="mt-0.5 shrink-0" />
                 <span>
-                  <span className="font-semibold">{step.agent}</span> {step.action}
+                  <span className="font-semibold">{agentLabel(step.agent, t)}</span> {step.action}
                 </span>
               </li>
             );
