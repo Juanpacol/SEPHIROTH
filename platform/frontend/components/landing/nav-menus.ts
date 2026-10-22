@@ -37,6 +37,12 @@ export const NAV_MENUS: NavMenu[] = [
     },
     items: [
       {
+        href: "#features",
+        titleKey: "marketing.nav.features.title",
+        bodyKey: "marketing.nav.features.body",
+        section: "features",
+      },
+      {
         href: "#how-it-works",
         titleKey: "marketing.nav.howItWorks",
         bodyKey: "marketing.nav.howItWorks.body",

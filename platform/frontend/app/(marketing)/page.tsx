@@ -32,6 +32,8 @@ import CitationGuardToggle from "@/components/landing/citation-guard-toggle";
 import AbstentionGate from "@/components/landing/abstention-gate";
 import AnalysisGallery from "@/components/landing/analysis-gallery";
 import AnalysisDemo from "@/components/landing/analysis-demo";
+import ScrollEffects from "@/components/landing/scroll-effects";
+import FeatureShowcase from "@/components/landing/feature-showcase";
 import { Marquee } from "@/components/magicui/marquee";
 import { BentoGrid, BentoCard } from "@/components/magicui/bento-grid";
 import { BorderBeam } from "@/components/magicui/border-beam";
@@ -114,10 +116,14 @@ export default function LandingPage() {
   return (
     <>
       <AuthRedirectGate />
+      <ScrollEffects />
 
       {/* Hero */}
-      <section className="band-dark relative overflow-hidden">
-        <div className="relative mx-auto max-w-6xl px-6 py-24 text-center md:py-32">
+      <section data-hero className="band-dark relative overflow-hidden">
+        <div
+          data-hero-content
+          className="relative mx-auto max-w-6xl translate-y-[calc(var(--hero-shift,0px)*0.45)] px-6 py-24 text-center opacity-[calc(1-var(--hero-progress,0)*0.7)] md:py-32"
+        >
           <WingMark
             size={420}
             className="pointer-events-none absolute left-1/2 top-0 -z-10 -translate-x-1/2 text-ink/[0.04]"
@@ -158,6 +164,15 @@ export default function LandingPage() {
             </span>
           ))}
         </Marquee>
+      </section>
+
+      {/* Features: what it does, one step at a time, with a media panel beside the list */}
+      <section id="features" className="mx-auto max-w-6xl scroll-mt-24 px-6 pt-24">
+        <span className="eyebrow text-primary-ink">{t("marketing.features.eyebrow")}</span>
+        <h2 className="mt-2 font-display text-title font-semibold">{t("marketing.features.title")}</h2>
+        <div className="mt-8">
+          <FeatureShowcase />
+        </div>
       </section>
 
       {/* Pain points — what actually costs a clinician time and trust, and how SEPHIROTH answers it */}
