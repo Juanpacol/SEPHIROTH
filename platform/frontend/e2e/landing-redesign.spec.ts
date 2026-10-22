@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
-/** The landing's imaging demo, navy bands and FAQ, in a real browser at every viewport.
- * Copy and data are pinned in lib/__tests__/{imaging-demo,bands,marketing-agents}.test.ts. */
+/** The landing's navy bands and FAQ, in a real browser at every viewport.
+ * Copy and data are pinned in lib/__tests__/{bands,marketing-agents}.test.ts. */
 const rgb = (css: string) =>
   (css.match(/\d+(\.\d+)?/g) ?? []).slice(0, 3).map(Number) as [number, number, number];
 const lum = ([r, g, b]: [number, number, number]) => {
@@ -20,60 +20,10 @@ async function settle(page: Page, selector: string) {
   await page.waitForTimeout(800);
 }
 
-test.describe("imaging demo", () => {
-  test("picking a study shows its analysis next to its image", async ({ page }) => {
-    await settle(page, "#analysis-demo");
-    const demo = page.getByTestId("analysis-demo");
-
-    await demo.getByRole("tab", { name: /MRI/ }).click();
-
-    const panel = demo.getByRole("tabpanel", { name: /MRI/ });
-    await expect(panel).toBeVisible();
-    await expect(panel.getByRole("img")).toBeVisible();
-    await expect(panel).toContainText("axial");
-    await expect(panel).toContainText(/not a diagnosis/i);
-    await expect(demo.getByRole("tab", { name: /MRI/ })).toHaveAttribute("aria-selected", "true");
-  });
-
-  test("the arrow keys move between studies", async ({ page, hasTouch }) => {
-    test.skip(hasTouch, "touch devices have no arrow keys");
-    await settle(page, "#analysis-demo");
-    const demo = page.getByTestId("analysis-demo");
-
-    await demo.getByRole("tab").first().focus();
-    await page.keyboard.press("ArrowRight");
-
-    await expect(demo.getByRole("tab", { name: /CT/ })).toBeFocused();
-    await expect(demo.getByRole("tab", { name: /CT/ })).toHaveAttribute("aria-selected", "true");
-  });
-
-  test("changing study moves nothing below it", async ({ page }) => {
-    await settle(page, "#analysis-demo");
-    const demo = page.getByTestId("analysis-demo");
-    const below = () =>
-      page
-        .locator("#how-it-works")
-        .evaluate((el) => Math.round(el.getBoundingClientRect().top + window.scrollY));
-    const before = await below();
-
-    for (const name of [/CT/, /Ultrasound/, /X-ray/]) {
-      await demo.getByRole("tab", { name }).click();
-      await page.waitForTimeout(350);
-      expect(Math.abs((await below()) - before)).toBeLessThanOrEqual(1);
-    }
-  });
-
-  test("fits the screen", async ({ page }) => {
-    await settle(page, "#analysis-demo");
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    expect(overflow).toBeLessThanOrEqual(0);
-  });
-});
-
 test.describe("navy bands on the white page", () => {
   for (const [name, selector] of [
     ["hero", "section.band-dark >> nth=0"],
-    ["agents", "#agents"],
+    ["safeguards", "#safeguards"],
     ["closing", "section.band-dark >> nth=-1"],
   ] as const) {
     test(`the ${name} band is navy and its text clears AA`, async ({ page }) => {
