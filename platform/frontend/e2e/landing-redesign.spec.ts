@@ -52,9 +52,7 @@ test.describe("imaging demo", () => {
     const demo = page.getByTestId("analysis-demo");
     const below = () =>
       page
-        .locator("section")
-        .filter({ hasText: "Every modality, one imaging pipeline" })
-        .first()
+        .locator("#how-it-works")
         .evaluate((el) => Math.round(el.getBoundingClientRect().top + window.scrollY));
     const before = await below();
 

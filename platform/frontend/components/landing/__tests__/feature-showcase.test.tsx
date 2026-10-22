@@ -1,4 +1,8 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import EN from "@/lib/i18n/dictionaries.en";
+import ES from "@/lib/i18n/dictionaries.es";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import FeatureShowcase from "@/components/landing/feature-showcase";
 import FeatureMediaView from "@/components/landing/feature-media";
@@ -101,6 +105,91 @@ describe("FeatureShowcase", () => {
     } finally {
       feature.media = original;
     }
+  });
+});
+
+describe("the See cell's slides", () => {
+  const slides = LANDING_FEATURES.find((f) => f.id === "see")!.media;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.stubGlobal("matchMedia", (q: string) => ({
+      matches: false,
+      media: q,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+  const current = (container: HTMLElement) => container.querySelector("[data-slide='current']")!;
+
+  it("carries the ten example studies, each with a description and a label", () => {
+    expect(slides.kind).toBe("slides");
+    if (slides.kind !== "slides") return;
+    expect(slides.slides).toHaveLength(10);
+    for (const slide of slides.slides) {
+      expect(slide.src).toMatch(/^\/landing\/analysis\/.+\.webp$/);
+      expect((EN as Record<string, string>)[slide.captionKey], slide.captionKey).toBeTruthy();
+      expect((ES as Record<string, string>)[slide.titleKey], slide.titleKey).toBeTruthy();
+    }
+  });
+
+  it("every file exists, so no slide is a broken picture", () => {
+    if (slides.kind !== "slides") return;
+    for (const slide of slides.slides) {
+      expect(existsSync(path.join(__dirname, "../../..", "public", slide.src)), slide.src).toBe(true);
+    }
+  });
+
+  it("shows the first and does not move while its cell is off screen", () => {
+    const { container } = render(wrap(<FeatureMediaView media={slides} playing={false} />));
+
+    act(() => vi.advanceTimersByTime(60000));
+
+    expect(current(container)).toHaveAttribute("src", "/landing/analysis/xray.webp");
+  });
+
+  it("takes turns while on screen, cross-fading, and wraps round to the first", () => {
+    const { container } = render(wrap(<FeatureMediaView media={slides} playing />));
+
+    act(() => vi.advanceTimersByTime(3400));
+    expect(current(container)).toHaveAttribute("src", "/landing/analysis/ct-brain.webp");
+    act(() => vi.advanceTimersByTime(3400));
+    expect(current(container)).toHaveAttribute("src", "/landing/analysis/mri-brain.webp");
+    // Each turn schedules the next once React has rendered it, so step one turn at a time.
+    for (let i = 0; i < 8; i++) act(() => vi.advanceTimersByTime(3400));
+    expect(current(container)).toHaveAttribute("src", "/landing/analysis/xray.webp");
+    expect(container.querySelector("img[data-slide='current']")!.className).toContain("duration-slow");
+  });
+
+  it("only the one on show is announced, and the label names it", () => {
+    const { container } = render(wrap(<FeatureMediaView media={slides} playing />));
+    act(() => vi.advanceTimersByTime(3400));
+
+    const images = Array.from(container.querySelectorAll("img"));
+    expect(images.filter((i) => i.getAttribute("aria-hidden") === "false")).toHaveLength(1);
+    expect(container.querySelector("[data-slide-label]")).toHaveTextContent("CT · Sagittal brain scan");
+  });
+
+  it("holds still under the pointer, and under reduced motion shows the first for good", () => {
+    const { container, unmount } = render(wrap(<FeatureMediaView media={slides} playing />));
+    fireEvent.mouseEnter(container.querySelector("[data-slides]")!);
+    act(() => vi.advanceTimersByTime(30000));
+    expect(current(container)).toHaveAttribute("src", "/landing/analysis/xray.webp");
+    unmount();
+
+    vi.stubGlobal("matchMedia", (q: string) => ({
+      matches: true,
+      media: q,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    const reduced = render(wrap(<FeatureMediaView media={slides} playing />));
+    act(() => vi.advanceTimersByTime(30000));
+    expect(current(reduced.container)).toHaveAttribute("src", "/landing/analysis/xray.webp");
   });
 });
 

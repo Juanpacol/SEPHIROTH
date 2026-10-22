@@ -15,7 +15,7 @@ branching in JavaScript. No layout shift on hydration, no client/server
 mismatch, and the two shapes cannot drift apart — the reasoning is spelled out
 in `components/ui/data-list.tsx`. `lib/hooks/use-media-query.ts` exists for the
 cases where JavaScript has to branch on *logic*, not presentation: computing
-positions (`components/landing/masonry.tsx`), or genuinely not mounting an
+positions, or genuinely not mounting an
 expensive subtree. Reach for it last.
 
 **Patterns already solved — reuse, don't rebuild:**

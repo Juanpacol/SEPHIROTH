@@ -6,8 +6,22 @@ import { expect, test, type Page } from "@playwright/test";
 const cssVar = (page: Page, name: string) =>
   page.evaluate((n) => document.documentElement.style.getPropertyValue(n).trim(), name);
 
+/** (The site scrolls smoothly, and a second `scrollTo` during a smooth one can be dropped in
+ * WebKit, so these tests ask for `instant`.)
+ *
+ * Scrolls to the very end. Pictures further up load as the page is scrolled and make it
+ * taller, so keep going until the page has stopped growing under us. */
 async function toEnd(page: Page) {
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  let last = -1;
+  for (let i = 0; i < 20; i++) {
+    const height = await page.evaluate(() => {
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" });
+      return document.documentElement.scrollHeight;
+    });
+    if (height === last) return;
+    last = height;
+    await page.waitForTimeout(150);
+  }
 }
 
 test.describe("footer", () => {
@@ -18,7 +32,8 @@ test.describe("footer", () => {
 
   test("is faded and low until the reader reaches it, then fully there", async ({ page }) => {
     const content = page.locator("[data-footer-content]");
-    await page.waitForTimeout(500);
+    // The script writes the variable on its first frame; until it has, the footer shows its resting state.
+    await expect.poll(() => cssVar(page, "--footer-progress")).not.toBe("");
     expect(Number(await cssVar(page, "--footer-progress"))).toBeLessThan(0.05);
     expect(Number(await content.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(0.5);
 
@@ -32,16 +47,24 @@ test.describe("footer", () => {
   });
 
   test("follows the scroll with a lag, not in one jump", async ({ page }) => {
-    await page.waitForTimeout(500);
+    await expect.poll(() => cssVar(page, "--footer-progress")).not.toBe("");
+    // Load everything first (the page grows as pictures arrive), then go back to the top and let it settle.
     await toEnd(page);
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await expect.poll(async () => Number(await cssVar(page, "--footer-progress"))).toBeLessThan(0.01);
 
+    // One jump to the end, then watch the footer catch up with it.
+    await page.evaluate(() =>
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }),
+    );
     const seen = new Set<string>();
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 12; i++) {
       seen.add(await cssVar(page, "--footer-progress"));
-      await page.waitForTimeout(40);
+      await page.waitForTimeout(30);
     }
 
     expect(seen.size).toBeGreaterThan(2);
+    expect(seen.has("1.000") || Number(Array.from(seen).at(-1)) > 0.5).toBe(true);
   });
 
   test("stays in the page's flow: its links are reachable and in order", async ({ page }) => {
@@ -89,7 +112,7 @@ test.describe("hero", () => {
     await page.waitForTimeout(600);
     expect(Number(await content.evaluate((el) => getComputedStyle(el).opacity))).toBeGreaterThan(0.99);
 
-    await page.evaluate(() => window.scrollTo(0, 500));
+    await page.evaluate(() => window.scrollTo({ top: 500, behavior: "instant" }));
 
     await expect.poll(async () => parseFloat(await cssVar(page, "--hero-shift"))).toBeGreaterThan(100);
     await expect
@@ -104,7 +127,7 @@ test.describe("hero", () => {
     const top = () => next.evaluate((el) => Math.round(el.getBoundingClientRect().top + window.scrollY));
     const before = await top();
 
-    await page.evaluate(() => window.scrollTo(0, 600));
+    await page.evaluate(() => window.scrollTo({ top: 600, behavior: "instant" }));
     await page.waitForTimeout(800);
 
     expect(Math.abs((await top()) - before)).toBeLessThanOrEqual(1);
@@ -120,7 +143,7 @@ test.describe("reduced motion", () => {
 
     expect(await cssVar(page, "--footer-progress")).toBe("1");
     expect(await cssVar(page, "--hero-shift")).toBe("0px");
-    await page.evaluate(() => window.scrollTo(0, 600));
+    await page.evaluate(() => window.scrollTo({ top: 600, behavior: "instant" }));
     await page.waitForTimeout(400);
     expect(await cssVar(page, "--hero-shift")).toBe("0px");
     expect(
@@ -136,7 +159,7 @@ test.describe("features", () => {
   });
 
   test("six cells, numbered, in the order the reader meets them", async ({ page }) => {
-    const labels = await page.locator("#features article .eyebrow").allInnerTexts();
+    const labels = await page.locator("#features article > .eyebrow").allInnerTexts();
 
     expect(labels.map((t) => t.replace(/\s+/g, " "))).toEqual([
       "#1 ASK",
@@ -182,8 +205,8 @@ test.describe("features", () => {
   });
 
   test("a picture drifts inside its frame as you scroll, and never leaves a gap", async ({ page }) => {
-    test.skip(page.viewportSize()!.width < 768, "the picture with a drift is the X-ray in the fourth cell");
-    const img = page.locator("#feature-see img[data-parallax]");
+    test.skip(page.viewportSize()!.width < 768, "checked on tablet and wider");
+    const img = page.locator("#feature-see [data-parallax]");
     await img.scrollIntoViewIfNeeded();
     await page.waitForTimeout(900);
 
@@ -201,6 +224,24 @@ test.describe("features", () => {
     }));
     expect(picture.top).toBeLessThanOrEqual(frame.top + 0.5);
     expect(picture.bottom).toBeGreaterThanOrEqual(frame.bottom - 0.5);
+  });
+
+  test("the See cell shows the example studies one after another, and the strip and gallery are gone", async ({
+    page,
+  }) => {
+    const see = page.locator("#feature-see");
+    await see.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(600);
+
+    const first = await see.locator("[data-slide='current']").getAttribute("src");
+    await expect
+      .poll(() => see.locator("[data-slide='current']").getAttribute("src"), { timeout: 9000 })
+      .not.toBe(first);
+
+    await expect(see.locator("[data-slide-label]")).toHaveText(/·/);
+    await expect(page.getByText("Every modality, one imaging pipeline")).toHaveCount(0);
+    await expect(page.locator(".animate-marquee")).toHaveCount(0);
+    await expect(page.getByText("PubMed / NCBI")).toHaveCount(0);
   });
 
   test("the page does not overflow sideways with all of this on it", async ({ page }) => {
