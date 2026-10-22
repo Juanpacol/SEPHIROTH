@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures/test";
 
 /** The landing header in a real browser: menus that lead somewhere, keyboard and touch
  * behaviour, and a header that says where you are. The data is pinned in
