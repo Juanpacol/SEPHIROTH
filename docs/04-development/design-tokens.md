@@ -84,3 +84,35 @@ already do, with the same timings they had.
 With `prefers-reduced-motion: reduce`, animations and transitions finish at once.
 Spinners and the typing dots are the exception: they show that work is
 happening.
+
+## Typography
+
+Three families, each with one job. All are free (SIL OFL 1.1), hosted in
+`platform/frontend/app/fonts/` with their licences and loaded through
+`next/font/local`, so a build never fetches a font. No trial or commercial font
+is used; `lib/__tests__/typography.test.ts` fails if one appears.
+
+| Family | Tailwind | Use |
+|---|---|---|
+| Manrope | `font-sans` (default) | Everything you read: interface and body text |
+| Antonio | `font-display` | The landing's headline and section titles. Tall and condensed. Not for body text or the app's pages |
+| JetBrains Mono | `font-mono` | Small uppercase labels (`.eyebrow`) |
+
+The scale, in `tailwind.config.ts`:
+
+| Class | Size | Line height | Use |
+|---|---|---|---|
+| `text-display` | fluid, 44 px at 320 px up to 88 px | 1 | Landing headline |
+| `text-title` | fluid, 24 to 32 px | 1.2 | Section headings |
+| `text-subtitle` | 18 px | 24 px | Lead text under a heading |
+| `text-label` | 11 px, tracking 0.08 em | 16 px | The one label size; 11 px is the floor |
+
+Everything else (`text-sm`, `text-base`...) is unchanged.
+
+**Labels.** One style for a small uppercase label above a group, a table column or
+a field: `.eyebrow` (mono, uppercase, wide tracking, 11 px). Set its colour on the
+element (`text-muted`, `text-primary-ink`). A rounded pill badge keeps its own
+style; any other `uppercase` styled by hand fails the test.
+
+The fallback fonts are metric-adjusted (`adjustFontFallback`), so the swap from the
+system font to Antonio does not move the lines below a heading.

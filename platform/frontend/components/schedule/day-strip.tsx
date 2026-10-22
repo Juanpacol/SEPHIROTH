@@ -44,7 +44,7 @@ export default function DayStrip({
               isSelected ? "bg-primary text-white" : "bg-surface text-ink/70"
             } ${!isSelected && key === todayKey ? "ring-1 ring-primary" : ""}`}
           >
-            <span className="block text-[11px] font-semibold uppercase opacity-70">
+            <span className="eyebrow block opacity-70">
               {format(day, "EEE")}
             </span>
             <span className="block text-base font-bold leading-tight">{format(day, "d")}</span>

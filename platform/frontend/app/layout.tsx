@@ -15,6 +15,24 @@ const manrope = localFont({
   display: "swap",
 });
 
+// Display and label faces (see app/fonts/README.md for source and licence). The
+// fallback is metric-adjusted, so the swap from system font to Antonio does not
+// move the lines below a heading.
+const antonio = localFont({
+  src: "./fonts/Antonio-latin-wght.woff2",
+  weight: "100 700",
+  variable: "--font-display",
+  display: "swap",
+  adjustFontFallback: "Arial",
+});
+const jetbrainsMono = localFont({
+  src: "./fonts/JetBrainsMono-latin-wght.woff2",
+  weight: "100 800",
+  variable: "--font-mono",
+  display: "swap",
+  adjustFontFallback: "Arial",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: "SEPHIROTH — Clinical AI",
@@ -55,7 +73,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={manrope.variable}>
+    <html lang="en" className={`${manrope.variable} ${antonio.variable} ${jetbrainsMono.variable}`}>
       <head>
         {/* Applies the saved theme before first paint — avoids a flash of the wrong theme. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

@@ -37,7 +37,7 @@ export default function LabResultCard({ lab, showMessage = true }: { lab: Portal
       <p className="text-sm">{labExplanation(lab, t)}</p>
       {showMessage && lab.message ? (
         <div className="rounded-xl border border-primary/20 bg-primary-soft/60 p-3">
-          <div className="mb-1 text-xs font-semibold uppercase text-primary">{t("portal.results.fromClinician")}</div>
+          <div className="mb-1 eyebrow text-primary-ink">{t("portal.results.fromClinician")}</div>
           <p className="whitespace-pre-wrap text-sm">{lab.message}</p>
         </div>
       ) : null}

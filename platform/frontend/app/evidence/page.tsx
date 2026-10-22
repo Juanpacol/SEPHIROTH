@@ -144,7 +144,7 @@ export default function EvidencePage() {
         </div>
       ) : (
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
+          <h2 className="eyebrow text-muted">
             {t("evidence.browseByCategory")}
           </h2>
           {categoriesLoading && <p className="text-sm text-muted">{t("evidence.loadingCategories")}</p>}

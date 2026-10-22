@@ -166,7 +166,7 @@ function PdfPreviewModal({
         </div>
 
         <div className="border-t border-line/60 p-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
+          <p className="mb-2 eyebrow text-muted">
             {t("copilot.includedSections")}
           </p>
           <ul className="mb-4 space-y-1">
@@ -443,7 +443,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
             <div className="max-w-[95%] rounded-squircle bg-card p-4 text-sm shadow-card">
               {exchange.pending ? (
                 <div className="space-y-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  <span className="eyebrow text-muted">
                     {t("copilot.agentsWorking")}
                   </span>
                   <div className="flex flex-wrap gap-2">

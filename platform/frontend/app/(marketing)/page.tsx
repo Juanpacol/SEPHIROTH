@@ -115,7 +115,7 @@ export default function LandingPage() {
           by="word"
           animation="blurInUp"
           duration={0.5}
-          className="mx-auto mt-5 max-w-2xl text-3xl font-extrabold tracking-tight md:text-5xl"
+          className="mx-auto mt-5 max-w-3xl font-display text-display font-semibold"
         >
           {t("marketing.hero.title")}
         </TextAnimate>
@@ -146,7 +146,7 @@ export default function LandingPage() {
 
       {/* Pain points — what actually costs a clinician time and trust, and how SEPHIROTH answers it */}
       <section className="mx-auto max-w-6xl px-6 py-24">
-        <h2 className="text-center text-2xl font-extrabold md:text-3xl">{t("marketing.painPoints.title")}</h2>
+        <h2 className="text-center font-display text-title font-semibold">{t("marketing.painPoints.title")}</h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-muted">{t("marketing.painPoints.subtitle")}</p>
         <div className="mt-10 space-y-5">
           {PAIN_POINTS.map((v) => (
@@ -155,13 +155,13 @@ export default function LandingPage() {
                 <v.icon size={20} />
               </div>
               <div>
-                <span className="text-xs font-bold uppercase tracking-wide text-danger">
+                <span className="eyebrow text-danger">
                   {t("marketing.painPoints.problemLabel")}
                 </span>
                 <p className="mt-1 text-sm text-muted">{t(v.problemKey)}</p>
               </div>
               <div className="border-t border-line/60 pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
-                <span className="text-xs font-bold uppercase tracking-wide text-primary">
+                <span className="eyebrow text-primary-ink">
                   {t("marketing.painPoints.solutionLabel")}
                 </span>
                 <p className="mt-1 text-sm">{t(v.solutionKey)}</p>
@@ -173,7 +173,7 @@ export default function LandingPage() {
 
       {/* Imaging analysis gallery — one real sample per supported modality */}
       <section className="mx-auto max-w-6xl px-6 pb-24">
-        <h2 className="text-center text-2xl font-extrabold md:text-3xl">{t("marketing.analysisGallery.title")}</h2>
+        <h2 className="text-center font-display text-title font-semibold">{t("marketing.analysisGallery.title")}</h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-muted">{t("marketing.analysisGallery.subtitle")}</p>
         <div className="mt-8">
           <AnalysisGallery />
@@ -183,10 +183,10 @@ export default function LandingPage() {
       {/* How it works — the mechanics, for the reader who wants to know before trusting it */}
       <section id="how-it-works" className="scroll-mt-24 border-t border-line/60 bg-primary-soft/30">
         <div className="mx-auto max-w-4xl px-6 py-24">
-          <span className="text-xs font-bold uppercase tracking-wide text-primary">
+          <span className="eyebrow text-primary-ink">
             {t("marketing.howItWorks.eyebrow")}
           </span>
-          <h2 className="mt-2 text-2xl font-extrabold md:text-3xl">{t("marketing.howItWorks.title")}</h2>
+          <h2 className="mt-2 font-display text-title font-semibold">{t("marketing.howItWorks.title")}</h2>
           <p className="mt-3 max-w-2xl text-muted">
             {t("marketing.howItWorks.bodyPre")}{" "}
             <span className="font-semibold text-primary">{t("marketing.walkthrough.runIt")}</span>{" "}
@@ -197,7 +197,7 @@ export default function LandingPage() {
 
       {/* Safeguards */}
       <section id="safeguards" className="scroll-mt-24 mx-auto max-w-6xl px-6 py-24">
-        <h2 className="text-2xl font-extrabold md:text-3xl">{t("marketing.safeguards.title")}</h2>
+        <h2 className="font-display text-title font-semibold">{t("marketing.safeguards.title")}</h2>
         <p className="mt-3 max-w-2xl text-muted">{t("marketing.safeguards.subtitle")}</p>
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
           <div>
@@ -219,7 +219,7 @@ export default function LandingPage() {
       {/* Agents */}
       <section id="agents" className="scroll-mt-24 border-t border-line/60 bg-primary-soft/30">
         <div className="mx-auto max-w-6xl px-6 py-24">
-          <h2 className="text-2xl font-extrabold md:text-3xl">{t("marketing.agentsSection.title")}</h2>
+          <h2 className="font-display text-title font-semibold">{t("marketing.agentsSection.title")}</h2>
           <p className="mt-3 max-w-2xl text-muted">{t("marketing.agentsSection.subtitle")}</p>
           <BentoGrid className="mt-8 auto-rows-[14rem] md:grid-cols-3">
             {AGENTS.map((a) => (
@@ -240,7 +240,7 @@ export default function LandingPage() {
           results. Kept plain (card grid, no bento/magicui flourish) since
           this is scope disclosure, not a hype section. */}
       <section className="mx-auto max-w-6xl px-6 py-24">
-        <h2 className="text-2xl font-extrabold md:text-3xl">{t("marketing.platform.title")}</h2>
+        <h2 className="font-display text-title font-semibold">{t("marketing.platform.title")}</h2>
         <p className="mt-3 max-w-2xl text-muted">{t("marketing.platform.subtitle")}</p>
         <div className="mt-8 grid gap-5 sm:grid-cols-2">
           {PLATFORM_FEATURES.map((f) => (
@@ -260,7 +260,7 @@ export default function LandingPage() {
       {/* FAQ */}
       <section id="faq" className="scroll-mt-24 border-t border-line/60">
         <div className="mx-auto max-w-3xl px-6 py-24">
-          <h2 className="text-2xl font-extrabold md:text-3xl">{t("marketing.faq.title")}</h2>
+          <h2 className="font-display text-title font-semibold">{t("marketing.faq.title")}</h2>
           <div className="mt-6 space-y-3">
             {FAQS.map((f) => (
               <details
@@ -284,7 +284,7 @@ export default function LandingPage() {
 
       {/* Closing CTA */}
       <section className="mx-auto max-w-3xl px-6 py-24 text-center">
-        <h2 className="text-2xl font-extrabold md:text-3xl">{t("marketing.cta.title")}</h2>
+        <h2 className="font-display text-title font-semibold">{t("marketing.cta.title")}</h2>
         <p className="mt-3 text-muted">{t("marketing.cta.subtitle")}</p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <ShimmerButton href="/login">{t("marketing.openApp")}</ShimmerButton>

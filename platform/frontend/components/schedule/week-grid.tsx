@@ -38,7 +38,7 @@ export default function WeekGrid({
       <div className="border-b border-line/60" />
       {days.map((day) => (
         <div key={day.toISOString()} className="border-b border-l border-line/60 px-2 py-2 text-center">
-          <div className="text-xs font-semibold uppercase text-muted">{format(day, "EEE")}</div>
+          <div className="eyebrow text-muted">{format(day, "EEE")}</div>
           <div
             className={`mx-auto mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold ${
               format(day, "yyyy-MM-dd") === todayKey ? "bg-primary text-white" : ""

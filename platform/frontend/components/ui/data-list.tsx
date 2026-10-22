@@ -86,7 +86,7 @@ export default function DataList<T>({
               <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
                 {secondary.map((col) => (
                   <Fragment key={col.key}>
-                    <dt className="text-xs uppercase tracking-wider text-muted">{col.header}</dt>
+                    <dt className="eyebrow text-muted">{col.header}</dt>
                     <dd className="text-right text-ink/80">{col.render(row)}</dd>
                   </Fragment>
                 ))}
@@ -113,7 +113,7 @@ export default function DataList<T>({
         <table className="w-full text-sm">
           <caption className="sr-only">{caption}</caption>
           <thead>
-            <tr className="border-b border-line/60 text-left text-xs uppercase tracking-wider text-muted">
+            <tr className="border-b border-line/60 text-left eyebrow text-muted">
               {columns.map((col) => (
                 <th key={col.key} scope="col" className="px-5 py-3.5">
                   {col.header}
