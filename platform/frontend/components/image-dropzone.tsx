@@ -76,7 +76,7 @@ export default function ImageDropzone({
         <img
           src={previewUrl}
           alt={t("imageDropzone.alt")}
-          className="max-h-[420px] w-full rounded-lg object-contain"
+          className="media-edge max-h-[420px] w-full rounded-inner object-contain"
         />
         <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 rounded-b-lg bg-ink/70 px-3 py-2 text-xs text-white">
           <span className="min-w-0 flex-1 truncate">{fileName}</span>

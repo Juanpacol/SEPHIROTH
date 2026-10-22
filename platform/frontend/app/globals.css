@@ -13,6 +13,9 @@
      link on a surface (also AA). `primary` itself, #3683F8, stays the brand
      colour for icons, rings and large shapes: 3.7:1 on white, not enough for
      small text. */
+  /* The colour shadows are cast in: a dark blue on light surfaces, black on navy. */
+  --shadow-ink: 16 42 83;
+  --shadow-strength: 1;
   --color-primary-fill: 48 115 218;
   --color-primary-ink: 37 99 201;
 
@@ -45,6 +48,9 @@
   --color-muted: 150 160 185;
   --color-primary-soft: 24 46 81;
   --color-primary-ink: 120 165 250;
+  --shadow-ink: 0 0 0;
+  /* A shadow on navy needs more weight than one on white to read at all. */
+  --shadow-strength: 3.5;
 }
 
 body {
@@ -114,7 +120,7 @@ input:-webkit-autofill:focus {
 
 @layer components {
   .card {
-    @apply bg-card rounded-squircle shadow-card p-5;
+    @apply bg-card rounded-card shadow-raised p-5;
   }
   /* Small uppercase label above a group, a table column or a field: mono, wide
      tracking, 11 px. Colour comes from the element (`text-muted`, `text-primary-ink`). */
@@ -145,11 +151,11 @@ input:-webkit-autofill:focus {
      applied everywhere something responds to touch/hover, not just
      buttons, so the whole app feels like one system. */
   .btn {
-    @apply relative inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-normal ease-ios active:scale-[0.97] active:duration-fast disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
+    @apply relative inline-flex items-center justify-center gap-2 rounded-control px-4 py-2.5 text-sm font-semibold transition-all duration-normal ease-ios active:scale-[0.97] active:duration-fast disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
   }
   .btn-primary {
     --btn-arc: rgb(255 255 255 / 0.85);
-    @apply btn bg-primary-fill text-white shadow-sm hover:-translate-y-0.5 hover:bg-primary-dark hover:shadow-md active:shadow-[inset_0_1px_4px_rgb(0_0_0/0.28)];
+    @apply btn bg-primary-fill text-white shadow-button hover:-translate-y-0.5 hover:bg-primary-dark hover:shadow-button-lift active:shadow-[inset_0_1px_4px_rgb(0_0_0/0.28)];
   }
   .btn-secondary {
     @apply btn bg-primary-soft text-primary hover:-translate-y-0.5 hover:brightness-95 active:shadow-[inset_0_1px_3px_rgb(0_0_0/0.14)];
@@ -191,14 +197,14 @@ input:-webkit-autofill:focus {
     }
   }
   .input {
-    @apply w-full rounded-2xl border border-line bg-card px-4 py-2.5 text-sm text-ink placeholder:text-muted transition-colors duration-normal focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+    @apply w-full rounded-control border border-line bg-card px-4 py-2.5 text-sm text-ink placeholder:text-muted transition-colors duration-normal focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
   }
 
   /* Cards that respond to hover/tap — the landing page's value/agent
      tiles, not every `.card` app-wide (a dashboard KPI card sitting still
      reads as more trustworthy than one that wobbles under the cursor). */
   .card-interactive {
-    @apply cursor-default transition-all duration-slow ease-ios hover:-translate-y-1 hover:shadow-card-lg active:translate-y-0 active:scale-[0.98] active:duration-fast;
+    @apply cursor-default transition-all duration-slow ease-ios hover:-translate-y-1 hover:shadow-raised-lg active:translate-y-0 active:scale-[0.98] active:duration-fast;
   }
 
   /* Underline that draws itself left to right on hover (the landing nav's section
@@ -222,6 +228,14 @@ input:-webkit-autofill:focus {
 }
 
 @layer utilities {
+  /* A fine edge on a picture, drawn over it (an outline, not a border, so the
+     picture keeps its size): dark studies (X-rays, CT) are otherwise lost against a
+     dark surface, and white ones against a light one. */
+  .media-edge {
+    outline: 1px solid rgb(var(--color-ink) / 0.14);
+    outline-offset: -1px;
+  }
+
   /* Apple HIG's 44pt minimum touch target. Size only — deliberately no
      `display`, because it's applied on top of `.btn*` (already inline-flex)
      and on bare icon buttons that bring their own padding; forcing a display

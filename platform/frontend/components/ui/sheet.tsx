@@ -111,7 +111,7 @@ export default function Sheet({
         />
         <div
           ref={setPanelEl}
-          className={`relative flex flex-col border-line/60 bg-card shadow-card-lg ${
+          className={`relative flex flex-col border-line/60 bg-card shadow-raised-lg ${
             open ? motion.in : motion.out
           } ${panel}`}
         >

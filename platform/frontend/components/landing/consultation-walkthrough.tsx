@@ -155,7 +155,7 @@ export default function ConsultationWalkthrough() {
 
   return (
     <div
-      className="overflow-hidden rounded-squircle border border-line/60 bg-card shadow-card"
+      className="overflow-hidden rounded-squircle border border-line/60 bg-card shadow-raised"
       onMouseEnter={() => setPlaying(false)}
       onFocus={() => setPlaying(false)}
     >

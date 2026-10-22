@@ -78,7 +78,7 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
           aria-label={t(labelKey)}
           title={t(labelKey)}
           className={`tap flex items-center justify-center rounded-full p-1.5 transition-colors ${
-            theme === value ? "bg-card text-primary shadow-sm" : "text-muted hover:text-primary"
+            theme === value ? "bg-card text-primary shadow-hairline" : "text-muted hover:text-primary"
           }`}
         >
           <Icon size={15} />

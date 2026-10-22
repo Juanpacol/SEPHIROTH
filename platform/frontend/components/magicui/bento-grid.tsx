@@ -37,7 +37,7 @@ const BentoGrid = ({ children, className, ...props }: BentoGridProps) => {
 const BentoCard = ({ name, className, background, Icon, description, href, cta, ...props }: BentoCardProps) => (
   <div
     className={cn(
-      "group relative col-span-3 flex flex-col justify-end overflow-hidden rounded-squircle border border-line/60 bg-card shadow-card transition-all duration-300 ease-ios hover:-translate-y-0.5 hover:shadow-card-lg",
+      "group relative col-span-3 flex flex-col justify-end overflow-hidden rounded-squircle border border-line/60 bg-card shadow-raised transition-all duration-300 ease-ios hover:-translate-y-0.5 hover:shadow-raised-lg",
       className
     )}
     {...props}

@@ -37,7 +37,7 @@ export default function Topbar() {
     <>
       <header
         className={`glass-surface sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-line/60 px-4 transition-all duration-200 md:px-6 ${
-          scrolled ? "py-2.5 shadow-card" : "py-3.5"
+          scrolled ? "py-2.5 shadow-raised" : "py-3.5"
         }`}
       >
         <div className="flex min-w-0 items-center gap-1">

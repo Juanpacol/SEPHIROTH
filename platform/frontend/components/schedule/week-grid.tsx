@@ -83,7 +83,7 @@ export default function WeekGrid({
                         onClick={() => {
                           if (appt.status === "booked") onRequestCancel(appt);
                         }}
-                        className={`absolute inset-x-0.5 top-0 z-10 overflow-hidden rounded-lg px-1.5 py-0.5 text-left text-[11px] font-semibold text-white shadow-sm ${
+                        className={`absolute inset-x-0.5 top-0 z-10 overflow-hidden rounded-lg px-1.5 py-0.5 text-left text-[11px] font-semibold text-white shadow-button ${
                           appt.status === "completed" ? "bg-success" : "bg-primary"
                         }`}
                         style={{ height: `${heightRem}rem` }}

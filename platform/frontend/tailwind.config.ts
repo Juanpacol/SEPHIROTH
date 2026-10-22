@@ -74,10 +74,27 @@ const config: Config = {
         // iOS-style "continuous corner" scale — larger than Tailwind's defaults.
         xl2: "1.25rem",
         squircle: "1.75rem",
+        // Nested radii: a surface, the controls on it, and what sits inside a card.
+        // An inner corner is its container's radius minus the padding between them.
+        card: "1.75rem",
+        control: "1rem",
+        inner: "0.75rem",
       },
+      // Every surface starts with the same hairline (a 1px ring in `line`, drawn as a
+      // shadow so it adds no size) and stacks short shadows on it: tight, so a card
+      // reads as a thin layer on the page, not as a cloud around it.
       boxShadow: {
-        card: "0 1px 3px rgba(16, 42, 83, 0.06), 0 8px 24px rgba(16, 42, 83, 0.06)",
-        "card-lg": "0 4px 10px rgba(16, 42, 83, 0.08), 0 16px 40px rgba(16, 42, 83, 0.12)",
+        hairline: "0 0 0 1px rgb(var(--color-line) / 0.6)",
+        // Not `card`: Tailwind also makes `shadow-<colour>` utilities, and the theme has a
+        // colour called `card`; its rule (shadow-card: white in light, navy in dark) beat
+        // this shadow, so cards had a halo in their own colour instead of a shadow.
+        raised: "0 0 0 1px rgb(var(--color-line) / 0.6), 0 1px 2px rgb(var(--shadow-ink) / calc(0.06 * var(--shadow-strength))), 0 4px 10px -2px rgb(var(--shadow-ink) / calc(0.08 * var(--shadow-strength)))",
+        "raised-lg":
+          "0 0 0 1px rgb(var(--color-line) / 0.8), 0 2px 4px rgb(var(--shadow-ink) / calc(0.08 * var(--shadow-strength))), 0 10px 24px -6px rgb(var(--shadow-ink) / calc(0.18 * var(--shadow-strength)))",
+        popover:
+          "0 0 0 1px rgb(var(--color-line) / 0.8), 0 4px 8px rgb(var(--shadow-ink) / calc(0.1 * var(--shadow-strength))), 0 20px 40px -8px rgb(var(--shadow-ink) / calc(0.25 * var(--shadow-strength)))",
+        button: "0 1px 2px rgb(var(--shadow-ink) / calc(0.18 * var(--shadow-strength)))",
+        "button-lift": "0 2px 4px rgb(var(--shadow-ink) / calc(0.2 * var(--shadow-strength))), 0 6px 12px -2px rgb(var(--shadow-ink) / calc(0.2 * var(--shadow-strength)))",
       },
       // Motion tokens (values live in globals.css `:root`).
       transitionDuration: {

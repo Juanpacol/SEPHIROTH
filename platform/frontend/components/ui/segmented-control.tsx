@@ -60,7 +60,7 @@ export default function SegmentedControl<T extends string>({
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(option.value)}
             className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-200 ease-ios ${
-              active ? "bg-card text-primary shadow-sm" : "text-ink/60 hover:text-primary"
+              active ? "bg-card text-primary shadow-hairline" : "text-ink/60 hover:text-primary"
             }`}
           >
             {option.label}
