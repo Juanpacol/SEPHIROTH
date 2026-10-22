@@ -10,7 +10,13 @@ interface Toast {
   id: number;
   message: string;
   kind: "success" | "error";
+  /** Set shortly before removal so the toast can fade out instead of vanishing. */
+  leaving?: boolean;
 }
+
+const VISIBLE_MS = 4000;
+/** `--duration-fast`: how long the leave animation runs before the toast is removed. */
+const LEAVE_MS = 100;
 
 const ToastContext = createContext<{ show: (message: string, kind?: Toast["kind"]) => void } | null>(
   null
@@ -22,7 +28,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const show = useCallback((message: string, kind: Toast["kind"] = "success") => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message, kind }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+    setTimeout(
+      () => setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, leaving: true } : t))),
+      VISIBLE_MS - LEAVE_MS
+    );
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), VISIBLE_MS);
   }, []);
 
   return (
@@ -32,7 +42,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`card pointer-events-auto flex items-center gap-2 py-3 pr-4 text-sm font-medium shadow-card animate-fadeIn ${
+            className={`card pointer-events-auto flex items-center gap-2 py-3 pr-4 text-sm font-medium shadow-card ${
+              t.leaving ? "animate-toast-out" : "animate-toast-in"
+            } ${
               t.kind === "error" ? "text-danger" : "text-ink"
             }`}
           >
