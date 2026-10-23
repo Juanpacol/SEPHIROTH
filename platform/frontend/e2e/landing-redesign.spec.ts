@@ -36,7 +36,7 @@ test.describe("a dark landing, whatever theme the reader chose", () => {
     expect(background).toBe("rgb(18, 27, 44)");
   });
 
-  for (const selector of ["#features", "#how-it-works", "#agents", "#faq"]) {
+  for (const selector of ["#features", "#how-it-works", "#faq"]) {
     test(`${selector} has no light section: its text clears AA on the page's navy`, async ({ page }) => {
       const section = page.locator(selector);
       await section.scrollIntoViewIfNeeded();

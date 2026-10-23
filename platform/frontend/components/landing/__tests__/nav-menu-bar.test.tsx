@@ -38,7 +38,6 @@ const renderBar = () =>
   render(
     <LanguageProvider>
       <div id="faq" />
-      <div id="agents" />
       <NavMenuBar />
     </LanguageProvider>,
   );
