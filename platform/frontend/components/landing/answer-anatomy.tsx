@@ -10,8 +10,16 @@
 
 import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
+import FeatureMediaView from "./feature-media";
 import { ANATOMY_STEPS, type AnatomyStepId } from "@/lib/landing-anatomy";
 import { useLanguage } from "@/lib/language";
+
+/** The picture behind the glass: the Ask cell's, a scan with a web of lines over it. */
+const BACKDROP = {
+  kind: "image",
+  src: "/landing/features/ask-spine.webp",
+  altKey: "marketing.features.ask.alt",
+} as const;
 
 /** A part of the answer that belongs to a step: lit when its step is the current one. */
 function Part({
@@ -34,7 +42,9 @@ function Part({
       data-active={on}
       onMouseEnter={() => onActivate(step)}
       className={`rounded-lg transition-[opacity,background-color,box-shadow] duration-slow ease-standard ${
-        on ? "bg-primary-soft opacity-100 shadow-[0_0_0_4px_rgb(var(--color-primary-soft))]" : "opacity-55"
+        on
+          ? "bg-[#3683F8]/20 opacity-100 shadow-[0_0_0_1px_rgb(120_165_250/0.55),0_0_32px_rgb(54_131_248/0.35)]"
+          : "opacity-45"
       } ${className}`}
     >
       {children}
@@ -51,53 +61,59 @@ export default function AnswerAnatomy() {
       {/* The answer, as the product shows it. */}
       <div
         data-anatomy-card
-        className="rounded-[28px] border border-line/60 bg-card p-6 shadow-raised-lg md:p-8"
+        className="relative overflow-hidden rounded-[28px] border border-white/15 shadow-raised-lg"
       >
-        <div className="eyebrow text-muted">{t("marketing.anatomy.card.label")}</div>
+        {/* One of the feature grid's pictures, in the same blue, behind the glass. */}
+        <div aria-hidden="true" className="absolute inset-0">
+          <FeatureMediaView media={BACKDROP} />
+        </div>
+        <div className="relative bg-surface/70 p-6 backdrop-blur-md md:p-8">
+          <div className="eyebrow text-white/70">{t("marketing.anatomy.card.label")}</div>
 
-        <p className="mt-4 text-sm leading-relaxed">
-          <Part step="route" active={active} onActivate={setActive} className="inline-block px-2 py-1">
-            <span className="mr-2 inline-flex rounded-full bg-surface px-2.5 py-0.5 text-xs font-semibold text-primary-ink">
-              {t("marketing.agentName.evidence")}
-            </span>
-            <span className="font-medium">{t("marketing.sample.question")}</span>
-          </Part>
-        </p>
-
-        <div className="mt-6 space-y-4 text-[15px] leading-relaxed md:text-base">
-          <p>
-            <Part step="write" active={active} onActivate={setActive} className="px-1.5 py-0.5">
-              {t("marketing.anatomy.card.answer")}
-            </Part>{" "}
-            <Part
-              step="guard"
-              active={active}
-              onActivate={setActive}
-              className="inline-flex flex-wrap items-center gap-x-2 px-1.5 py-0.5 font-mono text-xs"
-            >
-              <span className="text-primary-ink">[{t("marketing.anatomy.card.cite1")}]</span>
-              <span className="text-danger line-through opacity-80">
-                [{t("marketing.anatomy.card.cite2")}]
+          <p className="mt-4 text-sm leading-relaxed">
+            <Part step="route" active={active} onActivate={setActive} className="inline-block px-2 py-1">
+              <span className="mr-2 inline-flex rounded-full bg-surface px-2.5 py-0.5 text-xs font-semibold text-primary-ink">
+                {t("marketing.agentName.evidence")}
               </span>
-              <span className="font-semibold text-danger">{t("marketing.anatomy.card.removed")}</span>
+              <span className="font-medium">{t("marketing.sample.question")}</span>
             </Part>
           </p>
 
-          <p>
-            <Part step="verify" active={active} onActivate={setActive} className="block px-1.5 py-1">
-              <span className="text-muted line-through">{t("marketing.claim2.text")}</span>{" "}
-              <span className="ml-1 inline-flex items-center gap-1 text-xs font-semibold text-danger">
-                <ShieldCheck size={13} aria-hidden="true" />
-                {t("marketing.anatomy.card.excluded")}
-              </span>
-            </Part>
-          </p>
+          <div className="mt-6 space-y-4 text-[15px] leading-relaxed md:text-base">
+            <p>
+              <Part step="write" active={active} onActivate={setActive} className="px-1.5 py-0.5">
+                {t("marketing.anatomy.card.answer")}
+              </Part>{" "}
+              <Part
+                step="guard"
+                active={active}
+                onActivate={setActive}
+                className="inline-flex flex-wrap items-center gap-x-2 px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.12em]"
+              >
+                <span className="text-primary-ink">[{t("marketing.anatomy.card.cite1")}]</span>
+                <span className="text-danger line-through opacity-80">
+                  [{t("marketing.anatomy.card.cite2")}]
+                </span>
+                <span className="font-semibold text-danger">{t("marketing.anatomy.card.removed")}</span>
+              </Part>
+            </p>
 
-          <p>
-            <Part step="abstain" active={active} onActivate={setActive} className="block px-1.5 py-1">
-              <span className="font-medium">{t("marketing.anatomy.card.abstain")}</span>
-            </Part>
-          </p>
+            <p>
+              <Part step="verify" active={active} onActivate={setActive} className="block px-1.5 py-1">
+                <span className="text-muted line-through">{t("marketing.claim2.text")}</span>{" "}
+                <span className="ml-1 inline-flex items-center gap-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-danger">
+                  <ShieldCheck size={13} aria-hidden="true" />
+                  {t("marketing.anatomy.card.excluded")}
+                </span>
+              </Part>
+            </p>
+
+            <p>
+              <Part step="abstain" active={active} onActivate={setActive} className="block px-1.5 py-1">
+                <span className="font-medium">{t("marketing.anatomy.card.abstain")}</span>
+              </Part>
+            </p>
+          </div>
         </div>
       </div>
 
@@ -115,14 +131,16 @@ export default function AnswerAnatomy() {
                 onMouseEnter={() => setActive(step.id)}
                 onFocus={() => setActive(step.id)}
                 onClick={() => setActive(step.id)}
-                className="tap group grid w-full grid-cols-[2.25rem_1fr] gap-3 rounded-2xl px-3 py-3 text-left transition-colors duration-normal ease-standard hover:bg-primary-soft/60 data-[active=true]:bg-primary-soft"
+                className="tap group relative grid w-full grid-cols-[4.25rem_1fr] items-start gap-3 border-l border-white/15 px-4 py-4 text-left transition-colors duration-normal ease-standard hover:border-white/40 data-[active=true]:border-[#b6cfff]"
               >
-                <span className="eyebrow pt-1 text-primary-ink">{String(i + 1).padStart(2, "0")}</span>
+                <span className="font-display text-5xl font-light leading-none text-white/35 transition-colors duration-slow ease-standard group-data-[active=true]:text-[#b6cfff]">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
                 <span>
-                  <span className="block font-display text-2xl font-light leading-tight md:text-3xl">
+                  <span className="nav-underline block w-fit py-1 font-display text-2xl font-light uppercase leading-tight tracking-wide group-data-[active=true]:text-white md:text-3xl [&::after]:left-0 [&::after]:right-0 [&::after]:bottom-0 group-data-[active=true]:[&::after]:scale-x-100">
                     {t(step.titleKey)}
                   </span>
-                  <span className="mt-1 block text-sm leading-relaxed text-muted group-data-[active=true]:text-ink/90">
+                  <span className="mt-2 block text-sm leading-relaxed text-muted group-data-[active=true]:text-ink/90">
                     {t(step.bodyKey)}
                   </span>
                 </span>

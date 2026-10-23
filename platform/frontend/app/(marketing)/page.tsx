@@ -16,6 +16,7 @@ import { ScanEye } from "lucide-react";
 import AuthRedirectGate from "@/components/landing/auth-redirect-gate";
 import ScrollEffects from "@/components/landing/scroll-effects";
 import FeatureShowcase from "@/components/landing/feature-showcase";
+import AccentTitle from "@/components/landing/accent-title";
 import AnswerAnatomy from "@/components/landing/answer-anatomy";
 import CtaButton from "@/components/landing/cta-button";
 import HeroTriptych from "@/components/landing/hero-triptych";
@@ -56,9 +57,10 @@ export default function LandingPage() {
       <section id="how-it-works" className="scroll-mt-24 border-t border-line/60">
         <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
           <span className="eyebrow text-primary-ink">{t("marketing.howItWorks.eyebrow")}</span>
-          <h2 className="mt-3 max-w-4xl font-display text-[clamp(2.25rem,1.5rem+3vw,4rem)] font-light leading-[1.05]">
-            {t("marketing.howItWorks.title")}
-          </h2>
+          <AccentTitle
+            text={t("marketing.howItWorks.title")}
+            className="mt-3 max-w-5xl text-[clamp(3rem,1rem+6vw,7rem)]"
+          />
           <p className="mt-6 max-w-2xl text-lg text-muted">{t("marketing.howItWorks.body")}</p>
           <div className="mt-12 md:mt-16">
             <AnswerAnatomy />
