@@ -49,36 +49,44 @@ export default function CopilotWidget() {
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? t("copilot.widget.closeChat") : t("copilot.widget.openChat")}
         aria-expanded={open}
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 md:bottom-6 md:right-6 items-center justify-center rounded-full bg-primary text-white shadow-raised-lg transition-all duration-200 ease-ios hover:-translate-y-0.5 hover:bg-primary-dark active:scale-95"
+        className="group fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-white/30 bg-[linear-gradient(145deg,#3a52b3_0%,#222d6b_55%,#171f4a_100%)] text-[#b6cfff] shadow-[inset_0_1px_0_rgb(255_255_255/0.4),0_12px_28px_-10px_rgb(31_46_102/0.9)] backdrop-blur-md transition-[transform,border-color,box-shadow] duration-300 ease-ios hover:-translate-y-0.5 hover:border-white/60 active:scale-95 md:bottom-6 md:right-6"
       >
-        {open ? <X size={22} /> : <WingMark size={22} />}
+        {!open && (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-full bg-[#6f8bff]/25 motion-safe:animate-pulse"
+          />
+        )}
+        <span className="relative transition-transform duration-300 ease-ios group-hover:-translate-y-px group-hover:rotate-[-6deg]">
+          {open ? <X size={21} strokeWidth={1.75} /> : <WingMark size={24} />}
+        </span>
       </button>
 
       {open && (
         <div
           role="dialog"
           aria-label={t("copilot.widget.title")}
-          className="fixed inset-0 z-50 flex flex-col overflow-hidden border-line/60 bg-surface shadow-raised-lg md:inset-auto md:bottom-24 md:right-6 md:z-40 md:h-[min(680px,calc(100dvh-140px))] md:w-[min(420px,calc(100vw-3rem))] md:rounded-squircle md:border"
+          className="fixed inset-0 z-50 flex flex-col overflow-hidden border-white/15 copilot-skin shadow-raised-lg md:inset-auto md:bottom-24 md:right-6 md:z-40 md:h-[min(680px,calc(100dvh-140px))] md:w-[min(420px,calc(100vw-3rem))] md:rounded-squircle md:border"
         >
-          <div className="flex items-center justify-between border-b border-line/60 bg-card px-4 py-3">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <div className="flex items-center gap-2">
               <span
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
-                style={{ background: "linear-gradient(135deg,#8C92AC,#D1D5DB)" }}
+                style={{
+                  background: "linear-gradient(135deg,#8C92AC,#D1D5DB)",
+                }}
               >
                 <WingMark size={16} className="text-white" />
               </span>
               <div>
-                <h2 className="text-sm font-bold">{t("copilot.widget.title")}</h2>
-                <p className="text-xs text-muted">{t("copilot.widget.subtitle")}</p>
+                <h2 className="font-display text-lg font-light uppercase leading-none tracking-[0.12em]">
+                  {t("copilot.widget.title")}
+                </h2>
+                <p className="mt-1 text-[11px] leading-tight text-muted">{t("copilot.widget.subtitle")}</p>
               </div>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              aria-label={t("common.close")}
-              className="rounded-full p-1.5 text-muted hover:bg-surface hover:text-primary"
-            >
-              <X size={16} />
+            <button onClick={() => setOpen(false)} aria-label={t("common.close")} className="tap rounded-full p-1.5 text-muted transition-colors duration-normal hover:text-primary-ink">
+              <X size={16} strokeWidth={1.5} />
             </button>
           </div>
           <div className="min-h-0 flex-1 p-3">

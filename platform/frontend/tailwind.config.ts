@@ -88,13 +88,15 @@ const config: Config = {
         // Not `card`: Tailwind also makes `shadow-<colour>` utilities, and the theme has a
         // colour called `card`; its rule (shadow-card: white in light, navy in dark) beat
         // this shadow, so cards had a halo in their own colour instead of a shadow.
-        raised: "0 0 0 1px rgb(var(--color-line) / 0.6), 0 1px 2px rgb(var(--shadow-ink) / calc(0.06 * var(--shadow-strength))), 0 4px 10px -2px rgb(var(--shadow-ink) / calc(0.08 * var(--shadow-strength)))",
+        raised:
+          "0 0 0 1px rgb(var(--color-line) / 0.6), 0 1px 2px rgb(var(--shadow-ink) / calc(0.06 * var(--shadow-strength))), 0 4px 10px -2px rgb(var(--shadow-ink) / calc(0.08 * var(--shadow-strength)))",
         "raised-lg":
           "0 0 0 1px rgb(var(--color-line) / 0.8), 0 2px 4px rgb(var(--shadow-ink) / calc(0.08 * var(--shadow-strength))), 0 10px 24px -6px rgb(var(--shadow-ink) / calc(0.18 * var(--shadow-strength)))",
         popover:
           "0 0 0 1px rgb(var(--color-line) / 0.8), 0 4px 8px rgb(var(--shadow-ink) / calc(0.1 * var(--shadow-strength))), 0 20px 40px -8px rgb(var(--shadow-ink) / calc(0.25 * var(--shadow-strength)))",
         button: "0 1px 2px rgb(var(--shadow-ink) / calc(0.18 * var(--shadow-strength)))",
-        "button-lift": "0 2px 4px rgb(var(--shadow-ink) / calc(0.2 * var(--shadow-strength))), 0 6px 12px -2px rgb(var(--shadow-ink) / calc(0.2 * var(--shadow-strength)))",
+        "button-lift":
+          "0 2px 4px rgb(var(--shadow-ink) / calc(0.2 * var(--shadow-strength))), 0 6px 12px -2px rgb(var(--shadow-ink) / calc(0.2 * var(--shadow-strength)))",
       },
       // Motion tokens (values live in globals.css `:root`).
       transitionDuration: {
@@ -130,8 +132,31 @@ const config: Config = {
         sheetOutRight: { to: { opacity: "0", transform: "translateX(24px)" } },
         sheetInLeft: { from: { opacity: "0", transform: "translateX(-24px)" } },
         sheetOutLeft: { to: { opacity: "0", transform: "translateX(-24px)" } },
-        sheetInBottom: { from: { opacity: "0", transform: "translateY(24px)" } },
+        sheetInBottom: {
+          from: { opacity: "0", transform: "translateY(24px)" },
+        },
         sheetOutBottom: { to: { opacity: "0", transform: "translateY(24px)" } },
+        // The "thinking" state: a light that travels along a hairline, chips that rise in and pop when done,
+        // and the answer coming in from slightly below and a little blurred, settling sharp.
+        sheen: {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(300%)" },
+        },
+        chipIn: {
+          from: { opacity: "0", transform: "translateY(4px) scale(0.96)" },
+        },
+        chipPop: {
+          "0%": { transform: "scale(0.92)" },
+          "55%": { transform: "scale(1.06)" },
+          "100%": { transform: "scale(1)" },
+        },
+        answerIn: {
+          from: {
+            opacity: "0",
+            transform: "translateY(6px)",
+            filter: "blur(4px)",
+          },
+        },
         thinkingDot: {
           "0%, 60%, 100%": { opacity: "0.25", transform: "translateY(0)" },
           "30%": { opacity: "1", transform: "translateY(-1.5px)" },
@@ -159,6 +184,10 @@ const config: Config = {
       },
       animation: {
         fadeIn: "fadeIn 0.3s ease-out",
+        sheen: "sheen 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+        "chip-in": "chipIn 320ms var(--ease-emphasized) both",
+        "chip-pop": "chipPop 380ms var(--ease-emphasized) both",
+        "answer-in": "answerIn 480ms var(--ease-emphasized) both",
         // Enter at the slow duration and leave faster: leaving should not make anyone wait.
         "toast-in": "toastIn var(--duration-normal) var(--ease-emphasized) both",
         "toast-out": "toastOut var(--duration-fast) var(--ease-standard) both",
