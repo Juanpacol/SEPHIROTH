@@ -11,8 +11,6 @@
  * else. Don't "brighten it up."
  */
 
-import Link from "next/link";
-import { ScanEye } from "lucide-react";
 import AuthRedirectGate from "@/components/landing/auth-redirect-gate";
 import ScrollEffects from "@/components/landing/scroll-effects";
 import FeatureShowcase from "@/components/landing/feature-showcase";
@@ -43,10 +41,11 @@ export default function LandingPage() {
       {/* Features: what it does, in a grid of numbered cells with a picture under each */}
       <section id="features" className="scroll-mt-24 border-t border-line/60">
         <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
-          <h2 className="flex items-start gap-3 font-display text-[clamp(4rem,2rem+9vw,9rem)] font-light leading-[0.95]">
-            {t("marketing.features.title")}
-            <ScanEye aria-hidden="true" className="mt-[0.35em] size-[0.28em] shrink-0 text-primary-ink" />
-          </h2>
+          <AccentTitle
+            text={t("marketing.features.title")}
+            accentWords={1}
+            className="text-[clamp(4rem,2rem+9vw,9rem)]"
+          />
           <div className="mt-16 md:mt-20">
             <FeatureShowcase />
           </div>
@@ -70,23 +69,23 @@ export default function LandingPage() {
 
       {/* FAQ */}
       <section id="faq" className="scroll-mt-24 border-t border-line/60">
-        <div className="mx-auto max-w-3xl px-6 py-24">
-          <h2 className="font-display text-title font-semibold">{t("marketing.faq.title")}</h2>
-          <div className="mt-6 space-y-3">
+        <div className="mx-auto max-w-4xl px-6 py-24 md:py-32">
+          <AccentTitle text={t("marketing.faq.title")} className="text-[clamp(3rem,1rem+6vw,6.5rem)]" />
+          <div className="mt-12 border-t border-white/15">
             {FAQS.map((f) => (
-              <details
-                key={f.qKey}
-                className="card group transition-colors duration-200 open:bg-primary-soft/40"
-              >
-                <summary className="cursor-pointer list-none font-semibold [&::-webkit-details-marker]:hidden">
-                  <span className="flex items-center justify-between transition-colors duration-200 group-hover:text-primary">
+              <details key={f.qKey} className="group border-b border-white/15">
+                <summary className="tap flex cursor-pointer list-none items-center justify-between gap-6 py-6 [&::-webkit-details-marker]:hidden">
+                  <span className="nav-underline w-fit py-1 font-display text-2xl font-light uppercase tracking-wide transition-colors duration-normal ease-standard group-open:text-[#b6cfff] md:text-3xl [&::after]:left-0 [&::after]:right-0 [&::after]:bottom-0">
                     {t(f.qKey)}
-                    <span className="transition-transform duration-300 ease-ios group-open:rotate-90 group-open:text-primary">
-                      ›
-                    </span>
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="font-display text-4xl font-light leading-none text-white/50 transition-transform duration-300 ease-ios group-open:rotate-45 group-open:text-[#b6cfff]"
+                  >
+                    +
                   </span>
                 </summary>
-                <p className="mt-2 text-sm text-muted">{t(f.aKey)}</p>
+                <p className="max-w-2xl pb-6 text-base leading-relaxed text-muted">{t(f.aKey)}</p>
               </details>
             ))}
           </div>
@@ -95,15 +94,19 @@ export default function LandingPage() {
 
       {/* Closing CTA */}
       <section className="border-t border-line/60">
-        <div className="mx-auto max-w-3xl px-6 py-24 text-center">
-          <h2 className="font-display text-display font-semibold">{t("marketing.cta.title")}</h2>
-          <p className="mt-3 text-muted">{t("marketing.cta.subtitle")}</p>
+        <div className="mx-auto max-w-4xl px-6 py-24 text-center md:py-32">
+          <AccentTitle
+            text={t("marketing.cta.title")}
+            accentWords={3}
+            className="text-[clamp(2.75rem,1rem+5.5vw,6rem)]"
+          />
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted">{t("marketing.cta.subtitle")}</p>
           <p className="mx-auto mt-4 max-w-2xl text-sm text-muted">{t("marketing.cta.around")}</p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <CtaButton href="/login">{t("marketing.openApp")}</CtaButton>
-            <Link href="/portal/claim" className="btn-ghost">
+            <CtaButton href="/portal/claim" variant="line">
               {t("marketing.footer.patientPortalSetup")}
-            </Link>
+            </CtaButton>
           </div>
         </div>
       </section>
