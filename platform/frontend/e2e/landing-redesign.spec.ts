@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
-/** The landing's navy bands and FAQ, in a real browser at every viewport.
- * Copy and data are pinned in lib/__tests__/{bands,marketing-agents}.test.ts. */
+/** The landing page is one dark page, and the FAQ opens and closes, in a real browser at every viewport.
+ * Copy and data are pinned in lib/__tests__/marketing-agents.test.ts. */
 const rgb = (css: string) =>
   (css.match(/\d+(\.\d+)?/g) ?? []).slice(0, 3).map(Number) as [number, number, number];
 const lum = ([r, g, b]: [number, number, number]) => {
@@ -20,47 +20,52 @@ async function settle(page: Page, selector: string) {
   await page.waitForTimeout(800);
 }
 
-test.describe("navy bands on the white page", () => {
-  for (const [name, selector] of [
-    ["hero", "section.band-dark >> nth=0"],
-    ["safeguards", "#safeguards"],
-    ["closing", "section.band-dark >> nth=-1"],
-  ] as const) {
-    test(`the ${name} band is navy and its text clears AA`, async ({ page }) => {
-      await page.goto("/");
-      await page.waitForLoadState("networkidle");
-      const band = page.locator(selector);
-      await band.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(600);
+test.describe("a dark landing, whatever theme the reader chose", () => {
+  // The app's own theme is stored in localStorage; the landing must ignore a stored "light".
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("cac_theme", "light"));
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+  });
 
-      const { background, text, heading } = await band.evaluate((el) => {
+  test("is dark although the stored theme is light", async ({ page }) => {
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    const background = await page
+      .locator("main")
+      .evaluate((el) => getComputedStyle(el.parentElement as HTMLElement).backgroundColor);
+    expect(background).toBe("rgb(18, 27, 44)");
+  });
+
+  for (const selector of ["#features", "#how-it-works", "#safeguards", "#agents", "#faq"]) {
+    test(`${selector} has no light section: its text clears AA on the page's navy`, async ({ page }) => {
+      const section = page.locator(selector);
+      await section.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(500);
+
+      const { text, heading } = await section.evaluate((el) => {
         const h = el.querySelector("h1, h2, h3") as HTMLElement;
-        return {
-          background: getComputedStyle(el).backgroundColor,
-          text: getComputedStyle(el).color,
-          heading: getComputedStyle(h).color,
-        };
+        return { text: getComputedStyle(el).color, heading: getComputedStyle(h).color };
       });
 
-      expect(background).toBe("rgb(18, 27, 44)");
-      expect(contrast(rgb(text), rgb(background))).toBeGreaterThanOrEqual(4.5);
-      expect(contrast(rgb(heading), rgb(background))).toBeGreaterThanOrEqual(4.5);
+      const navy = rgb("rgb(18, 27, 44)");
+      expect(contrast(rgb(text), navy)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(rgb(heading), navy)).toBeGreaterThanOrEqual(4.5);
     });
   }
 
-  test("the page alternates: white sections sit between the navy ones", async ({ page }) => {
-    await page.goto("/");
+  test("has no theme buttons, and still lets the reader switch language", async ({ page }) => {
+    await expect(page.getByRole("button", { name: "Light" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Dark" })).toHaveCount(0);
+    // The switch is in the header from md up, and in the menu sheet on a phone.
+    if (page.viewportSize()!.width < 768) await page.getByRole("button", { name: "Menu" }).click();
+    await expect(page.getByRole("button", { name: "Toggle language" }).first()).toBeVisible();
+  });
+
+  test("gives the reader's theme back when they leave for the app", async ({ page }) => {
+    await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
-    const tones = await page.evaluate(() =>
-      Array.from(document.querySelectorAll("main > section, body > div section"))
-        .filter((s) => (s as HTMLElement).offsetHeight > 200)
-        .map((s) => (s.classList.contains("band-dark") ? "navy" : "light")),
-    );
-
-    expect(tones.filter((t) => t === "navy").length).toBeGreaterThanOrEqual(2);
-    expect(tones.join(" ")).toMatch(/navy light/);
-    expect(tones.join(" ")).toMatch(/light navy/);
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
   });
 });
 

@@ -155,13 +155,17 @@ test.describe("features", () => {
     ]);
   });
 
-  test("the title is in the display face and the section is a navy band", async ({ page }) => {
+  test("the title is in the display face and the section sits on the page's navy", async ({ page }) => {
     const heading = page.locator("#features h2");
 
     expect(await heading.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/antonio/i);
+    // The section paints nothing of its own: the whole landing is one navy page.
     expect(await page.locator("#features").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
-      "rgb(18, 27, 44)",
+      "rgba(0, 0, 0, 0)",
     );
+    expect(
+      await page.locator("main").evaluate((el) => getComputedStyle(el.parentElement!).backgroundColor),
+    ).toBe("rgb(18, 27, 44)");
   });
 
   test("three columns on a wide screen, two on a tablet, one on a phone", async ({ page }) => {
