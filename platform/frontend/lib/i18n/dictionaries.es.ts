@@ -317,7 +317,7 @@ const ES: Record<string, string> = {
   "marketing.nav.faq": "Preguntas frecuentes",
   "marketing.openApp": "Abrir la app",
 
-  "marketing.footer.tagline": "Apoyo a la decisión clínica con IA multiagente, con el razonamiento a la vista.",
+  "marketing.footer.tagline": "Apoyo a la decisión clínica para médicos, con el razonamiento a la vista.",
   "marketing.footer.product": "Producto",
   "marketing.footer.getStarted": "Comenzar",
   "marketing.footer.clinicianSignIn": "Ingreso de médicos",
@@ -325,7 +325,7 @@ const ES: Record<string, string> = {
 
   "marketing.hero.badge": "Uso de investigación y educación — no es un dispositivo médico",
   "marketing.hero.title": "Devuelve a cada médico los minutos perdidos en búsquedas",
-  "marketing.hero.subtitle": "Una consulta llega al especialista adecuado — imágenes, medicamentos o guías —, regresa citada y verificada, y te dice con claridad cuándo no lo sabe — menos tiempo revisando la historia clínica, más tiempo con el paciente.",
+  "marketing.hero.subtitle": "Haz una pregunta. Va al especialista adecuado y vuelve citada, verificada y honesta sobre lo que no sabe. Menos tiempo revisando la historia clínica, más tiempo con el paciente.",
   "marketing.hero.seeHowItWorks": "Ver cómo funciona",
 
   "marketing.agentName.radiology": "Análisis de imagen",
@@ -349,7 +349,7 @@ const ES: Record<string, string> = {
   "marketing.features.ask.alt": "Una radiografía de cuello y columna con una red de líneas finas dibujada encima, que une los huesos",
   "marketing.features.cite.verb": "Citar",
   "marketing.features.cite.title": "Cada afirmación tiene una fuente",
-  "marketing.features.cite.body": "Las respuestas se basan solo en guías clínicas recuperadas y resultados de PubMed. Una cita inventada por el modelo se elimina antes de que la veas. Las fuentes incluyen guías de ADA, ACC/AHA, KDIGO, GOLD y USPSTF, y PubMed.",
+  "marketing.features.cite.body": "Las respuestas se basan solo en guías clínicas recuperadas y en PubMed, de ADA, ACC/AHA, KDIGO, GOLD y USPSTF, entre otras. Una cita inventada por el modelo se elimina antes de que la veas.",
   "marketing.features.cite.alt": "Una figura anotada de un artículo: cortes de imagen junto a un diagrama con etiquetas y pies de figura",
   "marketing.features.verify.verb": "Verificar",
   "marketing.features.verify.title": "Revisado antes de que lo leas",
@@ -405,7 +405,7 @@ const ES: Record<string, string> = {
 
   "marketing.howItWorks.eyebrow": "Cómo funciona",
   "marketing.howItWorks.title": "Una respuesta, desarmada",
-  "marketing.howItWorks.body": "Cada respuesta se construye igual. Señala cualquier paso para ver a qué parte de la respuesta se refiere.",
+  "marketing.howItWorks.body": "Cada respuesta pasa por los mismos cinco pasos. Señala uno para ver qué parte de la respuesta marcó.",
   "marketing.anatomy.stepsLabel": "Qué le pasa a una respuesta",
   "marketing.anatomy.card.label": "Respuesta de ejemplo",
   "marketing.anatomy.card.answer": "La meta de A1C es menor de 7% para la mayoría de los adultos con diabetes tipo 2, individualizada según el riesgo.",
@@ -431,17 +431,17 @@ const ES: Record<string, string> = {
 
   "marketing.faq.title": "Preguntas frecuentes",
   "marketing.faq.q1": "¿Es esto un dispositivo médico?",
-  "marketing.faq.a1": "No. SEPHIROTH es apoyo a la decisión para investigación y educación — cada respuesta requiere revisión profesional antes de cualquier uso clínico.",
+  "marketing.faq.a1": "No. SEPHIROTH apoya la investigación y la educación. Describe y cita, no diagnostica, y cada respuesta necesita revisión profesional antes de cualquier uso clínico.",
   "marketing.faq.q2": "¿Qué datos ve?",
   "marketing.faq.a2": "Solo lo que un médico introduce en una consulta — contexto del paciente, notas y la pregunta misma. Consulta el aviso de privacidad en el README del proyecto para saber exactamente qué sale de la máquina.",
   "marketing.faq.q3": "¿Qué pasa cuando no lo sabe?",
-  "marketing.faq.a3": "El filtro de abstención revisa la confianza y el respaldo de evidencia antes de que una respuesta se entregue. Por debajo de su umbral, se abstiene en lugar de adivinar — prueba el control deslizante de arriba.",
+  "marketing.faq.a3": "Antes de entregar una respuesta, SEPHIROTH revisa su confianza y la evidencia que la respalda. Por debajo de su umbral se abstiene de esa parte en vez de adivinar, como en el ejemplo de arriba.",
   "marketing.faq.q4": "¿De dónde vienen las citas?",
   "marketing.faq.a4": "Solo de guías clínicas y resultados de PubMed recuperados, de ningún otro lugar. Citation Guard elimina cualquier cosa que el modelo agregó y que ninguna herramienta realmente devolvió.",
   "marketing.faq.q5": "¿Puedo auditar una respuesta pasada?",
   "marketing.faq.a5": "Sí — cada consulta guarda una traza de ejecución reproducible: qué agentes corrieron, qué llamaron, y cómo se clasificó cada afirmación.",
 
-  "marketing.cta.title": "Recupera hoy una hora de revisión de historias clínicas",
+  "marketing.cta.title": "Menos tiempo buscando, más tiempo con tus pacientes",
   "marketing.cta.subtitle": "Inicia sesión como médico para ejecutar una consulta, o configura tu cuenta del portal con un código de invitación de tu equipo de atención.",
   "marketing.cta.around": "Y alrededor de la consulta: dashboard de riesgo, agendamiento de citas, portal del paciente y resultados compartidos.",
 
