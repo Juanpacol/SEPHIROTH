@@ -35,7 +35,7 @@ export default function NavLinks({
               aria-current={isActive(pathname, href) ? "page" : undefined}
               className={`nav-item ${isActive(pathname, href) ? "nav-item-active" : ""}`}
             >
-              <Icon size={17} />
+              <Icon size={16} />
               {t(`nav.${id}`)}
             </Link>
           ))}

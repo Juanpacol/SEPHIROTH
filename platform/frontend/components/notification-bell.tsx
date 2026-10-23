@@ -93,7 +93,9 @@ export default function NotificationBell() {
 
   const markRead = async (id: string) => {
     await api.markNotificationRead(id);
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
+    );
     setUnread((prev) => Math.max(0, prev - 1));
   };
 
@@ -108,12 +110,8 @@ export default function NotificationBell() {
 
   return (
     <div ref={containerRef} className="relative">
-      <button
-        onClick={toggle}
-        className="tap relative flex items-center justify-center rounded-full p-2 text-muted hover:bg-primary-soft"
-        aria-label={t("notifications.title")}
-      >
-        <Bell size={18} />
+      <button onClick={toggle} className="icon-link tap" aria-label={t("notifications.title")}>
+        <Bell size={18} strokeWidth={1.5} />
         {unread > 0 && (
           <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
             {unread > 9 ? "9+" : unread}
@@ -128,9 +126,7 @@ export default function NotificationBell() {
           </div>
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 && (
-              <div className="px-4 py-6 text-center text-sm text-muted">
-                {t("notifications.empty")}
-              </div>
+              <div className="px-4 py-6 text-center text-sm text-muted">{t("notifications.empty")}</div>
             )}
             {notifications.map((n) => (
               <button
