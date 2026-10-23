@@ -108,184 +108,62 @@ describe("FeatureShowcase", () => {
   });
 });
 
-describe("the See cell's slides", () => {
-  const slides = LANDING_FEATURES.find((f) => f.id === "see")!.media;
+describe("the See cell's study", () => {
+  const media = LANDING_FEATURES.find((f) => f.id === "see")!.media;
 
-  beforeEach(() => {
+  it("is one pathology study with a description and a label, in both languages", () => {
+    expect(media.kind).toBe("slides");
+    if (media.kind !== "slides") return;
+    expect(media.slides).toHaveLength(1);
+    const [slide] = media.slides;
+    expect(slide.src).toBe("/landing/analysis/pathology.webp");
+    expect(existsSync(path.join(__dirname, "../../..", "public", slide.src))).toBe(true);
+    for (const key of [slide.titleKey, slide.captionKey]) {
+      expect((EN as Record<string, string>)[key], key).toBeTruthy();
+      expect((ES as Record<string, string>)[key], key).toBeTruthy();
+    }
+  });
+
+  it("stays where it is: no drift with the scroll, and nothing takes its turn", () => {
     vi.useFakeTimers();
-    vi.stubGlobal("matchMedia", (q: string) => ({
-      matches: false,
-      media: q,
-      addEventListener() {},
-      removeEventListener() {},
-    }));
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-    vi.unstubAllGlobals();
-  });
-  const current = (container: HTMLElement) => container.querySelector("[data-slide='current']")!;
+    try {
+      const { container } = render(wrap(<FeatureMediaView media={media} playing />));
+      const src = () => container.querySelector("[data-slide='current']")!.getAttribute("src");
+      const before = src();
 
-  it("carries the ten example studies, each with a description and a label", () => {
-    expect(slides.kind).toBe("slides");
-    if (slides.kind !== "slides") return;
-    expect(slides.slides).toHaveLength(10);
-    for (const slide of slides.slides) {
-      expect(slide.src).toMatch(/^\/landing\/analysis\/.+\.webp$/);
-      expect((EN as Record<string, string>)[slide.captionKey], slide.captionKey).toBeTruthy();
-      expect((ES as Record<string, string>)[slide.titleKey], slide.titleKey).toBeTruthy();
+      act(() => vi.advanceTimersByTime(60000));
+
+      expect(src()).toBe(before);
+      expect(container.querySelector("[data-parallax]")).toBeNull();
+      expect(container.querySelector("[data-slide-label]")).toHaveTextContent(
+        "Pathology · H&E-stained tissue",
+      );
+    } finally {
+      vi.useRealTimers();
     }
-  });
-
-  it("every file exists, so no slide is a broken picture", () => {
-    if (slides.kind !== "slides") return;
-    for (const slide of slides.slides) {
-      expect(existsSync(path.join(__dirname, "../../..", "public", slide.src)), slide.src).toBe(true);
-    }
-  });
-
-  it("shows the first and does not move while its cell is off screen", () => {
-    const { container } = render(wrap(<FeatureMediaView media={slides} playing={false} />));
-
-    act(() => vi.advanceTimersByTime(60000));
-
-    expect(current(container)).toHaveAttribute("src", "/landing/analysis/xray.webp");
-  });
-
-  it("takes turns while on screen, cross-fading, and wraps round to the first", () => {
-    const { container } = render(wrap(<FeatureMediaView media={slides} playing />));
-
-    act(() => vi.advanceTimersByTime(3400));
-    expect(current(container)).toHaveAttribute("src", "/landing/analysis/ct-brain.webp");
-    act(() => vi.advanceTimersByTime(3400));
-    expect(current(container)).toHaveAttribute("src", "/landing/analysis/mri-brain.webp");
-    // Each turn schedules the next once React has rendered it, so step one turn at a time.
-    for (let i = 0; i < 8; i++) act(() => vi.advanceTimersByTime(3400));
-    expect(current(container)).toHaveAttribute("src", "/landing/analysis/xray.webp");
-    expect(container.querySelector("img[data-slide='current']")!.className).toContain("duration-slow");
-  });
-
-  it("only the one on show is announced, and the label names it", () => {
-    const { container } = render(wrap(<FeatureMediaView media={slides} playing />));
-    act(() => vi.advanceTimersByTime(3400));
-
-    const images = Array.from(container.querySelectorAll("img"));
-    expect(images.filter((i) => i.getAttribute("aria-hidden") === "false")).toHaveLength(1);
-    expect(container.querySelector("[data-slide-label]")).toHaveTextContent("CT · Sagittal brain scan");
-  });
-
-  it("holds still under the pointer, and under reduced motion shows the first for good", () => {
-    const { container, unmount } = render(wrap(<FeatureMediaView media={slides} playing />));
-    fireEvent.mouseEnter(container.querySelector("[data-slides]")!);
-    act(() => vi.advanceTimersByTime(30000));
-    expect(current(container)).toHaveAttribute("src", "/landing/analysis/xray.webp");
-    unmount();
-
-    vi.stubGlobal("matchMedia", (q: string) => ({
-      matches: true,
-      media: q,
-      addEventListener() {},
-      removeEventListener() {},
-    }));
-    const reduced = render(wrap(<FeatureMediaView media={slides} playing />));
-    act(() => vi.advanceTimersByTime(30000));
-    expect(current(reduced.container)).toHaveAttribute("src", "/landing/analysis/xray.webp");
   });
 });
 
-describe("FeatureMediaView", () => {
-  // jsdom does not implement media playback.
-  beforeEach(() => {
-    vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(() => Promise.resolve());
-    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
-  });
-  afterEach(() => {
-    vi.restoreAllMocks();
-    vi.unstubAllGlobals();
-  });
-  const video: FeatureMedia = {
-    kind: "video",
-    src: "/a.mp4",
-    webm: "/a.webm",
-    poster: "/a.webp",
-    altKey: "marketing.features.see.alt",
-  };
+describe("the cells with a single picture", () => {
+  const cells = LANDING_FEATURES.filter((f) => f.media.kind === "image");
 
-  it("a feature with no picture gets a generated tile in its own pattern, hidden from assistive technology", () => {
-    for (const pattern of ["rays", "lines", "checks", "dots", "frames", "waves"] as const) {
-      const { container, unmount } = render(wrap(<FeatureMediaView media={{ kind: "tile", pattern }} />));
-      const tile = container.querySelector(`[data-tile="${pattern}"]`)!;
-      expect(tile).toHaveAttribute("aria-hidden", "true");
-      unmount();
+  it("are Ask, Cite, Verify, Follow up and Share, each with a file and a description in both languages", () => {
+    expect(cells.map((c) => c.id)).toEqual(["ask", "cite", "verify", "follow", "share"]);
+    for (const cell of cells) {
+      if (cell.media.kind !== "image") continue;
+      expect(existsSync(path.join(__dirname, "../../..", "public", cell.media.src)), cell.media.src).toBe(
+        true,
+      );
+      expect((EN as Record<string, string>)[cell.media.altKey], cell.media.altKey).toBeTruthy();
+      expect((ES as Record<string, string>)[cell.media.altKey], cell.media.altKey).toBeTruthy();
     }
   });
 
-  it("an image carries its description, drifts inside its frame and is tinted to the blue by default", () => {
-    const { container } = render(
-      wrap(
-        <FeatureMediaView media={{ kind: "image", src: "/x.webp", altKey: "marketing.features.see.alt" }} />,
-      ),
-    );
-
-    const img = screen.getByRole("img", { name: "A chest X-ray, one of the example studies" });
-    expect(img).toHaveAttribute("src", "/x.webp");
-    expect(img).toHaveAttribute("data-parallax");
-    expect(img.className).toContain("scale-[1.2]");
-    expect(container.querySelector(".mix-blend-multiply")).not.toBeNull();
-  });
-
-  it("an image can be left as it is", () => {
-    const { container } = render(
-      wrap(
-        <FeatureMediaView
-          media={{ kind: "image", src: "/x.webp", altKey: "marketing.features.see.alt", tone: "natural" }}
-        />,
-      ),
-    );
-
-    expect(container.querySelector(".mix-blend-multiply")).toBeNull();
-    expect(screen.getByRole("img")).toBeInTheDocument();
-  });
-
-  it("a video is silent, loops, plays inline and offers both formats", () => {
-    const { container } = render(wrap(<FeatureMediaView media={video} />));
-    const el = container.querySelector("video")!;
-
-    expect(el.muted).toBe(true);
-    expect(el.loop).toBe(true);
-    expect(el.getAttribute("playsinline")).not.toBeNull();
-    expect(el.getAttribute("poster")).toBe("/a.webp");
-    expect(Array.from(el.querySelectorAll("source")).map((s) => s.getAttribute("type"))).toEqual([
-      "video/webm",
-      "video/mp4",
-    ]);
-  });
-
-  it("a video plays only while it is on screen, and never under reduced motion", () => {
-    const play = vi.spyOn(HTMLMediaElement.prototype, "play");
-    const pause = vi.spyOn(HTMLMediaElement.prototype, "pause");
-    vi.stubGlobal("matchMedia", (q: string) => ({
-      matches: false,
-      media: q,
-      addEventListener() {},
-      removeEventListener() {},
-    }));
-
-    const { rerender } = render(wrap(<FeatureMediaView media={video} playing />));
-    expect(play).toHaveBeenCalledTimes(1);
-
-    rerender(wrap(<FeatureMediaView media={video} playing={false} />));
-    expect(pause).toHaveBeenCalled();
-
-    play.mockClear();
-    vi.stubGlobal("matchMedia", (q: string) => ({
-      matches: true,
-      media: q,
-      addEventListener() {},
-      removeEventListener() {},
-    }));
-    rerender(wrap(<FeatureMediaView media={video} playing={false} />));
-    rerender(wrap(<FeatureMediaView media={video} playing />));
-    expect(play).not.toHaveBeenCalled();
+  it("stay where they are: no drift with the scroll, and nothing takes its turn", () => {
+    for (const cell of cells) {
+      const { container } = render(wrap(<FeatureMediaView media={cell.media} playing />));
+      expect(container.querySelector("[data-parallax]"), cell.id).toBeNull();
+      expect(container.querySelector("[data-slides], [data-sequence]"), cell.id).toBeNull();
+    }
   });
 });

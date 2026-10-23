@@ -117,11 +117,10 @@ function Slides({ media, playing }: { media: Extract<FeatureMedia, { kind: "slid
       onMouseEnter={() => setHeld(true)}
       onMouseLeave={() => setHeld(false)}
     >
-      {/* The stack of pictures is larger than the square and drifts inside it as the page
-          scrolls (see `scroll-effects.tsx`). It is tinted on its own so the label above it is
-          not: a label inside the tint would be a blue word on blue. */}
+      {/* Tinted on its own so the label above it is not: a label inside the tint would be a blue
+          word on blue. */}
       <Tint tone={media.tone}>
-        <span data-parallax className="absolute inset-0 block scale-[1.2] [translate:0_var(--py-img,0px)]">
+        <span className="absolute inset-0 block">
           {media.slides.map((slide, i) => (
             // Static files from /public, optimised when they were made.
             // eslint-disable-next-line @next/next/no-img-element
@@ -213,16 +212,10 @@ export default function FeatureMediaView({
     media.kind === "video" ? (
       <Video media={media} playing={playing} />
     ) : (
-      // A static file from /public, optimised when it was made. `data-parallax` lets the page
-      // drift it inside its frame; the frame is scaled so the drift never shows an edge.
+      // A static file from /public, optimised when it was made. A single picture stays where it
+      // is: only the See cell's studies, which take turns, drift as the page scrolls.
       // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={media.src}
-        alt={t(media.altKey)}
-        loading="lazy"
-        data-parallax
-        className="h-full w-full scale-[1.2] object-cover [translate:0_var(--py-img,0px)]"
-      />
+      <img src={media.src} alt={t(media.altKey)} loading="lazy" className="h-full w-full object-cover" />
     );
 
   return natural ? <span className="block h-full w-full">{picture}</span> : <Duotone>{picture}</Duotone>;
