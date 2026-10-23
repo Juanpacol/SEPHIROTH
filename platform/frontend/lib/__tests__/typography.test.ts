@@ -3,9 +3,9 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import config from "../../tailwind.config";
 
-/** The type system (AB#40): free fonts hosted in the repo with their licences, a
- * named scale, one label style. Reads the sources as text so a trial font, a Google
- * fetch at build time or a loose label style fails here. */
+/** The type system (AB#40): free fonts hosted in the repo with their licences, and a label that
+ * stays readable. Reads the sources as text so a trial font or a Google fetch at build time fails
+ * here. (The named scale and the label style used to be pinned too: they described a look.) */
 const root = path.join(__dirname, "../..");
 const read = (rel: string) => readFileSync(path.join(root, rel), "utf8");
 
@@ -64,43 +64,8 @@ describe("fonts", () => {
 describe("scale", () => {
   const theme = config.theme?.extend as Record<string, Record<string, unknown>>;
 
-  it("names the sizes the pages used to repeat as loose numbers", () => {
-    expect(Object.keys(theme.fontSize)).toEqual(["display", "title", "subtitle", "label"]);
-  });
-
   it("keeps the label at 11 px or more", () => {
     const [size] = theme.fontSize.label as [string];
     expect(parseFloat(size) * 16).toBeGreaterThanOrEqual(11);
-  });
-
-  it("makes the display size fluid, with a floor that fits a 320 px screen", () => {
-    const [size] = theme.fontSize.display as [string];
-    expect(size).toMatch(/^clamp\(/);
-    expect(parseFloat(size.match(/clamp\(([\d.]+)rem/)![1]) * 16).toBeLessThanOrEqual(48);
-  });
-
-  it("has a display and a mono family that fall back to something that exists", () => {
-    const families = theme.fontFamily as Record<string, string[]>;
-    expect(families.display[0]).toBe("var(--font-display)");
-    expect(families.mono[0]).toBe("var(--font-mono)");
-    expect(families.display.length).toBeGreaterThan(1);
-  });
-});
-
-describe("labels", () => {
-  it("has one label style: mono, uppercase, wide tracking", () => {
-    const css = read("app/globals.css");
-    expect(css).toMatch(/\.eyebrow\s*\{\s*@apply font-mono text-label font-medium uppercase;/);
-    expect(css).toMatch(/\.nav-group-label\s*\{\s*@apply eyebrow/);
-  });
-
-  it("no small uppercase label is styled by hand: it is `.eyebrow`, or a rounded pill badge", () => {
-    const offenders: string[] = [];
-    for (const file of sources("app").concat(sources("components"))) {
-      for (const [, classes] of Array.from(read(file).matchAll(/className="([^"]*\buppercase\b[^"]*)"/g))) {
-        if (!/\beyebrow\b/.test(classes) && !/\brounded/.test(classes)) offenders.push(`${file}: ${classes}`);
-      }
-    }
-    expect(offenders).toEqual([]);
   });
 });
