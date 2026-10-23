@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { LANDING_FEATURES } from "@/lib/landing-features";
 import { useLanguage } from "@/lib/language";
 import FeatureMediaView from "./feature-media";
+import Reveal from "./reveal";
 
 export default function FeatureShowcase() {
   const { t } = useLanguage();
@@ -37,7 +38,7 @@ export default function FeatureShowcase() {
   return (
     <ol className="grid grid-cols-1 gap-x-10 gap-y-20 md:grid-cols-2 lg:grid-cols-3">
       {LANDING_FEATURES.map((feature, i) => (
-        <li key={feature.id}>
+        <Reveal as="li" key={feature.id} delay={(i % 3) * 120}>
           <article
             id={`feature-${feature.id}`}
             data-feature={feature.id}
@@ -45,7 +46,7 @@ export default function FeatureShowcase() {
               cells.current[feature.id] = el;
             }}
             aria-labelledby={`feature-${feature.id}-title`}
-            className="flex h-full flex-col"
+            className="group/cell flex h-full flex-col"
           >
             <div className="eyebrow text-ink/80">
               #{i + 1} {t(feature.verbKey)}
@@ -62,12 +63,15 @@ export default function FeatureShowcase() {
             {/* `mt-auto`: the picture sits at the bottom of the cell, so the six line up by their
                 pictures whatever number of lines a title or a paragraph takes. */}
             <div className="mt-auto pt-8 md:pt-10">
-              <div data-parallax-frame className="aspect-square overflow-hidden bg-surface">
+              <div
+                data-parallax-frame
+                className="aspect-square overflow-hidden bg-surface [&_img]:transition-transform [&_img]:duration-[1200ms] [&_img]:ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/cell:[&_img]:scale-[1.04]"
+              >
                 <FeatureMediaView media={feature.media} playing={Boolean(inView[feature.id])} />
               </div>
             </div>
           </article>
-        </li>
+        </Reveal>
       ))}
     </ol>
   );
