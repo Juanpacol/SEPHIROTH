@@ -120,6 +120,22 @@ input:-webkit-autofill:focus {
   }
 }
 
+/* A row's detail opens by growing its height and fading in. */
+.detail-in {
+  display: grid;
+  animation: detail-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes detail-in {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  to {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
 /* A word of the hero headline comes in: a little below, blurred, then settles. */
 @keyframes word-in {
   from {
@@ -168,6 +184,11 @@ input:-webkit-autofill:focus {
 @layer components {
   .card {
     @apply bg-card rounded-card shadow-raised p-5;
+  }
+  /* A dashboard block in the landing's manner: a quiet panel with a hairline ring that
+     lights up under the pointer, instead of a raised card. */
+  .dash-panel {
+    @apply rounded-squircle bg-card p-5 ring-1 ring-line/60 transition-[box-shadow,transform] duration-slow ease-ios hover:ring-primary-ink/40;
   }
   /* Small uppercase label above a group, a table column or a field: mono, wide
      tracking, 11 px. Colour comes from the element (`text-muted`, `text-primary-ink`). */

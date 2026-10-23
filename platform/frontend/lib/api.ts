@@ -109,6 +109,31 @@ export interface DashboardEvolution {
   new_risk_factors_count: number;
 }
 
+/** Patients whose latest recorded vital signs are out of range, with the range
+ * and the reading from the visit before. Vitals are taken at visits, so
+ * `measured_at` always travels with them. */
+export interface DashboardVitals {
+  abnormal_patient_count: number;
+  patients_with_vitals: number;
+  patients: {
+    patient_id: string;
+    patient_name: string;
+    measured_at: string | null;
+    severity: "high" | "medium";
+    findings: {
+      key: string;
+      label: string;
+      unit: string;
+      value: number;
+      display: string;
+      severity: "high" | "medium";
+      low: number;
+      high: number;
+      previous: { value: number; at: string | null } | null;
+    }[];
+  }[];
+}
+
 export interface DashboardAlerts {
   active_count: number;
   new_count: number;
@@ -917,6 +942,7 @@ export const api = {
   dashboardRuleSummary: () => get<DashboardRuleSummary>("/api/dashboard/rule-summary"),
   dashboardEvolution: () => get<DashboardEvolution>("/api/dashboard/evolution"),
   dashboardAlerts: () => get<DashboardAlerts>("/api/dashboard/alerts"),
+  dashboardVitals: () => get<DashboardVitals>("/api/dashboard/vitals"),
   dashboardMedications: () => get<DashboardMedications>("/api/dashboard/medications"),
   dashboardLabs: () => get<DashboardLabs>("/api/dashboard/labs"),
   dashboardImaging: () => get<DashboardImaging>("/api/dashboard/imaging"),

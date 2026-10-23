@@ -2,18 +2,32 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, ClipboardList, ThumbsUp } from "lucide-react";
+import { BarChart3, ClipboardList } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import ActionItemsList from "@/components/action-items-list";
-import StatCard from "@/components/stat-card";
-import RiskDistribution from "@/components/dashboard/risk-distribution";
+import AccentTitle from "@/components/landing/accent-title";
+import Reveal from "@/components/landing/reveal";
+import {
+  AgendaPanel,
+  AlertRing,
+  EvolutionBar,
+  KpiStrip,
+  MedicationBars,
+  QualityRing,
+  RiskDonut,
+  VitalsWatch,
+} from "@/components/dashboard/insight-charts";
 import RuleSummaryChart from "@/components/dashboard/rule-summary-chart";
 
 export default function DashboardPage() {
   const { t } = useLanguage();
 
-  const { data: bootstrap, isLoading, error } = useQuery({
+  const {
+    data: bootstrap,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["dashboard", "bootstrap"],
     queryFn: api.dashboardBootstrap,
     refetchInterval: 30_000,
@@ -28,6 +42,26 @@ export default function DashboardPage() {
     queryFn: api.dashboardAI,
     refetchInterval: 60_000,
   });
+  const { data: evolution } = useQuery({
+    queryKey: ["dashboard", "evolution"],
+    queryFn: api.dashboardEvolution,
+    refetchInterval: 60_000,
+  });
+  const { data: alerts } = useQuery({
+    queryKey: ["dashboard", "alerts"],
+    queryFn: api.dashboardAlerts,
+    refetchInterval: 60_000,
+  });
+  const { data: vitals } = useQuery({
+    queryKey: ["dashboard", "vitals"],
+    queryFn: api.dashboardVitals,
+    refetchInterval: 60_000,
+  });
+  const { data: medications } = useQuery({
+    queryKey: ["dashboard", "medications"],
+    queryFn: api.dashboardMedications,
+    refetchInterval: 60_000,
+  });
   const data = bootstrap?.stats;
 
   if (isLoading) return <div className="text-muted">{t("dashboard.loading")}</div>;
@@ -35,96 +69,101 @@ export default function DashboardPage() {
     return (
       <div className="card text-danger">
         {t("dashboard.backendDown")}{" "}
-        <code className="rounded bg-surface px-1">
-          PYTHONPATH=.:platform uvicorn api.main:app
-        </code>
+        <code className="rounded bg-surface px-1">PYTHONPATH=.:platform uvicorn api.main:app</code>
       </div>
     );
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-extrabold">{t("dashboard.title")}</h1>
-        <p className="text-sm text-muted">{t("dashboard.subtitle")}</p>
-      </div>
+    <div className="space-y-2.5">
+      <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
+        <div className="min-w-0">
+          <div className="eyebrow text-primary-ink">Sephiroth</div>
+          <AccentTitle
+            as="h1"
+            text={t("dashboard.title")}
+            accentWords={1}
+            accentClass="text-primary-ink"
+            className="mt-0.5 text-3xl sm:text-4xl"
+          />
+        </div>
+        <p className="max-w-md pb-1 text-sm text-muted">{t("dashboard.subtitle")}</p>
+      </header>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <RiskDistribution
+      <Reveal>
+        <KpiStrip
           critical={data.critical_count}
-          moderate={data.moderate_count}
-          stable={data.stable_count}
+          worsening={evolution?.deteriorating_count ?? 0}
+          unreviewed={alerts?.pending_review_count ?? 0}
+          vitals={vitals?.abnormal_patient_count ?? 0}
         />
-        <StatCard
-          label={t("dashboard.stat.maxPriority")}
-          value={data.max_priority_score}
-          tone="primary"
-          suffix={t("dashboard.stat.maxPriorityOf")}
-          hint={t("dashboard.stat.maxPriorityHint")}
-        />
+      </Reveal>
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+        <div className="space-y-2.5 lg:col-span-8">
+          <Reveal className="dash-panel flex flex-col !p-5 hover:!ring-line/60">
+            <h2 className="eyebrow mb-1 flex items-center gap-2 text-muted">
+              <ClipboardList size={13} className="text-primary-ink" /> {t("dashboard.actionItems.title")}
+            </h2>
+            <div className="max-h-[19rem] overflow-y-auto">
+              <ActionItemsList groups={bootstrap?.action_items.groups ?? []} maxVisible={5} />
+            </div>
+          </Reveal>
+          {vitals && (
+            <Reveal delay={80}>
+              <VitalsWatch data={vitals} />
+            </Reveal>
+          )}
+        </div>
+
+        <div className="space-y-2.5 lg:col-span-4">
+          {bootstrap?.agenda && (
+            <Reveal delay={60}>
+              <AgendaPanel agenda={bootstrap.agenda} />
+            </Reveal>
+          )}
+          <Reveal delay={120}>
+            <RiskDonut
+              critical={data.critical_count}
+              moderate={data.moderate_count}
+              stable={data.stable_count}
+            />
+          </Reveal>
+          {alerts && (
+            <Reveal delay={180}>
+              <AlertRing data={alerts} />
+            </Reveal>
+          )}
+        </div>
       </div>
 
-      {quality && (
-        <div className="card !p-4" data-testid="answer-quality">
-          <h2 className="flex items-center gap-2 text-sm font-bold">
-            <ThumbsUp size={15} className="text-primary" /> {t("dashboard.quality.title")}
-          </h2>
-          <p className="text-xs text-muted">{t("dashboard.quality.subtitle")}</p>
-          {quality.auto_graded_count > 0 && (
-            <div className="mt-3 border-t border-line/60 pt-3" data-testid="auto-grades">
-              <p className="text-xs text-muted">
-                {t("dashboard.quality.autoGraded").replace("{count}", String(quality.auto_graded_count))}
-              </p>
-              <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
-                {(["grounding", "completeness", "safety", "abstention"] as const).map((c) => (
-                  <div key={c} className="min-w-0">
-                    <dt className="truncate text-xs text-muted">{t(`dashboard.quality.criterion.${c}`)}</dt>
-                    <dd className="font-bold">{quality.auto_grade_averages[c]?.toFixed(1) ?? "—"} / 5</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          )}
-          {quality.helpful_ratio === null ? (
-            <p className="mt-2 text-sm text-muted">{t("dashboard.quality.none")}</p>
-          ) : (
-            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-3xl font-extrabold text-primary">{Math.round(quality.helpful_ratio * 100)}%</span>
-              <span className="text-sm text-muted">{t("dashboard.quality.helpful")}</span>
-              <span className="text-xs text-muted">
-                {t("dashboard.quality.ratings").replace("{count}", String(quality.ratings_count))}
-              </span>
-              <span className={`text-xs font-semibold ${quality.pending_review_count > 0 ? "text-warning" : "text-muted"}`}>
-                {t("dashboard.quality.pending").replace("{count}", String(quality.pending_review_count))}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <div className="card !p-4">
-          <h2 className="mb-1 flex items-center gap-2 text-sm font-bold">
-            <ClipboardList size={15} className="text-primary" /> {t("dashboard.actionItems.title")}
-          </h2>
-          <ActionItemsList groups={bootstrap?.action_items.groups ?? []} maxVisible={6} />
-        </div>
-
-        <div className="card !p-4">
-          <div className="mb-2 flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h2 className="flex items-center gap-2 text-sm font-bold">
-                <BarChart3 size={15} className="text-primary" /> {t("dashboard.ruleSummary.title")}
-              </h2>
-              <p className="text-xs text-muted">{t("dashboard.ruleSummary.subtitle")}</p>
-            </div>
-            <Link href="/patients?sort=risk" className="shrink-0 text-xs font-semibold text-primary">
+      <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
+        {evolution && (
+          <Reveal>
+            <EvolutionBar data={evolution} />
+          </Reveal>
+        )}
+        {medications && (
+          <Reveal delay={80}>
+            <MedicationBars data={medications} />
+          </Reveal>
+        )}
+        {quality && (
+          <Reveal>
+            <QualityRing data={quality} />
+          </Reveal>
+        )}
+        <Reveal delay={80} className="dash-panel !p-5">
+          <div className="mb-1 flex items-start justify-between gap-2">
+            <h2 className="eyebrow flex items-center gap-2 text-muted">
+              <BarChart3 size={13} className="text-primary-ink" /> {t("dashboard.ruleSummary.title")}
+            </h2>
+            <Link href="/patients?sort=risk" className="link-underline shrink-0 text-xs font-semibold">
               {t("dashboard.viewAll")}
             </Link>
           </div>
           {ruleSummary && <RuleSummaryChart summary={ruleSummary} />}
-        </div>
+        </Reveal>
       </div>
     </div>
   );
 }
-

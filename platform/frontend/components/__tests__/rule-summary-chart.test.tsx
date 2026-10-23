@@ -31,22 +31,25 @@ function renderChart(summary: DashboardRuleSummary) {
 describe("RuleSummaryChart", () => {
   afterEach(() => localStorage.removeItem("cac_lang"));
 
-  it("draws one translated, counted bar per problem, sized against the largest", () => {
-    const { container } = renderChart({
+  it("lists one translated, counted row per problem", () => {
+    renderChart({
       total_patients: 6,
       rules: [rule("hyperkalemia", "Hyperkalemia", 4), rule("drug_interaction", "Interaction", 2, "medium")],
     });
     expect(screen.getByText("Potasio alto (hiperpotasemia)")).toBeInTheDocument();
     expect(screen.getByText("Interacción de medicamentos")).toBeInTheDocument();
     expect(screen.getByText("4")).toBeInTheDocument();
-    const fills = container.querySelectorAll<HTMLElement>(".bg-danger, .bg-warning");
-    expect(fills[0].style.width).toBe("100%");
-    expect(fills[1].style.width).toBe("50%");
+    expect(screen.getByText("2")).toBeInTheDocument();
   });
 
   it("expands a bar into its patients, each linking to the chart", () => {
-    renderChart({ total_patients: 3, rules: [rule("hyperkalemia", "Hyperkalemia", 2)] });
-    const bar = screen.getByRole("button", { name: /hiperpotasemia\): 2 pacientes/i });
+    renderChart({
+      total_patients: 3,
+      rules: [rule("hyperkalemia", "Hyperkalemia", 2)],
+    });
+    const bar = screen.getByRole("button", {
+      name: /hiperpotasemia\): 2 pacientes/i,
+    });
     expect(bar).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
 
@@ -58,13 +61,13 @@ describe("RuleSummaryChart", () => {
     expect(within(links[0]).getByText("Riesgo alto")).toBeInTheDocument();
   });
 
-  it("shows six bars first and offers the rest", () => {
+  it("shows five rows first and offers the rest", () => {
     renderChart({
       total_patients: 20,
       rules: Array.from({ length: 8 }, (_, i) => rule(`rule_${i}`, `Rule ${i}`, 8 - i)),
     });
-    expect(screen.getAllByRole("button", { expanded: false })).toHaveLength(6);
-    fireEvent.click(screen.getByText("Ver 2 problemas más"));
+    expect(screen.getAllByRole("button", { expanded: false })).toHaveLength(5);
+    fireEvent.click(screen.getByText("Ver 3 problemas más"));
     expect(screen.getAllByRole("button", { expanded: false })).toHaveLength(8);
   });
 
