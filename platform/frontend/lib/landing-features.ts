@@ -46,7 +46,7 @@ export const LANDING_FEATURES: LandingFeature[] = [
     verbKey: "marketing.features.ask.verb",
     titleKey: "marketing.features.ask.title",
     bodyKey: "marketing.features.ask.body",
-    media: { kind: "tile", pattern: "rays" },
+    media: { kind: "image", src: "/landing/features/ask-spine.webp", altKey: "marketing.features.ask.alt" },
   },
   {
     // `verification/citation_guard.py` and the evidence agent: guidelines and PubMed only.
@@ -54,7 +54,11 @@ export const LANDING_FEATURES: LandingFeature[] = [
     verbKey: "marketing.features.cite.verb",
     titleKey: "marketing.features.cite.title",
     bodyKey: "marketing.features.cite.body",
-    media: { kind: "tile", pattern: "lines" },
+    media: {
+      kind: "image",
+      src: "/landing/features/cite-annotated-figure.webp",
+      altKey: "marketing.features.cite.alt",
+    },
   },
   {
     // `verification/` (five claim states) and `safety/abstention.py`.
@@ -62,7 +66,11 @@ export const LANDING_FEATURES: LandingFeature[] = [
     verbKey: "marketing.features.verify.verb",
     titleKey: "marketing.features.verify.title",
     bodyKey: "marketing.features.verify.body",
-    media: { kind: "tile", pattern: "checks" },
+    media: {
+      kind: "image",
+      src: "/landing/features/verify-eye.webp",
+      altKey: "marketing.features.verify.alt",
+    },
   },
   {
     // `intelligence/mcp/vision_server.py`: a description of what is visible, not a diagnosis.
@@ -70,59 +78,14 @@ export const LANDING_FEATURES: LandingFeature[] = [
     verbKey: "marketing.features.see.verb",
     titleKey: "marketing.features.see.title",
     bodyKey: "marketing.features.see.body",
-    // The ten example studies, one after another: X-ray, CT, MRI, ultrasound and pathology.
+    // One example study, with its label: the picture stays where it is.
     media: {
       kind: "slides",
       slides: [
         {
-          src: "/landing/analysis/xray.webp",
-          titleKey: "marketing.analysisGallery.xray.title",
-          captionKey: "marketing.analysisGallery.xray.caption",
-        },
-        {
-          src: "/landing/analysis/ct-brain.webp",
-          titleKey: "marketing.analysisGallery.ct.title",
-          captionKey: "marketing.analysisGallery.ct.caption",
-        },
-        {
-          src: "/landing/analysis/mri-brain.webp",
-          titleKey: "marketing.analysisGallery.mri.title",
-          captionKey: "marketing.analysisGallery.mri.caption",
-        },
-        {
-          src: "/landing/analysis/ultrasound.webp",
-          titleKey: "marketing.analysisGallery.ultrasound.title",
-          captionKey: "marketing.analysisGallery.ultrasound.caption",
-        },
-        {
           src: "/landing/analysis/pathology.webp",
           titleKey: "marketing.analysisGallery.pathology.title",
           captionKey: "marketing.analysisGallery.pathology.caption",
-        },
-        {
-          src: "/landing/analysis/xray-2.webp",
-          titleKey: "marketing.analysisGallery.xray2.title",
-          captionKey: "marketing.analysisGallery.xray2.caption",
-        },
-        {
-          src: "/landing/analysis/xray-3.webp",
-          titleKey: "marketing.analysisGallery.xray3.title",
-          captionKey: "marketing.analysisGallery.xray3.caption",
-        },
-        {
-          src: "/landing/analysis/xray-4.webp",
-          titleKey: "marketing.analysisGallery.xray4.title",
-          captionKey: "marketing.analysisGallery.xray4.caption",
-        },
-        {
-          src: "/landing/analysis/ultrasound-2.webp",
-          titleKey: "marketing.analysisGallery.ultrasound2.title",
-          captionKey: "marketing.analysisGallery.ultrasound2.caption",
-        },
-        {
-          src: "/landing/analysis/pathology-2.webp",
-          titleKey: "marketing.analysisGallery.pathology2.title",
-          captionKey: "marketing.analysisGallery.pathology2.caption",
         },
       ],
     },
@@ -133,7 +96,11 @@ export const LANDING_FEATURES: LandingFeature[] = [
     verbKey: "marketing.features.follow.verb",
     titleKey: "marketing.features.follow.title",
     bodyKey: "marketing.features.follow.body",
-    media: { kind: "tile", pattern: "dots" },
+    media: {
+      kind: "image",
+      src: "/landing/features/follow-waveform.webp",
+      altKey: "marketing.features.follow.alt",
+    },
   },
   {
     // `api/patient_labs.py`: a patient sees a result only after a clinician has communicated it.
@@ -141,6 +108,10 @@ export const LANDING_FEATURES: LandingFeature[] = [
     verbKey: "marketing.features.share.verb",
     titleKey: "marketing.features.share.title",
     bodyKey: "marketing.features.share.body",
-    media: { kind: "tile", pattern: "frames" },
+    media: {
+      kind: "image",
+      src: "/landing/features/share-hands.webp",
+      altKey: "marketing.features.share.alt",
+    },
   },
 ];

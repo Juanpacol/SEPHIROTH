@@ -35,3 +35,13 @@ RSNA/Kaggle samples under `real_data/`, whose licence forbids redistributing the
 ## Files here
 
 None yet: the "See" feature uses `/landing/analysis/xray.webp`, the same file as the demo.
+
+## Added 2026-10-22 (AB#54)
+
+One still picture each for the Ask, Cite, Verify, Follow up and Share cells, supplied by the maintainer from
+Pinterest: `cite-annotated-figure.webp` (a crop of a collage poster: scan slices beside a labelled anatomy
+diagram, with captions; some of the poster's own small text remains), `ask-spine.webp` (an X-ray of the neck and spine with a web of fine lines over it),
+`verify-eye.webp` (an eye drawn in dots), `follow-waveform.webp` (an ink drawing of a wave; 580 px, soft
+when enlarged) and `share-hands.webp` (two hands made of fine lines). **Source and licence unknown, and the
+maintainer chose to use them anyway.** Find the originals (a reverse image search), or swap them for
+CC0 images, before this is treated as clean.
