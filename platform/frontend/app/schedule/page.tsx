@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, differenceInCalendarDays, format, isSameDay, startOfWeek } from "date-fns";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
 import { api, ApiError, type Appointment } from "@/lib/api";
 import { useUser } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
@@ -13,6 +13,7 @@ import DayAgenda from "@/components/schedule/day-agenda";
 import DayStrip from "@/components/schedule/day-strip";
 import WeekGrid from "@/components/schedule/week-grid";
 import Dialog from "@/components/ui/dialog";
+import PageHeader from "@/components/ui/page-header";
 import { useToast } from "@/components/ui/toast";
 
 export default function SchedulePage() {
@@ -38,7 +39,7 @@ export default function SchedulePage() {
   // Opens on today, not on Monday: the first thing a clinician wants from a
   // schedule on their phone is what is left of today.
   const [dayOffset, setDayOffset] = useState(() =>
-    differenceInCalendarDays(new Date(), startOfWeek(new Date(), { weekStartsOn: 1 })),
+    differenceInCalendarDays(new Date(), startOfWeek(new Date(), { weekStartsOn: 1 }))
   );
   const selectedDay = days[dayOffset] ?? days[0];
   const weekStartIso = format(anchor, "yyyy-MM-dd");
@@ -64,6 +65,15 @@ export default function SchedulePage() {
     return map;
   }, [appointments]);
 
+  const weekCount = useMemo(() => {
+    let n = 0;
+    appointmentsByDay.forEach((list) => {
+      n += list.length;
+    });
+    return n;
+  }, [appointmentsByDay]);
+  const todayCount = (appointmentsByDay.get(format(new Date(), "yyyy-MM-dd")) ?? []).length;
+
   const cancel = async (appointmentId: string) => {
     try {
       await api.cancelAppointment(appointmentId);
@@ -75,50 +85,59 @@ export default function SchedulePage() {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h1 className="text-lg font-bold">{t("nav.schedule")}</h1>
-          <div className="flex items-center gap-1">
+    <div className="space-y-4">
+      <PageHeader
+        eyebrow={t("patients.eyebrow")}
+        title={t("nav.schedule")}
+        subtitle={t("schedule.weekSummary")
+          .replace("{count}", String(weekCount))
+          .replace("{today}", String(todayCount))}
+        actions={
+          <>
             <button
-              onClick={() => setAnchor(addDays(anchor, -7))}
-              className="btn-ghost tap px-2.5 py-1.5"
-              aria-label={t("schedule.previousWeek")}
+              onClick={() => setAvailabilityOpen(true)}
+              className="nav-underline tap px-3.5 py-2 text-sm font-medium text-muted hover:text-ink"
             >
-              ‹
+              <CalendarClock size={15} strokeWidth={1.5} className="mr-1.5 inline" />{" "}
+              {t("schedule.workingHours")}
             </button>
             <button
-              onClick={() => setAnchor(startOfWeek(new Date(), { weekStartsOn: 1 }))}
-              className="btn-ghost tap px-2.5 py-1.5 text-sm"
+              onClick={() => {
+                setBookDate(format(new Date(), "yyyy-MM-dd"));
+                setBookOpen(true);
+              }}
+              className="btn-primary tap"
             >
-              {t("schedule.today")}
+              {t("schedule.newAppointment")}
             </button>
-            <button
-              onClick={() => setAnchor(addDays(anchor, 7))}
-              className="btn-ghost tap px-2.5 py-1.5"
-              aria-label={t("schedule.nextWeek")}
-            >
-              ›
-            </button>
-          </div>
-          <span className="text-sm text-muted">
-            {format(anchor, "MMM d")} – {format(addDays(anchor, 6), "MMM d, yyyy")}
-          </span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setAvailabilityOpen(true)} className="btn-secondary tap flex-1 sm:flex-none">
-            <CalendarClock size={16} /> {t("schedule.workingHours")}
-          </button>
-          <button
-            onClick={() => {
-              setBookDate(format(new Date(), "yyyy-MM-dd"));
-              setBookOpen(true);
-            }}
-            className="btn-primary tap flex-1 sm:flex-none"
-          >
-            {t("schedule.newAppointment")}
-          </button>
-        </div>
+          </>
+        }
+      />
+
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => setAnchor(addDays(anchor, -7))}
+          className="icon-link tap"
+          aria-label={t("schedule.previousWeek")}
+        >
+          <ChevronLeft size={18} strokeWidth={1.5} />
+        </button>
+        <button
+          onClick={() => setAnchor(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+          className="nav-underline tap px-3 py-2 text-sm font-medium text-muted hover:text-ink"
+        >
+          {t("schedule.today")}
+        </button>
+        <button
+          onClick={() => setAnchor(addDays(anchor, 7))}
+          className="icon-link tap"
+          aria-label={t("schedule.nextWeek")}
+        >
+          <ChevronRight size={18} strokeWidth={1.5} />
+        </button>
+        <span className="ml-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+          {format(anchor, "MMM d")} – {format(addDays(anchor, 6), "MMM d, yyyy")}
+        </span>
       </div>
 
       {/* Phone: a day at a time. Tablet and up: the week grid. Both are fed by
@@ -159,7 +178,7 @@ export default function SchedulePage() {
         onClose={() => setPendingCancel(null)}
         title={t("schedule.confirmCancel").replace(
           "{name}",
-          pendingCancel?.patient_name ?? t("schedule.patientFallback"),
+          pendingCancel?.patient_name ?? t("schedule.patientFallback")
         )}
         confirmLabel={t("schedule.agenda.cancel")}
         destructive
