@@ -92,7 +92,7 @@ test.describe("landing: how it works", () => {
     const section = page.locator("#how-it-works");
     const below = () =>
       page
-        .locator("#safeguards")
+        .locator("#agents")
         .evaluate((el) => Math.round(el.getBoundingClientRect().top + window.scrollY));
     const before = await below();
 

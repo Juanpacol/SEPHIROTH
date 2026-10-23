@@ -17,7 +17,6 @@ import AuthRedirectGate from "@/components/landing/auth-redirect-gate";
 import ScrollEffects from "@/components/landing/scroll-effects";
 import FeatureShowcase from "@/components/landing/feature-showcase";
 import AnswerAnatomy from "@/components/landing/answer-anatomy";
-import TrustCarousel from "@/components/landing/trust-carousel";
 import ChapterStrip from "@/components/landing/chapter-strip";
 import CtaButton from "@/components/landing/cta-button";
 import HeroTriptych from "@/components/landing/hero-triptych";
@@ -65,17 +64,6 @@ export default function LandingPage() {
           <div className="mt-12 md:mt-16">
             <AnswerAnatomy />
           </div>
-        </div>
-      </section>
-
-      {/* Safeguards: three checks before an answer reaches you, each one you can try */}
-      <section id="safeguards" className="scroll-mt-24 overflow-hidden border-t border-line/60">
-        <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
-          <h2 className="max-w-4xl font-display text-[clamp(2.25rem,1.5rem+3vw,4rem)] font-light leading-[1.05]">
-            {t("marketing.safeguards.title")}
-          </h2>
-          <p className="mb-12 mt-6 max-w-2xl text-lg text-muted">{t("marketing.safeguards.subtitle")}</p>
-          <TrustCarousel />
         </div>
       </section>
 

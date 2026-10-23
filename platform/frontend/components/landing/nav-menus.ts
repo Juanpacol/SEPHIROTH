@@ -43,12 +43,6 @@ export const NAV_MENUS: NavMenu[] = [
         section: "how-it-works",
       },
       {
-        href: "#safeguards",
-        titleKey: "marketing.nav.safeguards",
-        bodyKey: "marketing.nav.safeguards.body",
-        section: "safeguards",
-      },
-      {
         href: "#agents",
         titleKey: "marketing.nav.agents",
         bodyKey: "marketing.nav.agents.body",
