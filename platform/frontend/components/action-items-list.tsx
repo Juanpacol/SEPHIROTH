@@ -46,7 +46,9 @@ export function itemText(item: DashboardActionItem, t: (key: string) => string):
       // dropping the jargon sentence entirely.
       const interaction = parseInteractionLabel(item.title);
       if (interaction) {
-        return t("clinical.interaction").replace("{drugA}", interaction.drugA).replace("{drugB}", interaction.drugB);
+        return t("clinical.interaction")
+          .replace("{drugA}", interaction.drugA)
+          .replace("{drugB}", interaction.drugB);
       }
       const title = riskLabel(item.title, t);
       // With structured factors the range bar already says it, translated.
@@ -58,7 +60,9 @@ export function itemText(item: DashboardActionItem, t: (key: string) => string):
       const test = friendlyTestName(item.test_name, t);
       const extra = (item.worsened_test_count ?? 1) - 1;
       return extra > 0
-        ? t("dashboard.actionItems.deterioratingTestMore").replace("{test}", test).replace("{count}", String(extra))
+        ? t("dashboard.actionItems.deterioratingTestMore")
+            .replace("{test}", test)
+            .replace("{count}", String(extra))
         : t("dashboard.actionItems.deterioratingTest").replace("{test}", test);
     }
     case "lab":
@@ -145,7 +149,8 @@ function factorText(factor: RiskFactor, t: (key: string) => string): string {
 }
 
 function explanationFor(item: DashboardActionItem, t: (key: string) => string): string | null {
-  const key = item.rule_code && item.rule_code !== "drug_interaction" ? `risk.explain.${item.rule_code}` : null;
+  const key =
+    item.rule_code && item.rule_code !== "drug_interaction" ? `risk.explain.${item.rule_code}` : null;
   return key && t(key) !== key ? t(key) : null;
 }
 
@@ -168,28 +173,42 @@ function SignalDetails({ item }: { item: DashboardActionItem }) {
     .replace("{last}", fmt(trend[trend.length - 1]?.value ?? 0));
 
   return (
-    <div className="mt-1 flex min-w-0 flex-col gap-1 pl-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
-      {factors.map((factor) => (
-        <RangeBar key={factor.test} factor={factor} text={factorText(factor, t)} />
-      ))}
-      {trend.length >= 2 && (
-        <MiniTrend values={trend.map((point) => point.value)} lastTone={trendTone} label={trendLabel} />
-      )}
-      {(explanation || recurrence) && (
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-[11px] leading-tight">
-          {explanation && <span className="text-ink/80">{explanation}</span>}
-          {recurrence && (
-            <span className="whitespace-nowrap rounded-full bg-primary-soft px-2 py-0.5 font-semibold text-primary">
-              {t("dashboard.signal.activeSince").replace("{when}", relativeTime(recurrence.active_since, lang))}
-              {recurrence.prior_count > 0 && (
-                <span aria-label={t("dashboard.signal.recurredAria").replace("{count}", String(recurrence.prior_count))}>
-                  {` · ↻ ${recurrence.prior_count}`}
+    <div className="detail-in ml-6 mt-1.5 min-w-0">
+      <div className="min-w-0 overflow-hidden">
+        <div className="space-y-2 rounded-xl bg-line/20 p-3">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4">
+            {factors.map((factor) => (
+              <RangeBar key={factor.test} factor={factor} text={factorText(factor, t)} />
+            ))}
+            {trend.length >= 2 && (
+              <MiniTrend values={trend.map((point) => point.value)} lastTone={trendTone} label={trendLabel} />
+            )}
+          </div>
+          {(explanation || recurrence) && (
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-snug">
+              {explanation && <span className="text-muted">{explanation}</span>}
+              {recurrence && (
+                <span className="whitespace-nowrap rounded-full bg-primary-soft px-2 py-0.5 font-semibold text-primary">
+                  {t("dashboard.signal.activeSince").replace(
+                    "{when}",
+                    relativeTime(recurrence.active_since, lang)
+                  )}
+                  {recurrence.prior_count > 0 && (
+                    <span
+                      aria-label={t("dashboard.signal.recurredAria").replace(
+                        "{count}",
+                        String(recurrence.prior_count)
+                      )}
+                    >
+                      {` · ↻ ${recurrence.prior_count}`}
+                    </span>
+                  )}
                 </span>
               )}
-            </span>
+            </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -209,9 +228,12 @@ function SignalRow({ item, defaultOpen = false }: { item: DashboardActionItem; d
         size={14}
         className={`shrink-0 ${item.severity === "critical" || item.severity === "high" ? "text-danger" : "text-warning"}`}
       />
-      <span className="min-w-0 flex-1 truncate text-xs leading-tight text-muted">{itemText(item, t)}</span>
+      <span className="min-w-0 flex-1 line-clamp-2 text-xs leading-snug text-muted">{itemText(item, t)}</span>
       {when && item.occurred_at && (
-        <time dateTime={item.occurred_at} className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-muted">
+        <time
+          dateTime={item.occurred_at}
+          className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-muted"
+        >
           {when}
         </time>
       )}
@@ -225,7 +247,7 @@ function SignalRow({ item, defaultOpen = false }: { item: DashboardActionItem; d
           onClick={() => setOpen(!open)}
           aria-expanded={open}
           title={open ? t("dashboard.signal.hideDetail") : t("dashboard.signal.showDetail")}
-          className="flex w-full min-w-0 items-center gap-2.5 rounded text-left transition-colors hover:bg-primary-soft/40"
+          className="flex w-full min-w-0 items-center gap-2.5 rounded-lg py-0.5 text-left transition-colors hover:bg-primary-soft/40"
         >
           {line}
           <ChevronDown
@@ -290,7 +312,9 @@ export default function ActionItemsList({
                 <SignalRow
                   key={`${item.category}-${j}`}
                   item={item}
-                  defaultOpen={group.severity === "critical" && j === group.items.findIndex((it) => hasDetails(it, t))}
+                  defaultOpen={
+                    group.severity === "critical" && j === group.items.findIndex((it) => hasDetails(it, t))
+                  }
                 />
               ))}
             </ul>

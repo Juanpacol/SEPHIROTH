@@ -6,7 +6,7 @@ import { riskLabel } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 import StatusPill from "@/components/status-pill";
 
-const MAX_VISIBLE = 6;
+const MAX_VISIBLE = 5;
 
 /** Patients per active problem, across every patient (SPEC-031 B-13, B-14).
  * Bars are proportional to the largest one; the count is always written out,
@@ -20,7 +20,6 @@ export default function RuleSummaryChart({ summary }: { summary: DashboardRuleSu
   if (summary.rules.length === 0) {
     return <p className="text-sm text-muted">{t("dashboard.ruleSummary.empty")}</p>;
   }
-  const max = Math.max(...summary.rules.map((rule) => rule.count));
   const visible = showAll ? summary.rules : summary.rules.slice(0, MAX_VISIBLE);
   const hidden = summary.rules.length - visible.length;
 
@@ -43,24 +42,22 @@ export default function RuleSummaryChart({ summary }: { summary: DashboardRuleSu
                 onClick={() => setOpen(expanded ? null : rule.rule_code)}
                 aria-expanded={expanded}
                 aria-label={`${label}: ${countText}`}
-                className="tap flex w-full min-w-0 flex-col gap-1 rounded-lg px-1.5 py-1.5 text-left transition-colors hover:bg-primary-soft/40"
+                className="tap flex w-full min-w-0 items-center gap-2 rounded-lg px-1.5 py-1.5 text-left text-sm transition-colors hover:bg-primary-soft/40"
               >
-                <span className="flex w-full min-w-0 items-center gap-2 text-sm">
-                  <Icon size={14} className={`shrink-0 ${high ? "text-danger" : "text-warning"}`} aria-hidden />
-                  <span className="min-w-0 flex-1 truncate">{label}</span>
-                  <span className="shrink-0 font-bold text-ink">{rule.count}</span>
-                  <ChevronDown
-                    size={14}
-                    aria-hidden
-                    className={`shrink-0 text-muted transition-transform ${expanded ? "rotate-180" : ""}`}
-                  />
+                <Icon size={14} className={`shrink-0 ${high ? "text-danger" : "text-warning"}`} aria-hidden />
+                <span className="min-w-0 flex-1 truncate">{label}</span>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${
+                    high ? "bg-danger/15 text-danger" : "bg-warning/15 text-warning"
+                  }`}
+                >
+                  {rule.count}
                 </span>
-                <span className="block h-2 w-full rounded-[4px] bg-line/50" aria-hidden>
-                  <span
-                    className={`block h-full rounded-[4px] ${high ? "bg-danger" : "bg-warning"}`}
-                    style={{ width: `${(rule.count / max) * 100}%`, minWidth: "6px" }}
-                  />
-                </span>
+                <ChevronDown
+                  size={14}
+                  aria-hidden
+                  className={`shrink-0 text-muted transition-transform ${expanded ? "rotate-180" : ""}`}
+                />
               </button>
               {expanded && (
                 <ul className="mb-1 ml-6 mt-0.5 divide-y divide-line/60">

@@ -156,7 +156,15 @@ const ACTION_ITEMS = [
     detail: "Potassium 6.4 mmol/L, up from 5.1 in 48 hours.",
     occurred_at: iso(0, 7),
     rule_code: "hyperkalemia",
-    factors: [{ test: "potassium", value: 6.4, comparator: ">" as const, threshold: 5.5, unit: "mEq/L" }],
+    factors: [
+      {
+        test: "potassium",
+        value: 6.4,
+        comparator: ">" as const,
+        threshold: 5.5,
+        unit: "mEq/L",
+      },
+    ],
     trend: [
       { value: 4.8, taken_at: iso(-4) },
       { value: 5.1, taken_at: iso(-2) },
@@ -175,7 +183,15 @@ const ACTION_ITEMS = [
     unit: "",
     occurred_at: iso(-1),
     rule_code: "supratherapeutic_inr",
-    factors: [{ test: "inr", value: 4.8, comparator: ">" as const, threshold: 3.5, unit: "" }],
+    factors: [
+      {
+        test: "inr",
+        value: 4.8,
+        comparator: ">" as const,
+        threshold: 3.5,
+        unit: "",
+      },
+    ],
     trend: [
       { value: 2.6, taken_at: iso(-6) },
       { value: 3.1, taken_at: iso(-3) },
@@ -192,7 +208,6 @@ const ACTION_ITEMS = [
     occurred_at: iso(-12),
   },
 ];
-
 
 const APPOINTMENTS = [
   {
@@ -378,6 +393,86 @@ const DASHBOARD_ACTION_ITEMS = {
 /** Longest-prefix wins, so ordering here is irrelevant. */
 const ROUTES: Record<string, unknown> = {
   "/api/dashboard/stats": DASHBOARD_STATS,
+  "/api/dashboard/vitals": {
+    abnormal_patient_count: 2,
+    patients_with_vitals: 5,
+    patients: [
+      {
+        patient_id: "p-001",
+        patient_name: "María Fernanda Restrepo Villegas",
+        measured_at: new Date(Date.now() - 26 * 3600_000).toISOString().replace("Z", ""),
+        severity: "high",
+        findings: [
+          {
+            key: "oxygen_saturation",
+            label: "Saturación de oxígeno",
+            unit: "%",
+            value: 86,
+            display: "86 %",
+            severity: "high",
+            low: 94,
+            high: 100,
+            previous: { value: 95, at: null },
+          },
+          {
+            key: "heart_rate",
+            label: "Frecuencia cardíaca",
+            unit: "lpm",
+            value: 118,
+            display: "118 lpm",
+            severity: "medium",
+            low: 60,
+            high: 100,
+            previous: { value: 88, at: null },
+          },
+        ],
+      },
+      {
+        patient_id: "p-002",
+        patient_name: "Juan Esteban Ocampo",
+        measured_at: new Date(Date.now() - 3 * 86400_000).toISOString().replace("Z", ""),
+        severity: "medium",
+        findings: [
+          {
+            key: "systolic",
+            label: "Presión sistólica",
+            unit: "mmHg",
+            value: 148,
+            display: "148 mmHg",
+            severity: "medium",
+            low: 90,
+            high: 130,
+            previous: null,
+          },
+        ],
+      },
+    ],
+  },
+  "/api/dashboard/alerts": {
+    active_count: 6,
+    new_count: 3,
+    critical_count: 2,
+    pending_review_count: 4,
+    resolved_count: 9,
+    avg_review_seconds: 2400,
+    recent: [],
+  },
+  "/api/dashboard/evolution": {
+    deteriorating: [],
+    improving: [],
+    no_change: [],
+    deteriorating_count: 3,
+    improving_count: 2,
+    no_change_count: 7,
+    new_risk_factors_count: 1,
+  },
+  "/api/dashboard/medications": {
+    interaction_count: 5,
+    contraindication_count: 2,
+    high_risk_medication_count: 4,
+    dose_anomaly_count: 1,
+    polypharmacy_patient_count: 3,
+  },
   "/api/dashboard/action-items": DASHBOARD_ACTION_ITEMS,
   "/api/dashboard/rule-summary": {
     total_patients: PATIENTS.length,
@@ -389,7 +484,11 @@ const ROUTES: Record<string, unknown> = {
         count: 2,
         patients: [
           { id: "p-001", name: PATIENTS[0].name, risk_level: "high" as const },
-          { id: "p-002", name: PATIENTS[1].name, risk_level: "medium" as const },
+          {
+            id: "p-002",
+            name: PATIENTS[1].name,
+            risk_level: "medium" as const,
+          },
         ],
       },
       {
@@ -397,7 +496,13 @@ const ROUTES: Record<string, unknown> = {
         label: "Supratherapeutic INR",
         severity: "high" as const,
         count: 1,
-        patients: [{ id: "p-002", name: PATIENTS[1].name, risk_level: "medium" as const }],
+        patients: [
+          {
+            id: "p-002",
+            name: PATIENTS[1].name,
+            risk_level: "medium" as const,
+          },
+        ],
       },
       {
         rule_code: "drug_interaction",
@@ -421,12 +526,44 @@ const ROUTES: Record<string, unknown> = {
     helpful_ratio: 0.75,
     pending_review_count: 2,
     auto_graded_count: 5,
-    auto_grade_averages: { grounding: 4.2, completeness: 3.8, safety: 4.6, abstention: 4.0 },
+    auto_grade_averages: {
+      grounding: 4.2,
+      completeness: 3.8,
+      safety: 4.6,
+      abstention: 4.0,
+    },
   },
   // What /dashboard actually fetches; without it the page renders "backend down".
   "/api/dashboard/bootstrap": {
     stats: DASHBOARD_STATS,
-    agenda: { date: iso(0).slice(0, 10), count: 0, next_at: null, items: [] },
+    agenda: {
+      date: iso(0).slice(0, 10),
+      count: 3,
+      next_at: iso(0).slice(0, 11) + "14:30:00",
+      items: [
+        {
+          id: "a1",
+          start_at: iso(0).slice(0, 11) + "09:00:00",
+          end_at: iso(0).slice(0, 11) + "09:30:00",
+          patient_name: "Lucía Gómez",
+          reason: "Seguimiento hipertensión",
+        },
+        {
+          id: "a2",
+          start_at: iso(0).slice(0, 11) + "14:30:00",
+          end_at: iso(0).slice(0, 11) + "15:00:00",
+          patient_name: "Juan Esteban Ocampo",
+          reason: "Control de INR",
+        },
+        {
+          id: "a3",
+          start_at: iso(0).slice(0, 11) + "16:00:00",
+          end_at: iso(0).slice(0, 11) + "16:30:00",
+          patient_name: "Mohamed Ahmed",
+          reason: "Revisión de laboratorios",
+        },
+      ],
+    },
     action_items: DASHBOARD_ACTION_ITEMS,
   },
   "/api/patients": PATIENTS,
@@ -478,7 +615,11 @@ const ROUTES: Record<string, unknown> = {
     medications: ["Lisinopril 10 mg daily", "Spironolactone 25 mg daily", "Metformin 1 g twice daily"],
     allergies: ["Penicillin"],
     timeline: PATIENT_TIMELINE,
-    lab_results: { Potassium: "6.4 mmol/L", Creatinine: "2.1 mg/dL", HbA1c: "8.2 %" },
+    lab_results: {
+      Potassium: "6.4 mmol/L",
+      Creatinine: "2.1 mg/dL",
+      HbA1c: "8.2 %",
+    },
     risk_flags: [
       {
         source: "lab" as const,
@@ -496,9 +637,30 @@ const ROUTES: Record<string, unknown> = {
         test_name: "potassium",
         unit: "mmol/L",
         entries: [
-          { value: 6.4, taken_at: iso(-1), is_abnormal: true, is_critical: true, reference_low: 3.5, reference_high: 5.1 },
-          { value: 5.1, taken_at: iso(-30), is_abnormal: false, is_critical: false, reference_low: 3.5, reference_high: 5.1 },
-          { value: 4.8, taken_at: iso(-60), is_abnormal: false, is_critical: false, reference_low: 3.5, reference_high: 5.1 },
+          {
+            value: 6.4,
+            taken_at: iso(-1),
+            is_abnormal: true,
+            is_critical: true,
+            reference_low: 3.5,
+            reference_high: 5.1,
+          },
+          {
+            value: 5.1,
+            taken_at: iso(-30),
+            is_abnormal: false,
+            is_critical: false,
+            reference_low: 3.5,
+            reference_high: 5.1,
+          },
+          {
+            value: 4.8,
+            taken_at: iso(-60),
+            is_abnormal: false,
+            is_critical: false,
+            reference_low: 3.5,
+            reference_high: 5.1,
+          },
         ],
         // Reviewed and told: the full line (decision, who, when, told).
         result_id: 101,
@@ -515,14 +677,28 @@ const ROUTES: Record<string, unknown> = {
         test_name: "sodium",
         unit: "mmol/L",
         entries: [
-          { value: 139, taken_at: iso(-3), is_abnormal: false, is_critical: false, reference_low: 135, reference_high: 145 },
+          {
+            value: 139,
+            taken_at: iso(-3),
+            is_abnormal: false,
+            is_critical: false,
+            reference_low: 135,
+            reference_high: 145,
+          },
         ],
       },
       {
         test_name: "ldl",
         unit: "mg/dL",
         entries: [
-          { value: 162, taken_at: iso(-5), is_abnormal: true, is_critical: false, reference_low: null, reference_high: 100 },
+          {
+            value: 162,
+            taken_at: iso(-5),
+            is_abnormal: true,
+            is_critical: false,
+            reference_low: null,
+            reference_high: 100,
+          },
         ],
         // Received and not reviewed yet. Sodium below has no review at all.
         result_id: 103,
@@ -539,7 +715,14 @@ const ROUTES: Record<string, unknown> = {
         test_name: "bp_systolic",
         unit: "mmHg",
         entries: [
-          { value: 150, taken_at: iso(-2), is_abnormal: true, is_critical: false, reference_low: 90, reference_high: 140 },
+          {
+            value: 150,
+            taken_at: iso(-2),
+            is_abnormal: true,
+            is_critical: false,
+            reference_low: 90,
+            reference_high: 140,
+          },
         ],
       },
     ],
@@ -559,7 +742,10 @@ const ROUTES: Record<string, unknown> = {
     allergies: ["Penicillin"],
   },
   "/api/portal/timeline": { patient_id: "p-001", events: TIMELINE },
-  "/api/portal/labs": { patient_id: "p-001", labs: [PORTAL_LAB, PORTAL_LAB_NORMAL] },
+  "/api/portal/labs": {
+    patient_id: "p-001",
+    labs: [PORTAL_LAB, PORTAL_LAB_NORMAL],
+  },
   "/api/encounters/vitals/spec": {
     vitals: [
       {
@@ -687,7 +873,13 @@ const ROUTES: Record<string, unknown> = {
     amendment_reason: "",
     clinical_note_id: null,
     orders: [
-      { id: "o-1", kind: "lab" as const, detail: "Basic metabolic panel", due_in_days: 1, task_id: null },
+      {
+        id: "o-1",
+        kind: "lab" as const,
+        detail: "Basic metabolic panel",
+        due_in_days: 1,
+        task_id: null,
+      },
     ],
     template: { subjective: "", objective: "", assessment: "", plan: "" },
   },
@@ -703,7 +895,10 @@ const ROUTES: Record<string, unknown> = {
 
 export function bodyFor(pathname: string): unknown | undefined {
   const match = Object.keys(ROUTES)
-    .filter((prefix) => pathname === prefix || pathname.startsWith(prefix + "/") || pathname.startsWith(prefix + "?"))
+    .filter(
+      (prefix) =>
+        pathname === prefix || pathname.startsWith(prefix + "/") || pathname.startsWith(prefix + "?")
+    )
     .sort((a, b) => b.length - a.length)[0];
   return match === undefined ? undefined : ROUTES[match];
 }
@@ -717,8 +912,16 @@ export async function mockApi(page: Page): Promise<void> {
       // An empty 200 rather than a 404: an unmocked endpoint should leave the
       // page rendering, so the failure that surfaces is the missing fixture in
       // the diff and not a cascade of error banners.
-      return route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: "[]",
+      });
     }
-    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(body),
+    });
   });
 }

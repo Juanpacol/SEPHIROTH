@@ -14,11 +14,14 @@ export default function AccentTitle({
   accentWords = 2,
   as: Tag = "h2",
   className = "",
+  accentClass = ACCENT_BLUE,
 }: {
   text: string;
   accentWords?: number;
   as?: "h1" | "h2" | "h3";
   className?: string;
+  /** Colour of the accent words; the app passes a theme-aware one, the always-dark landing keeps the pale blue. */
+  accentClass?: string;
 }) {
   const words = text.split(" ");
   const { ref, state } = useReveal<HTMLHeadingElement>();
@@ -34,10 +37,12 @@ export default function AccentTitle({
           <Fragment key={i}>
             <span
               data-accent={accent || undefined}
-              style={{ transitionDelay: state === "shown" ? `${i * 70}ms` : "0ms" }}
+              style={{
+                transitionDelay: state === "shown" ? `${i * 70}ms` : "0ms",
+              }}
               className={`inline-block transition-[opacity,transform] duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 state === "hidden" ? "translate-y-[0.35em] opacity-0" : ""
-              } ${accent ? ACCENT_BLUE : ""}`}
+              } ${accent ? accentClass : ""}`}
             >
               {word}
             </span>{" "}

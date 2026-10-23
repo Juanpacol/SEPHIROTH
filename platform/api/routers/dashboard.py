@@ -43,7 +43,7 @@ from data.schemas import (
     WorkflowStep,
 )
 from intelligence.mcp.drug_safety_server import find_interactions
-from sephiroth.clinical.vitals import is_physiologically_plausible
+from sephiroth.clinical.vitals import VITAL_SPECS, is_physiologically_plausible, vital_findings
 from sephiroth.safety.priority import compute_priority_score
 from sephiroth.safety.risk import (
     RISK_ORDER,
@@ -270,6 +270,86 @@ async def _dashboard_alerts(session: AsyncSession) -> Dict[str, Any]:
             }
             for a in alerts[:20]
         ],
+    }
+
+
+@router.get("/vitals", summary="Patients whose latest recorded vital signs are out of range")
+async def dashboard_vitals(session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
+    return await _cached("vitals", lambda: _dashboard_vitals(session))
+
+
+_VITALS_LIMIT = 8
+
+
+async def _dashboard_vitals(session: AsyncSession) -> Dict[str, Any]:
+    """Why a patient needs attention, in the clinician's own measurements.
+
+    Per patient, the vitals of the latest signed or amended visit that recorded
+    any, with the out-of-range ones carrying their normal range and the reading
+    from the visit before. Vitals are taken at visits, not continuously, so
+    `measured_at` always travels with the numbers: a value from last month is not
+    a current one. Same rules as the encounter screen (`vital_findings`); nothing
+    here decides who is critical, it only shows what was measured."""
+    rows = (
+        await session.execute(
+            select(Encounter.patient_id, Encounter.started_at, Encounter.vitals, Patient.name)
+            .join(Patient, Patient.id == Encounter.patient_id)
+            .where(Encounter.status.in_(("signed", "amended")))
+            .order_by(Encounter.started_at.desc())
+        )
+    ).all()
+
+    visits: Dict[str, List[Any]] = {}
+    for row in rows:
+        if row.vitals:
+            visits.setdefault(row.patient_id, []).append(row)
+
+    patients: List[Dict[str, Any]] = []
+    for patient_id, patient_visits in visits.items():
+        latest = patient_visits[0]
+        findings = vital_findings(latest.vitals)
+        if not findings:
+            continue
+        out: List[Dict[str, Any]] = []
+        for f in findings:
+            spec = VITAL_SPECS[f.key]
+            previous = next(
+                (
+                    {"value": float(v.vitals[f.key]), "at": _iso(v.started_at)}
+                    for v in patient_visits[1:]
+                    if isinstance(v.vitals.get(f.key), (int, float))
+                ),
+                None,
+            )
+            out.append(
+                {
+                    "key": f.key,
+                    "label": f.label,
+                    "unit": spec.unit,
+                    "value": f.value,
+                    "display": f.display,
+                    "severity": f.severity,
+                    "low": spec.clinical[0],
+                    "high": spec.clinical[1],
+                    "previous": previous,
+                }
+            )
+        out.sort(key=lambda item: 0 if item["severity"] == "high" else 1)
+        patients.append(
+            {
+                "patient_id": patient_id,
+                "patient_name": latest.name,
+                "measured_at": _iso(latest.started_at),
+                "severity": out[0]["severity"],
+                "findings": out,
+            }
+        )
+
+    patients.sort(key=lambda p: (0 if p["severity"] == "high" else 1, -len(p["findings"])))
+    return {
+        "abnormal_patient_count": len(patients),
+        "patients_with_vitals": len(visits),
+        "patients": patients[:_VITALS_LIMIT],
     }
 
 
