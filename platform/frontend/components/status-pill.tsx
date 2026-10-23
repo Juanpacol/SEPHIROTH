@@ -27,10 +27,10 @@ const styles: Record<string, string> = {
 // Clinical severity — a pulsing dot draws the eye to HIGH risk the way a
 // monitor alarm would; medium gets a steady glow, low stays calm/static.
 const riskDots: Record<string, string> = {
-  high: "bg-danger animate-pulse shadow-[0_0_0_3px_rgba(239,68,68,0.25)]",
-  "high risk": "bg-danger animate-pulse shadow-[0_0_0_3px_rgba(239,68,68,0.25)]",
-  medium: "bg-warning shadow-[0_0_0_3px_rgba(245,158,11,0.2)]",
-  "medium risk": "bg-warning shadow-[0_0_0_3px_rgba(245,158,11,0.2)]",
+  high: "bg-danger",
+  "high risk": "bg-danger",
+  medium: "bg-warning",
+  "medium risk": "bg-warning",
   low: "bg-success",
   "low risk": "bg-success",
 };
@@ -45,7 +45,7 @@ export default function StatusPill({ label }: { label: string }) {
   const known = translated !== i18nKey;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${known ? "" : "capitalize"} ${style}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${known ? "" : "capitalize"} ${style}`}
     >
       {dot && <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} aria-hidden />}
       {known ? translated : label}

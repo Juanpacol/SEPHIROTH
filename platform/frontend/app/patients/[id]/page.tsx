@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
+  ClipboardCheck,
   FileUp,
   NotebookPen,
   Pill,
@@ -18,6 +19,10 @@ import { parseInteractionLabel, riskLabel } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 import StatusPill from "@/components/status-pill";
 import AgentBadge from "@/components/agent-badge";
+import Sheet from "@/components/ui/sheet";
+import VitalsCard from "@/components/patients/vitals-card";
+import { initialsOf } from "@/lib/initials";
+import AccentTitle from "@/components/landing/accent-title";
 import ShareResultSheet from "@/components/results/share-result-sheet";
 import InteractionCheckerCard from "@/components/patients/interaction-checker-card";
 import FollowupCard from "@/components/patients/followup-card";
@@ -46,34 +51,36 @@ function MedicationsCard({ patientId, medications }: { patientId: string; medica
 
   return (
     <div className="card">
-      <h2 className="mb-3 font-bold">{t("patientDetail.medications.title")}</h2>
+      <h2 className="eyebrow mb-3 flex items-center gap-2 text-muted">
+        <Pill size={13} className="text-primary-ink" /> {t("patientDetail.medications.title")}
+      </h2>
       <div className="mb-3 flex flex-wrap gap-1.5">
         {medications.length === 0 && (
           <p className="text-sm text-muted">{t("patientDetail.medications.none")}</p>
         )}
         {medications.map((med) => (
-          <span key={med} className="rounded-full bg-surface px-2.5 py-1 text-xs font-medium">
+          <span key={med} className="rounded-full border border-line/60 px-2.5 py-1 text-xs font-medium">
             {med}
           </span>
         ))}
       </div>
-      <div className="flex gap-2 border-t border-line/60 pt-3">
+      <div className="flex flex-wrap gap-2 border-t border-line/60 pt-3">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={t("patientDetail.medications.namePlaceholder")}
-          className="input flex-1 rounded-lg py-2"
+          className="input min-w-0 flex-1 basis-40 rounded-lg py-2"
         />
         <input
           value={dosage}
           onChange={(e) => setDosage(e.target.value)}
           placeholder={t("patientDetail.medications.dosagePlaceholder")}
-          className="input w-32 rounded-lg py-2"
+          className="input min-w-0 basis-28 rounded-lg py-2"
         />
         <button
           onClick={() => addMedication.mutate()}
           disabled={!name.trim() || addMedication.isPending}
-          className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"
+          className="btn-secondary tap w-full py-2 text-xs disabled:opacity-40"
         >
           <Pill size={13} />
           {addMedication.isPending
@@ -81,6 +88,7 @@ function MedicationsCard({ patientId, medications }: { patientId: string; medica
             : t("patientDetail.medications.prescribe")}
         </button>
       </div>
+      <InteractionCheckerCard medications={medications} embedded />
     </div>
   );
 }
@@ -92,7 +100,7 @@ function MedicationsCard({ patientId, medications }: { patientId: string; medica
 const POLL_INTERVAL_MS = 6000;
 const POLL_MAX_ATTEMPTS = 30;
 
-function AddNoteCard({ patientId }: { patientId: string }) {
+function AddNoteCard({ patientId, bare = false }: { patientId: string; bare?: boolean }) {
   const { t } = useLanguage();
   const [content, setContent] = useState("");
   const [pollState, setPollState] = useState<"idle" | "polling" | "found" | "none">("idle");
@@ -199,11 +207,13 @@ function AddNoteCard({ patientId }: { patientId: string }) {
               : "";
 
   return (
-    <div className="card">
+    <div className={bare ? "" : "card"}>
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 font-bold">
-          <NotebookPen size={16} className="text-primary" /> {t("patientDetail.notes.title")}
-        </h2>
+        {!bare && (
+          <h2 className="eyebrow flex items-center gap-2 text-muted">
+            <NotebookPen size={13} className="text-primary-ink" /> {t("patientDetail.notes.title")}
+          </h2>
+        )}
         <AgentBadge name={t("patientDetail.notes.autoTimeline")} />
       </div>
       <textarea
@@ -252,6 +262,8 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
   const router = useRouter();
   const showToast = useToast();
   const [shareOpen, setShareOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [followupOpen, setFollowupOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null);
   const { data: patient, isLoading } = useQuery({
     queryKey: ["patient", id],
@@ -291,21 +303,49 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
 
   return (
     <div className="space-y-5">
-      <div className="card flex flex-wrap items-center gap-5">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-lg font-bold text-primary">
-          {patient.name.split(" ").map((n) => n[0]).join("")}
-        </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-extrabold">{patient.name}</h1>
-          <p className="text-sm text-muted">
-            {patient.medical_record_number} · {patient.age}y · {patient.sex}
-          </p>
+      <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary-soft font-mono text-sm font-semibold tracking-wider text-primary-ink">
+            {initialsOf(patient.name)}
+          </div>
+          <div className="min-w-0">
+            <AccentTitle
+              as="h1"
+              text={patient.name}
+              accentWords={1}
+              accentClass="text-primary-ink"
+              className="text-3xl sm:text-4xl"
+            />
+            <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+              {patient.medical_record_number} · {patient.age}y · {patient.sex}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {patient.risk_level && <StatusPill label={`${patient.risk_level} risk`} />}
+              {patient.allergies.length > 0 && (
+                <>
+                  <span className="eyebrow text-muted">{t("patientDetail.snapshot.allergies")}</span>
+                  {patient.allergies.map((allergy) => (
+                    <span
+                      key={allergy}
+                      className="rounded-full bg-danger/10 px-2.5 py-0.5 text-[11px] font-semibold text-danger"
+                    >
+                      {allergy}
+                    </span>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <div className="flex flex-wrap items-center gap-2">
-            {patient.risk_level && <StatusPill label={`${patient.risk_level} risk`} />}
-            <StatusPill label={patient.status} />
-          </div>
+          <button
+            onClick={() => invitePatient.mutate()}
+            disabled={invitePatient.isPending}
+            className="nav-underline tap px-3.5 py-2 text-sm font-medium text-muted hover:text-ink"
+            title={t("patientDetail.inviteTooltip")}
+          >
+            <UserPlus size={14} className="mr-1.5 inline" /> {t("patientDetail.invitePortal")}
+          </button>
           <button
             onClick={() => startEncounter.mutate()}
             disabled={startEncounter.isPending}
@@ -313,29 +353,57 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
           >
             <Stethoscope size={15} /> {t("encounter.start")}
           </button>
-          <button
-            onClick={() => invitePatient.mutate()}
-            disabled={invitePatient.isPending}
-            className="btn-secondary tap w-full sm:w-auto"
-            title={t("patientDetail.inviteTooltip")}
-          >
-            <UserPlus size={15} /> {t("patientDetail.invitePortal")}
-          </button>
         </div>
-      </div>
+      </header>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <AddNoteCard patientId={patient.id} />
-          <FollowupCard patientId={patient.id} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {patient.risk_flags && patient.risk_flags.length > 0 && (
+              <div className="card">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="eyebrow flex items-center gap-2 text-muted">
+                    <AlertTriangle size={13} className="text-danger" /> {t("patientDetail.riskFlags.title")}
+                  </h2>
+                  <StatusPill label={patient.risk_level ?? "low"} />
+                </div>
+                <ul className="space-y-2.5">
+                  {patient.risk_flags.map((flag, i) => {
+                    const interaction = parseInteractionLabel(flag.label);
+                    const label = interaction
+                      ? `${interaction.drugA} + ${interaction.drugB}`
+                      : riskLabel(flag.label, t);
+                    return (
+                      <li key={i} title={flag.detail} className="flex items-start gap-2 text-sm">
+                        <AlertTriangle
+                          size={14}
+                          aria-hidden
+                          className={`mt-0.5 shrink-0 ${flag.severity === "high" ? "text-danger" : "text-warning"}`}
+                        />
+                        <div className="min-w-0">
+                          <div className="font-semibold">{label}</div>
+                          <div className="text-xs text-muted">{flag.detail}</div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="mt-3 text-[11px] text-muted">{t("patientDetail.riskFlags.disclaimer")}</p>
+              </div>
+            )}
+            <VitalsCard patientId={patient.id} />
+          </div>
 
           {/* Intelligent Timeline — the differentiating feature */}
           <div className="card">
-            <div className="mb-1 flex items-center justify-between">
-              <h2 className="font-bold">{t("patientDetail.timeline.title")}</h2>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <h2 className="eyebrow text-muted">{t("patientDetail.timeline.title")}</h2>
               <div className="flex items-center gap-2">
-                <button onClick={() => setShareOpen(true)} className="btn-secondary py-1.5 text-xs">
-                  <Share2 size={13} /> {t("patientDetail.timeline.share")}
+                <button
+                  onClick={() => setShareOpen(true)}
+                  className="nav-underline tap px-2.5 py-1.5 text-xs font-medium text-muted hover:text-ink"
+                >
+                  <Share2 size={12} className="mr-1.5 inline" /> {t("patientDetail.timeline.share")}
                 </button>
                 <AgentBadge name={t("patientDetail.timeline.aiOrganized")} />
               </div>
@@ -346,70 +414,40 @@ export default function PatientProfilePage({ params }: { params: { id: string } 
         </div>
 
         <div className="space-y-4">
-          {patient.risk_flags && patient.risk_flags.length > 0 && (
-            <div className="card">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="font-bold">{t("patientDetail.riskFlags.title")}</h2>
-                <StatusPill label={patient.risk_level ?? "low"} />
-              </div>
-              <ul className="space-y-2.5">
-                {patient.risk_flags.map((flag, i) => {
-                  // A drug-interaction flag's label is the formal
-                  // "Interaction: X + Y" audit-log form — shown here as
-                  // just "X + Y" since the surrounding card already says
-                  // this is a risk flag.
-                  const interaction = parseInteractionLabel(flag.label);
-                  const label = interaction ? `${interaction.drugA} + ${interaction.drugB}` : riskLabel(flag.label, t);
-                  return (
-                    <li
-                      key={i}
-                      title={flag.detail}
-                      className="flex items-start gap-2 rounded-lg p-1.5 text-sm transition-colors hover:bg-surface"
-                    >
-                      <span className="relative mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
-                        {flag.severity === "high" && (
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger/40" />
-                        )}
-                        <AlertTriangle
-                          size={15}
-                          aria-hidden
-                          className={`relative ${flag.severity === "high" ? "text-danger" : "text-warning"}`}
-                        />
-                      </span>
-                      <div>
-                        <div className="font-semibold">{label}</div>
-                        <div className="text-xs text-muted">{flag.detail}</div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="mt-3 text-xs text-muted">{t("patientDetail.riskFlags.disclaimer")}</p>
+          <div className="card">
+            <h2 className="eyebrow mb-2 text-muted">{t("patientDetail.actions.title")}</h2>
+            <div className="flex flex-col gap-1">
+              <button onClick={() => setNoteOpen(true)} className="btn-ghost tap justify-start">
+                <NotebookPen size={15} /> {t("patientDetail.notes.title")}
+              </button>
+              <button onClick={() => setFollowupOpen(true)} className="btn-ghost tap justify-start">
+                <ClipboardCheck size={15} /> {t("patientDetail.followup.title")}
+              </button>
             </div>
-          )}
-
-          <InteractionCheckerCard medications={patient.medications} />
+          </div>
 
           <LabsCard patientId={patient.id} snapshot={patient.lab_results} />
 
           <MedicationsCard patientId={patient.id} medications={patient.medications} />
-
-          <div className="card">
-            <h2 className="mb-3 font-bold">{t("patientDetail.allergies.title")}</h2>
-            {patient.allergies.length ? (
-              <div className="flex flex-wrap gap-1.5">
-                {patient.allergies.map((allergy) => (
-                  <span key={allergy} className="rounded-full bg-danger/10 px-2.5 py-1 text-xs font-medium text-danger">
-                    {allergy}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted">{t("patientDetail.allergies.none")}</p>
-            )}
-          </div>
         </div>
       </div>
+
+      <Sheet
+        open={noteOpen}
+        onClose={() => setNoteOpen(false)}
+        side="right"
+        title={t("patientDetail.notes.title")}
+      >
+        <AddNoteCard patientId={patient.id} bare />
+      </Sheet>
+      <Sheet
+        open={followupOpen}
+        onClose={() => setFollowupOpen(false)}
+        side="right"
+        title={t("patientDetail.followup.title")}
+      >
+        <FollowupCard patientId={patient.id} bare />
+      </Sheet>
 
       <ShareResultSheet open={shareOpen} onClose={() => setShareOpen(false)} patientId={patient.id} />
       <TimelineEventSheet event={selectedEvent} onClose={() => setSelectedEvent(null)} />

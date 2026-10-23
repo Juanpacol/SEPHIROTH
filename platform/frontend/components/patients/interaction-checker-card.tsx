@@ -12,7 +12,14 @@ import StatusPill from "@/components/status-pill";
  * tool the Risk Flags card's drug-interaction flags are already derived
  * from, but on demand for a med that isn't in the record yet. Explicit
  * button, not on-mount: this calls an MCP tool, don't fire it for free. */
-export default function InteractionCheckerCard({ medications }: { medications: string[] }) {
+export default function InteractionCheckerCard({
+  medications,
+  embedded = false,
+}: {
+  medications: string[];
+  /** Inside the medications card: no card of its own and no explanatory paragraph. */
+  embedded?: boolean;
+}) {
   const { t } = useLanguage();
   const [candidate, setCandidate] = useState("");
 
@@ -25,14 +32,18 @@ export default function InteractionCheckerCard({ medications }: { medications: s
   );
 
   return (
-    <div className="card">
-      <h2 className="mb-1 font-bold">{t("patientDetail.interactionChecker.title")}</h2>
-      <p className="mb-3 text-sm text-muted">
-        {medications.length
-          ? t("patientDetail.interactionChecker.subtitleWithMeds")
-          : t("patientDetail.interactionChecker.subtitleEmpty")}
-      </p>
-      <div className="flex gap-2">
+    <div className={embedded ? "mt-4 border-t border-line/60 pt-3" : "card"}>
+      <h2 className={`${embedded ? "eyebrow text-muted" : "font-bold"} mb-1`}>
+        {t("patientDetail.interactionChecker.title")}
+      </h2>
+      {!embedded && (
+        <p className="mb-3 text-sm text-muted">
+          {medications.length
+            ? t("patientDetail.interactionChecker.subtitleWithMeds")
+            : t("patientDetail.interactionChecker.subtitleEmpty")}
+        </p>
+      )}
+      <div className={`flex gap-2 ${embedded ? "mt-2" : ""}`}>
         <input
           value={candidate}
           onChange={(e) => setCandidate(e.target.value)}
@@ -66,7 +77,8 @@ export default function InteractionCheckerCard({ medications }: { medications: s
                 // isn't already in `medications`.
                 const candidateLower = candidate.trim().toLowerCase();
                 const existingDrug =
-                  interaction.pair.find((name) => name.toLowerCase() !== candidateLower) ?? interaction.pair[0];
+                  interaction.pair.find((name) => name.toLowerCase() !== candidateLower) ??
+                  interaction.pair[0];
                 const candidateDrug =
                   interaction.pair.find((name) => name.toLowerCase() === candidateLower) ?? candidate.trim();
                 return (

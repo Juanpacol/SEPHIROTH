@@ -28,7 +28,7 @@ describe("TimelineEventSheet", () => {
 
   it("shows the event's date, title and detail", () => {
     renderSheet(EVENT);
-    expect(screen.getByText(EVENT.date)).toBeInTheDocument();
+    expect(screen.getByText("May 1, 2026")).toBeInTheDocument();
     expect(screen.getByText(EVENT.title)).toBeInTheDocument();
     expect(screen.getByText(EVENT.detail)).toBeInTheDocument();
   });

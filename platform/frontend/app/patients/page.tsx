@@ -4,6 +4,9 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
+import { initialsOf } from "@/lib/initials";
+import FilterTabs from "@/components/ui/filter-tabs";
+import PageHeader from "@/components/ui/page-header";
 import { api, type PatientSummary } from "@/lib/api";
 import { plainCondition } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
@@ -12,23 +15,19 @@ import DataList, { type Column } from "@/components/ui/data-list";
 
 type RiskFilter = "all" | "high" | "medium" | "low";
 
-const RISK_FILTERS: { value: RiskFilter; labelKey: string }[] = [
+const RISK_FILTERS: { value: RiskFilter; labelKey: string; dot?: string }[] = [
   { value: "all", labelKey: "patients.filter.all" },
-  { value: "high", labelKey: "patients.filter.critical" },
-  { value: "medium", labelKey: "patients.filter.moderate" },
-  { value: "low", labelKey: "patients.filter.stable" },
+  { value: "high", labelKey: "patients.filter.critical", dot: "bg-danger" },
+  { value: "medium", labelKey: "patients.filter.moderate", dot: "bg-warning" },
+  { value: "low", labelKey: "patients.filter.stable", dot: "bg-success" },
 ];
 
-const RISK_PILL_ACTIVE: Record<RiskFilter, string> = {
-  all: "bg-primary text-white",
-  high: "bg-danger text-white",
-  medium: "bg-warning text-white",
-  low: "bg-success text-white",
-};
+const RISK_ACCENT: Record<string, string> = { high: "bg-danger", medium: "bg-warning" };
 
 export default function PatientsPage() {
   const { t } = useLanguage();
-  const sortByRisk = useSearchParams().get("sort") === "risk";
+  // Most urgent first unless the URL asks for names (`?sort=name`).
+  const sortByRisk = useSearchParams().get("sort") !== "name";
   const [search, setSearch] = useState("");
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("all");
   const { data: patients, isLoading } = useQuery({
@@ -65,10 +64,15 @@ export default function PatientsPage() {
       primary: true,
       render: (p) => (
         <span className="flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary">
-            {p.name.split(" ").map((n) => n[0]).join("")}
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft font-mono text-[11px] font-semibold tracking-wider text-primary-ink">
+            {initialsOf(p.name)}
           </span>
-          <span className="min-w-0 font-semibold text-ink">{p.name}</span>
+          <span className="min-w-0">
+            <span className="block truncate font-semibold text-ink">{p.name}</span>
+            <span className="block truncate font-mono text-[11px] tracking-wide text-muted">
+              {p.medical_record_number} · {p.age} / {p.sex}
+            </span>
+          </span>
         </span>
       ),
     },
@@ -78,26 +82,21 @@ export default function PatientsPage() {
       primary: true,
       render: (p) => (p.risk_level ? <StatusPill label={p.risk_level} /> : null),
     },
-    { key: "mrn", header: t("patients.table.mrn"), className: "text-muted", render: (p) => p.medical_record_number },
-    { key: "ageSex", header: t("patients.table.ageSex"), render: (p) => `${p.age} / ${p.sex}` },
-    { key: "status", header: t("patients.table.status"), render: (p) => <StatusPill label={p.status} /> },
     {
-      // Three stacked lines of prose is what forced the old table's
-      // `min-w-[640px]`; a phone card has no room for it.
+      // Two lines at most: a third is what made rows uneven, and the rest are one tap away on the chart.
       key: "conditions",
       header: t("patients.table.conditions"),
-      desktopOnly: true,
-      className: "max-w-xs text-muted",
+      className: "max-w-sm text-muted",
       render: (p) => (
         <>
-          {p.conditions.slice(0, 3).map((c) => (
+          {p.conditions.slice(0, 2).map((c) => (
             <div key={c} className="truncate">
               {plainCondition(c)}
             </div>
           ))}
-          {p.conditions.length > 3 && (
-            <div className="text-xs">
-              {t("criticalPatients.moreFlags").replace("{count}", String(p.conditions.length - 3))}
+          {p.conditions.length > 2 && (
+            <div className="font-mono text-[11px]">
+              {t("patients.table.moreConditions").replace("{count}", String(p.conditions.length - 2))}
             </div>
           )}
         </>
@@ -106,38 +105,38 @@ export default function PatientsPage() {
   ];
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-extrabold">{t("patients.title")}</h1>
-        <p className="text-sm text-muted">{t("patients.subtitle")}</p>
-      </div>
+    <div className="space-y-4">
+      <PageHeader
+        eyebrow={t("patients.eyebrow")}
+        title={t("patients.title")}
+        subtitle={t("patients.subtitle")}
+      />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="relative w-full sm:min-w-[220px] sm:flex-1">
-          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <FilterTabs
+          label={t("patients.filter.group")}
+          value={riskFilter}
+          onChange={setRiskFilter}
+          tabs={RISK_FILTERS.map((f) => ({
+            value: f.value,
+            label: t(f.labelKey),
+            count: counts[f.value],
+            dot: f.dot,
+          }))}
+        />
+        <div className="relative w-full sm:w-72">
+          <Search
+            size={14}
+            strokeWidth={1.5}
+            className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-muted"
+          />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("patients.filter.searchPlaceholder")}
-            className="input pl-9"
+            aria-label={t("patients.filter.searchPlaceholder")}
+            className="w-full border-0 border-b border-line/60 bg-transparent py-2 pl-6 pr-1 text-sm text-ink transition-colors duration-normal placeholder:text-muted focus:border-primary-ink focus-visible:!outline-none"
           />
-        </div>
-        {/* A swipeable strip on a phone rather than a wrapping block: four
-            pills wrapping to two rows push the table down a third of the
-            screen. The negative margin lets it bleed to the screen edge so it
-            reads as scrollable. */}
-        <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
-          {RISK_FILTERS.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setRiskFilter(f.value)}
-              className={`tap shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                riskFilter === f.value ? RISK_PILL_ACTIVE[f.value] : "bg-surface text-muted hover:text-primary"
-              }`}
-            >
-              {t(f.labelKey)} · {counts[f.value]}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -146,6 +145,7 @@ export default function PatientsPage() {
         columns={columns}
         rowKey={(p) => p.id}
         onRowHref={(p) => `/patients/${p.id}`}
+        rowAccent={(p) => (p.risk_level ? RISK_ACCENT[p.risk_level] : null)}
         isLoading={isLoading}
         loadingLabel={t("patients.loading")}
         emptyLabel={t("patients.filter.empty")}

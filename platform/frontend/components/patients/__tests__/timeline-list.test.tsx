@@ -18,17 +18,18 @@ function renderList(events: TimelineEvent[], onSelect = vi.fn()) {
   render(
     <LanguageProvider>
       <TimelineList events={events} onSelect={onSelect} />
-    </LanguageProvider>,
+    </LanguageProvider>
   );
   return onSelect;
 }
 
-const titles = () => screen.getAllByRole("listitem").map((li) => li.querySelector(".font-semibold")?.textContent);
+const titles = () =>
+  screen.getAllByRole("listitem").map((li) => li.querySelector(".font-semibold")?.textContent);
 
 describe("TimelineList", () => {
-  it("shows only the most recent events, still oldest-to-newest", () => {
+  it("shows only the most recent events, newest first", () => {
     renderList(makeEvents(12));
-    expect(titles()).toEqual(["Event 8", "Event 9", "Event 10", "Event 11", "Event 12"]);
+    expect(titles()).toEqual(["Event 12", "Event 11", "Event 10", "Event 9", "Event 8"]);
     expect(TIMELINE_COLLAPSED_COUNT).toBe(5);
   });
 
@@ -49,13 +50,13 @@ describe("TimelineList", () => {
 
     fireEvent.click(toggle);
     expect(titles()).toHaveLength(12);
-    expect(titles()[0]).toBe("Event 1");
-    expect(titles()[11]).toBe("Event 12");
+    expect(titles()[0]).toBe("Event 12");
+    expect(titles()[11]).toBe("Event 1");
     const less = screen.getByRole("button", { name: "Show less" });
     expect(less).toHaveAttribute("aria-expanded", "true");
 
     fireEvent.click(less);
-    expect(titles()).toEqual(["Event 8", "Event 9", "Event 10", "Event 11", "Event 12"]);
+    expect(titles()).toEqual(["Event 12", "Event 11", "Event 10", "Event 9", "Event 8"]);
     expect(screen.getByRole("button", { name: "Show 7 earlier events" })).toBeInTheDocument();
   });
 
@@ -94,7 +95,7 @@ describe("TimelineList", () => {
     const { rerender } = render(
       <LanguageProvider>
         <TimelineList events={events} onSelect={vi.fn()} />
-      </LanguageProvider>,
+      </LanguageProvider>
     );
     rerender(
       <LanguageProvider>
@@ -102,9 +103,9 @@ describe("TimelineList", () => {
           events={[...events, { date: "2026-02-01", type: "note", title: "Brand new note", detail: "" }]}
           onSelect={vi.fn()}
         />
-      </LanguageProvider>,
+      </LanguageProvider>
     );
-    expect(titles()).toEqual(["Event 5", "Event 6", "Event 7", "Event 8", "Brand new note"]);
+    expect(titles()).toEqual(["Brand new note", "Event 8", "Event 7", "Event 6", "Event 5"]);
     expect(screen.getByRole("button", { name: "Show 4 earlier events" })).toBeInTheDocument();
   });
 });
