@@ -5,7 +5,11 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme, type Theme } from "@/lib/theme";
 import { useLanguage } from "@/lib/language";
 
-const OPTIONS: { value: Theme; icon: typeof Sun; labelKey: "common.light" | "common.dark" }[] = [
+const OPTIONS: {
+  value: Theme;
+  icon: typeof Sun;
+  labelKey: "common.light" | "common.dark";
+}[] = [
   { value: "light", icon: Sun, labelKey: "common.light" },
   { value: "dark", icon: Moon, labelKey: "common.dark" },
 ];
@@ -47,7 +51,11 @@ function useThemeRevealTransition() {
       .then(() => {
         document.documentElement.animate(
           { clipPath: [clipFrom, clipTo] },
-          { duration: 400, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }
+          {
+            duration: 400,
+            easing: "ease-in-out",
+            pseudoElement: "::view-transition-new(root)",
+          }
         );
       })
       .catch(() => {});
@@ -55,7 +63,13 @@ function useThemeRevealTransition() {
 }
 
 /** iOS-style segmented control for Light/Dark plus a language toggle, used in Topbar, landing nav, and the profile page. */
-export default function ThemeToggle({ className = "" }: { className?: string }) {
+export default function ThemeToggle({
+  className = "",
+  bare = false,
+}: {
+  className?: string;
+  bare?: boolean;
+}) {
   const [theme, setTheme] = useTheme();
   const reveal = useThemeRevealTransition();
   const { lang, setLang, t } = useLanguage();
@@ -68,6 +82,40 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
     const appearanceChanges = resolvesDark(value) !== document.documentElement.classList.contains("dark");
     reveal(e.currentTarget, appearanceChanges, () => setTheme(value));
   };
+
+  if (bare) {
+    // The top bar's version: no pill, the current theme is the one with a line under it, and the
+    // language reads like the landing's switch (mono, wide-tracked).
+    return (
+      <div className={`inline-flex items-center gap-0.5 ${className}`}>
+        {OPTIONS.map(({ value, icon: Icon, labelKey }) => (
+          <button
+            key={value}
+            onClick={(e) => select(e, value)}
+            aria-label={t(labelKey)}
+            aria-pressed={theme === value}
+            title={t(labelKey)}
+            data-here={theme === value ? "" : undefined}
+            className={`icon-link tap ${theme === value ? "!text-ink" : ""}`}
+          >
+            <Icon size={16} strokeWidth={1.5} />
+          </button>
+        ))}
+        <button
+          onClick={() => setLang(lang === "en" ? "es" : "en")}
+          aria-label={t("common.toggleLanguage")}
+          title={lang === "en" ? "English" : "Español"}
+          className="tap ml-1 inline-flex items-center gap-1.5 rounded-full px-2 font-mono text-[11px] font-semibold tracking-[0.18em]"
+        >
+          <span className={lang === "en" ? "text-ink" : "text-muted"}>EN</span>
+          <span aria-hidden className="text-muted/60">
+            /
+          </span>
+          <span className={lang === "es" ? "text-ink" : "text-muted"}>ES</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className={`inline-flex items-center gap-0.5 rounded-full bg-primary-soft p-1 ${className}`}>

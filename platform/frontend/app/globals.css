@@ -198,11 +198,83 @@ input:-webkit-autofill:focus {
   .nav-group-label {
     @apply eyebrow px-3 pt-5 pb-1 text-muted;
   }
+  /* A destination in the rail, set like the landing's header: mono capitals, a thin icon, and no filled
+     pill. The current one has a short line drawn at its edge; the one under the pointer gets the same
+     line under its text that grows from the left (`.nav-underline`). */
   .nav-item {
-    @apply flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-ink/70 transition-colors hover:bg-primary-soft hover:text-primary;
+    @apply relative flex items-center gap-3 rounded-lg py-2.5 pl-4 pr-3 font-mono text-[11.5px] font-medium uppercase leading-5 tracking-[0.14em] text-muted transition-colors duration-normal ease-standard hover:text-ink;
+  }
+  .nav-item svg {
+    @apply shrink-0 transition-[transform,color] duration-normal ease-standard;
+    stroke-width: 1.5;
+  }
+  .nav-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 22%;
+    bottom: 22%;
+    width: 2px;
+    border-radius: 2px;
+    background: rgb(var(--color-primary-ink));
+    transform: scaleY(0);
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .nav-item::after {
+    content: "";
+    position: absolute;
+    left: 2.9rem;
+    right: 0.75rem;
+    bottom: 0.4rem;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.5;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 220ms cubic-bezier(0, 0, 0.2, 1);
   }
   .nav-item-active {
-    @apply bg-primary-soft text-primary;
+    @apply text-ink;
+  }
+  .nav-item-active::before {
+    transform: scaleY(1);
+  }
+  .nav-item-active svg {
+    @apply text-primary-ink;
+  }
+  @media (hover: hover) {
+    .nav-item:hover::after {
+      transform: scaleX(1);
+    }
+    .nav-item:hover svg {
+      @apply text-primary-ink;
+      transform: translateX(2px);
+    }
+  }
+  /* A bare icon button in the top bar: no disc behind it, a thin line draws under it instead. */
+  .icon-link {
+    @apply relative inline-flex items-center justify-center rounded-full p-2 text-muted transition-colors duration-normal ease-standard hover:text-ink;
+  }
+  .icon-link::after {
+    content: "";
+    position: absolute;
+    left: 0.55rem;
+    right: 0.55rem;
+    bottom: 0.2rem;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 220ms cubic-bezier(0, 0, 0.2, 1);
+  }
+  .icon-link:focus-visible::after,
+  .icon-link[data-here]::after {
+    transform: scaleX(1);
+  }
+  @media (hover: hover) {
+    .icon-link:hover::after {
+      transform: scaleX(1);
+    }
   }
   /* Sephiroth accent — marks AI-generated content */
   .ai-ring {

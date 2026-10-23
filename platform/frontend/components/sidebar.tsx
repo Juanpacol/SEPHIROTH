@@ -11,28 +11,30 @@ import { useLanguage } from "@/lib/language";
 import NavLinks from "@/components/nav-links";
 import NavUserCard from "@/components/nav-user-card";
 import WingMark from "@/components/brand/wing-mark";
+import Wordmark from "@/components/landing/wordmark";
 
 export default function Sidebar() {
   const user = useUser();
   const { t } = useLanguage();
 
   return (
-    <aside className="glass-surface sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-line/60 px-3 py-5 md:flex">
-      <Link href={user ? homeFor(user.role) : "/dashboard"} className="flex items-center gap-2 px-3">
-        <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-primary-soft text-primary">
-          <WingMark size={18} />
-        </span>
-        <span className="text-[15px] font-bold tracking-tight">SEPHIROTH</span>
+    <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-line/40 px-3 py-5 md:flex">
+      <Link
+        href={user ? homeFor(user.role) : "/dashboard"}
+        className="group/brand flex items-center gap-2.5 px-3"
+      >
+        <WingMark size={20} className="text-primary-ink" />
+        <Wordmark className="text-[21px] tracking-[0.16em]" />
       </Link>
 
       {user?.role !== "patient" && (
-        <div className="mt-5 flex items-center gap-2 rounded-2xl border border-line/70 px-3 py-2 text-sm text-muted">
-          <Search size={15} />
+        <div className="mt-6 flex items-center gap-2.5 border-b border-line/60 px-3 pb-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+          <Search size={14} strokeWidth={1.5} />
           <span>{t("nav.search")}</span>
         </div>
       )}
 
-      <NavLinks className="mt-2 flex-1" />
+      <NavLinks className="mt-1 flex-1" />
 
       <NavUserCard />
     </aside>
