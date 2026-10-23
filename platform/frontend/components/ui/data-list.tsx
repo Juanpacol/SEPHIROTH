@@ -36,6 +36,7 @@ export default function DataList<T>({
   columns,
   rowKey,
   onRowHref,
+  rowAccent,
   isLoading = false,
   loadingLabel,
   emptyLabel,
@@ -51,6 +52,9 @@ export default function DataList<T>({
    * columns render their own interactive content, since the row-wide overlay
    * sits above the other cells. */
   onRowHref?: (row: T) => string;
+  /** A background class (e.g. `bg-danger`) for a short line at the row's left edge, so a state can be
+   * scanned down the list without reading it. Table shape only. */
+  rowAccent?: (row: T) => string | null | undefined;
   isLoading?: boolean;
   loadingLabel: string;
   emptyLabel: string;
@@ -122,15 +126,23 @@ export default function DataList<T>({
             </tr>
           </thead>
           <tbody>
-            {items.map((row) => {
+            {items.map((row, rowIndex) => {
               const href = onRowHref?.(row);
+              const accent = rowAccent?.(row);
               return (
                 <tr
                   key={rowKey(row)}
-                  className={`border-b border-line/40 last:border-0 hover:bg-surface/60 ${href ? "relative" : ""}`}
+                  style={{ animationDelay: `${Math.min(rowIndex, 12) * 35}ms` }}
+                  className={`group/row animate-fadeIn border-b border-line/40 transition-colors duration-normal [animation-fill-mode:both] last:border-0 hover:bg-primary-soft/30 ${href ? "relative" : ""}`}
                 >
                   {columns.map((col, index) => (
-                    <td key={col.key} className={`px-5 py-3.5 ${col.className ?? ""}`}>
+                    <td key={col.key} className={`relative px-5 py-3.5 ${col.className ?? ""}`}>
+                      {accent && index === 0 && (
+                        <span
+                          aria-hidden
+                          className={`absolute inset-y-2.5 left-0 w-0.5 rounded-full ${accent}`}
+                        />
+                      )}
                       {href && index === 0 ? (
                         <a href={href} className="after:absolute after:inset-0 after:content-['']">
                           {col.render(row)}

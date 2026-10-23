@@ -46,11 +46,14 @@ function ReviewLine({ row, patientId }: { row: LabRow; patientId: string }) {
   if (!review) return null;
   const date = (iso: string) => new Date(iso).toLocaleDateString(lang);
   const urgent = review.status === "received" && row.status === "critical";
+  // The review and the telling often happen the same day; say the date once.
+  const reviewedOn = review.reviewed_at ? date(review.reviewed_at) : null;
+  const toldOn = review.communicated_at ? date(review.communicated_at) : null;
   const details = [
     review.disposition ? t(`results.disposition.${review.disposition}`) : null,
     review.reviewed_by,
-    review.reviewed_at ? date(review.reviewed_at) : null,
-    review.communicated_at ? t("labs.review.told").replace("{date}", date(review.communicated_at)) : null,
+    reviewedOn && reviewedOn !== toldOn ? reviewedOn : null,
+    toldOn ? t("labs.review.told").replace("{date}", toldOn) : null,
   ].filter(Boolean);
   const filter = review.status === "closed" ? "closed" : "open";
 
@@ -94,7 +97,7 @@ export default function LabsCard({
 
   const rows = useMemo(
     () => buildLabRows(data, snapshot, (name) => friendlyTestName(name, t)),
-    [data, snapshot, t],
+    [data, snapshot, t]
   );
 
   const date = (iso: string) => new Date(iso).toLocaleDateString(lang);
@@ -111,7 +114,7 @@ export default function LabsCard({
   return (
     <div className="card" data-testid="labs-card">
       <div className="mb-1 flex items-center justify-between gap-3">
-        <h2 className="min-w-0 font-bold">{t("labs.card.title")}</h2>
+        <h2 className="eyebrow min-w-0 text-muted">{t("labs.card.title")}</h2>
         <button type="button" onClick={() => setRecording(true)} className="btn-ghost tap shrink-0 text-sm">
           {t("recordLab.open")}
         </button>
@@ -142,7 +145,9 @@ export default function LabsCard({
                     <span>
                       {row.hasHistory && row.takenAt
                         ? `${date(row.takenAt)}${
-                            row.readings.length > 1 ? ` · ${row.readings.length} ${t("labs.card.readings")}` : ""
+                            row.readings.length > 1
+                              ? ` · ${row.readings.length} ${t("labs.card.readings")}`
+                              : ""
                           }`
                         : t("labs.card.noHistory")}
                     </span>
@@ -166,7 +171,9 @@ export default function LabsCard({
                 </div>
                 <MiniTrend
                   values={row.readings.map((r) => r.value)}
-                  lastTone={row.status === "critical" ? "danger" : row.status === "normal" ? "neutral" : "warning"}
+                  lastTone={
+                    row.status === "critical" ? "danger" : row.status === "normal" ? "neutral" : "warning"
+                  }
                   label={`${name}: ${row.readings.map((r) => `${r.value} (${date(r.takenAt)})`).join(" → ")}`}
                 />
                 <ReviewLine row={row} patientId={patientId} />

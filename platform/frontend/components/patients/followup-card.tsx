@@ -7,7 +7,7 @@ import { api, type FollowupPlan } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import { useToast } from "@/components/ui/toast";
 
-export default function FollowupCard({ patientId }: { patientId: string }) {
+export default function FollowupCard({ patientId, bare = false }: { patientId: string; bare?: boolean }) {
   const { t } = useLanguage();
   const [instructions, setInstructions] = useState("");
   const queryClient = useQueryClient();
@@ -37,12 +37,14 @@ export default function FollowupCard({ patientId }: { patientId: string }) {
   const activePlan: FollowupPlan | undefined = plans?.[0];
 
   return (
-    <div className="card">
-      <div className="mb-1 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 font-bold">
-          <ClipboardCheck size={16} className="text-primary" /> {t("patientDetail.followup.title")}
-        </h2>
-      </div>
+    <div className={bare ? "" : "card"}>
+      {!bare && (
+        <div className="mb-1 flex items-center justify-between">
+          <h2 className="eyebrow flex items-center gap-2 text-muted">
+            <ClipboardCheck size={13} className="text-primary-ink" /> {t("patientDetail.followup.title")}
+          </h2>
+        </div>
+      )}
       <p className="mb-3 text-xs text-muted">{t("patientDetail.followup.subtitle")}</p>
 
       {activePlan ? (
