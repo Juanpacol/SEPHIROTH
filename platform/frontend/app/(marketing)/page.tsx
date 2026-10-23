@@ -18,7 +18,7 @@ import AuthRedirectGate from "@/components/landing/auth-redirect-gate";
 import ScrollEffects from "@/components/landing/scroll-effects";
 import AnswerCard from "@/components/landing/answer-card";
 import FeatureShowcase from "@/components/landing/feature-showcase";
-import HowItWorksStory from "@/components/landing/how-it-works-story";
+import AnswerAnatomy from "@/components/landing/answer-anatomy";
 import TrustCarousel from "@/components/landing/trust-carousel";
 import ChapterStrip from "@/components/landing/chapter-strip";
 import { TextAnimate } from "@/components/magicui/text-animate";
@@ -90,7 +90,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How it works: the five stages of a consultation, told while you scroll */}
+      {/* How it works: one answer taken apart, each step pinned to the part it is about */}
       <section id="how-it-works" className="scroll-mt-24">
         <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
           <span className="eyebrow text-primary-ink">{t("marketing.howItWorks.eyebrow")}</span>
@@ -99,7 +99,7 @@ export default function LandingPage() {
           </h2>
           <p className="mt-6 max-w-2xl text-lg text-muted">{t("marketing.howItWorks.body")}</p>
           <div className="mt-12 md:mt-16">
-            <HowItWorksStory />
+            <AnswerAnatomy />
           </div>
         </div>
       </section>

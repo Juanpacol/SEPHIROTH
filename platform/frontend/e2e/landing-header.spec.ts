@@ -122,9 +122,7 @@ test.describe("phone", () => {
       "Set up your portal account",
     );
     await expect(sheet.getByRole("navigation", { name: "Open source" })).toContainText("Documentation");
-    await expect(sheet.getByRole("navigation", { name: "Product" })).toContainText(
-      "Five steps from a question",
-    );
+    await expect(sheet.getByRole("navigation", { name: "Product" })).toContainText("One answer taken apart");
   });
 
   test("choosing a place closes the sheet", async ({ page }) => {

@@ -33,7 +33,7 @@ test.describe("landing: the page holds still", () => {
     // walkthrough to move through three of its stages.
     await page.waitForTimeout(1500);
 
-    const headings = ["Features", "The same workup", "How we keep it fro"];
+    const headings = ["Features", "An answer, taken apart", "How we keep it fro"];
     const seen = await sample(page, headings, 7000);
 
     for (const name of headings) {

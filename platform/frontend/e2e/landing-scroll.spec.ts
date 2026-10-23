@@ -188,40 +188,17 @@ test.describe("features", () => {
     expect(Math.abs(frames[0].w - frames[1].w)).toBeLessThanOrEqual(1);
   });
 
-  test("a picture drifts inside its frame as you scroll, and never leaves a gap", async ({ page }) => {
-    test.skip(page.viewportSize()!.width < 768, "checked on tablet and wider");
-    const img = page.locator("#feature-see [data-parallax]");
-    await img.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(900);
-
-    const shift = async () =>
-      parseFloat(await img.evaluate((el) => getComputedStyle(el).getPropertyValue("--py-img") || "0"));
-    const first = await shift();
-    await page.evaluate(() => window.scrollBy(0, 220));
-    await page.waitForTimeout(900);
-    const second = await shift();
-
-    expect(second).not.toBe(first);
-    const { frame, picture } = await img.evaluate((el) => ({
-      frame: el.closest("[data-parallax-frame]")!.getBoundingClientRect(),
-      picture: el.getBoundingClientRect(),
-    }));
-    expect(picture.top).toBeLessThanOrEqual(frame.top + 0.5);
-    expect(picture.bottom).toBeGreaterThanOrEqual(frame.bottom - 0.5);
-  });
-
-  test("the See cell shows the example studies one after another, and the strip and gallery are gone", async ({
+  test("the pictures stay where they are: nothing drifts and the See cell does not cycle", async ({
     page,
   }) => {
     const see = page.locator("#feature-see");
     await see.scrollIntoViewIfNeeded();
     await page.waitForTimeout(600);
 
+    await expect(page.locator("#features [data-parallax]")).toHaveCount(0);
     const first = await see.locator("[data-slide='current']").getAttribute("src");
-    await expect
-      .poll(() => see.locator("[data-slide='current']").getAttribute("src"), { timeout: 9000 })
-      .not.toBe(first);
-
+    await page.waitForTimeout(4500);
+    expect(await see.locator("[data-slide='current']").getAttribute("src")).toBe(first);
     await expect(see.locator("[data-slide-label]")).toHaveText(/·/);
     await expect(page.getByText("Every modality, one imaging pipeline")).toHaveCount(0);
     await expect(page.locator(".animate-marquee")).toHaveCount(0);
