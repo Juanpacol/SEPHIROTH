@@ -87,7 +87,7 @@ export default function ShareResultSheet({
               <div className="text-xs text-muted">{selected.date}</div>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold">{t("shareResult.message")}</label>
+              <label className="eyebrow mb-1 block text-muted">{t("shareResult.message")}</label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -97,7 +97,7 @@ export default function ShareResultSheet({
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-semibold">{t("shareResult.attachment")}</label>
+              <label className="eyebrow mb-1 block text-muted">{t("shareResult.attachment")}</label>
               <input
                 type="file"
                 accept="application/pdf,image/png,image/jpeg"

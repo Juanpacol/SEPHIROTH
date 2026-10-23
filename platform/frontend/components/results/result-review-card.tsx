@@ -19,18 +19,13 @@ import { type Disposition, type ResultReview } from "@/lib/api";
 import { plainResultSummary } from "@/lib/clinical-text";
 import { useLanguage } from "@/lib/language";
 
-const DISPOSITIONS: Disposition[] = [
-  "normal",
-  "abnormal_expected",
-  "action_taken",
-  "needs_patient_contact",
-];
+const DISPOSITIONS: Disposition[] = ["normal", "abnormal_expected", "action_taken", "needs_patient_contact"];
 
 const SEVERITY_TONE: Record<ResultReview["severity"], string> = {
-  critical: "bg-danger text-white",
-  abnormal: "bg-warning/20 text-ink",
-  unclassified: "bg-surface text-ink/70",
-  normal: "bg-surface text-ink/60",
+  critical: "bg-danger/15 text-danger",
+  abnormal: "bg-warning/15 text-warning",
+  unclassified: "bg-line/30 text-muted",
+  normal: "bg-success/10 text-success",
 };
 
 interface Props {
@@ -65,7 +60,7 @@ export default function ResultReviewCard({
 }: Props) {
   const { t } = useLanguage();
   const [disposition, setDisposition] = useState<Disposition>(
-    review.disposition ?? (review.severity === "normal" ? "normal" : "action_taken"),
+    review.disposition ?? (review.severity === "normal" ? "normal" : "action_taken")
   );
   const [note, setNote] = useState(review.note);
 
@@ -78,24 +73,25 @@ export default function ResultReviewCard({
     <article className="card flex flex-col gap-3">
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-xs text-ink/50">{review.patient_name ?? review.patient_id}</p>
-          <p className="text-sm font-medium">{plainResultSummary(review.result, review.severity, t)}</p>
-          <p className="text-xs text-ink/40">{resultLine(review)} · {review.classification_reason}</p>
+          <p className="eyebrow text-muted">{review.patient_name ?? review.patient_id}</p>
+          <p className="mt-0.5 font-semibold">{plainResultSummary(review.result, review.severity, t)}</p>
+          <p className="mt-0.5 text-xs text-muted">
+            {resultLine(review)} · {review.classification_reason}
+          </p>
         </div>
         <span
-          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${SEVERITY_TONE[review.severity]}`}
+          className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${SEVERITY_TONE[review.severity]}`}
         >
           {t(`results.severity.${review.severity}`)}
         </span>
       </header>
 
-      <ol className="flex flex-wrap items-center gap-1.5 text-xs text-ink/50">
+      <ol className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
         {(["received", "reviewed", "communicated", "closed"] as const).map((step, index) => {
-          const reached =
-            ["received", "reviewed", "communicated", "closed"].indexOf(review.status) >= index;
+          const reached = ["received", "reviewed", "communicated", "closed"].indexOf(review.status) >= index;
           return (
             <li key={step} className={reached ? "font-medium text-ink" : ""}>
-              {index > 0 ? <span className="mr-1.5 text-ink/30">→</span> : null}
+              {index > 0 ? <span className="mr-1.5 text-muted/50">→</span> : null}
               {t(`results.step.${step}`)}
             </li>
           );
@@ -105,11 +101,11 @@ export default function ResultReviewCard({
       {review.status === "received" ? (
         <div className="flex flex-col gap-2 border-t border-line/60 pt-3">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-ink/70">{t("results.decision")}</span>
+            <span className="eyebrow text-muted">{t("results.decision")}</span>
             <select
               value={disposition}
               onChange={(event) => setDisposition(event.target.value as Disposition)}
-              className="tap rounded-lg border border-line bg-card px-3 py-2 text-sm"
+              className="input tap rounded-lg py-2"
             >
               {DISPOSITIONS.map((option) => (
                 <option key={option} value={option}>
@@ -119,14 +115,14 @@ export default function ResultReviewCard({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-ink/70">
+            <span className="eyebrow text-muted">
               {noteRequired ? t("results.noteRequired") : t("results.noteOptional")}
             </span>
             <textarea
               rows={2}
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              className="w-full rounded-lg border border-line bg-card px-3 py-2 text-sm"
+              className="input rounded-lg py-2"
             />
           </label>
           <button
@@ -141,10 +137,10 @@ export default function ResultReviewCard({
       ) : (
         <div className="border-t border-line/60 pt-3 text-sm">
           <p>
-            <span className="text-ink/60">{t("results.decision")}: </span>
+            <span className="text-muted">{t("results.decision")}: </span>
             {review.disposition ? t(`results.disposition.${review.disposition}`) : "—"}
           </p>
-          {review.note ? <p className="text-ink/80">{review.note}</p> : null}
+          {review.note ? <p className="text-ink/90">{review.note}</p> : null}
         </div>
       )}
 
@@ -157,12 +153,7 @@ export default function ResultReviewCard({
 
       <footer className="flex flex-wrap gap-2">
         {review.needs_communication ? (
-          <button
-            type="button"
-            onClick={onCommunicate}
-            disabled={busy}
-            className="btn-secondary tap"
-          >
+          <button type="button" onClick={onCommunicate} disabled={busy} className="btn-secondary tap">
             <MessageSquare className="mr-1.5 inline h-3.5 w-3.5" aria-hidden />
             {t("results.communicate")}
           </button>
@@ -183,7 +174,7 @@ export default function ResultReviewCard({
 
         {review.status === "closed" ? (
           <>
-            <span className="flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 text-xs">
+            <span className="flex items-center gap-1.5 rounded-full border border-line/60 px-3 py-1 text-xs text-muted">
               <Lock className="h-3.5 w-3.5" aria-hidden />
               {t("results.step.closed")}
             </span>

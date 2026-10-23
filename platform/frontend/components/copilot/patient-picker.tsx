@@ -18,11 +18,14 @@ export default function PatientPicker({
   value,
   onChange,
   noneLabel,
+  placement = "up",
 }: {
   patients: PickerPatient[];
   value: string;
   onChange: (id: string) => void;
   noneLabel: string;
+  /** Which way the list opens: `up` in the chat's composer, `down` in a page's filter row. */
+  placement?: "up" | "down";
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -72,7 +75,7 @@ export default function PatientPicker({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
-        className="tap flex max-w-full items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-xs font-medium text-ink/90 transition-colors duration-normal hover:border-white/30 hover:bg-white/10"
+        className="tap flex max-w-full items-center gap-1.5 rounded-full border border-line/70 px-3 py-1.5 text-xs font-medium text-ink/90 transition-colors duration-normal hover:border-primary-ink/60 hover:bg-primary-soft/30"
       >
         <User size={13} strokeWidth={1.5} className="shrink-0 text-primary-ink" aria-hidden />
         <span className="min-w-0 truncate">{current.name}</span>
@@ -88,7 +91,7 @@ export default function PatientPicker({
           id={listId}
           role="listbox"
           aria-activedescendant={undefined}
-          className="absolute bottom-full left-0 z-10 mb-2 max-h-56 min-w-[12rem] max-w-[min(20rem,80vw)] animate-fadeIn overflow-y-auto rounded-2xl border border-white/15 bg-[#1a2358]/95 p-1.5 shadow-raised-lg backdrop-blur-md"
+          className={`absolute left-0 z-10 max-h-56 min-w-[12rem] max-w-[min(20rem,80vw)] animate-fadeIn overflow-y-auto rounded-2xl border border-line/60 bg-card p-1.5 shadow-raised-lg ${placement === "up" ? "bottom-full mb-2" : "top-full mt-2"}`}
         >
           {options.map((o) => {
             const selected = o.id === value;
@@ -109,7 +112,7 @@ export default function PatientPicker({
                     close(true);
                   }
                 }}
-                className={`tap flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors duration-normal hover:bg-white/10 focus-visible:!outline-none focus-visible:bg-white/10 ${
+                className={`tap flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors duration-normal hover:bg-primary-soft/50 focus-visible:!outline-none focus-visible:bg-primary-soft/50 ${
                   selected ? "text-primary-ink" : "text-ink/90"
                 }`}
               >

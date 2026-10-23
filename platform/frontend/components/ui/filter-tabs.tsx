@@ -23,11 +23,25 @@ export default function FilterTabs<T extends string>({
   /** Names the group for assistive technology. */
   label: string;
 }) {
+  const move = (delta: number) => {
+    const index = tabs.findIndex((tab) => tab.value === value);
+    if (index === -1) return;
+    onChange(tabs[(index + delta + tabs.length) % tabs.length].value);
+  };
   return (
     <div
       role="tablist"
       aria-label={label}
       className="-mx-4 flex gap-1 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0"
+      onKeyDown={(e) => {
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          move(1);
+        } else if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          move(-1);
+        }
+      }}
     >
       {tabs.map((tab) => {
         const here = tab.value === value;
@@ -37,6 +51,7 @@ export default function FilterTabs<T extends string>({
             type="button"
             role="tab"
             aria-selected={here}
+            tabIndex={here ? 0 : -1}
             data-here={here ? "" : undefined}
             onClick={() => onChange(tab.value)}
             className={`nav-underline tap flex shrink-0 items-center gap-2 px-3.5 py-2 text-sm font-medium transition-colors duration-normal ease-standard ${

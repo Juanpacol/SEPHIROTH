@@ -166,7 +166,7 @@ export default function RecordLabSheet({
         }}
       >
         <div>
-          <label htmlFor="rl-test" className="mb-1 block text-sm font-semibold">
+          <label htmlFor="rl-test" className="eyebrow mb-1 block text-muted">
             {t("recordLab.test")}
           </label>
           {/* `appearance-none`: WebKit drops a native select's padding, which leaves
@@ -194,7 +194,7 @@ export default function RecordLabSheet({
 
         <div className="grid grid-cols-2 gap-3">
           <div className="min-w-0">
-            <label htmlFor="rl-value" className="mb-1 block text-sm font-semibold">
+            <label htmlFor="rl-value" className="eyebrow mb-1 block text-muted">
               {t("recordLab.value")}
             </label>
             <input
@@ -209,7 +209,7 @@ export default function RecordLabSheet({
             />
           </div>
           <div className="min-w-0">
-            <label htmlFor="rl-unit" className="mb-1 block text-sm font-semibold">
+            <label htmlFor="rl-unit" className="eyebrow mb-1 block text-muted">
               {t("recordLab.unit")}
             </label>
             <input
@@ -223,7 +223,7 @@ export default function RecordLabSheet({
         </div>
 
         <div>
-          <label htmlFor="rl-taken" className="mb-1 block text-sm font-semibold">
+          <label htmlFor="rl-taken" className="eyebrow mb-1 block text-muted">
             {t("recordLab.takenAt")}
           </label>
           <input
@@ -246,7 +246,7 @@ export default function RecordLabSheet({
         <div>
           <div className="grid grid-cols-2 gap-3">
             <div className="min-w-0">
-              <label htmlFor="rl-low" className="mb-1 block text-sm font-semibold">
+              <label htmlFor="rl-low" className="eyebrow mb-1 block text-muted">
                 {t("recordLab.low")}
               </label>
               <input
@@ -260,7 +260,7 @@ export default function RecordLabSheet({
               />
             </div>
             <div className="min-w-0">
-              <label htmlFor="rl-high" className="mb-1 block text-sm font-semibold">
+              <label htmlFor="rl-high" className="eyebrow mb-1 block text-muted">
                 {t("recordLab.high")}
               </label>
               <input

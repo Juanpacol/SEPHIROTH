@@ -19,7 +19,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type Disposition, type ResultReview } from "@/lib/api";
 import { Search } from "lucide-react";
 import { useLanguage } from "@/lib/language";
-import SegmentedControl from "@/components/ui/segmented-control";
+import FilterTabs from "@/components/ui/filter-tabs";
+import PageHeader from "@/components/ui/page-header";
+import PatientPicker from "@/components/copilot/patient-picker";
 import InformPatientSheet from "@/components/results/inform-patient-sheet";
 import ResultReviewCard from "@/components/results/result-review-card";
 import SharedResultsList from "@/components/results/shared-results-list";
@@ -38,7 +40,7 @@ export default function ResultsPage() {
   const linked = useSearchParams();
   const linkedFilter = linked.get("filter");
   const [filter, setFilter] = useState<Filter>(
-    linkedFilter === "closed" || linkedFilter === "critical" ? linkedFilter : "open",
+    linkedFilter === "closed" || linkedFilter === "critical" ? linkedFilter : "open"
   );
   const [patientId, setPatientId] = useState(linked.get("patient") ?? "");
   const [search, setSearch] = useState("");
@@ -59,7 +61,11 @@ export default function ResultsPage() {
     enabled: tab === "inbox",
   });
 
-  const patientsQuery = useQuery({ queryKey: ["patients"], queryFn: () => api.patients(), enabled: tab === "inbox" });
+  const patientsQuery = useQuery({
+    queryKey: ["patients"],
+    queryFn: () => api.patients(),
+    enabled: tab === "inbox",
+  });
 
   function settle(updated: ResultReview) {
     queryClient.invalidateQueries({ queryKey: INBOX_QUERY_KEY });
@@ -101,16 +107,17 @@ export default function ResultsPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-extrabold">{t("results.title")}</h1>
-        <p className="text-sm text-muted">{t("results.inbox.subtitle")}</p>
-      </div>
+      <PageHeader
+        eyebrow={t("patients.eyebrow")}
+        title={t("results.title")}
+        subtitle={t("results.inbox.subtitle")}
+      />
 
-      <SegmentedControl
+      <FilterTabs
         label={t("results.title")}
         value={tab}
-        onChange={(value) => setTab(value as Tab)}
-        options={[
+        onChange={setTab}
+        tabs={[
           { value: "inbox", label: t("results.tab.inbox") },
           { value: "shared", label: t("results.tab.shared") },
         ]}
@@ -120,40 +127,41 @@ export default function ResultsPage() {
         <SharedResultsList />
       ) : (
         <>
-          <SegmentedControl
-            label={t("results.filter.open")}
-            value={filter}
-            onChange={(value) => setFilter(value as Filter)}
-            options={[
-              { value: "open", label: t("results.filter.open") },
-              { value: "critical", label: t("results.filter.critical") },
-              { value: "closed", label: t("results.filter.closed") },
-            ]}
-          />
-
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <div className="relative flex-1">
-              <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t("results.search.placeholder")}
-                className="w-full rounded-lg border border-line bg-surface py-1.5 pl-8 pr-2.5 text-sm outline-none focus:border-primary"
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <FilterTabs
+              label={t("results.filter.open")}
+              value={filter}
+              onChange={setFilter}
+              tabs={[
+                { value: "open", label: t("results.filter.open") },
+                { value: "critical", label: t("results.filter.critical"), dot: "bg-danger" },
+                { value: "closed", label: t("results.filter.closed") },
+              ]}
+            />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <PatientPicker
+                placement="down"
+                patients={patientsQuery.data ?? []}
+                value={patientId}
+                onChange={setPatientId}
+                noneLabel={t("results.filter.allPatients")}
               />
+              <div className="relative w-full sm:w-64">
+                <Search
+                  size={14}
+                  strokeWidth={1.5}
+                  className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-muted"
+                />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t("results.search.placeholder")}
+                  aria-label={t("results.search.placeholder")}
+                  className="w-full border-0 border-b border-line/60 bg-transparent py-2 pl-6 pr-1 text-sm text-ink transition-colors duration-normal placeholder:text-muted focus:border-primary-ink focus-visible:!outline-none"
+                />
+              </div>
             </div>
-            <select
-              value={patientId}
-              onChange={(e) => setPatientId(e.target.value)}
-              className="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-primary sm:w-56"
-            >
-              <option value="">{t("results.filter.allPatients")}</option>
-              {(patientsQuery.data ?? []).map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
           </div>
 
           {error ? (
@@ -163,7 +171,7 @@ export default function ResultsPage() {
           ) : null}
 
           {inbox.isLoading ? (
-            <div className="h-32 animate-pulse rounded-xl bg-surface" aria-busy="true" />
+            <div className="h-32 animate-pulse rounded-card bg-line/20" aria-busy="true" />
           ) : items.length === 0 ? (
             <p className="card text-sm text-muted">{t("results.inbox.empty")}</p>
           ) : (
