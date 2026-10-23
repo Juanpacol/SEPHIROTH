@@ -6,6 +6,7 @@ import {
   footerProgress,
   heroProgress,
   heroShift,
+  pastHero,
   parallaxShift,
 } from "@/lib/scroll-effects";
 
@@ -131,5 +132,19 @@ describe("parallaxShift", () => {
 
   it("survives a frame of no height", () => {
     expect(Number.isFinite(parallaxShift({ frameTop: 100, frameHeight: 0, viewportHeight: 900 }))).toBe(true);
+  });
+});
+
+describe("pastHero", () => {
+  it("is false at the top and through most of the hero, true once it is nearly gone", () => {
+    expect(pastHero(0, 900)).toBe(false);
+    expect(pastHero(700, 900)).toBe(false);
+    expect(pastHero(766, 900)).toBe(true);
+    expect(pastHero(3000, 900)).toBe(true);
+  });
+
+  it("never shows the compact bar for the first 120px, even over a very short hero", () => {
+    expect(pastHero(100, 50)).toBe(false);
+    expect(pastHero(121, 50)).toBe(true);
   });
 });

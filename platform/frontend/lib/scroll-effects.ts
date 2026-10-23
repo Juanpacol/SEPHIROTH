@@ -65,3 +65,10 @@ export function parallaxShift(args: {
 export function damp(current: number, target: number, dt: number, rate = 9): number {
   return current + (target - current) * (1 - Math.exp(-rate * dt));
 }
+
+/** Whether the reader is past the hero, so the compact header should be shown. It comes in a
+ * little before the hero's last pixel, so it is already there when the page's first section
+ * reaches the top, and never while any of the hero's own header is still on screen. */
+export function pastHero(scrollY: number, heroHeight: number): boolean {
+  return scrollY > Math.max(120, heroHeight * 0.85);
+}

@@ -228,6 +228,35 @@ input:-webkit-autofill:focus {
 }
 
 @layer utilities {
+  /* A fine line under a link that grows from the left, 220ms: the only hover the landing
+     header has, as on the Ruby page. It stays drawn for the current item (an open menu, or
+     the section the reader is in). Hover is only drawn where the device can hover. */
+  .nav-underline {
+    position: relative;
+  }
+  .nav-underline::after {
+    content: "";
+    position: absolute;
+    left: 0.875rem;
+    right: 0.875rem;
+    bottom: 0.375rem;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 220ms cubic-bezier(0, 0, 0.2, 1);
+  }
+  .nav-underline:focus-visible::after,
+  .nav-underline[aria-expanded="true"]::after,
+  .nav-underline[data-here]::after {
+    transform: scaleX(1);
+  }
+  @media (hover: hover) {
+    .nav-underline:hover::after {
+      transform: scaleX(1);
+    }
+  }
+
   /* A navy band on a light page. It sets the dark theme's colour tokens on itself, so
      everything inside (text-ink, bg-card, text-muted, cards, buttons) renders in the
      dark palette with no per-element change, in either theme. The values are the
