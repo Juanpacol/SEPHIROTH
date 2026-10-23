@@ -114,7 +114,7 @@ export default function InformPatientSheet({
           </div>
 
           <div>
-            <label htmlFor="inform-message" className="mb-1 block text-sm font-semibold">
+            <label htmlFor="inform-message" className="eyebrow mb-1 block text-muted">
               {t("inform.message")}
             </label>
             <textarea
@@ -139,7 +139,7 @@ export default function InformPatientSheet({
 
           {available.length > 0 ? (
             <div>
-              <label htmlFor="inform-entry" className="mb-1 block text-sm font-semibold">
+              <label htmlFor="inform-entry" className="eyebrow mb-1 block text-muted">
                 {t("inform.attach")}
               </label>
               <select

@@ -105,24 +105,22 @@ export default function Sheet({
         data-state={open ? "open" : "closed"}
       >
         <div
-          className={`absolute inset-0 bg-ink/30 backdrop-blur-sm ${open ? "animate-scrim-in" : "animate-scrim-out"}`}
+          className={`absolute inset-0 bg-ink/25 backdrop-blur-[3px] ${open ? "animate-scrim-in" : "animate-scrim-out"}`}
           onClick={onClose}
           aria-hidden="true"
         />
         <div
           ref={setPanelEl}
-          className={`relative flex flex-col border-line/60 bg-card shadow-raised-lg ${
+          className={`relative flex flex-col border-line/50 bg-card shadow-raised-lg ${
             open ? motion.in : motion.out
           } ${panel}`}
         >
-          <div className="flex items-center justify-between border-b border-line/60 px-5 py-4">
-            <h2 className="text-base font-bold">{title}</h2>
-            <button
-              onClick={onClose}
-              aria-label={t("common.close")}
-              className="tap rounded-full p-1.5 text-muted hover:bg-primary-soft"
-            >
-              <X size={18} />
+          <div className="flex items-center justify-between border-b border-line/50 px-5 py-4">
+            <h2 className="font-display text-xl font-light uppercase leading-none tracking-[0.1em]">
+              {title}
+            </h2>
+            <button onClick={onClose} aria-label={t("common.close")} className="icon-link tap">
+              <X size={18} strokeWidth={1.5} />
             </button>
           </div>
           {/* `overscroll-contain` stops a flick past the end of a long sheet

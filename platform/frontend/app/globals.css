@@ -298,7 +298,7 @@ input:-webkit-autofill:focus {
     @apply btn bg-primary-fill text-white shadow-button hover:-translate-y-0.5 hover:bg-primary-dark hover:shadow-button-lift active:shadow-[inset_0_1px_4px_rgb(0_0_0/0.28)];
   }
   .btn-secondary {
-    @apply btn bg-primary-soft text-primary hover:-translate-y-0.5 hover:brightness-95 active:shadow-[inset_0_1px_3px_rgb(0_0_0/0.14)];
+    @apply btn border border-line/70 bg-transparent text-ink/90 hover:-translate-y-0.5 hover:border-primary-ink/60 hover:bg-primary-soft/40 hover:text-primary-ink active:shadow-[inset_0_1px_3px_rgb(0_0_0/0.14)];
     --btn-arc: rgb(var(--color-primary-ink) / 0.75);
   }
   .btn-ghost {
@@ -336,8 +336,10 @@ input:-webkit-autofill:focus {
       animation: btn-arc 700ms cubic-bezier(0.45, 0, 0.25, 1) 1 both;
     }
   }
+  /* A field: a fine border, no fill; focus is drawn by the border and a soft ring, never the global outline
+     (which sits outside the layers and would add a square box around a rounded field). */
   .input {
-    @apply w-full rounded-control border border-line bg-card px-4 py-2.5 text-sm text-ink placeholder:text-muted transition-colors duration-normal focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+    @apply w-full rounded-control border border-line/70 bg-transparent px-4 py-2.5 text-sm text-ink placeholder:text-muted transition-colors duration-normal hover:border-line focus:border-primary-ink focus:ring-2 focus:ring-primary-ink/20 focus-visible:!outline-none;
   }
 
   /* Cards that respond to hover/tap — the landing page's value/agent

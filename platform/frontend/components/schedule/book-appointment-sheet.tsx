@@ -81,7 +81,7 @@ export default function BookAppointmentSheet({
     <Sheet open={open} onClose={onClose} title={t("schedule.newAppointment")}>
       <div className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-semibold">{t("schedule.book.patient")}</label>
+          <label className="eyebrow mb-1 block text-muted">{t("schedule.book.patient")}</label>
           <select value={patientId} onChange={(e) => setPatientId(e.target.value)} className="input">
             <option value="">{t("schedule.book.selectPatient")}</option>
             {patients?.map((p) => (
@@ -93,7 +93,7 @@ export default function BookAppointmentSheet({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold">{t("schedule.book.date")}</label>
+          <label className="eyebrow mb-1 block text-muted">{t("schedule.book.date")}</label>
           <input
             type="date"
             value={date}
@@ -106,7 +106,7 @@ export default function BookAppointmentSheet({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold">{t("schedule.book.time")}</label>
+          <label className="eyebrow mb-1 block text-muted">{t("schedule.book.time")}</label>
           <div className="flex flex-wrap gap-2">
             {(slotsData?.slots ?? []).length === 0 && (
               <p className="text-sm text-muted">{t("schedule.book.noSlots")}</p>
@@ -135,7 +135,7 @@ export default function BookAppointmentSheet({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold">{t("schedule.book.reason")}</label>
+          <label className="eyebrow mb-1 block text-muted">{t("schedule.book.reason")}</label>
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
