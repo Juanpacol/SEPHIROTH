@@ -318,7 +318,7 @@ const EN: Record<string, string> = {
   "marketing.nav.faq": "FAQ",
   "marketing.openApp": "Open the app",
 
-  "marketing.footer.tagline": "Multi-agent AI decision support for clinicians, with the reasoning shown.",
+  "marketing.footer.tagline": "Decision support for clinicians, with the reasoning shown.",
   "marketing.footer.product": "Product",
   "marketing.footer.getStarted": "Get started",
   "marketing.footer.clinicianSignIn": "Clinician sign in",
@@ -326,7 +326,7 @@ const EN: Record<string, string> = {
 
   "marketing.hero.badge": "Research & education use — not a medical device",
   "marketing.hero.title": "Give every clinician back the minutes lost to lookups",
-  "marketing.hero.subtitle": "One question goes to the right specialist — images, medications or guidelines — and comes back cited and verified, and tells you plainly when it doesn't know — less chart-digging, more time with the patient.",
+  "marketing.hero.subtitle": "Ask one question. It goes to the right specialist and comes back cited, checked, and honest about what it does not know. Less chart-digging, more time with the patient.",
   "marketing.hero.seeHowItWorks": "See how it works",
 
   "marketing.agentName.radiology": "Image Analysis",
@@ -350,7 +350,7 @@ const EN: Record<string, string> = {
   "marketing.features.ask.alt": "An X-ray of a neck and spine with a web of fine lines drawn over it, linking the bones",
   "marketing.features.cite.verb": "Cite",
   "marketing.features.cite.title": "Every claim has a source",
-  "marketing.features.cite.body": "Answers draw on retrieved clinical guidelines and PubMed results only. A citation the model made up is removed before you see it. Sources include ADA, ACC/AHA, KDIGO, GOLD and USPSTF guidelines, and PubMed.",
+  "marketing.features.cite.body": "Answers draw only on retrieved clinical guidelines and PubMed, from ADA, ACC/AHA, KDIGO, GOLD and USPSTF among others. A citation the model invented is removed before you see it.",
   "marketing.features.cite.alt": "An annotated figure from a paper: scan slices beside a labelled diagram, with captions",
   "marketing.features.verify.verb": "Verify",
   "marketing.features.verify.title": "Checked before you read it",
@@ -406,7 +406,7 @@ const EN: Record<string, string> = {
 
   "marketing.howItWorks.eyebrow": "How it works",
   "marketing.howItWorks.title": "An answer, taken apart",
-  "marketing.howItWorks.body": "Every answer is built the same way. Point at any step to see which part of the answer it is about.",
+  "marketing.howItWorks.body": "Every answer goes through the same five steps. Point at one to see which part of the answer it shaped.",
   "marketing.anatomy.stepsLabel": "What happens to an answer",
   "marketing.anatomy.card.label": "Example answer",
   "marketing.anatomy.card.answer": "Target A1C is below 7% for most adults with type 2 diabetes, individualized by risk.",
@@ -432,17 +432,17 @@ const EN: Record<string, string> = {
 
   "marketing.faq.title": "Frequently asked",
   "marketing.faq.q1": "Is this a medical device?",
-  "marketing.faq.a1": "No. SEPHIROTH is decision support for research and education — every answer requires professional review before any clinical use.",
+  "marketing.faq.a1": "No. SEPHIROTH supports research and education. It describes and cites, it does not diagnose, and every answer needs professional review before any clinical use.",
   "marketing.faq.q2": "What data does it see?",
   "marketing.faq.a2": "Only what a clinician puts into a consultation — patient context, notes, and the query itself. See the privacy notice in the project README for exactly what leaves the machine.",
   "marketing.faq.q3": "What happens when it doesn't know?",
-  "marketing.faq.a3": "The abstention gate checks confidence and evidence support before an answer ever ships. Below its threshold, it declines instead of guessing — try the slider above.",
+  "marketing.faq.a3": "Before an answer ships, SEPHIROTH checks its confidence and the evidence behind it. Below its threshold it declines that part instead of guessing, as in the example above.",
   "marketing.faq.q4": "Where do citations come from?",
   "marketing.faq.a4": "Retrieved clinical guidelines and PubMed results only, nowhere else. Citation Guard strips anything the model added that no tool actually returned.",
   "marketing.faq.q5": "Can I audit a past answer?",
   "marketing.faq.a5": "Yes — every consultation saves a replayable execution trace: which agents ran, what they called, and how each claim was classified.",
 
-  "marketing.cta.title": "Get an hour of chart review back today",
+  "marketing.cta.title": "Less time searching, more time with patients",
   "marketing.cta.subtitle": "Sign in as a clinician to run a consultation, or set up your portal account with a claim code from your care team.",
   "marketing.cta.around": "And around the consult: a risk dashboard, appointment scheduling, the patient portal and shared results.",
 
