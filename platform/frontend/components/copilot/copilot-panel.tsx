@@ -8,20 +8,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  CheckCircle2,
-  Download,
-  Loader2,
-  Send,
-  ShieldAlert,
-  ShieldCheck,
-  X,
-} from "lucide-react";
+import { CheckCircle2, Download, Loader2, Send, ShieldAlert, ShieldCheck, X } from "lucide-react";
 import { api, type CitationReport, type Explanation, type LLMCall, type ToolCall } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import AgentBadge from "@/components/agent-badge";
 import { agentLabel } from "@/lib/agents";
+import WingMark from "@/components/brand/wing-mark";
+import PatientPicker from "@/components/copilot/patient-picker";
 import AnswerText from "@/components/copilot/answer-text";
 import AnswerRating from "@/components/answer-rating";
 import ExplainabilityPanel from "@/components/explainability-panel";
@@ -45,6 +39,8 @@ interface Exchange {
   traceId?: string;
   progress?: AgentProgress[];
   pending?: boolean;
+  /** The answer is still being written out; what hangs off it (citations, trace, rating) waits. */
+  revealing?: boolean;
   error?: string;
 }
 
@@ -68,9 +64,18 @@ interface Exchange {
  * above was verified against these exact English strings. `labelKey` is
  * only what the button displays. */
 const SUGGESTED_QUESTIONS = [
-  { query: "What blood pressure reading is considered high?", labelKey: "copilot.suggested.bloodPressure" },
-  { query: "What is the A1C target for adults with type 2 diabetes?", labelKey: "copilot.suggested.a1cTarget" },
-  { query: "Do warfarin and ibuprofen interact?", labelKey: "copilot.suggested.warfarinIbuprofen" },
+  {
+    query: "What blood pressure reading is considered high?",
+    labelKey: "copilot.suggested.bloodPressure",
+  },
+  {
+    query: "What is the A1C target for adults with type 2 diabetes?",
+    labelKey: "copilot.suggested.a1cTarget",
+  },
+  {
+    query: "Do warfarin and ibuprofen interact?",
+    labelKey: "copilot.suggested.warfarinIbuprofen",
+  },
 ];
 
 /** Token-overlap match — mirrors the >=0.5 overlap threshold Citation Guard
@@ -166,9 +171,7 @@ function PdfPreviewModal({
         </div>
 
         <div className="border-t border-line/60 p-4">
-          <p className="mb-2 eyebrow text-muted">
-            {t("copilot.includedSections")}
-          </p>
+          <p className="mb-2 eyebrow text-muted">{t("copilot.includedSections")}</p>
           <ul className="mb-4 space-y-1">
             {preview.sections.map((section) => (
               <li key={section} className="flex items-center gap-1.5 text-sm">
@@ -302,12 +305,13 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
     closePdfPreview();
   };
 
-  const { data: patients } = useQuery({ queryKey: ["patients"], queryFn: () => api.patients() });
+  const { data: patients } = useQuery({
+    queryKey: ["patients"],
+    queryFn: () => api.patients(),
+  });
 
   const patch = (update: Partial<Exchange>) =>
-    setExchanges((prev) =>
-      prev.map((e, i) => (i === prev.length - 1 ? { ...e, ...update } : e))
-    );
+    setExchanges((prev) => prev.map((e, i) => (i === prev.length - 1 ? { ...e, ...update } : e)));
 
   /** The `final` SSE event carries the whole answer in one shot — there's no
    * token-level streaming from the model to relay (see the module docstring
@@ -320,8 +324,9 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
     let shown = 0;
     const step = () => {
       shown = Math.min(shown + 3, words.length);
-      patch({ answer: words.slice(0, shown).join(" ") });
-      if (shown < words.length) setTimeout(step, 30);
+      const done = shown >= words.length;
+      patch({ answer: words.slice(0, shown).join(" "), revealing: !done });
+      if (!done) setTimeout(step, 30);
     };
     step();
   };
@@ -342,7 +347,10 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
         body: JSON.stringify({
           query: q,
           patient_id: patientId,
-          context: { ...(patient ? { conditions: patient.conditions } : {}), language: lang },
+          context: {
+            ...(patient ? { conditions: patient.conditions } : {}),
+            language: lang,
+          },
         }),
       });
       if (!res.ok || !res.body) throw new Error(`${res.status}`);
@@ -388,6 +396,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
           } else if (event.event === "final") {
             patch({
               pending: false,
+              revealing: true,
               answer: "",
               agents: event.agents_involved,
               toolCalls: event.tool_calls,
@@ -433,40 +442,43 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
         )}
         {exchanges.map((exchange, i) => (
           <div key={i} className="space-y-3">
-            <div className="ml-auto w-fit max-w-[85%] rounded-2xl bg-primary px-4 py-2.5 text-sm text-white">
+            <div className="ml-auto w-fit max-w-[85%] rounded-2xl border border-white/30 bg-white/15 px-4 py-2.5 text-sm text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.3)] backdrop-blur-sm">
               {exchange.question}
             </div>
             {/* No `ai-ring` here: its 2px #8c92ac halo read as a stray light
                 border around every answer. The AI-provenance signal that ring
                 carried (design decision #4) still ships on each answer via
                 AgentBadge, which uses the same Sephiroth gradient. */}
-            <div className="max-w-[95%] rounded-squircle bg-card p-4 text-sm shadow-raised">
+            <div className="max-w-[95%] rounded-squircle bg-card/80 p-4 text-sm ring-1 ring-white/10">
               {exchange.pending ? (
-                <div className="space-y-2">
-                  <span className="eyebrow text-muted">
-                    {t("copilot.agentsWorking")}
-                  </span>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <WingMark size={14} className="text-primary-ink motion-safe:animate-pulse" />
+                    <span className="eyebrow text-muted">{t("copilot.agentsWorking")}</span>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {exchange.progress?.map((agent) => (
                       <span
-                        key={agent.name}
+                        key={`${agent.name}-${agent.done}`}
                         role="status"
-                        className={`inline-flex animate-fadeIn items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${
-                          agent.done ? "ai-badge" : "bg-surface text-muted"
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          agent.done ? "ai-badge animate-chip-pop" : "animate-chip-in bg-surface text-muted"
                         }`}
                       >
                         {agent.done ? <CheckCircle2 size={11} /> : <ThinkingDots />}
                         {agentLabel(agent.name, t)}
-                        {agent.toolCalls.length > 0 &&
-                          ` · ${agent.toolCalls.map((t) => t.name).join(", ")}`}
+                        {agent.toolCalls.length > 0 && ` · ${agent.toolCalls.map((t) => t.name).join(", ")}`}
                       </span>
                     ))}
+                  </div>
+                  <div aria-hidden className="h-px w-full overflow-hidden rounded-full bg-white/10">
+                    <div className="h-full w-1/3 animate-sheen bg-[linear-gradient(90deg,transparent,#b6cfff,transparent)]" />
                   </div>
                 </div>
               ) : exchange.error ? (
                 <span className="text-danger">{exchange.error}</span>
               ) : (
-                <div className="space-y-3">
+                <div className="animate-answer-in space-y-3">
                   <div className="flex flex-wrap items-center gap-1.5">
                     {exchange.agents?.map((agent) => (
                       <AgentBadge key={agent} name={agentLabel(agent, t)} />
@@ -488,17 +500,22 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                     )}
                   </div>
                   <AnswerText answer={exchange.answer ?? ""} />
-                  {exchange.citations && (
-                    <CitationsPanel report={exchange.citations} toolCalls={exchange.toolCalls} />
+                  {/* What hangs off the answer waits until it has been written out, then comes in. */}
+                  {!exchange.revealing && (
+                    <div className="animate-answer-in space-y-3">
+                      {exchange.citations && (
+                        <CitationsPanel report={exchange.citations} toolCalls={exchange.toolCalls} />
+                      )}
+                      {exchange.explanation && (
+                        <ExplainabilityPanel
+                          explanation={exchange.explanation}
+                          llmCalls={exchange.llmCalls}
+                          traceId={exchange.traceId}
+                        />
+                      )}
+                      {exchange.id && <AnswerRating key={exchange.id} consultationId={exchange.id} />}
+                    </div>
                   )}
-                  {exchange.explanation && (
-                    <ExplainabilityPanel
-                      explanation={exchange.explanation}
-                      llmCalls={exchange.llmCalls}
-                      traceId={exchange.traceId}
-                    />
-                  )}
-                  {exchange.id && <AnswerRating key={exchange.id} consultationId={exchange.id} />}
                 </div>
               )}
             </div>
@@ -509,8 +526,8 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
       {/* `shrink-0`: the transcript above is `flex-1` and must give up the
           space, never the composer. */}
       <div
-        className={`flex shrink-0 cursor-text flex-col rounded-squircle bg-card shadow-raised ring-1 ring-line/70 transition-all duration-200 ${
-          inputFocused ? "ring-primary/50" : ""
+        className={`flex shrink-0 cursor-text flex-col rounded-squircle bg-card/80 ring-1 ring-white/15 backdrop-blur-sm transition-all duration-200 ${
+          inputFocused ? "!ring-primary-ink/60" : ""
         }`}
         onClick={() => textareaRef.current?.focus()}
       >
@@ -535,46 +552,30 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
           onBlur={() => setInputFocused(false)}
           placeholder={t("copilot.placeholder")}
           rows={1}
-          className="max-h-40 min-h-[44px] w-full resize-none bg-transparent px-4 pt-3 text-sm leading-relaxed outline-none placeholder:text-muted"
+          className="max-h-40 min-h-[44px] w-full resize-none bg-transparent px-4 pt-3 text-sm leading-relaxed focus-visible:!outline-none placeholder:text-muted"
         />
         <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5 pt-1.5">
-          <select
+          <PatientPicker
+            patients={patients ?? []}
             value={patientId}
-            onChange={(e) => setPatientId(e.target.value)}
-            className="rounded-full border-none bg-surface px-3 py-1.5 text-xs font-medium text-ink/70 outline-none"
-          >
-            <option value="">{t("copilot.noPatient")}</option>
-            {patients?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            onChange={setPatientId}
+            noneLabel={t("copilot.noPatient")}
+          />
           <button
             onClick={() => submit()}
             disabled={streaming || !query.trim()}
             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
-              query.trim() && !streaming
-                ? "bg-primary-soft text-primary"
-                : "bg-surface text-muted"
+              query.trim() && !streaming ? "bg-white/15 text-primary-ink" : "bg-surface/60 text-muted"
             } disabled:cursor-not-allowed`}
             aria-label={t("copilot.send")}
           >
-            {streaming ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <Send size={15} />
-            )}
+            {streaming ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
           </button>
         </div>
       </div>
 
       {pdfPreview && (
-        <PdfPreviewModal
-          preview={pdfPreview}
-          onClose={closePdfPreview}
-          onConfirm={confirmPdfDownload}
-        />
+        <PdfPreviewModal preview={pdfPreview} onClose={closePdfPreview} onConfirm={confirmPdfDownload} />
       )}
     </div>
   );
