@@ -60,15 +60,51 @@ test.describe("landing: agents and platform", () => {
 });
 
 test.describe("landing: how it works", () => {
-  test("the story has five steps and a panel that names one specialist out of three", async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
+    await page.locator("#how-it-works").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
+  });
+
+  test("an answer taken apart: five steps, and the one specialist the sample was routed to", async ({
+    page,
+  }) => {
     const section = page.locator("#how-it-works");
 
-    await expect(section.getByRole("list").first().getByRole("heading", { level: 3 })).toHaveCount(5);
-    // The first stage is the routing one, which names all three and strikes two of them.
-    const routing = section.getByText("Guidelines & Literature", { exact: true });
-    await expect(routing.first()).toBeAttached();
+    await expect(section.locator("[data-step]")).toHaveCount(5);
+    await expect(section.locator("[data-anatomy-card]")).toContainText("Guidelines & Literature");
     await expect(section.getByText(/Laboratory|Coordinator/)).toHaveCount(0);
+  });
+
+  test("pointing at a step lights the part of the answer it is about", async ({ page, hasTouch }) => {
+    const section = page.locator("#how-it-works");
+    const target = section.locator("[data-step='guard']");
+
+    if (hasTouch) await target.tap();
+    else await target.hover();
+
+    await expect(section.locator("[data-part='guard']")).toHaveAttribute("data-active", "true");
+    await expect(section.locator("[data-part='route']")).toHaveAttribute("data-active", "false");
+  });
+
+  test("changing step moves nothing below it", async ({ page }) => {
+    const section = page.locator("#how-it-works");
+    const below = () =>
+      page
+        .locator("#safeguards")
+        .evaluate((el) => Math.round(el.getBoundingClientRect().top + window.scrollY));
+    const before = await below();
+
+    for (const id of ["guard", "verify", "abstain", "write"]) {
+      await section.locator(`[data-step='${id}']`).click();
+      await page.waitForTimeout(350);
+      expect(Math.abs((await below()) - before)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test("fits the screen at every width", async ({ page }) => {
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
   });
 });

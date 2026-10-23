@@ -1,35 +1,11 @@
 /** Sample data for the landing page's interactive explanations — kept
- * here, typed, so the walkthrough script and copy stay editable in one
+ * here, typed, so the sample claims and copy stay editable in one
  * place rather than buried in JSX. None of this is live data; it's a
  * fixed script demonstrating how a real consultation flows.
  *
  * Text fields hold i18n keys (see `lib/i18n/dictionaries.{en,es}.ts`,
  * `marketing.*` scope), not literal strings — consuming components call
  * `t()` on them, same as everywhere else in the app. */
-
-export interface WalkthroughStage {
-  id: string;
-  labelKey: string;
-  render: "routing" | "specialists" | "synthesize" | "guard" | "verify";
-}
-
-export const WALKTHROUGH_STAGES: WalkthroughStage[] = [
-  { id: "route", labelKey: "marketing.walkthrough.stage.route", render: "routing" },
-  { id: "specialists", labelKey: "marketing.walkthrough.stage.specialists", render: "specialists" },
-  { id: "synthesize", labelKey: "marketing.walkthrough.stage.synthesize", render: "synthesize" },
-  { id: "guard", labelKey: "marketing.walkthrough.stage.guard", render: "guard" },
-  { id: "verify", labelKey: "marketing.walkthrough.stage.verify", render: "verify" },
-];
-
-export const SAMPLE_QUESTION_KEY = "marketing.sample.question";
-
-export const SAMPLE_SPECIALISTS = [
-  { nameKey: "marketing.agentName.evidence", findingKey: "marketing.sample.evidenceFinding" },
-];
-
-export const SAMPLE_DRAFT_KEY = "marketing.sample.draft";
-
-export const SAMPLE_GUARDED_KEY = "marketing.sample.guarded";
 
 export type ClaimState = "supported" | "partial" | "unsupported" | "contradicted" | "unknown";
 
