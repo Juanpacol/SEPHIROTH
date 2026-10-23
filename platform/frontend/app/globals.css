@@ -85,6 +85,41 @@ input:-webkit-autofill:focus {
   transition: background-color 9999s ease-in-out 0s;
 }
 
+/* Each section of the landing comes up into place as it is scrolled to, and its top rule draws itself across.
+   Both follow the scroll position (a view timeline), so they run off the main thread, stop when the reader
+   stops, and ask nothing of JavaScript. Where the browser has no view timelines the page is simply still. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .section-rise {
+      animation: section-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+    }
+    .section-rule::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 1px;
+      background: rgb(var(--color-line));
+      transform-origin: left;
+      animation: section-rule linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+@keyframes section-rise {
+  from {
+    opacity: 0.25;
+    transform: translateY(56px) scale(0.985);
+  }
+}
+@keyframes section-rule {
+  from {
+    transform: scaleX(0);
+  }
+}
+
 /* A word of the hero headline comes in: a little below, blurred, then settles. */
 @keyframes word-in {
   from {

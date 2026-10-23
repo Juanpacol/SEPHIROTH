@@ -40,8 +40,8 @@ export default function LandingPage() {
       <HeroTriptych />
 
       {/* Features: what it does, in a grid of numbered cells with a picture under each */}
-      <section id="features" className="scroll-mt-24 border-t border-line/60">
-        <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
+      <section id="features" className="section-rule relative scroll-mt-24">
+        <div className="section-rise mx-auto max-w-7xl px-6 py-24 md:py-32">
           <AccentTitle
             text={t("marketing.features.title")}
             accentWords={1}
@@ -54,8 +54,8 @@ export default function LandingPage() {
       </section>
 
       {/* How it works: one answer taken apart, each step pinned to the part it is about */}
-      <section id="how-it-works" className="scroll-mt-24 border-t border-line/60">
-        <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
+      <section id="how-it-works" className="section-rule relative scroll-mt-24">
+        <div className="section-rise mx-auto max-w-7xl px-6 py-24 md:py-32">
           <span className="eyebrow text-primary-ink">{t("marketing.howItWorks.eyebrow")}</span>
           <AccentTitle
             text={t("marketing.howItWorks.title")}
@@ -71,8 +71,8 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="scroll-mt-24 border-t border-line/60">
-        <div className="mx-auto max-w-4xl px-6 py-24 md:py-32">
+      <section id="faq" className="section-rule relative scroll-mt-24">
+        <div className="section-rise mx-auto max-w-4xl px-6 py-24 md:py-32">
           <AccentTitle text={t("marketing.faq.title")} className="text-[clamp(3rem,1rem+6vw,6.5rem)]" />
           <Reveal className="mt-12 border-t border-white/15" delay={100}>
             {FAQS.map((f) => (
@@ -96,8 +96,8 @@ export default function LandingPage() {
       </section>
 
       {/* Closing CTA */}
-      <section className="border-t border-line/60">
-        <div className="mx-auto max-w-4xl px-6 py-24 text-center md:py-32">
+      <section className="section-rule relative">
+        <div className="section-rise mx-auto max-w-4xl px-6 py-24 text-center md:py-32">
           <AccentTitle
             text={t("marketing.cta.title")}
             accentWords={3}
