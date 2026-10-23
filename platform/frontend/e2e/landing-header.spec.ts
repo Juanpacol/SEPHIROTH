@@ -62,11 +62,11 @@ test.describe("desktop menus", () => {
     await page.getByRole("button", { name: "Product" }).click();
     await page
       .locator("header")
-      .getByRole("link", { name: /Safeguards/ })
+      .getByRole("link", { name: /Agents/ })
       .click();
 
     await expect(page.locator("header").getByRole("region")).toHaveCount(0);
-    await expect(page).toHaveURL(/#safeguards$/);
+    await expect(page).toHaveURL(/#agents$/);
   });
 
   test("the header says where you are: the section in view is marked in the Product menu", async ({
