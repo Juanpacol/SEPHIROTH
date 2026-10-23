@@ -16,7 +16,7 @@ import { NAV_MENUS } from "./nav-menus";
 export default function LandingFooter() {
   const { t } = useLanguage();
   return (
-    <footer data-footer-reveal className="band-dark relative overflow-hidden border-t border-line/60">
+    <footer data-footer-reveal className="relative overflow-hidden border-t border-line/60">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 bottom-0 flex select-none justify-center overflow-hidden"

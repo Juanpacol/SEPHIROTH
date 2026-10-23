@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowUpRight, Menu } from "lucide-react";
 import WingMark from "@/components/brand/wing-mark";
-import ThemeToggle from "@/components/theme-toggle";
+import LanguageSwitch from "./language-switch";
 import Sheet from "@/components/ui/sheet";
 import CtaButton from "./cta-button";
 import Wordmark from "./wordmark";
@@ -43,15 +43,13 @@ function HeaderRow({
     >
       <Link href="/" className="group/brand flex items-center gap-2.5">
         <WingMark size={22} className="text-primary" />
-        <Wordmark className="text-xl tracking-[0.1em] sm:text-[26px] sm:tracking-[0.16em]" />
+        <Wordmark className="text-[26px] tracking-[0.16em]" />
       </Link>
 
       <NavMenuBar />
 
       <div className="flex items-center gap-2 md:gap-3">
-        {/* The toggle moves into the sheet on a phone: logo + toggle + CTA
-            together are wider than a 390px screen. */}
-        <ThemeToggle className="hidden md:inline-flex" />
+        <LanguageSwitch className="hidden md:inline-flex" />
         <CtaButton href="/login" size="sm">
           {t("marketing.openApp")}
         </CtaButton>
@@ -94,7 +92,7 @@ export default function LandingNav() {
         data-header="hero"
         {...inertWhen(compact)}
         aria-hidden={compact || undefined}
-        className="band-dark absolute inset-x-0 top-0 z-20 !bg-transparent"
+        className="absolute inset-x-0 top-0 z-20"
       >
         <HeaderRow compact={false} onMenu={() => setMenuOpen(true)} menuOpen={menuOpen} />
       </header>
@@ -105,7 +103,7 @@ export default function LandingNav() {
         data-header="compact"
         {...inertWhen(!compact)}
         aria-hidden={!compact || undefined}
-        className={`band-dark fixed inset-x-0 top-0 z-40 border-b border-line/60 !bg-surface/85 backdrop-blur-md transition-[transform,visibility] duration-300 ease-out ${
+        className={`fixed inset-x-0 top-0 z-40 border-b border-line/60 bg-surface/85 backdrop-blur-md transition-[transform,visibility] duration-300 ease-out ${
           compact ? "visible translate-y-0" : "invisible -translate-y-full"
         }`}
       >
@@ -146,7 +144,7 @@ export default function LandingNav() {
           ))}
         </div>
         <div className="mt-4 flex justify-center border-t border-line/60 pt-4">
-          <ThemeToggle />
+          <LanguageSwitch />
         </div>
       </Sheet>
     </>

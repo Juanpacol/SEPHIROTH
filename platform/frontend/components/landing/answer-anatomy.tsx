@@ -51,7 +51,7 @@ export default function AnswerAnatomy() {
       {/* The answer, as the product shows it. */}
       <div
         data-anatomy-card
-        className="band-dark rounded-[28px] border border-line/60 p-6 shadow-raised-lg md:p-8"
+        className="rounded-[28px] border border-line/60 bg-card p-6 shadow-raised-lg md:p-8"
       >
         <div className="eyebrow text-muted">{t("marketing.anatomy.card.label")}</div>
 
