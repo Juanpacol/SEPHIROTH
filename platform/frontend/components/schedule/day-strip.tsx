@@ -40,17 +40,19 @@ export default function DayStrip({
             ref={isSelected ? selectedRef : null}
             onClick={() => onSelect(day)}
             aria-current={isSelected ? "date" : undefined}
-            className={`tap w-14 shrink-0 snap-start rounded-2xl py-2 text-center transition-colors ${
-              isSelected ? "bg-primary text-white" : "bg-surface text-ink/70"
-            } ${!isSelected && key === todayKey ? "ring-1 ring-primary" : ""}`}
+            className={`tap w-14 shrink-0 snap-start rounded-2xl border py-2 text-center transition-colors duration-normal ${
+              isSelected
+                ? "border-primary-ink/60 bg-primary-soft/60 text-ink"
+                : "border-line/50 text-muted hover:border-line"
+            } ${!isSelected && key === todayKey ? "!border-primary-ink/40" : ""}`}
           >
-            <span className="eyebrow block opacity-70">
+            <span className={`eyebrow block ${isSelected ? "text-primary-ink" : ""}`}>
               {format(day, "EEE")}
             </span>
-            <span className="block text-base font-bold leading-tight">{format(day, "d")}</span>
+            <span className="block font-display text-2xl font-light leading-tight">{format(day, "d")}</span>
             <span
               className={`mx-auto mt-0.5 block h-1 w-1 rounded-full ${
-                count > 0 ? (isSelected ? "bg-white" : "bg-primary") : "bg-transparent"
+                count > 0 ? "bg-primary-ink" : "bg-transparent"
               }`}
               aria-hidden="true"
             />

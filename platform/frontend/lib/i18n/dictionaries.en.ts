@@ -662,6 +662,7 @@ const EN: Record<string, string> = {
 
   "schedule.previousWeek": "Previous week",
   "schedule.nextWeek": "Next week",
+  "schedule.weekSummary": "{count} booked this week · {today} today",
   "schedule.today": "Today",
   "schedule.workingHours": "Working hours",
   "schedule.newAppointment": "New appointment",

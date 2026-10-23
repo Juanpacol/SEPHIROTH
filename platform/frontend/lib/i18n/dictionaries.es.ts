@@ -663,6 +663,7 @@ const ES: Record<string, string> = {
 
   "schedule.previousWeek": "Semana anterior",
   "schedule.nextWeek": "Semana siguiente",
+  "schedule.weekSummary": "{count} citas esta semana · {today} hoy",
   "schedule.today": "Hoy",
   "schedule.workingHours": "Horario laboral",
   "schedule.newAppointment": "Nueva cita",

@@ -32,7 +32,7 @@ export default function DayAgenda({
 
   return (
     <div className="space-y-3">
-      <h2 className="text-sm font-bold">{format(day, "EEEE, MMMM d")}</h2>
+      <h2 className="eyebrow text-muted">{format(day, "EEEE, MMMM d")}</h2>
 
       {ordered.length === 0 ? (
         <p className="card text-sm text-muted">{t("schedule.agenda.empty")}</p>
@@ -44,9 +44,9 @@ export default function DayAgenda({
               <li key={appt.id} className="card flex gap-3 !p-4">
                 {/* `tabular-nums` so the times line up as a column even though
                     each row lays itself out independently. */}
-                <div className="shrink-0 text-sm font-bold tabular-nums text-primary">
+                <div className="shrink-0 font-display text-2xl font-light leading-none tabular-nums text-primary-ink">
                   {slotTime(appt.start_at)}
-                  <span className="block text-xs font-medium text-muted">{slotTime(appt.end_at)}</span>
+                  <span className="mt-1 block font-mono text-[11px] text-muted">{slotTime(appt.end_at)}</span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
