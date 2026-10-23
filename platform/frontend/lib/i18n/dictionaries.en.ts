@@ -303,7 +303,6 @@ const EN: Record<string, string> = {
   "marketing.nav.source": "Open source",
   "marketing.nav.source.eyebrow": "The project",
   "marketing.nav.external": "(opens in a new tab)",
-  "marketing.nav.agents.body": "Three specialists, and only the one a case needs.",
   "marketing.nav.faq.body": "Data, citations, audits, and what happens when it does not know.",
   "marketing.nav.claim.title": "Set up your portal account",
   "marketing.nav.claim.body": "Use the claim code your clinician gave you.",
@@ -316,7 +315,6 @@ const EN: Record<string, string> = {
   "marketing.nav.issues.title": "Report an issue",
   "marketing.nav.issues.body": "Something wrong or unclear? Tell us on GitHub.",
   "marketing.nav.howItWorks": "How it works",
-  "marketing.nav.agents": "Agents",
   "marketing.nav.faq": "FAQ",
   "marketing.openApp": "Open the app",
 
@@ -406,11 +404,6 @@ const EN: Record<string, string> = {
   "marketing.analysisGallery.pathology.caption": "H&E-stained tissue",
 
 
-  "marketing.chapters.title": "One specialist per question, and everything around the consult",
-  "marketing.chapters.subtitle": "Pick one to see what it does.",
-  "marketing.chapters.label": "What SEPHIROTH includes",
-  "marketing.chapters.agent": "Specialist",
-  "marketing.chapters.platform": "Platform",
   "marketing.howItWorks.eyebrow": "How it works",
   "marketing.howItWorks.title": "An answer, taken apart",
   "marketing.howItWorks.body": "Every answer is built the same way. Point at any step to see which part of the answer it is about.",
@@ -434,18 +427,7 @@ const EN: Record<string, string> = {
   "marketing.anatomy.step.abstain.body": "When the evidence is thin, it declines to answer that part instead of guessing.",
   "marketing.nav.howItWorks.body": "One answer taken apart: where it came from and what was checked.",
 
-  "marketing.agentsSection.radiology.body": "Describes medical images — modality, region, notable structures — and says plainly what is unclear. Not a diagnosis.",
-  "marketing.agentsSection.drugSafety.body": "Cross-checks a medication list against known drug-drug interactions and reports severity and what to do.",
-  "marketing.agentsSection.evidence.body": "Pulls guidelines and PubMed results — every line cited, nothing invented.",
 
-  "marketing.platform.dashboard.title": "Dashboard with risk alerts",
-  "marketing.platform.dashboard.body": "Patients prioritized by risk level, drug interactions, and out-of-range labs — computed on every read, no background jobs.",
-  "marketing.platform.scheduling.title": "Appointment scheduling",
-  "marketing.platform.scheduling.body": "Clinician availability, slot booking, and double-booking checks — without leaving the platform.",
-  "marketing.platform.portal.title": "Patient portal",
-  "marketing.platform.portal.body": "Invite-only access from the clinician — a patient sees only their own record, never anyone else's.",
-  "marketing.platform.results.title": "Shared results",
-  "marketing.platform.results.body": "Share labs and imaging with the patient and export a PDF summary.",
 
 
   "marketing.faq.title": "Frequently asked",
@@ -462,6 +444,7 @@ const EN: Record<string, string> = {
 
   "marketing.cta.title": "Get an hour of chart review back today",
   "marketing.cta.subtitle": "Sign in as a clinician to run a consultation, or set up your portal account with a claim code from your care team.",
+  "marketing.cta.around": "And around the consult: a risk dashboard, appointment scheduling, the patient portal and shared results.",
 
   "patients.title": "Patients",
   "patients.subtitle": "Detailed overview of patients under AI-assisted care",

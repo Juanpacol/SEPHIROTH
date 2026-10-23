@@ -17,7 +17,6 @@ import AuthRedirectGate from "@/components/landing/auth-redirect-gate";
 import ScrollEffects from "@/components/landing/scroll-effects";
 import FeatureShowcase from "@/components/landing/feature-showcase";
 import AnswerAnatomy from "@/components/landing/answer-anatomy";
-import ChapterStrip from "@/components/landing/chapter-strip";
 import CtaButton from "@/components/landing/cta-button";
 import HeroTriptych from "@/components/landing/hero-triptych";
 import { useLanguage } from "@/lib/language";
@@ -67,17 +66,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Agents and platform: one row to choose from, one panel that says what it is */}
-      <section id="agents" className="scroll-mt-24 border-t border-line/60">
-        <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
-          <h2 className="max-w-4xl font-display text-[clamp(2.25rem,1.5rem+3vw,4rem)] font-light leading-[1.05]">
-            {t("marketing.chapters.title")}
-          </h2>
-          <p className="mb-12 mt-6 max-w-2xl text-lg text-muted">{t("marketing.chapters.subtitle")}</p>
-          <ChapterStrip />
-        </div>
-      </section>
-
       {/* FAQ */}
       <section id="faq" className="scroll-mt-24 border-t border-line/60">
         <div className="mx-auto max-w-3xl px-6 py-24">
@@ -108,6 +96,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-3xl px-6 py-24 text-center">
           <h2 className="font-display text-display font-semibold">{t("marketing.cta.title")}</h2>
           <p className="mt-3 text-muted">{t("marketing.cta.subtitle")}</p>
+          <p className="mx-auto mt-4 max-w-2xl text-sm text-muted">{t("marketing.cta.around")}</p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <CtaButton href="/login">{t("marketing.openApp")}</CtaButton>
             <Link href="/portal/claim" className="btn-ghost">

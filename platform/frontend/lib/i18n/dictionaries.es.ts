@@ -302,7 +302,6 @@ const ES: Record<string, string> = {
   "marketing.nav.source": "Código abierto",
   "marketing.nav.source.eyebrow": "El proyecto",
   "marketing.nav.external": "(se abre en una pestaña nueva)",
-  "marketing.nav.agents.body": "Tres especialistas, y solo el que un caso necesita.",
   "marketing.nav.faq.body": "Datos, citas, auditoría y qué pasa cuando no lo sabe.",
   "marketing.nav.claim.title": "Configura tu cuenta del portal",
   "marketing.nav.claim.body": "Usa el código que te dio tu médico.",
@@ -315,7 +314,6 @@ const ES: Record<string, string> = {
   "marketing.nav.issues.title": "Reportar un problema",
   "marketing.nav.issues.body": "¿Algo mal o confuso? Cuéntanos en GitHub.",
   "marketing.nav.howItWorks": "Cómo funciona",
-  "marketing.nav.agents": "Agentes",
   "marketing.nav.faq": "Preguntas frecuentes",
   "marketing.openApp": "Abrir la app",
 
@@ -405,11 +403,6 @@ const ES: Record<string, string> = {
   "marketing.analysisGallery.pathology.caption": "Tejido teñido con H&E",
 
 
-  "marketing.chapters.title": "Un especialista por pregunta, y todo lo que rodea la consulta",
-  "marketing.chapters.subtitle": "Elige uno para ver qué hace.",
-  "marketing.chapters.label": "Qué incluye SEPHIROTH",
-  "marketing.chapters.agent": "Especialista",
-  "marketing.chapters.platform": "Plataforma",
   "marketing.howItWorks.eyebrow": "Cómo funciona",
   "marketing.howItWorks.title": "Una respuesta, desarmada",
   "marketing.howItWorks.body": "Cada respuesta se construye igual. Señala cualquier paso para ver a qué parte de la respuesta se refiere.",
@@ -433,18 +426,7 @@ const ES: Record<string, string> = {
   "marketing.anatomy.step.abstain.body": "Cuando la evidencia es escasa, se niega a responder esa parte en vez de adivinar.",
   "marketing.nav.howItWorks.body": "Una respuesta desarmada: de dónde salió y qué se comprobó.",
 
-  "marketing.agentsSection.radiology.body": "Describe imágenes médicas — modalidad, región, estructuras notables — y dice con claridad lo que no está claro. No es un diagnóstico.",
-  "marketing.agentsSection.drugSafety.body": "Cruza una lista de medicamentos con interacciones conocidas e informa la gravedad y qué hacer.",
-  "marketing.agentsSection.evidence.body": "Extrae guías y resultados de PubMed — cada línea citada, nada inventado.",
 
-  "marketing.platform.dashboard.title": "Dashboard con alertas de riesgo",
-  "marketing.platform.dashboard.body": "Pacientes priorizados por nivel de riesgo, interacciones de medicamentos y valores de laboratorio fuera de rango — calculado en cada lectura, sin trabajos en segundo plano.",
-  "marketing.platform.scheduling.title": "Agendamiento de citas",
-  "marketing.platform.scheduling.body": "Disponibilidad del clínico, reserva de horarios y control de dobles reservas — sin salir de la plataforma.",
-  "marketing.platform.portal.title": "Portal del paciente",
-  "marketing.platform.portal.body": "Acceso solo por invitación del clínico — el paciente ve su propia historia clínica, nunca la de otro.",
-  "marketing.platform.results.title": "Resultados compartidos",
-  "marketing.platform.results.body": "Comparte laboratorios e imágenes con el paciente y exporta el resumen en PDF.",
 
 
   "marketing.faq.title": "Preguntas frecuentes",
@@ -461,6 +443,7 @@ const ES: Record<string, string> = {
 
   "marketing.cta.title": "Recupera hoy una hora de revisión de historias clínicas",
   "marketing.cta.subtitle": "Inicia sesión como médico para ejecutar una consulta, o configura tu cuenta del portal con un código de invitación de tu equipo de atención.",
+  "marketing.cta.around": "Y alrededor de la consulta: dashboard de riesgo, agendamiento de citas, portal del paciente y resultados compartidos.",
 
   "patients.title": "Pacientes",
   "patients.subtitle": "Resumen detallado de pacientes bajo atención asistida por IA",

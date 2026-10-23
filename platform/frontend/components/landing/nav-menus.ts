@@ -42,12 +42,6 @@ export const NAV_MENUS: NavMenu[] = [
         bodyKey: "marketing.nav.howItWorks.body",
         section: "how-it-works",
       },
-      {
-        href: "#agents",
-        titleKey: "marketing.nav.agents",
-        bodyKey: "marketing.nav.agents.body",
-        section: "agents",
-      },
       { href: "#faq", titleKey: "marketing.nav.faq", bodyKey: "marketing.nav.faq.body", section: "faq" },
     ],
   },
