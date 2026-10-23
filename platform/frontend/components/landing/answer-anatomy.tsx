@@ -61,12 +61,28 @@ export default function AnswerAnatomy() {
       {/* The answer, as the product shows it. */}
       <div
         data-anatomy-card
-        className="relative overflow-hidden rounded-[28px] border border-white/15 shadow-raised-lg"
+        onPointerMove={(e) => {
+          // A soft light under the pointer, for devices that have one.
+          if (e.pointerType !== "mouse") return;
+          const box = e.currentTarget.getBoundingClientRect();
+          e.currentTarget.style.setProperty("--mx", `${e.clientX - box.left}px`);
+          e.currentTarget.style.setProperty("--my", `${e.clientY - box.top}px`);
+        }}
+        className="group/card relative overflow-hidden rounded-[28px] border border-white/15 shadow-raised-lg"
       >
         {/* One of the feature grid's pictures, in the same blue, behind the glass. */}
         <div aria-hidden="true" className="absolute inset-0">
           <FeatureMediaView media={BACKDROP} />
         </div>
+        <div
+          aria-hidden="true"
+          data-spotlight
+          className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-[600ms] ease-standard group-hover/card:opacity-100"
+          style={{
+            background:
+              "radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgb(120 165 250 / 0.18), transparent 70%)",
+          }}
+        />
         <div className="relative bg-surface/70 p-6 backdrop-blur-md md:p-8">
           <div className="eyebrow text-white/70">{t("marketing.anatomy.card.label")}</div>
 

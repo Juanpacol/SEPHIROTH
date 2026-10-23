@@ -15,6 +15,7 @@ import AuthRedirectGate from "@/components/landing/auth-redirect-gate";
 import ScrollEffects from "@/components/landing/scroll-effects";
 import FeatureShowcase from "@/components/landing/feature-showcase";
 import AccentTitle from "@/components/landing/accent-title";
+import Reveal from "@/components/landing/reveal";
 import AnswerAnatomy from "@/components/landing/answer-anatomy";
 import CtaButton from "@/components/landing/cta-button";
 import HeroTriptych from "@/components/landing/hero-triptych";
@@ -60,10 +61,12 @@ export default function LandingPage() {
             text={t("marketing.howItWorks.title")}
             className="mt-3 max-w-5xl text-[clamp(3rem,1rem+6vw,7rem)]"
           />
-          <p className="mt-6 max-w-2xl text-lg text-muted">{t("marketing.howItWorks.body")}</p>
-          <div className="mt-12 md:mt-16">
+          <Reveal as="p" className="mt-6 max-w-2xl text-lg text-muted">
+            {t("marketing.howItWorks.body")}
+          </Reveal>
+          <Reveal className="mt-12 md:mt-16" delay={120}>
             <AnswerAnatomy />
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -71,7 +74,7 @@ export default function LandingPage() {
       <section id="faq" className="scroll-mt-24 border-t border-line/60">
         <div className="mx-auto max-w-4xl px-6 py-24 md:py-32">
           <AccentTitle text={t("marketing.faq.title")} className="text-[clamp(3rem,1rem+6vw,6.5rem)]" />
-          <div className="mt-12 border-t border-white/15">
+          <Reveal className="mt-12 border-t border-white/15" delay={100}>
             {FAQS.map((f) => (
               <details key={f.qKey} className="group border-b border-white/15">
                 <summary className="tap flex cursor-pointer list-none items-center justify-between gap-6 py-6 [&::-webkit-details-marker]:hidden">
@@ -88,7 +91,7 @@ export default function LandingPage() {
                 <p className="max-w-2xl pb-6 text-base leading-relaxed text-muted">{t(f.aKey)}</p>
               </details>
             ))}
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -100,14 +103,16 @@ export default function LandingPage() {
             accentWords={3}
             className="text-[clamp(2.75rem,1rem+5.5vw,6rem)]"
           />
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted">{t("marketing.cta.subtitle")}</p>
-          <p className="mx-auto mt-4 max-w-2xl text-sm text-muted">{t("marketing.cta.around")}</p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Reveal delay={150}>
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-muted">{t("marketing.cta.subtitle")}</p>
+            <p className="mx-auto mt-4 max-w-2xl text-sm text-muted">{t("marketing.cta.around")}</p>
+          </Reveal>
+          <Reveal className="mt-8 flex flex-wrap items-center justify-center gap-3" delay={280}>
             <CtaButton href="/login">{t("marketing.openApp")}</CtaButton>
             <CtaButton href="/portal/claim" variant="line">
               {t("marketing.footer.patientPortalSetup")}
             </CtaButton>
-          </div>
+          </Reveal>
         </div>
       </section>
     </>
