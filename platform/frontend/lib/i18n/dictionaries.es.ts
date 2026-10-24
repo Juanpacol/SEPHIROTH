@@ -90,7 +90,8 @@ const ES: Record<string, string> = {
   "dashboard.actionItems.showMore": "Ver {count} más",
   "dashboard.actionItems.deteriorating": "Está empeorando — revisá su evolución clínica",
   "dashboard.actionItems.deterioratingTest": "Empeora en {test} — revisá su evolución clínica",
-  "dashboard.actionItems.deterioratingTestMore": "Empeora en {test} y {count} más — revisá su evolución clínica",
+  "dashboard.actionItems.deterioratingTestMore":
+    "Empeora en {test} y {count} más — revisá su evolución clínica",
   "dashboard.actionItems.lab": "{test} en nivel crítico: {value} {unit} — revisar",
   "clinical.interaction": "Posible interacción: {drugA} + {drugB} — revisar tratamiento",
   "dashboard.actionItems.imaging": "Revisar {modality} de {bodyPart} — {status}",
@@ -102,7 +103,8 @@ const ES: Record<string, string> = {
   "dashboard.actionItems.followupCheck.day7": "día 7",
   "dashboard.actionItems.followupCheck.day30": "día 30",
   "dashboard.actionItems.approval": "Hay un mensaje para el paciente esperando tu aprobación",
-  "dashboard.actionItems.approvalFollowup": "Seguimiento {check}: mensaje al paciente esperando tu aprobación",
+  "dashboard.actionItems.approvalFollowup":
+    "Seguimiento {check}: mensaje al paciente esperando tu aprobación",
   "dashboard.actionItems.decision": 'Tenés una consulta de alto riesgo sin resolver: "{query}"',
   "dashboard.actionItems.markActedOn": "Ya actué",
   "dashboard.actionItems.markingActedOn": "Guardando…",
@@ -160,8 +162,7 @@ const ES: Record<string, string> = {
   "approvals.rejected": "Rechazado.",
   "approvals.error.generateDraft": "No se pudo generar el borrador — intenta de nuevo.",
   "approvals.error.approve": "No se pudo aprobar — intenta de nuevo.",
-  "approvals.error.approveFlagged":
-    "El filtro de seguridad marcó el texto — revísalo antes de aprobar.",
+  "approvals.error.approveFlagged": "El filtro de seguridad marcó el texto — revísalo antes de aprobar.",
   "approvals.error.reject": "No se pudo rechazar — intenta de nuevo.",
   "alerts.title": "Alertas",
   "alerts.subtitle": "Alertas clínicas generadas por el motor de riesgo — revisa y luego resuelve.",
@@ -263,12 +264,14 @@ const ES: Record<string, string> = {
   "results.plain.missing": "Todavía no hay un resultado registrado.",
   "results.plain.imaging": "Estudio de {modality} de {bodyPart} — {finding}",
   "results.plain.imagingNoFinding": "sin hallazgos importantes",
-  "results.plain.unclassified": "{test}: {value}. Todavía no tenemos un rango normal registrado para este examen.",
+  "results.plain.unclassified":
+    "{test}: {value}. Todavía no tenemos un rango normal registrado para este examen.",
   "results.plain.critical": "{test} dio {value} — está fuera de un rango seguro y necesita atención pronto.",
   "results.plain.abnormal.below": "{test} dio {value}, más bajo de lo normal (rango normal: {low}–{high}).",
   "results.plain.abnormal.above": "{test} dio {value}, más alto de lo normal (rango normal: {low}–{high}).",
   "results.plain.abnormalNoRange": "{test} dio {value}, fuera del rango normal.",
-  "results.plain.normal": "{test} dio {value}, dentro del rango normal ({low}–{high}). Sin motivo de preocupación.",
+  "results.plain.normal":
+    "{test} dio {value}, dentro del rango normal ({low}–{high}). Sin motivo de preocupación.",
   "results.plain.normalNoRange": "{test} dio {value}, dentro del rango normal. Sin motivo de preocupación.",
 
   "imaging.analyzed": "Analizados",
@@ -365,47 +368,52 @@ const ES: Record<string, string> = {
 
   "marketing.hero.badge": "Uso de investigación y educación — no es un dispositivo médico",
   "marketing.hero.title": "Devuelve a cada médico los minutos perdidos en búsquedas",
-  "marketing.hero.subtitle": "Haz una pregunta. Va al especialista adecuado y vuelve citada, verificada y honesta sobre lo que no sabe. Menos tiempo revisando la historia clínica, más tiempo con el paciente.",
+  "marketing.hero.subtitle":
+    "Haz una pregunta. Va al especialista adecuado y vuelve citada, verificada y honesta sobre lo que no sabe. Menos tiempo revisando la historia clínica, más tiempo con el paciente.",
   "marketing.hero.seeHowItWorks": "Ver cómo funciona",
 
   "marketing.agentName.radiology": "Análisis de imagen",
   "marketing.agentName.drugSafety": "Interacciones medicamentosas",
   "marketing.agentName.evidence": "Guías y literatura",
 
-
-  "marketing.sample.question": "¿Qué meta de A1C es apropiada para una persona de 62 años con diabetes tipo 2?",
-
+  "marketing.sample.question":
+    "¿Qué meta de A1C es apropiada para una persona de 62 años con diabetes tipo 2?",
 
   "marketing.claim2.text": "La metformina debe suspenderse a este nivel de A1C.",
-
-
-
 
   "marketing.features.eyebrow": "Funciones",
   "marketing.features.title": "Funciones",
   "marketing.features.ask.verb": "Preguntar",
   "marketing.features.ask.title": "Una pregunta, el especialista adecuado",
-  "marketing.features.ask.body": "Imágenes, medicamentos o guías: cada pregunta va al único especialista que necesita, así una consulta de medicamentos nunca espera al análisis de imagen.",
-  "marketing.features.ask.alt": "Una radiografía de cuello y columna con una red de líneas finas dibujada encima, que une los huesos",
+  "marketing.features.ask.body":
+    "Imágenes, medicamentos o guías: cada pregunta va al único especialista que necesita, así una consulta de medicamentos nunca espera al análisis de imagen.",
+  "marketing.features.ask.alt":
+    "Una radiografía de cuello y columna con una red de líneas finas dibujada encima, que une los huesos",
   "marketing.features.cite.verb": "Citar",
   "marketing.features.cite.title": "Cada afirmación tiene una fuente",
-  "marketing.features.cite.body": "Las respuestas se basan solo en guías clínicas recuperadas y en PubMed, de ADA, ACC/AHA, KDIGO, GOLD y USPSTF, entre otras. Una cita inventada por el modelo se elimina antes de que la veas.",
-  "marketing.features.cite.alt": "Una figura anotada de un artículo: cortes de imagen junto a un diagrama con etiquetas y pies de figura",
+  "marketing.features.cite.body":
+    "Las respuestas se basan solo en guías clínicas recuperadas y en PubMed, de ADA, ACC/AHA, KDIGO, GOLD y USPSTF, entre otras. Una cita inventada por el modelo se elimina antes de que la veas.",
+  "marketing.features.cite.alt":
+    "Una figura anotada de un artículo: cortes de imagen junto a un diagrama con etiquetas y pies de figura",
   "marketing.features.verify.verb": "Verificar",
   "marketing.features.verify.title": "Revisado antes de que lo leas",
-  "marketing.features.verify.body": "Cada afirmación se clasifica como respaldada, parcial, sin respaldo, contradicha o desconocida. Si la evidencia es escasa, se niega a responder en lugar de adivinar.",
+  "marketing.features.verify.body":
+    "Cada afirmación se clasifica como respaldada, parcial, sin respaldo, contradicha o desconocida. Si la evidencia es escasa, se niega a responder en lugar de adivinar.",
   "marketing.features.verify.alt": "Un ojo que mira algo, dibujado con puntos",
   "marketing.features.see.verb": "Ver",
   "marketing.features.see.title": "Imágenes, descritas",
-  "marketing.features.see.body": "Rayos X, TAC, resonancia, ecografía y patología: un modelo de visión describe lo que se ve y dice lo que no está claro. Nunca diagnostica.",
+  "marketing.features.see.body":
+    "Rayos X, TAC, resonancia, ecografía y patología: un modelo de visión describe lo que se ve y dice lo que no está claro. Nunca diagnostica.",
   "marketing.features.see.alt": "Una radiografía de tórax, uno de los estudios de ejemplo",
   "marketing.features.follow.verb": "Seguimiento",
   "marketing.features.follow.title": "Resultados que no se pierden",
-  "marketing.features.follow.body": "Los valores de laboratorio se leen contra rangos de referencia, los críticos se marcan, y cada resultado llega a una bandeja de revisión hasta que alguien lo atiende.",
+  "marketing.features.follow.body":
+    "Los valores de laboratorio se leen contra rangos de referencia, los críticos se marcan, y cada resultado llega a una bandeja de revisión hasta que alguien lo atiende.",
   "marketing.features.follow.alt": "Un dibujo en tinta de una onda que crece y se apaga",
   "marketing.features.share.verb": "Compartir",
   "marketing.features.share.title": "El paciente siempre informado",
-  "marketing.features.share.body": "Un paciente ve un resultado solo después de que su médico se lo comunica, con una explicación sencilla. Las cuentas se crean con un código que emite el médico.",
+  "marketing.features.share.body":
+    "Un paciente ve un resultado solo después de que su médico se lo comunica, con una explicación sencilla. Las cuentas se crean con un código que emite el médico.",
   "marketing.features.share.alt": "Dos manos hechas de líneas finas, a punto de tocarse",
   "marketing.nav.features.title": "Funciones",
   "marketing.nav.features.body": "Qué hace, paso a paso.",
@@ -415,20 +423,25 @@ const ES: Record<string, string> = {
   "marketing.answer.play": "Reproducir ejemplos",
   "marketing.answer.you": "Un médico pregunta",
   "marketing.answer.guideline.tab": "Guía",
-  "marketing.answer.guideline.question": "¿Qué meta de A1C es apropiada para una persona de 62 años con diabetes tipo 2?",
-  "marketing.answer.guideline.answer": "La meta de A1C es menor de 7% para la mayoría de los adultos, individualizada según el riesgo.",
+  "marketing.answer.guideline.question":
+    "¿Qué meta de A1C es apropiada para una persona de 62 años con diabetes tipo 2?",
+  "marketing.answer.guideline.answer":
+    "La meta de A1C es menor de 7% para la mayoría de los adultos, individualizada según el riesgo.",
   "marketing.answer.guideline.claim1": "La meta de A1C es menor de 7% para la mayoría de los adultos",
   "marketing.answer.guideline.claim2": "La meta se individualiza según el riesgo",
   "marketing.answer.guideline.outcome": "Respondida · 2 de 2 afirmaciones respaldadas",
   "marketing.answer.drug.tab": "Medicamento",
   "marketing.answer.drug.question": "¿Puede tomar ibuprofeno mientras toma warfarina?",
-  "marketing.answer.drug.answer": "Evita la combinación: los AINE como el ibuprofeno aumentan el riesgo de sangrado en pacientes con warfarina.",
+  "marketing.answer.drug.answer":
+    "Evita la combinación: los AINE como el ibuprofeno aumentan el riesgo de sangrado en pacientes con warfarina.",
   "marketing.answer.drug.claim1": "El ibuprofeno y la warfarina interactúan",
   "marketing.answer.drug.claim2": "La interacción aumenta el riesgo de sangrado",
   "marketing.answer.drug.outcome": "Respondida · 2 de 2 afirmaciones respaldadas",
   "marketing.answer.decline.tab": "Se abstiene",
-  "marketing.answer.decline.question": "¿Es segura en el embarazo esta combinación de tres fármacos recién aprobados?",
-  "marketing.answer.decline.answer": "Ninguna guía ni estudio recuperado cubre esta combinación. SEPHIROTH se niega a responder en lugar de adivinar.",
+  "marketing.answer.decline.question":
+    "¿Es segura en el embarazo esta combinación de tres fármacos recién aprobados?",
+  "marketing.answer.decline.answer":
+    "Ninguna guía ni estudio recuperado cubre esta combinación. SEPHIROTH se niega a responder en lugar de adivinar.",
   "marketing.answer.decline.claim1": "Ninguna fuente respalda una afirmación de seguridad",
   "marketing.answer.decline.outcome": "Rechazada · evidencia insuficiente",
   "marketing.analysisGallery.xray.title": "Rayos X",
@@ -442,48 +455,59 @@ const ES: Record<string, string> = {
   "marketing.analysisGallery.pathology.title": "Patología",
   "marketing.analysisGallery.pathology.caption": "Tejido teñido con H&E",
 
-
   "marketing.howItWorks.eyebrow": "Cómo funciona",
   "marketing.howItWorks.title": "Una respuesta, desarmada",
-  "marketing.howItWorks.body": "Cada respuesta pasa por los mismos cinco pasos. Señala uno para ver qué parte de la respuesta marcó.",
+  "marketing.howItWorks.body":
+    "Cada respuesta pasa por los mismos cinco pasos. Señala uno para ver qué parte de la respuesta marcó.",
   "marketing.anatomy.stepsLabel": "Qué le pasa a una respuesta",
   "marketing.anatomy.card.label": "Respuesta de ejemplo",
-  "marketing.anatomy.card.answer": "La meta de A1C es menor de 7% para la mayoría de los adultos con diabetes tipo 2, individualizada según el riesgo.",
+  "marketing.anatomy.card.answer":
+    "La meta de A1C es menor de 7% para la mayoría de los adultos con diabetes tipo 2, individualizada según el riesgo.",
   "marketing.anatomy.card.cite1": "ADA Standards of Care, 2024",
   "marketing.anatomy.card.cite2": "UpToDate Diabetes Review, 2023",
   "marketing.anatomy.card.removed": "eliminada: no está en la evidencia",
   "marketing.anatomy.card.excluded": "Excluida",
-  "marketing.anatomy.card.abstain": "Intervalo de control: las fuentes recuperadas no cubren este caso, así que no se da una respuesta.",
+  "marketing.anatomy.card.abstain":
+    "Intervalo de control: las fuentes recuperadas no cubren este caso, así que no se da una respuesta.",
   "marketing.anatomy.step.route.title": "Va a un solo especialista",
-  "marketing.anatomy.step.route.body": "La pregunta se dirige al único especialista que necesita, aquí Guías y literatura. No toda pregunta necesita a los tres.",
+  "marketing.anatomy.step.route.body":
+    "La pregunta se dirige al único especialista que necesita, aquí Guías y literatura. No toda pregunta necesita a los tres.",
   "marketing.anatomy.step.write.title": "Se escribe a partir de evidencia",
-  "marketing.anatomy.step.write.body": "El especialista responde con texto de guías y resultados de PubMed recuperados, y cita lo que usó.",
+  "marketing.anatomy.step.write.body":
+    "El especialista responde con texto de guías y resultados de PubMed recuperados, y cita lo que usó.",
   "marketing.anatomy.step.guard.title": "Cada cita se comprueba",
-  "marketing.anatomy.step.guard.body": "Una cita que no coincide con algo realmente recuperado se elimina antes de que veas la respuesta.",
+  "marketing.anatomy.step.guard.body":
+    "Una cita que no coincide con algo realmente recuperado se elimina antes de que veas la respuesta.",
   "marketing.anatomy.step.verify.title": "Cada afirmación se clasifica",
-  "marketing.anatomy.step.verify.body": "Cada frase se marca como respaldada, parcial, sin respaldo, contradicha o desconocida. Una contradicha se deja fuera.",
+  "marketing.anatomy.step.verify.body":
+    "Cada frase se marca como respaldada, parcial, sin respaldo, contradicha o desconocida. Una contradicha se deja fuera.",
   "marketing.anatomy.step.abstain.title": "Si no está seguro, lo dice",
-  "marketing.anatomy.step.abstain.body": "Cuando la evidencia es escasa, se niega a responder esa parte en vez de adivinar.",
+  "marketing.anatomy.step.abstain.body":
+    "Cuando la evidencia es escasa, se niega a responder esa parte en vez de adivinar.",
   "marketing.nav.howItWorks.body": "Una respuesta desarmada: de dónde salió y qué se comprobó.",
-
-
-
 
   "marketing.faq.title": "Preguntas frecuentes",
   "marketing.faq.q1": "¿Es esto un dispositivo médico?",
-  "marketing.faq.a1": "No. SEPHIROTH apoya la investigación y la educación. Describe y cita, no diagnostica, y cada respuesta necesita revisión profesional antes de cualquier uso clínico.",
+  "marketing.faq.a1":
+    "No. SEPHIROTH apoya la investigación y la educación. Describe y cita, no diagnostica, y cada respuesta necesita revisión profesional antes de cualquier uso clínico.",
   "marketing.faq.q2": "¿Qué datos ve?",
-  "marketing.faq.a2": "Solo lo que un médico introduce en una consulta — contexto del paciente, notas y la pregunta misma. Consulta el aviso de privacidad en el README del proyecto para saber exactamente qué sale de la máquina.",
+  "marketing.faq.a2":
+    "Solo lo que un médico introduce en una consulta — contexto del paciente, notas y la pregunta misma. Consulta el aviso de privacidad en el README del proyecto para saber exactamente qué sale de la máquina.",
   "marketing.faq.q3": "¿Qué pasa cuando no lo sabe?",
-  "marketing.faq.a3": "Antes de entregar una respuesta, SEPHIROTH revisa su confianza y la evidencia que la respalda. Por debajo de su umbral se abstiene de esa parte en vez de adivinar, como en el ejemplo de arriba.",
+  "marketing.faq.a3":
+    "Antes de entregar una respuesta, SEPHIROTH revisa su confianza y la evidencia que la respalda. Por debajo de su umbral se abstiene de esa parte en vez de adivinar, como en el ejemplo de arriba.",
   "marketing.faq.q4": "¿De dónde vienen las citas?",
-  "marketing.faq.a4": "Solo de guías clínicas y resultados de PubMed recuperados, de ningún otro lugar. Citation Guard elimina cualquier cosa que el modelo agregó y que ninguna herramienta realmente devolvió.",
+  "marketing.faq.a4":
+    "Solo de guías clínicas y resultados de PubMed recuperados, de ningún otro lugar. Citation Guard elimina cualquier cosa que el modelo agregó y que ninguna herramienta realmente devolvió.",
   "marketing.faq.q5": "¿Puedo auditar una respuesta pasada?",
-  "marketing.faq.a5": "Sí — cada consulta guarda una traza de ejecución reproducible: qué agentes corrieron, qué llamaron, y cómo se clasificó cada afirmación.",
+  "marketing.faq.a5":
+    "Sí — cada consulta guarda una traza de ejecución reproducible: qué agentes corrieron, qué llamaron, y cómo se clasificó cada afirmación.",
 
   "marketing.cta.title": "Menos tiempo buscando, más tiempo con tus pacientes",
-  "marketing.cta.subtitle": "Inicia sesión como médico para ejecutar una consulta, o configura tu cuenta del portal con un código de invitación de tu equipo de atención.",
-  "marketing.cta.around": "Y alrededor de la consulta: dashboard de riesgo, agendamiento de citas, portal del paciente y resultados compartidos.",
+  "marketing.cta.subtitle":
+    "Inicia sesión como médico para ejecutar una consulta, o configura tu cuenta del portal con un código de invitación de tu equipo de atención.",
+  "marketing.cta.around":
+    "Y alrededor de la consulta: dashboard de riesgo, agendamiento de citas, portal del paciente y resultados compartidos.",
 
   "patients.eyebrow": "Clínico",
   "patients.filter.group": "Filtrar por riesgo",
@@ -519,7 +543,7 @@ const ES: Record<string, string> = {
   "patientDetail.error.invite": "No se pudo crear la invitación.",
   "patientDetail.timeline.title": "Línea de tiempo inteligente",
   "patientDetail.timeline.subtitle":
-    "Todo lo que le pasó a este paciente, en orden — diagnósticos, medicamentos, labs e imágenes. Lo marcado \"IA\" se sacó automático de una nota, no lo escribió un médico a mano.",
+    'Todo lo que le pasó a este paciente, en orden — diagnósticos, medicamentos, labs e imágenes. Lo marcado "IA" se sacó automático de una nota, no lo escribió un médico a mano.',
   "patientDetail.timeline.share": "Compartir un resultado",
   "patientDetail.timeline.aiOrganized": "Organizado por IA",
   "patientDetail.timeline.aiExtracted": "Extraído por IA",
@@ -552,12 +576,14 @@ const ES: Record<string, string> = {
   "patientDetail.notes.title": "Agregar nota clínica",
   "patientDetail.notes.autoTimeline": "línea de tiempo automática",
   "patientDetail.notes.placeholder":
-    "Escríbela como se la contarías a un colega — ej. \"La paciente mejoró del dolor lumbar, se inició ibuprofeno 400mg cada 8 horas.\" No hace falta fecha ni formato especial — si no la mencionas, se usa la de hoy.",
+    'Escríbela como se la contarías a un colega — ej. "La paciente mejoró del dolor lumbar, se inició ibuprofeno 400mg cada 8 horas." No hace falta fecha ni formato especial — si no la mencionas, se usa la de hoy.',
   "patientDetail.notes.extracting": "Guardando…",
-  "patientDetail.notes.processingBackground": "Guardada — extrayendo eventos para la línea de tiempo en segundo plano…",
+  "patientDetail.notes.processingBackground":
+    "Guardada — extrayendo eventos para la línea de tiempo en segundo plano…",
   "patientDetail.notes.eventsExtractedFrom": "{count} evento(s) extraído(s) de {file}",
   "patientDetail.notes.eventsAdded": "{count} evento(s) agregado(s) a la línea de tiempo",
-  "patientDetail.notes.noEventsFound": "Guardada — no se encontraron eventos para la línea de tiempo en esta nota.",
+  "patientDetail.notes.noEventsFound":
+    "Guardada — no se encontraron eventos para la línea de tiempo en esta nota.",
   "patientDetail.notes.error.ocrUnsupported":
     "No se encontró texto — los PDF escaneados (OCR) aún no están soportados.",
   "patientDetail.notes.error.uploadFailed": "Falló la carga — ¿iniciaste sesión?",
@@ -591,7 +617,8 @@ const ES: Record<string, string> = {
   "patientDetail.interactionChecker.checking": "Revisando…",
   "patientDetail.interactionChecker.check": "Revisar",
   "patientDetail.interactionChecker.none": "Sin interacción conocida con lo que ya toma.",
-  "patientDetail.interactionChecker.impact": "Ya toma {existing} — agregar {candidate} podría causar: {effect}",
+  "patientDetail.interactionChecker.impact":
+    "Ya toma {existing} — agregar {candidate} podría causar: {effect}",
   "patientDetail.interactionChecker.whatToDo": "Qué hacer: {recommendation}",
   "patientDetail.interactionChecker.error": "No se pudo consultar el verificador de interacciones.",
 
@@ -650,9 +677,18 @@ const ES: Record<string, string> = {
 
   "common.loading": "Cargando…",
   "common.disclaimer": "Solo para uso de investigación y educación — no es un dispositivo médico.",
-  "common.footerDisclaimer": "Solo apoyo a la decisión — no es un dispositivo médico. Todo resultado de IA requiere revisión profesional.",
+  "common.footerDisclaimer":
+    "Solo apoyo a la decisión — no es un dispositivo médico. Todo resultado de IA requiere revisión profesional.",
 
-
+  "evidence.copyCitation": "Copiar cita",
+  "evidence.copied": "Copiado",
+  "evidence.askAbout": "Preguntar a Sephiroth",
+  "evidence.askPrefill":
+    "Sobre este fragmento de guía: «{excerpt}» — ¿qué significa para el paciente que tengo delante?",
+  "evidence.backToCategories": "← Volver a categorías",
+  "evidence.example.bp": "objetivo de presión arterial en adultos con hipertensión",
+  "evidence.example.a1c": "objetivo de A1C en diabetes tipo 2",
+  "evidence.example.interaction": "interacción entre warfarina e ibuprofeno",
   "evidence.subtitle":
     "Explora las guías clínicas indexadas por categoría, o busca una pregunta específica — cada resultado trae su cita.",
   "evidence.searchPlaceholder": "ej. meta de presión arterial para adultos con hipertensión",
@@ -717,8 +753,7 @@ const ES: Record<string, string> = {
   "common.dark": "Oscuro",
   "common.toggleLanguage": "Cambiar idioma",
 
-  "imaging.subtitle":
-    "Razonamiento de visión con IA para radiografías, TC, RM, ultrasonido y patología",
+  "imaging.subtitle": "Razonamiento de visión con IA para radiografías, TC, RM, ultrasonido y patología",
   "imaging.previewFailed": "No se pudo cargar la vista previa",
   "imaging.patientOptional": "Paciente (opcional)",
   "imaging.targetOptional": "Objetivo (opcional)",
@@ -732,8 +767,7 @@ const ES: Record<string, string> = {
     "Sube una imagen a la izquierda y este panel se llena con el mismo tipo de descripción de visión en vivo y evidencia citada que se muestra abajo — de una consulta real, no una maqueta.",
   "imaging.visionDescription": "Descripción de visión",
   "imaging.visionAiBadge": "Visión IA",
-  "imaging.generatedByDisclaimer":
-    "Generado por {model} — describe solo lo visible; no es un diagnóstico.",
+  "imaging.generatedByDisclaimer": "Generado por {model} — describe solo lo visible; no es un diagnóstico.",
   "imaging.addedToTimeline": "Agregado a la línea de tiempo",
   "imaging.addingToTimeline": "Agregando…",
   "imaging.addToTimeline": "Agregar a la línea de tiempo",
@@ -807,12 +841,14 @@ const ES: Record<string, string> = {
   "portal.labs.taken": "Tomado el {date}",
   "portal.labs.range": "Rango habitual ",
   "portal.labs.open": "Abrir este resultado",
-  "portal.labs.disclaimer": "Estas notas explican el número. Solo tu equipo de salud puede decirte qué significa un resultado para ti.",
+  "portal.labs.disclaimer":
+    "Estas notas explican el número. Solo tu equipo de salud puede decirte qué significa un resultado para ti.",
   "portal.labs.explain.inside": "Tu {test} está dentro del rango habitual.",
   "portal.labs.explain.outside": "Tu {test} está fuera del rango habitual.",
   "portal.labs.explain.outside.above": "Tu {test} está por encima del rango habitual.",
   "portal.labs.explain.outside.below": "Tu {test} está por debajo del rango habitual.",
-  "portal.labs.explain.needs_attention": "Tu {test} necesita atención pronto. Sigue las indicaciones de tu equipo de salud.",
+  "portal.labs.explain.needs_attention":
+    "Tu {test} necesita atención pronto. Sigue las indicaciones de tu equipo de salud.",
   "portal.labs.explain.unknown": "Tu equipo de salud revisará este resultado contigo.",
   "portal.results.title": "Mis resultados",
   "portal.results.loading": "Cargando…",
@@ -821,15 +857,18 @@ const ES: Record<string, string> = {
   "portal.results.aiDrafted": "Redactado por IA",
   "portal.results.notFound": "No se pudo encontrar este resultado.",
   "portal.results.fromClinician": "De tu médico",
-  "portal.results.aiDraftedNote": "Este resumen fue redactado por un agente de IA y revisado por tu médico antes de compartirlo contigo.",
+  "portal.results.aiDraftedNote":
+    "Este resumen fue redactado por un agente de IA y revisado por tu médico antes de compartirlo contigo.",
   "portal.results.attachments": "Adjuntos",
 
   "portal.claim.incompleteTitle": "Este enlace de invitación está incompleto",
-  "portal.claim.incompleteBody": "Pide a tu médico que reenvíe el enlace de invitación al portal y ábrelo directamente.",
+  "portal.claim.incompleteBody":
+    "Pide a tu médico que reenvíe el enlace de invitación al portal y ábrelo directamente.",
   "portal.claim.alreadyHaveAccount": "¿Ya tienes una cuenta?",
   "portal.claim.signIn": "Iniciar sesión",
   "portal.claim.setupTitle": "Configura tu cuenta del portal",
-  "portal.claim.setupBody": "La invitación de tu médico está lista — agrega tu nombre, correo y una contraseña para terminar.",
+  "portal.claim.setupBody":
+    "La invitación de tu médico está lista — agrega tu nombre, correo y una contraseña para terminar.",
   "portal.claim.fullName": "Nombre completo",
   "portal.claim.fullNamePlaceholder": "Jane Smith",
   "portal.claim.email": "Correo electrónico",
@@ -837,7 +876,8 @@ const ES: Record<string, string> = {
   "portal.claim.passwordPlaceholder": "Al menos 8 caracteres",
   "portal.claim.pleaseWait": "Un momento…",
   "portal.claim.submit": "Configurar mi cuenta",
-  "portal.claim.error.invalidInvite": "Este enlace de invitación no es válido o expiró. Pide a tu médico que envíe uno nuevo.",
+  "portal.claim.error.invalidInvite":
+    "Este enlace de invitación no es válido o expiró. Pide a tu médico que envíe uno nuevo.",
   "portal.claim.error.emailTaken": "Ese correo ya está registrado.",
   "portal.claim.error.validation": "Revisa tus datos (contraseña ≥ 8 caracteres).",
   "portal.claim.error.serverUnreachable": "No se pudo conectar con el servidor. ¿Está corriendo el backend?",
@@ -864,8 +904,10 @@ const ES: Record<string, string> = {
   "login.error.invalidCredentials": "Correo o contraseña inválidos.",
   "login.error.validation": "Revisa tus datos (contraseña ≥ 8 caracteres).",
   "login.error.serverUnreachable": "No se pudo conectar con el servidor. ¿Está corriendo el backend?",
-  "login.error.accountLocked": "Demasiados intentos fallidos — la cuenta está bloqueada temporalmente. Inténtalo más tarde.",
-  "login.error.registrationRestricted": "La creación de cuentas está restringida. Pide a un profesional que te invite.",
+  "login.error.accountLocked":
+    "Demasiados intentos fallidos — la cuenta está bloqueada temporalmente. Inténtalo más tarde.",
+  "login.error.registrationRestricted":
+    "La creación de cuentas está restringida. Pide a un profesional que te invite.",
   "login.error.tooManyAttempts": "Demasiadas solicitudes. Espera un minuto e inténtalo de nuevo.",
 
   "profile.title": "Perfil",
@@ -892,7 +934,8 @@ const ES: Record<string, string> = {
   "profile.error.passwordChangeFailed": "No se pudo cambiar la contraseña.",
 
   "preferences.title": "Preferencias de automatización",
-  "preferences.subtitle": "Configura cómo se comportan los recordatorios de citas y los seguimientos. Nada aquí cambia lo que se envía — solo cuándo.",
+  "preferences.subtitle":
+    "Configura cómo se comportan los recordatorios de citas y los seguimientos. Nada aquí cambia lo que se envía — solo cuándo.",
   "preferences.leadTime.title": "Antelación del recordatorio",
   "preferences.leadTime.label": "Horas antes de una cita",
   "preferences.saved": "Guardado.",
@@ -950,13 +993,16 @@ const ES: Record<string, string> = {
   "encounter.saveBeforeSigning": "Guarda los cambios antes de firmar.",
   "encounter.amend": "Enmendar",
   "encounter.amendConfirm": "Enmendar",
-  "encounter.amendHelp": "Una nota firmada es un registro clínico, así que se corrige con una enmienda que lo dice. Explica qué cambia y por qué.",
+  "encounter.amendHelp":
+    "Una nota firmada es un registro clínico, así que se corrige con una enmienda que lo dice. Explica qué cambia y por qué.",
   "encounter.vitals.title": "Signos vitales",
   "encounter.vitals.bp": "Presión arterial",
   "encounter.vitals.autofill": "Autocompletar peso y talla",
   "encounter.vitals.autofillLoading": "Buscando una visita anterior…",
-  "encounter.vitals.autofillEmpty": "Este paciente aún no tiene una consulta firmada con peso o talla. Se registrarán al firmar esta.",
-  "encounter.vitals.autofillNote": "Solo se copian el peso y la talla. Los demás signos vitales muestran la última lectura como referencia y deben medirse en esta visita.",
+  "encounter.vitals.autofillEmpty":
+    "Este paciente aún no tiene una consulta firmada con peso o talla. Se registrarán al firmar esta.",
+  "encounter.vitals.autofillNote":
+    "Solo se copian el peso y la talla. Los demás signos vitales muestran la última lectura como referencia y deben medirse en esta visita.",
   "encounter.vitals.autofillWillCopy": "Copiará {items}.",
   "encounter.vitals.autofillVisit": "visita del {date}",
   "encounter.vitals.autofillFilled": "Ya están rellenos: {items}.",
@@ -984,14 +1030,17 @@ const ES: Record<string, string> = {
   "encounter.orderKind.followup": "Control",
   "encounter.orderKind.medication": "Medicación",
   "encounter.draft.title": "Redactar la nota",
-  "encounter.draft.help": "Pega o escribe lo que pasó. El modelo solo ordena tus palabras en secciones — no decide nada, y no se guarda hasta que apliques y firmes.",
+  "encounter.draft.help":
+    "Pega o escribe lo que pasó. El modelo solo ordena tus palabras en secciones — no decide nada, y no se guarda hasta que apliques y firmes.",
   "encounter.draft.placeholder": "Tres días de cefalea, PA 210/120, inicio losartán 50mg…",
   "encounter.draft.action": "Ordenar en secciones",
   "encounter.draft.working": "Trabajando…",
   "encounter.draft.apply": "Aplicar a la nota",
   "encounter.draft.model": "Redactado por",
-  "encounter.draft.degraded": "No hay modelo disponible, así que este es tu propio texto bajo los títulos de sección.",
-  "encounter.draft.addedContent": "Algunas secciones tienen texto que no está en lo que escribiste. Revísalas con cuidado antes de aplicar.",
+  "encounter.draft.degraded":
+    "No hay modelo disponible, así que este es tu propio texto bajo los títulos de sección.",
+  "encounter.draft.addedContent":
+    "Algunas secciones tienen texto que no está en lo que escribiste. Revísalas con cuidado antes de aplicar.",
   "encounter.draft.addedBadge": "revisar",
 
   // --- Bucle de resultados (SPEC-024) ---------------------------------------
@@ -1031,20 +1080,25 @@ const ES: Record<string, string> = {
   "results.noteRequired": "Por qué (obligatorio)",
   "results.noteOptional": "Nota (opcional)",
   "results.recordDecision": "Registrar la decisión",
-  "results.mustCommunicate": "Decidiste que hay que avisarle al paciente. Este resultado queda abierto hasta que se le avise.",
+  "results.mustCommunicate":
+    "Decidiste que hay que avisarle al paciente. Este resultado queda abierto hasta que se le avise.",
   "inform.title": "Avisar al paciente",
   "inform.message": "Mensaje para el paciente",
   "inform.messageHint": "El paciente lo lee junto con el resultado. Escríbelo en palabras sencillas.",
-  "inform.suggestion": "Hola, revisamos su resultado de {test}: {value}. Queremos hablar con usted. Comuníquese con la clínica para acordar el siguiente paso.",
-  "inform.suggestion.imaging": "Hola, revisamos su estudio de {test} y queremos hablar con usted. Comuníquese con la clínica para acordar el siguiente paso.",
+  "inform.suggestion":
+    "Hola, revisamos su resultado de {test}: {value}. Queremos hablar con usted. Comuníquese con la clínica para acordar el siguiente paso.",
+  "inform.suggestion.imaging":
+    "Hola, revisamos su estudio de {test} y queremos hablar con usted. Comuníquese con la clínica para acordar el siguiente paso.",
   "inform.attach": "Usar una entrada de la línea de tiempo del paciente (opcional)",
   "inform.attachNone": "Crear una entrada a partir de este resultado",
   "inform.send": "Enviar al paciente",
   "inform.sending": "Enviando…",
   "inform.cancel": "Cancelar",
   "inform.done": "Se avisó al paciente y se le notificó.",
-  "inform.doneNoPortal": "Registrado. Este paciente aún no tiene acceso al portal, así que avísale por otro medio.",
-  "inform.error.conflict": "Este resultado ya se había informado, o la entrada que elegiste ya se compartió. Actualiza la lista y revisa.",
+  "inform.doneNoPortal":
+    "Registrado. Este paciente aún no tiene acceso al portal, así que avísale por otro medio.",
+  "inform.error.conflict":
+    "Este resultado ya se había informado, o la entrada que elegiste ya se compartió. Actualiza la lista y revisa.",
   "inform.error.failed": "No se pudo enviar. Inténtalo de nuevo.",
   "results.communicate": "Avisar al paciente",
   "results.close": "Cerrar",
