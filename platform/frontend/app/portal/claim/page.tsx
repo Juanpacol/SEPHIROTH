@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { getStoredUser, homeFor, storeAuth } from "@/lib/auth";
 import WingMark from "@/components/brand/wing-mark";
+import Wordmark from "@/components/landing/wordmark";
+import AccentTitle from "@/components/landing/accent-title";
 import { useLanguage } from "@/lib/language";
 
 export default function ClaimInvitePage() {
@@ -75,27 +77,39 @@ function ClaimInviteForm() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-surface p-6">
       <div className="w-full max-w-sm">
-        <div className="mb-6 flex items-center justify-center gap-2">
+        <div className="group/brand mb-6 flex items-center justify-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-soft text-primary">
             <WingMark size={20} />
           </span>
-          <span className="text-lg font-bold tracking-tight">SEPHIROTH</span>
+          <Wordmark className="text-lg tracking-[0.08em] text-ink" />
         </div>
 
         {!code ? (
           <div className="card space-y-3 text-center">
-            <h1 className="font-extrabold">{t("portal.claim.incompleteTitle")}</h1>
+            <AccentTitle
+              as="h1"
+              text={t("portal.claim.incompleteTitle")}
+              accentWords={0}
+              className="text-2xl text-ink sm:text-[28px]"
+            />
             <p className="text-sm text-muted">{t("portal.claim.incompleteBody")}</p>
             <p className="text-sm text-muted">
               {t("portal.claim.alreadyHaveAccount")}{" "}
-              <Link href="/login" className="font-semibold text-primary">{t("portal.claim.signIn")}</Link>
+              <Link href="/login" className="nav-underline tap font-semibold text-primary">
+                {t("portal.claim.signIn")}
+              </Link>
             </p>
           </div>
         ) : (
           <form onSubmit={submit} className="card space-y-4">
             <div>
-              <h1 className="font-extrabold">{t("portal.claim.setupTitle")}</h1>
-              <p className="text-sm text-muted">{t("portal.claim.setupBody")}</p>
+              <AccentTitle
+                as="h1"
+                text={t("portal.claim.setupTitle")}
+                accentWords={0}
+                className="text-2xl text-ink sm:text-[28px]"
+              />
+              <p className="mt-1.5 text-sm text-muted">{t("portal.claim.setupBody")}</p>
             </div>
 
             <div>
@@ -136,17 +150,15 @@ function ClaimInviteForm() {
 
             {error && <p className="text-sm text-danger">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white disabled:opacity-40"
-            >
+            <button type="submit" disabled={busy} className="btn-primary w-full">
               {busy ? t("portal.claim.pleaseWait") : t("portal.claim.submit")}
             </button>
 
             <p className="text-center text-sm text-muted">
               {t("portal.claim.alreadyHaveAccount")}{" "}
-              <Link href="/login" className="font-semibold text-primary">{t("portal.claim.signIn")}</Link>
+              <Link href="/login" className="nav-underline tap font-semibold text-primary">
+                {t("portal.claim.signIn")}
+              </Link>
             </p>
           </form>
         )}
