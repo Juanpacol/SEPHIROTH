@@ -215,7 +215,7 @@ pyjwt==2.15.1
     #   mcp
 pyotp==2.10.0
     # via -r requirements.txt
-pypdf==6.20.0
+pypdf==6.21.2
     # via -r requirements.txt
 pyperclip==1.11.0
     # via fastmcp-slim
