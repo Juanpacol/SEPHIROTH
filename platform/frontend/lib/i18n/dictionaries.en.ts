@@ -92,7 +92,8 @@ const EN: Record<string, string> = {
   "dashboard.actionItems.showMore": "Show {count} more",
   "dashboard.actionItems.deteriorating": "Getting worse — review their clinical trend",
   "dashboard.actionItems.deterioratingTest": "Worsening {test} — review their clinical trend",
-  "dashboard.actionItems.deterioratingTestMore": "Worsening {test} and {count} more — review their clinical trend",
+  "dashboard.actionItems.deterioratingTestMore":
+    "Worsening {test} and {count} more — review their clinical trend",
   "dashboard.actionItems.lab": "{test} at a critical level: {value} {unit} — needs review",
   "clinical.interaction": "Possible interaction: {drugA} + {drugB} — review treatment",
   "dashboard.actionItems.imaging": "Review {modality} of {bodyPart} — {status}",
@@ -265,7 +266,8 @@ const EN: Record<string, string> = {
   "results.plain.imaging": "{modality} scan of the {bodyPart} — {finding}",
   "results.plain.imagingNoFinding": "no notable findings",
   "results.plain.unclassified": "{test}: {value}. We don't have a normal range on file for this test yet.",
-  "results.plain.critical": "{test} came back at {value} — this is outside a safe range and needs attention soon.",
+  "results.plain.critical":
+    "{test} came back at {value} — this is outside a safe range and needs attention soon.",
   "results.plain.abnormal.below": "{test} was {value}, which is lower than the normal range ({low}–{high}).",
   "results.plain.abnormal.above": "{test} was {value}, which is higher than the normal range ({low}–{high}).",
   "results.plain.abnormalNoRange": "{test} was {value}, outside the normal range.",
@@ -366,47 +368,51 @@ const EN: Record<string, string> = {
 
   "marketing.hero.badge": "Research & education use — not a medical device",
   "marketing.hero.title": "Give every clinician back the minutes lost to lookups",
-  "marketing.hero.subtitle": "Ask one question. It goes to the right specialist and comes back cited, checked, and honest about what it does not know. Less chart-digging, more time with the patient.",
+  "marketing.hero.subtitle":
+    "Ask one question. It goes to the right specialist and comes back cited, checked, and honest about what it does not know. Less chart-digging, more time with the patient.",
   "marketing.hero.seeHowItWorks": "See how it works",
 
   "marketing.agentName.radiology": "Image Analysis",
   "marketing.agentName.drugSafety": "Medication Interactions",
   "marketing.agentName.evidence": "Guidelines & Literature",
 
-
   "marketing.sample.question": "What A1C goal is appropriate for a 62-year-old with type 2 diabetes?",
 
-
   "marketing.claim2.text": "Metformin should be discontinued at this A1C level.",
-
-
-
 
   "marketing.features.eyebrow": "Features",
   "marketing.features.title": "Features",
   "marketing.features.ask.verb": "Ask",
   "marketing.features.ask.title": "One question, the right specialist",
-  "marketing.features.ask.body": "Images, medications or guidelines: each question goes to the one specialist it needs, so a drug question never waits on image analysis.",
-  "marketing.features.ask.alt": "An X-ray of a neck and spine with a web of fine lines drawn over it, linking the bones",
+  "marketing.features.ask.body":
+    "Images, medications or guidelines: each question goes to the one specialist it needs, so a drug question never waits on image analysis.",
+  "marketing.features.ask.alt":
+    "An X-ray of a neck and spine with a web of fine lines drawn over it, linking the bones",
   "marketing.features.cite.verb": "Cite",
   "marketing.features.cite.title": "Every claim has a source",
-  "marketing.features.cite.body": "Answers draw only on retrieved clinical guidelines and PubMed, from ADA, ACC/AHA, KDIGO, GOLD and USPSTF among others. A citation the model invented is removed before you see it.",
-  "marketing.features.cite.alt": "An annotated figure from a paper: scan slices beside a labelled diagram, with captions",
+  "marketing.features.cite.body":
+    "Answers draw only on retrieved clinical guidelines and PubMed, from ADA, ACC/AHA, KDIGO, GOLD and USPSTF among others. A citation the model invented is removed before you see it.",
+  "marketing.features.cite.alt":
+    "An annotated figure from a paper: scan slices beside a labelled diagram, with captions",
   "marketing.features.verify.verb": "Verify",
   "marketing.features.verify.title": "Checked before you read it",
-  "marketing.features.verify.body": "Each claim is classified as supported, partial, unsupported, contradicted or unknown. When the evidence is thin, it declines to answer instead of guessing.",
+  "marketing.features.verify.body":
+    "Each claim is classified as supported, partial, unsupported, contradicted or unknown. When the evidence is thin, it declines to answer instead of guessing.",
   "marketing.features.verify.alt": "An eye looking at something, drawn in dots",
   "marketing.features.see.verb": "See",
   "marketing.features.see.title": "Images, described",
-  "marketing.features.see.body": "X-ray, CT, MRI, ultrasound and pathology: a vision model describes what is visible and says what is unclear. It never diagnoses.",
+  "marketing.features.see.body":
+    "X-ray, CT, MRI, ultrasound and pathology: a vision model describes what is visible and says what is unclear. It never diagnoses.",
   "marketing.features.see.alt": "A chest X-ray, one of the example studies",
   "marketing.features.follow.verb": "Follow up",
   "marketing.features.follow.title": "Results that do not get lost",
-  "marketing.features.follow.body": "Lab values are read against reference ranges, critical ones are flagged, and every result lands in a review inbox until someone has dealt with it.",
+  "marketing.features.follow.body":
+    "Lab values are read against reference ranges, critical ones are flagged, and every result lands in a review inbox until someone has dealt with it.",
   "marketing.features.follow.alt": "An ink drawing of a wave that grows and fades",
   "marketing.features.share.verb": "Share",
   "marketing.features.share.title": "Patients stay in the loop",
-  "marketing.features.share.body": "A patient sees a result only after their clinician has told them, with a plain explanation. Accounts are created from a code the clinician issues.",
+  "marketing.features.share.body":
+    "A patient sees a result only after their clinician has told them, with a plain explanation. Accounts are created from a code the clinician issues.",
   "marketing.features.share.alt": "Two hands made of fine lines, about to touch",
   "marketing.nav.features.title": "Features",
   "marketing.nav.features.body": "What it does, one step at a time.",
@@ -416,20 +422,23 @@ const EN: Record<string, string> = {
   "marketing.answer.play": "Play examples",
   "marketing.answer.you": "A clinician asks",
   "marketing.answer.guideline.tab": "Guideline",
-  "marketing.answer.guideline.question": "What A1C goal is appropriate for a 62-year-old with type 2 diabetes?",
+  "marketing.answer.guideline.question":
+    "What A1C goal is appropriate for a 62-year-old with type 2 diabetes?",
   "marketing.answer.guideline.answer": "Target A1C is below 7% for most adults, individualized by risk.",
   "marketing.answer.guideline.claim1": "Target A1C is below 7% for most adults",
   "marketing.answer.guideline.claim2": "The goal is individualized by risk",
   "marketing.answer.guideline.outcome": "Answered · 2 of 2 claims supported",
   "marketing.answer.drug.tab": "Medication",
   "marketing.answer.drug.question": "Can she take ibuprofen while she is on warfarin?",
-  "marketing.answer.drug.answer": "Avoid the combination: NSAIDs such as ibuprofen raise the risk of bleeding in patients on warfarin.",
+  "marketing.answer.drug.answer":
+    "Avoid the combination: NSAIDs such as ibuprofen raise the risk of bleeding in patients on warfarin.",
   "marketing.answer.drug.claim1": "Ibuprofen and warfarin interact",
   "marketing.answer.drug.claim2": "The interaction raises the risk of bleeding",
   "marketing.answer.drug.outcome": "Answered · 2 of 2 claims supported",
   "marketing.answer.decline.tab": "Declines",
   "marketing.answer.decline.question": "Is this combination of three newly approved drugs safe in pregnancy?",
-  "marketing.answer.decline.answer": "No retrieved guideline or study covers this combination. SEPHIROTH declines to answer instead of guessing.",
+  "marketing.answer.decline.answer":
+    "No retrieved guideline or study covers this combination. SEPHIROTH declines to answer instead of guessing.",
   "marketing.answer.decline.claim1": "No source supports a safety claim",
   "marketing.answer.decline.outcome": "Declined · not enough evidence",
   "marketing.analysisGallery.xray.title": "X-Ray",
@@ -443,48 +452,59 @@ const EN: Record<string, string> = {
   "marketing.analysisGallery.pathology.title": "Pathology",
   "marketing.analysisGallery.pathology.caption": "H&E-stained tissue",
 
-
   "marketing.howItWorks.eyebrow": "How it works",
   "marketing.howItWorks.title": "An answer, taken apart",
-  "marketing.howItWorks.body": "Every answer goes through the same five steps. Point at one to see which part of the answer it shaped.",
+  "marketing.howItWorks.body":
+    "Every answer goes through the same five steps. Point at one to see which part of the answer it shaped.",
   "marketing.anatomy.stepsLabel": "What happens to an answer",
   "marketing.anatomy.card.label": "Example answer",
-  "marketing.anatomy.card.answer": "Target A1C is below 7% for most adults with type 2 diabetes, individualized by risk.",
+  "marketing.anatomy.card.answer":
+    "Target A1C is below 7% for most adults with type 2 diabetes, individualized by risk.",
   "marketing.anatomy.card.cite1": "ADA Standards of Care, 2024",
   "marketing.anatomy.card.cite2": "UpToDate Diabetes Review, 2023",
   "marketing.anatomy.card.removed": "removed: not in the evidence",
   "marketing.anatomy.card.excluded": "Excluded",
-  "marketing.anatomy.card.abstain": "Recheck interval: the retrieved sources do not cover this case, so no answer is given.",
+  "marketing.anatomy.card.abstain":
+    "Recheck interval: the retrieved sources do not cover this case, so no answer is given.",
   "marketing.anatomy.step.route.title": "It goes to one specialist",
-  "marketing.anatomy.step.route.body": "The question is routed to the one specialist it needs, here Guidelines & Literature. Not every question needs all three.",
+  "marketing.anatomy.step.route.body":
+    "The question is routed to the one specialist it needs, here Guidelines & Literature. Not every question needs all three.",
   "marketing.anatomy.step.write.title": "It is written from evidence",
-  "marketing.anatomy.step.write.body": "The specialist answers from retrieved guideline text and PubMed results, and cites what it used.",
+  "marketing.anatomy.step.write.body":
+    "The specialist answers from retrieved guideline text and PubMed results, and cites what it used.",
   "marketing.anatomy.step.guard.title": "Every citation is checked",
-  "marketing.anatomy.step.guard.body": "A citation that does not match something actually retrieved is removed before you see the answer.",
+  "marketing.anatomy.step.guard.body":
+    "A citation that does not match something actually retrieved is removed before you see the answer.",
   "marketing.anatomy.step.verify.title": "Every claim is classified",
-  "marketing.anatomy.step.verify.body": "Each sentence is marked supported, partial, unsupported, contradicted or unknown. A contradicted one is left out.",
+  "marketing.anatomy.step.verify.body":
+    "Each sentence is marked supported, partial, unsupported, contradicted or unknown. A contradicted one is left out.",
   "marketing.anatomy.step.abstain.title": "If it is not sure, it says so",
-  "marketing.anatomy.step.abstain.body": "When the evidence is thin, it declines to answer that part instead of guessing.",
+  "marketing.anatomy.step.abstain.body":
+    "When the evidence is thin, it declines to answer that part instead of guessing.",
   "marketing.nav.howItWorks.body": "One answer taken apart: where it came from and what was checked.",
-
-
-
 
   "marketing.faq.title": "Frequently asked",
   "marketing.faq.q1": "Is this a medical device?",
-  "marketing.faq.a1": "No. SEPHIROTH supports research and education. It describes and cites, it does not diagnose, and every answer needs professional review before any clinical use.",
+  "marketing.faq.a1":
+    "No. SEPHIROTH supports research and education. It describes and cites, it does not diagnose, and every answer needs professional review before any clinical use.",
   "marketing.faq.q2": "What data does it see?",
-  "marketing.faq.a2": "Only what a clinician puts into a consultation — patient context, notes, and the query itself. See the privacy notice in the project README for exactly what leaves the machine.",
+  "marketing.faq.a2":
+    "Only what a clinician puts into a consultation — patient context, notes, and the query itself. See the privacy notice in the project README for exactly what leaves the machine.",
   "marketing.faq.q3": "What happens when it doesn't know?",
-  "marketing.faq.a3": "Before an answer ships, SEPHIROTH checks its confidence and the evidence behind it. Below its threshold it declines that part instead of guessing, as in the example above.",
+  "marketing.faq.a3":
+    "Before an answer ships, SEPHIROTH checks its confidence and the evidence behind it. Below its threshold it declines that part instead of guessing, as in the example above.",
   "marketing.faq.q4": "Where do citations come from?",
-  "marketing.faq.a4": "Retrieved clinical guidelines and PubMed results only, nowhere else. Citation Guard strips anything the model added that no tool actually returned.",
+  "marketing.faq.a4":
+    "Retrieved clinical guidelines and PubMed results only, nowhere else. Citation Guard strips anything the model added that no tool actually returned.",
   "marketing.faq.q5": "Can I audit a past answer?",
-  "marketing.faq.a5": "Yes — every consultation saves a replayable execution trace: which agents ran, what they called, and how each claim was classified.",
+  "marketing.faq.a5":
+    "Yes — every consultation saves a replayable execution trace: which agents ran, what they called, and how each claim was classified.",
 
   "marketing.cta.title": "Less time searching, more time with patients",
-  "marketing.cta.subtitle": "Sign in as a clinician to run a consultation, or set up your portal account with a claim code from your care team.",
-  "marketing.cta.around": "And around the consult: a risk dashboard, appointment scheduling, the patient portal and shared results.",
+  "marketing.cta.subtitle":
+    "Sign in as a clinician to run a consultation, or set up your portal account with a claim code from your care team.",
+  "marketing.cta.around":
+    "And around the consult: a risk dashboard, appointment scheduling, the patient portal and shared results.",
 
   "patients.eyebrow": "Clinical",
   "patients.filter.group": "Filter by risk",
@@ -519,7 +539,7 @@ const EN: Record<string, string> = {
   "patientDetail.error.invite": "Could not create an invite.",
   "patientDetail.timeline.title": "Intelligent Timeline",
   "patientDetail.timeline.subtitle":
-    "Everything that's happened to this patient, in order — diagnoses, medications, labs, and imaging. Anything marked \"AI\" was pulled automatically from a note, not typed in by hand.",
+    'Everything that\'s happened to this patient, in order — diagnoses, medications, labs, and imaging. Anything marked "AI" was pulled automatically from a note, not typed in by hand.',
   "patientDetail.timeline.share": "Share a result",
   "patientDetail.timeline.aiOrganized": "AI-organized",
   "patientDetail.timeline.aiExtracted": "AI-extracted",
@@ -590,7 +610,8 @@ const EN: Record<string, string> = {
   "patientDetail.interactionChecker.checking": "Checking…",
   "patientDetail.interactionChecker.check": "Check",
   "patientDetail.interactionChecker.none": "No known interaction with the current list.",
-  "patientDetail.interactionChecker.impact": "Already taking {existing} — adding {candidate} could cause: {effect}",
+  "patientDetail.interactionChecker.impact":
+    "Already taking {existing} — adding {candidate} could cause: {effect}",
   "patientDetail.interactionChecker.whatToDo": "What to do: {recommendation}",
   "patientDetail.interactionChecker.error": "Could not reach the interaction checker.",
 
@@ -649,9 +670,18 @@ const EN: Record<string, string> = {
 
   "common.loading": "Loading…",
   "common.disclaimer": "Research and education use only — not a medical device.",
-  "common.footerDisclaimer": "Decision support only — not a medical device. All AI output requires professional review.",
+  "common.footerDisclaimer":
+    "Decision support only — not a medical device. All AI output requires professional review.",
 
-
+  "evidence.copyCitation": "Copy citation",
+  "evidence.copied": "Copied",
+  "evidence.askAbout": "Ask Sephiroth",
+  "evidence.askPrefill":
+    'About this guideline excerpt: "{excerpt}" — what does it mean for a patient in front of me?',
+  "evidence.backToCategories": "← Back to categories",
+  "evidence.example.bp": "blood pressure target for adults with hypertension",
+  "evidence.example.a1c": "A1C target for type 2 diabetes",
+  "evidence.example.interaction": "warfarin and ibuprofen interaction",
   "evidence.subtitle":
     "Browse indexed clinical guidelines by category, or search a specific question — every result carries its citation.",
   "evidence.searchPlaceholder": "e.g. blood pressure target for adults with hypertension",
@@ -716,8 +746,7 @@ const EN: Record<string, string> = {
   "common.dark": "Dark",
   "common.toggleLanguage": "Toggle language",
 
-  "imaging.subtitle":
-    "AI vision reasoning for X-Ray, CT, MRI, ultrasound and pathology images",
+  "imaging.subtitle": "AI vision reasoning for X-Ray, CT, MRI, ultrasound and pathology images",
   "imaging.previewFailed": "Preview failed to load",
   "imaging.patientOptional": "Patient (optional)",
   "imaging.targetOptional": "Target (optional)",
@@ -805,12 +834,14 @@ const EN: Record<string, string> = {
   "portal.labs.taken": "Taken {date}",
   "portal.labs.range": "Usual range ",
   "portal.labs.open": "Open this result",
-  "portal.labs.disclaimer": "These notes explain the number. Only your care team can tell you what a result means for you.",
+  "portal.labs.disclaimer":
+    "These notes explain the number. Only your care team can tell you what a result means for you.",
   "portal.labs.explain.inside": "Your {test} is within the usual range.",
   "portal.labs.explain.outside": "Your {test} is outside the usual range.",
   "portal.labs.explain.outside.above": "Your {test} is above the usual range.",
   "portal.labs.explain.outside.below": "Your {test} is below the usual range.",
-  "portal.labs.explain.needs_attention": "Your {test} needs attention soon. Please follow your care team's instructions.",
+  "portal.labs.explain.needs_attention":
+    "Your {test} needs attention soon. Please follow your care team's instructions.",
   "portal.labs.explain.unknown": "Your care team will go over this result with you.",
   "portal.results.title": "My Results",
   "portal.results.loading": "Loading…",
@@ -819,15 +850,18 @@ const EN: Record<string, string> = {
   "portal.results.aiDrafted": "AI-drafted",
   "portal.results.notFound": "This result could not be found.",
   "portal.results.fromClinician": "From your clinician",
-  "portal.results.aiDraftedNote": "This summary was drafted by an AI agent and reviewed by your clinician before being shared with you.",
+  "portal.results.aiDraftedNote":
+    "This summary was drafted by an AI agent and reviewed by your clinician before being shared with you.",
   "portal.results.attachments": "Attachments",
 
   "portal.claim.incompleteTitle": "This invite link is incomplete",
-  "portal.claim.incompleteBody": "Ask your clinician to resend your portal invite link, then open it directly.",
+  "portal.claim.incompleteBody":
+    "Ask your clinician to resend your portal invite link, then open it directly.",
   "portal.claim.alreadyHaveAccount": "Already have an account?",
   "portal.claim.signIn": "Sign in",
   "portal.claim.setupTitle": "Set up your portal account",
-  "portal.claim.setupBody": "Your clinician's invite is ready — add your name, email, and a password to finish.",
+  "portal.claim.setupBody":
+    "Your clinician's invite is ready — add your name, email, and a password to finish.",
   "portal.claim.fullName": "Full name",
   "portal.claim.fullNamePlaceholder": "Jane Smith",
   "portal.claim.email": "Email",
@@ -835,7 +869,8 @@ const EN: Record<string, string> = {
   "portal.claim.passwordPlaceholder": "At least 8 characters",
   "portal.claim.pleaseWait": "Please wait…",
   "portal.claim.submit": "Set up my account",
-  "portal.claim.error.invalidInvite": "This invite link is invalid or has expired. Ask your clinician to send a new one.",
+  "portal.claim.error.invalidInvite":
+    "This invite link is invalid or has expired. Ask your clinician to send a new one.",
   "portal.claim.error.emailTaken": "That email is already registered.",
   "portal.claim.error.validation": "Check your input (password ≥ 8 characters).",
   "portal.claim.error.serverUnreachable": "Could not reach the server. Is the backend running?",
@@ -862,7 +897,8 @@ const EN: Record<string, string> = {
   "login.error.invalidCredentials": "Invalid email or password.",
   "login.error.validation": "Check your input (password ≥ 8 chars).",
   "login.error.serverUnreachable": "Could not reach the server. Is the backend running?",
-  "login.error.accountLocked": "Too many failed attempts — this account is temporarily locked. Try again later.",
+  "login.error.accountLocked":
+    "Too many failed attempts — this account is temporarily locked. Try again later.",
   "login.error.registrationRestricted": "Account creation is restricted. Ask a clinician to invite you.",
   "login.error.tooManyAttempts": "Too many requests. Wait a minute and try again.",
 
@@ -890,7 +926,8 @@ const EN: Record<string, string> = {
   "profile.error.passwordChangeFailed": "Could not change password.",
 
   "preferences.title": "Automation preferences",
-  "preferences.subtitle": "Configure how appointment reminders and follow-ups behave. Nothing here changes what gets sent — only when.",
+  "preferences.subtitle":
+    "Configure how appointment reminders and follow-ups behave. Nothing here changes what gets sent — only when.",
   "preferences.leadTime.title": "Reminder lead time",
   "preferences.leadTime.label": "Hours before an appointment",
   "preferences.saved": "Saved.",
@@ -948,13 +985,16 @@ const EN: Record<string, string> = {
   "encounter.saveBeforeSigning": "Save your changes before signing.",
   "encounter.amend": "Amend",
   "encounter.amendConfirm": "Amend",
-  "encounter.amendHelp": "A signed note is a clinical record, so it is corrected by an amendment that says so. Explain what is changing and why.",
+  "encounter.amendHelp":
+    "A signed note is a clinical record, so it is corrected by an amendment that says so. Explain what is changing and why.",
   "encounter.vitals.title": "Vitals",
   "encounter.vitals.bp": "Blood pressure",
   "encounter.vitals.autofill": "Autofill weight & height",
   "encounter.vitals.autofillLoading": "Looking for a previous visit…",
-  "encounter.vitals.autofillEmpty": "This patient has no signed visit with weight or height yet. They will be recorded when you sign this one.",
-  "encounter.vitals.autofillNote": "Only weight and height are copied. The other vitals show the last reading as a reference and must be measured at this visit.",
+  "encounter.vitals.autofillEmpty":
+    "This patient has no signed visit with weight or height yet. They will be recorded when you sign this one.",
+  "encounter.vitals.autofillNote":
+    "Only weight and height are copied. The other vitals show the last reading as a reference and must be measured at this visit.",
   "encounter.vitals.autofillWillCopy": "Will copy {items}.",
   "encounter.vitals.autofillVisit": "visit of {date}",
   "encounter.vitals.autofillFilled": "Already filled: {items}.",
@@ -982,14 +1022,16 @@ const EN: Record<string, string> = {
   "encounter.orderKind.followup": "Follow-up",
   "encounter.orderKind.medication": "Medication",
   "encounter.draft.title": "Draft the note",
-  "encounter.draft.help": "Paste or type what happened. The model only sorts your words into sections — it is not asked to decide anything, and nothing is saved until you apply and sign.",
+  "encounter.draft.help":
+    "Paste or type what happened. The model only sorts your words into sections — it is not asked to decide anything, and nothing is saved until you apply and sign.",
   "encounter.draft.placeholder": "Three days of headache, BP 210/120, started losartan 50mg…",
   "encounter.draft.action": "Organise into sections",
   "encounter.draft.working": "Working…",
   "encounter.draft.apply": "Apply to the note",
   "encounter.draft.model": "Drafted by",
   "encounter.draft.degraded": "No model available, so this is your own text under the section headings.",
-  "encounter.draft.addedContent": "Some sections contain wording that is not in what you wrote. Read those closely before applying.",
+  "encounter.draft.addedContent":
+    "Some sections contain wording that is not in what you wrote. Read those closely before applying.",
   "encounter.draft.addedBadge": "check",
 
   // --- The results loop (SPEC-024) ------------------------------------------
@@ -1029,12 +1071,15 @@ const EN: Record<string, string> = {
   "results.noteRequired": "Why (required)",
   "results.noteOptional": "Note (optional)",
   "results.recordDecision": "Record the decision",
-  "results.mustCommunicate": "You decided the patient needs to be told. This result stays open until they have been.",
+  "results.mustCommunicate":
+    "You decided the patient needs to be told. This result stays open until they have been.",
   "inform.title": "Tell the patient",
   "inform.message": "Message to the patient",
   "inform.messageHint": "The patient reads this with the result. Write it in plain words.",
-  "inform.suggestion": "Hello, we reviewed your result for {test}: {value}. We would like to talk with you about it. Please contact the clinic to arrange the next step.",
-  "inform.suggestion.imaging": "Hello, we reviewed your {test} study and would like to talk with you about it. Please contact the clinic to arrange the next step.",
+  "inform.suggestion":
+    "Hello, we reviewed your result for {test}: {value}. We would like to talk with you about it. Please contact the clinic to arrange the next step.",
+  "inform.suggestion.imaging":
+    "Hello, we reviewed your {test} study and would like to talk with you about it. Please contact the clinic to arrange the next step.",
   "inform.attach": "Use one of the patient's timeline entries (optional)",
   "inform.attachNone": "Make an entry from this result",
   "inform.send": "Send to the patient",
@@ -1042,7 +1087,8 @@ const EN: Record<string, string> = {
   "inform.cancel": "Cancel",
   "inform.done": "The patient has been told and notified.",
   "inform.doneNoPortal": "Recorded. This patient has no portal access yet, so tell them another way.",
-  "inform.error.conflict": "This result was already told, or the entry you picked was already shared. Refresh the list and check.",
+  "inform.error.conflict":
+    "This result was already told, or the entry you picked was already shared. Refresh the list and check.",
   "inform.error.failed": "Could not send. Try again.",
   "results.communicate": "Tell the patient",
   "results.close": "Close",

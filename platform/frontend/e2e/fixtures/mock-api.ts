@@ -732,6 +732,58 @@ const ROUTES: Record<string, unknown> = {
     { slug: "endocrinology", label: "Endocrinology", count: 12 },
     { slug: "nephrology", label: "Nephrology", count: 7 },
   ],
+  "/api/rag/categories/endocrinology": [
+    {
+      id: "ev-1",
+      title: "ADA Standards of Care: A1C targets",
+      organization: "American Diabetes Association",
+      year: 2026,
+      excerpt:
+        "For most non-pregnant adults with type 2 diabetes, an A1C target of below 7% is reasonable; less stringent targets (e.g. below 8%) may be appropriate for patients with limited life expectancy or extensive comorbidity.",
+      citation: "ADA Standards of Care in Diabetes, 2026",
+      url: "https://diabetesjournals.org/care",
+    },
+    {
+      id: "ev-2",
+      title: "Metformin first-line therapy",
+      organization: "American Diabetes Association",
+      year: 2026,
+      excerpt:
+        "Metformin remains the preferred initial pharmacologic agent for type 2 diabetes unless contraindicated, due to its efficacy, low cost, and favourable safety profile.",
+      citation: "ADA Standards of Care in Diabetes, 2026",
+      url: "https://diabetesjournals.org/care",
+    },
+  ],
+  "/api/rag/categories/nephrology": [
+    {
+      id: "ev-3",
+      title: "KDIGO blood pressure target in CKD",
+      organization: "KDIGO",
+      year: 2024,
+      excerpt:
+        "In adults with CKD and high blood pressure, a target systolic blood pressure of below 120 mmHg is suggested, when tolerated, using standardized office measurement.",
+      citation: "KDIGO 2024 Clinical Practice Guideline for Blood Pressure",
+      url: "https://kdigo.org",
+    },
+  ],
+  "/api/rag/search": {
+    results: [
+      {
+        content:
+          "Blood pressure is considered hypertensive range above 140/90 mmHg on repeated office measurement, or above 130/80 mmHg for patients with diabetes or chronic kidney disease.",
+        citation: "ACC/AHA Hypertension Guideline, 2023",
+        url: "https://acc.org",
+        score: 0.92,
+      },
+      {
+        content:
+          "Home blood pressure monitoring, averaged over several days, is recommended to confirm an office diagnosis of hypertension before starting treatment.",
+        citation: "ACC/AHA Hypertension Guideline, 2023",
+        url: "https://acc.org",
+        score: 0.81,
+      },
+    ],
+  },
   "/api/portal/me": {
     id: "p-001",
     name: PATIENTS[0].name,
