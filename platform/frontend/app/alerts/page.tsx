@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell } from "lucide-react";
+import Link from "next/link";
 import { api, type ClinicalAlert } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import { useToast } from "@/components/ui/toast";
 import StatusPill from "@/components/status-pill";
+import FilterTabs from "@/components/ui/filter-tabs";
+import PageHeader from "@/components/ui/page-header";
 import { parseInteractionLabel, riskLabel } from "@/lib/clinical-text";
 
 const STATUS_FILTERS = ["active", "reviewed", "resolved"] as const;
@@ -20,7 +22,9 @@ function alertCategory(category: string, t: (key: string) => string): string {
 function alertTitle(title: string, t: (key: string) => string): string {
   const interaction = parseInteractionLabel(title);
   if (interaction) {
-    return t("clinical.interaction").replace("{drugA}", interaction.drugA).replace("{drugB}", interaction.drugB);
+    return t("clinical.interaction")
+      .replace("{drugA}", interaction.drugA)
+      .replace("{drugB}", interaction.drugB);
   }
   return riskLabel(title, t);
 }
@@ -48,22 +52,26 @@ function AlertRow({ alert }: { alert: ClinicalAlert }) {
     onError: () => showToast(t("alerts.error.resolve"), "error"),
   });
 
+  const edge = alert.severity === "critical" || alert.severity === "high" ? "bg-danger" : "bg-warning";
+
   return (
-    <div className="card space-y-2">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-        <div className="min-w-0">
+    <li className="relative flex flex-col gap-2 py-4 pl-4 pr-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+      <span aria-hidden className={`absolute inset-y-4 left-0 w-0.5 rounded-full ${edge}`} />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
           <p className="font-semibold">{alertTitle(alert.title, t)}</p>
-          <p className="text-xs text-muted">
-            {t("alerts.patient").replace("{id}", alert.patient_id)} · {alertCategory(alert.category, t)}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
           <StatusPill label={alert.severity} />
-          <StatusPill label={alert.status} />
         </div>
+        <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted">
+          <Link href={`/patients/${alert.patient_id}`} className="nav-underline hover:text-ink">
+            {t("alerts.patient").replace("{id}", alert.patient_id)}
+          </Link>
+          {" · "}
+          {alertCategory(alert.category, t)}
+        </p>
+        {alert.detail && <p className="mt-1.5 text-sm text-muted">{alert.detail}</p>}
       </div>
-      {alert.detail && <p className="text-sm text-ink/80">{alert.detail}</p>}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex shrink-0 gap-2">
         {alert.status === "active" && (
           <button
             onClick={() => review.mutate()}
@@ -77,13 +85,13 @@ function AlertRow({ alert }: { alert: ClinicalAlert }) {
           <button
             onClick={() => resolve.mutate()}
             disabled={resolve.isPending}
-            className="btn-primary tap w-full sm:w-auto"
+            className="btn-secondary tap w-full sm:w-auto"
           >
             {t("alerts.resolve")}
           </button>
         )}
       </div>
-    </div>
+    </li>
   );
 }
 
@@ -97,33 +105,25 @@ export default function AlertsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      <div>
-        <h1 className="flex items-center gap-2 text-xl font-extrabold">
-          <Bell size={20} className="text-primary" /> {t("alerts.title")}
-        </h1>
-        <p className="text-sm text-muted">{t("alerts.subtitle")}</p>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-4">
+      <PageHeader eyebrow={t("patients.eyebrow")} title={t("alerts.title")} subtitle={t("alerts.subtitle")} />
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        {STATUS_FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setStatus(f)}
-            className={`tap shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-              status === f ? "bg-primary text-white" : "bg-primary-soft text-primary"
-            }`}
-          >
-            {t(`alerts.filter.${f}`)}
-          </button>
-        ))}
-      </div>
+      <FilterTabs
+        label={t("alerts.title")}
+        value={status}
+        onChange={setStatus}
+        tabs={STATUS_FILTERS.map((f) => ({ value: f, label: t(`alerts.filter.${f}`) }))}
+      />
 
-      <div className="space-y-3">
-        {isLoading && <p className="text-sm text-muted">{t("alerts.loading")}</p>}
-        {alerts?.length === 0 && <p className="card text-sm text-muted">{t("alerts.empty")}</p>}
-        {alerts?.map((a) => <AlertRow key={a.id} alert={a} />)}
-      </div>
+      {isLoading && <p className="text-sm text-muted">{t("alerts.loading")}</p>}
+      {alerts?.length === 0 && <p className="card text-sm text-muted">{t("alerts.empty")}</p>}
+      {alerts && alerts.length > 0 && (
+        <ul className="card divide-y divide-line/50 !py-1">
+          {alerts.map((a) => (
+            <AlertRow key={a.id} alert={a} />
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
