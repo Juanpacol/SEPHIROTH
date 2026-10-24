@@ -79,10 +79,12 @@ export default function ActionDetail({ action, onDone }: { action: PendingAction
 
   return (
     <div className="card space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-bold">{who}</h2>
-          <p className="text-xs text-muted">{actionTypeLabel(action.action_type, t)}</p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="break-words font-display text-2xl font-light uppercase leading-none tracking-wide">
+            {who}
+          </h2>
+          <p className="eyebrow mt-1 text-muted">{actionTypeLabel(action.action_type, t)}</p>
         </div>
         <div className="flex items-center gap-2">
           {!edited && action.draft_source === "llm" && <AgentBadge name={action.draft_model ?? "AI draft"} />}
@@ -91,15 +93,12 @@ export default function ActionDetail({ action, onDone }: { action: PendingAction
       </div>
 
       {isPending && (
-        <p className="rounded-xl bg-primary-soft px-3 py-2 text-xs text-ink/80">
+        <p className="rounded-xl border border-line/50 bg-primary-soft/30 px-3 py-2 text-xs text-ink/80">
           {t("approvals.whatIsThis")
             .replace("{patient}", who)
             .replace("{type}", actionTypeLabel(action.action_type, t).toLowerCase())}
           {action.instructions && (
-            <>
-              {" "}
-              {t("approvals.watchingFor").replace("{instructions}", action.instructions)}
-            </>
+            <> {t("approvals.watchingFor").replace("{instructions}", action.instructions)}</>
           )}
         </p>
       )}
@@ -134,7 +133,7 @@ export default function ActionDetail({ action, onDone }: { action: PendingAction
                 <button
                   onClick={() => reject.mutate()}
                   disabled={reject.isPending || rejectReason.trim() === ""}
-                  className="rounded-xl bg-danger px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+                  className="btn rounded-xl bg-danger text-white disabled:opacity-40"
                 >
                   {t("approvals.confirmReject")}
                 </button>
@@ -154,7 +153,7 @@ export default function ActionDetail({ action, onDone }: { action: PendingAction
               </button>
               <button
                 onClick={() => setShowReject(true)}
-                className="flex items-center gap-1.5 rounded-xl border border-line/70 px-4 py-2 text-sm font-semibold text-danger"
+                className="btn-secondary flex items-center gap-1.5 !text-danger hover:!border-danger/50"
               >
                 <XCircle size={15} /> {t("approvals.reject")}
               </button>

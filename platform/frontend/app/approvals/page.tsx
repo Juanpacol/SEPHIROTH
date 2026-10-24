@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardCheck } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import ActionDetail, { actionTypeLabel } from "@/components/approvals/action-detail";
+import FilterTabs from "@/components/ui/filter-tabs";
+import PageHeader from "@/components/ui/page-header";
 import Sheet from "@/components/ui/sheet";
 
 const STATUS_FILTERS = ["pending", "approved", "rejected", "expired"] as const;
@@ -29,32 +30,24 @@ export default function ApprovalsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
-      <div>
-        <h1 className="flex items-center gap-2 text-xl font-extrabold">
-          <ClipboardCheck size={20} className="text-primary" /> {t("approvals.title")}
-        </h1>
-        <p className="text-sm text-muted">{t("approvals.subtitle")}</p>
-      </div>
+      <PageHeader
+        eyebrow={t("patients.eyebrow")}
+        title={t("approvals.title")}
+        subtitle={t("approvals.subtitle")}
+      />
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        {STATUS_FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => {
-              setStatus(f);
-              setSelectedId(null);
-            }}
-            className={`tap shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-              status === f ? "bg-primary text-white" : "bg-primary-soft text-primary"
-            }`}
-          >
-            {t(`approvals.status.${f}`)}
-          </button>
-        ))}
-      </div>
+      <FilterTabs
+        label={t("approvals.title")}
+        value={status}
+        onChange={(f) => {
+          setStatus(f);
+          setSelectedId(null);
+        }}
+        tabs={STATUS_FILTERS.map((f) => ({ value: f, label: t(`approvals.status.${f}`) }))}
+      />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-[280px_minmax(0,1fr)]">
-        <div className="space-y-2">
+        <div className="space-y-1">
           {isLoading && <p className="text-sm text-muted">{t("approvals.loading")}</p>}
           {actions?.length === 0 && (
             <p className="card text-sm text-muted">{t(`approvals.empty.${status}`)}</p>
@@ -64,12 +57,18 @@ export default function ApprovalsPage() {
               key={a.id}
               onClick={() => setSelectedId(a.id)}
               aria-current={inlineSelected?.id === a.id ? "true" : undefined}
-              className={`card-interactive tap w-full text-left ${
-                inlineSelected?.id === a.id ? "ring-2 ring-primary" : ""
+              className={`tap relative w-full rounded-xl py-2.5 pl-4 pr-3 text-left transition-colors duration-normal ${
+                inlineSelected?.id === a.id ? "bg-primary-soft/50" : "hover:bg-primary-soft/25"
               }`}
             >
+              <span
+                aria-hidden
+                className={`absolute inset-y-2.5 left-0 w-0.5 rounded-full bg-primary-ink transition-transform duration-300 ${
+                  inlineSelected?.id === a.id ? "scale-y-100" : "scale-y-0"
+                }`}
+              />
               <p className="text-sm font-semibold">{a.patient_name ?? t("approvals.unknownPatient")}</p>
-              <p className="text-xs text-muted">{actionTypeLabel(a.action_type, t)}</p>
+              <p className="eyebrow text-muted">{actionTypeLabel(a.action_type, t)}</p>
             </button>
           ))}
         </div>
@@ -98,9 +97,7 @@ export default function ApprovalsPage() {
             side="bottom"
             title={picked?.patient_name ?? t("approvals.unknownPatient")}
           >
-            {picked && (
-              <ActionDetail key={picked.id} action={picked} onDone={() => setSelectedId(null)} />
-            )}
+            {picked && <ActionDetail key={picked.id} action={picked} onDone={() => setSelectedId(null)} />}
           </Sheet>
         </div>
       </div>
