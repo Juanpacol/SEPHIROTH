@@ -57,7 +57,9 @@ describe("ClaimInvitePage", () => {
 
     renderPage();
 
-    await waitFor(() => expect(screen.getByText("This invite link is incomplete")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "This invite link is incomplete" })).toBeInTheDocument()
+    );
     expect(screen.queryByLabelText(/claim code/i)).not.toBeInTheDocument();
     expect(replace).not.toHaveBeenCalled();
   });
@@ -68,7 +70,9 @@ describe("ClaimInvitePage", () => {
 
     renderPage();
 
-    await waitFor(() => expect(screen.getByText("Set up your portal account")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Set up your portal account" })).toBeInTheDocument()
+    );
     expect(screen.queryByText(/claim code/i)).not.toBeInTheDocument();
     expect(screen.getByText("Full name")).toBeInTheDocument();
   });
