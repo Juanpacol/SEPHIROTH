@@ -8,6 +8,8 @@ import { homeFor, storeAuth } from "@/lib/auth";
 import WingMark from "@/components/brand/wing-mark";
 import Wordmark from "@/components/landing/wordmark";
 import AccentTitle from "@/components/landing/accent-title";
+import ForceDark from "@/components/landing/force-dark";
+import AuthBackdrop from "@/components/auth/auth-backdrop";
 import { useLanguage } from "@/lib/language";
 
 export default function LoginPage() {
@@ -45,8 +47,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-surface p-6">
-      <div className="w-full max-w-sm">
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden p-6">
+      <ForceDark />
+      <AuthBackdrop />
+      <div className="relative z-10 w-full max-w-sm">
         <div className="group/brand mb-6 flex items-center justify-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-soft text-primary">
             <WingMark size={20} />
