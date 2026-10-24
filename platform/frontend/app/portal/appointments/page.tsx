@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import StatusPill from "@/components/status-pill";
+import PageHeader from "@/components/ui/page-header";
 import { useLanguage } from "@/lib/language";
 
 export default function PortalAppointmentsPage() {
@@ -36,8 +37,8 @@ export default function PortalAppointmentsPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-bold">{t("portal.appointments.title")}</h1>
+    <div className="space-y-5">
+      <PageHeader eyebrow={t("portal.eyebrow")} title={t("portal.appointments.title")} />
 
       {isLoading && <p className="text-sm text-muted">{t("portal.appointments.loading")}</p>}
       {!isLoading && (appointments ?? []).length === 0 && (

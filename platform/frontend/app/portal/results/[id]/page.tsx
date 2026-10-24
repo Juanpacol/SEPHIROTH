@@ -7,6 +7,7 @@ import { Download, FileDown, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import AgentBadge from "@/components/agent-badge";
 import LabResultCard from "@/components/portal/lab-result-card";
+import PageHeader from "@/components/ui/page-header";
 import { useLanguage } from "@/lib/language";
 import { useToast } from "@/components/ui/toast";
 
@@ -43,20 +44,21 @@ export default function PortalResultDetailPage() {
 
   return (
     <div className="max-w-2xl space-y-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold">{share.event.title}</h1>
-          <p className="text-sm text-muted">{share.event.date}</p>
-        </div>
-        <button
-          onClick={downloadPdf}
-          disabled={downloadingPdf}
-          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-line/70 px-3 py-2 text-xs font-semibold text-ink/80 hover:bg-surface disabled:opacity-40"
-        >
-          {downloadingPdf ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
-          {downloadingPdf ? t("portal.result.downloadingPdf") : t("portal.result.downloadPdf")}
-        </button>
-      </div>
+      <PageHeader
+        eyebrow={t("portal.eyebrow")}
+        title={share.event.title}
+        subtitle={share.event.date}
+        actions={
+          <button
+            onClick={downloadPdf}
+            disabled={downloadingPdf}
+            className="tap flex shrink-0 items-center gap-1.5 rounded-xl border border-line/70 px-3 py-2 text-xs font-semibold text-ink/80 hover:bg-surface disabled:opacity-40"
+          >
+            {downloadingPdf ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
+            {downloadingPdf ? t("portal.result.downloadingPdf") : t("portal.result.downloadPdf")}
+          </button>
+        }
+      />
 
       {share.lab && (
         <div className="card">

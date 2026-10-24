@@ -805,6 +805,7 @@ const ES: Record<string, string> = {
   "imaging.askPrefillFocus": " (enfoque: {target})",
 
   // Portal del paciente — página de inicio ("Mi salud")
+  "portal.eyebrow": "Portal",
   "portal.home.greeting": "Hola, {name}",
   "portal.home.ageYears": "{name} · {age} años",
   "portal.home.upcomingTitle": "Tu próxima cita",

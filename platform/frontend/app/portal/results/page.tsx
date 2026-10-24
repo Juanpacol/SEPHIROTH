@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FileText, Paperclip } from "lucide-react";
 import { api } from "@/lib/api";
 import AgentBadge from "@/components/agent-badge";
+import PageHeader from "@/components/ui/page-header";
 import { useLanguage } from "@/lib/language";
 
 export default function PortalResultsPage() {
@@ -15,8 +16,8 @@ export default function PortalResultsPage() {
   });
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-bold">{t("portal.results.title")}</h1>
+    <div className="space-y-5">
+      <PageHeader eyebrow={t("portal.eyebrow")} title={t("portal.results.title")} />
 
       {isLoading && <p className="text-sm text-muted">{t("portal.results.loading")}</p>}
       {!isLoading && (shares ?? []).length === 0 && (
