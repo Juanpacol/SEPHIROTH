@@ -160,11 +160,12 @@ async def consult(
     body: ConsultRequest,
     user: User = Depends(get_current_user),
 ) -> ConsultResponse:
-    """Run the multi-agent clinical workflow and persist it to the user's history.
+    """Run the single-specialist clinical workflow (ADR-016) and persist it
+    to the user's history.
 
     Deliberately does not hold a request-scoped session (no `Depends(get_session)`)
-    across `run_consultation()` — that call can take minutes (5 agents, up to 6
-    tool rounds each, throttled by the shared Gemini rate limiter) and an open
+    across `run_consultation()` — that call can take a while (one specialist,
+    up to 6 tool rounds, throttled by the shared LLM rate limiter) and an open
     session would pin a pooled connection idle-in-transaction for the whole
     run. Same short-lived-session pattern `consult_stream` already uses below.
     """

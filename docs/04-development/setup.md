@@ -42,6 +42,49 @@ Always test the backend via `http://127.0.0.1:8000` (IPv4). Frontend is on
 **3100** and Postgres on **5433**, because the defaults are occupied by another
 project's containers on this machine.
 
+### Local LLM (Ollama) instead of Gemini
+
+Set `LLM_PROVIDER=ollama` in `.env` (plus `OLLAMA_MODEL`/`OLLAMA_VISION_MODEL`
+— see `.env.example`'s "Local LLM" block) to run chat and vision on a local
+Ollama install instead of Gemini: no API key, no quota, nothing leaves the
+machine. Ollama runs as a native macOS process, not in Docker Compose — on
+Apple Silicon that's the difference between the GPU (Metal) answering a
+request and the CPU doing it, and Compose's Postgres-only service here never
+tries to containerize it.
+
+Before starting the API, both models have to already be pulled and the
+server running:
+
+```bash
+ollama pull qwen3:8b            # or whatever OLLAMA_MODEL is set to
+ollama pull qwen2.5vl:3b        # or whatever OLLAMA_VISION_MODEL is set to
+set -a; source .env; set +a; scripts/start_ollama.sh   # starts `ollama serve`
+                                                        # if not already up,
+                                                        # and warms both models
+```
+
+Skipping the `source .env` step is the single most common cause of
+"the model never responds" on this machine: `scripts/start_ollama.sh` reads
+`OLLAMA_MODEL`/`OLLAMA_VISION_MODEL` from the *shell's* environment, not from
+`.env` directly, and falls back to its own hardcoded defaults
+(`qwen2.5:3b-instruct`) when they're unset — silently warming a different
+model than the one the app is configured to call. The first real request
+against a model that was never warmed this way takes a slow cold-load before
+it answers, which from the frontend looks identical to "it's stuck."
+
+Two local models kept resident at once (`OLLAMA_KEEP_ALIVE=-1`, set by the
+script) need real memory — budget roughly 6GB for an 8B chat model and 3GB
+for a 3B vision model, on top of whatever Postgres/Node/the browser are
+already using. On a machine with 16GB total, that is tight enough that disk
+swapping (not a crash, not an error) is a realistic explanation for a request
+that "never responds" rather than returning quickly or failing outright. For
+a concrete current reading before guessing further: `GET /health/ready` only
+reports `llm: configured`, which is true even when Ollama is down or
+swapping — it does not call the model (see `main.py::readiness_check`'s
+docstring). To tell those apart, check `ollama ps` (which models are loaded
+and whether they're thrashing) and the API logs around the failing request,
+rather than the health endpoint.
+
 `platform/` must **not** be a Python package — a root `__init__.py` there would
 shadow the stdlib `platform` module. It goes on `PYTHONPATH` instead, so its
 subpackages import as top-level (`from core.config import settings`).

@@ -49,7 +49,10 @@ services:
       # LLM — Google Gemini API. PHI leaves the machine once this is set;
       # see README's privacy notice.
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      # Same default as `Settings.gemini_model` (core/config.py) — kept in
+      # sync on purpose, not re-derived, so a bare `docker compose up` and a
+      # bare `uvicorn` run never silently pick different models.
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-flash-latest}
       DEBUG: "false"
     healthcheck:
       # urllib instead of curl — the slim python base image has no curl.

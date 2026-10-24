@@ -1,9 +1,10 @@
-"""Fast-path lookups — bypass the multi-agent LLM pipeline entirely for
-query shapes that are pure data retrieval, not synthesis.
+"""Fast-path lookups — bypass the single-specialist LLM pipeline entirely
+for query shapes that are pure data retrieval, not synthesis.
 
-**Why this is safe, not just fast.** The full pipeline (specialist →
-coordinator → citation guard → claim verification → abstention) exists
-because free-text LLM synthesis can fabricate. A fast-path answer never
+**Why this is safe, not just fast.** The full pipeline (one specialist,
+picked by `intent_router` — ADR-016 — → citation guard → claim
+verification → abstention) exists because free-text LLM synthesis can
+fabricate. A fast-path answer never
 synthesizes anything — it returns a tool's own structured result
 (`search_clinical_guidelines`, `check_drug_interactions`) verbatim, with
 the tool's own citation attached unchanged. There is nothing for an LLM
