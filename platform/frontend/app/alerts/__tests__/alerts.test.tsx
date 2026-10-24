@@ -6,7 +6,9 @@ import { api } from "@/lib/api";
 import { LanguageProvider } from "@/lib/language";
 
 function renderPage() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   return render(
     <QueryClientProvider client={client}>
       <LanguageProvider>
@@ -90,8 +92,11 @@ describe("AlertsPage", () => {
     ]);
     renderPage();
 
-    await waitFor(() => expect(screen.getByText("Presión arterial en rango hipertensivo")).toBeInTheDocument());
-    expect(screen.getByText("Paciente P001 · Laboratorio")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("Presión arterial en rango hipertensivo")).toBeInTheDocument()
+    );
+    expect(screen.getByRole("link", { name: "Paciente P001" })).toHaveAttribute("href", "/patients/P001");
+    expect(screen.getByText(/Laboratorio/, { selector: "p" })).toBeInTheDocument();
     expect(screen.getByText("Crítico")).toBeInTheDocument();
     expect(screen.getByText("Activas", { selector: "button" })).toBeInTheDocument();
     expect(screen.queryByText(/Patient|critical|Hypertensive/)).not.toBeInTheDocument();
@@ -106,9 +111,12 @@ describe("AlertsPage", () => {
     renderPage();
 
     await waitFor(() =>
-      expect(screen.getByText("Posible interacción: clopidogrel + warfarin — revisar tratamiento")).toBeInTheDocument()
+      expect(
+        screen.getByText("Posible interacción: clopidogrel + warfarin — revisar tratamiento")
+      ).toBeInTheDocument()
     );
-    expect(screen.getByText("Paciente P001 · Medicación")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Paciente P001" })).toBeInTheDocument();
+    expect(screen.getByText(/Medicación/, { selector: "p" })).toBeInTheDocument();
     expect(screen.queryByText(/Interaction:/)).not.toBeInTheDocument();
     localStorage.removeItem("cac_lang");
   });
