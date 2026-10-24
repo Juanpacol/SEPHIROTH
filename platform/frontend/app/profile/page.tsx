@@ -2,11 +2,21 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bot } from "lucide-react";
+import { ArrowRight, Bot, KeyRound, Palette, UserRound } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { updateStoredUser, useUser } from "@/lib/auth";
 import ThemeToggle from "@/components/theme-toggle";
+import PageHeader from "@/components/ui/page-header";
 import { useLanguage } from "@/lib/language";
+
+function SectionLabel({ icon: Icon, children }: { icon: typeof UserRound; children: React.ReactNode }) {
+  return (
+    <h2 className="eyebrow flex items-center gap-2 text-muted">
+      <Icon size={14} className="text-primary-ink" aria-hidden />
+      {children}
+    </h2>
+  );
+}
 
 export default function ProfilePage() {
   const user = useUser();
@@ -90,29 +100,32 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <div>
-        <h1 className="text-xl font-extrabold">{t("profile.title")}</h1>
-        <p className="text-sm text-muted">{t("profile.subtitle")}</p>
-      </div>
+    <div className="mx-auto max-w-xl space-y-5">
+      <PageHeader eyebrow={t("profile.eyebrow")} title={t("profile.title")} subtitle={t("profile.subtitle")} />
 
       <div className="card space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-bold">{t("profile.appearance")}</h2>
+          <SectionLabel icon={Palette}>{t("profile.appearance")}</SectionLabel>
           <ThemeToggle />
         </div>
       </div>
 
-      <Link href="/preferences" className="card flex items-center justify-between hover:bg-surface">
-        <div className="flex items-center gap-2">
-          <Bot size={16} className="text-primary" />
-          <span className="font-bold">{t("profile.automationPreferences")}</span>
-        </div>
-        <span className="text-sm text-muted">{t("profile.automationPreferencesHint")}</span>
+      <Link
+        href="/preferences"
+        className="tap card flex flex-wrap items-center justify-between gap-x-3 gap-y-1 transition-colors duration-normal hover:bg-surface"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <Bot size={16} className="shrink-0 text-primary-ink" aria-hidden />
+          <span className="font-semibold text-ink">{t("profile.automationPreferences")}</span>
+        </span>
+        <span className="flex min-w-0 shrink-0 items-center gap-1.5 text-sm text-muted">
+          {t("profile.automationPreferencesHint")}
+          <ArrowRight size={13} className="shrink-0 -rotate-45" aria-hidden />
+        </span>
       </Link>
 
       <form onSubmit={saveProfile} className="card space-y-4">
-        <h2 className="font-bold">{t("profile.accountDetails")}</h2>
+        <SectionLabel icon={UserRound}>{t("profile.accountDetails")}</SectionLabel>
         <div>
           <label className="mb-1 block text-sm font-semibold">{t("profile.fullName")}</label>
           <input
@@ -142,7 +155,7 @@ export default function ProfilePage() {
       </form>
 
       <form onSubmit={savePassword} className="card space-y-4">
-        <h2 className="font-bold">{t("profile.changePassword")}</h2>
+        <SectionLabel icon={KeyRound}>{t("profile.changePassword")}</SectionLabel>
         <div>
           <label className="mb-1 block text-sm font-semibold">{t("profile.currentPassword")}</label>
           <input
