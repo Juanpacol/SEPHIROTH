@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import LabResultCard from "@/components/portal/lab-result-card";
+import PageHeader from "@/components/ui/page-header";
 
 /** The lab results a clinician reviewed and told this patient about, and
  * nothing else. */
@@ -14,11 +15,8 @@ export default function PortalLabsPage() {
   const labs = data?.labs ?? [];
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-bold">{t("portal.labs.title")}</h1>
-        <p className="text-sm text-muted">{t("portal.labs.subtitle")}</p>
-      </div>
+    <div className="space-y-5">
+      <PageHeader eyebrow={t("portal.eyebrow")} title={t("portal.labs.title")} subtitle={t("portal.labs.subtitle")} />
 
       {isLoading ? <p className="text-sm text-muted">{t("portal.labs.loading")}</p> : null}
       {error ? (

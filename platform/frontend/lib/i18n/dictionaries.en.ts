@@ -798,6 +798,7 @@ const EN: Record<string, string> = {
   "imaging.askPrefillFocus": " (focus: {target})",
 
   // Patient portal — home page ("My Health")
+  "portal.eyebrow": "Portal",
   "portal.home.greeting": "Hi, {name}",
   "portal.home.ageYears": "{name} · {age} years old",
   "portal.home.upcomingTitle": "Your next appointment",

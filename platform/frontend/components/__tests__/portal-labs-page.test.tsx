@@ -95,7 +95,7 @@ describe("PortalLabsPage", () => {
     vi.spyOn(api, "portalLabs").mockResolvedValue({ patient_id: "p", labs: [lab({ standing: "inside", direction: null })] });
     renderPage();
 
-    expect(await screen.findByText("Mis laboratorios")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Mis laboratorios" })).toBeInTheDocument();
     expect(await screen.findByText("Tu Potasio está dentro del rango habitual.")).toBeInTheDocument();
     expect(screen.getByText(/Solo tu equipo de salud puede decirte/)).toBeInTheDocument();
     expect(screen.getByText("Nuevo")).toBeInTheDocument();

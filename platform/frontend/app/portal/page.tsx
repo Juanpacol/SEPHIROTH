@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, FileText } from "lucide-react";
 import { api } from "@/lib/api";
 import { useUser } from "@/lib/auth";
+import PageHeader from "@/components/ui/page-header";
 import { useLanguage } from "@/lib/language";
 
 /** Case-insensitive de-dup for display only — seed/demo data can carry the
@@ -40,16 +41,13 @@ export default function PortalHomePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-bold">
-          {t("portal.home.greeting").replace("{name}", user?.name?.split(" ")[0] ?? "")}
-        </h1>
-        {me && (
-          <p className="text-sm text-muted">
-            {t("portal.home.ageYears").replace("{name}", me.name).replace("{age}", String(me.age))}
-          </p>
-        )}
-      </div>
+      <PageHeader
+        eyebrow={t("portal.eyebrow")}
+        title={t("portal.home.greeting").replace("{name}", user?.name?.split(" ")[0] ?? "")}
+        subtitle={
+          me ? t("portal.home.ageYears").replace("{name}", me.name).replace("{age}", String(me.age)) : undefined
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="card">
