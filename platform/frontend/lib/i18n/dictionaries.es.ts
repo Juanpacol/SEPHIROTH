@@ -915,6 +915,7 @@ const ES: Record<string, string> = {
     "La creación de cuentas está restringida. Pide a un profesional que te invite.",
   "login.error.tooManyAttempts": "Demasiadas solicitudes. Espera un minuto e inténtalo de nuevo.",
 
+  "profile.eyebrow": "Cuenta",
   "profile.title": "Perfil",
   "profile.subtitle": "Administra tu cuenta y preferencias de apariencia.",
   "profile.appearance": "Apariencia",
@@ -938,6 +939,7 @@ const ES: Record<string, string> = {
   "profile.error.currentPasswordIncorrect": "La contraseña actual es incorrecta.",
   "profile.error.passwordChangeFailed": "No se pudo cambiar la contraseña.",
 
+  "preferences.eyebrow": "Automatización",
   "preferences.title": "Preferencias de automatización",
   "preferences.subtitle":
     "Configura cómo se comportan los recordatorios de citas y los seguimientos. Nada aquí cambia lo que se envía — solo cuándo.",

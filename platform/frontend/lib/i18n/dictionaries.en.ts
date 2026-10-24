@@ -907,6 +907,7 @@ const EN: Record<string, string> = {
   "login.error.registrationRestricted": "Account creation is restricted. Ask a clinician to invite you.",
   "login.error.tooManyAttempts": "Too many requests. Wait a minute and try again.",
 
+  "profile.eyebrow": "Account",
   "profile.title": "Profile",
   "profile.subtitle": "Manage your account and appearance preferences.",
   "profile.appearance": "Appearance",
@@ -930,6 +931,7 @@ const EN: Record<string, string> = {
   "profile.error.currentPasswordIncorrect": "Current password is incorrect.",
   "profile.error.passwordChangeFailed": "Could not change password.",
 
+  "preferences.eyebrow": "Automation",
   "preferences.title": "Automation preferences",
   "preferences.subtitle":
     "Configure how appointment reminders and follow-ups behave. Nothing here changes what gets sent — only when.",

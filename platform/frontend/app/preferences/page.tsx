@@ -1,8 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Clock, Moon } from "lucide-react";
 import { api } from "@/lib/api";
+import PageHeader from "@/components/ui/page-header";
 import { useLanguage } from "@/lib/language";
+
+function SectionLabel({ icon: Icon, children }: { icon: typeof Clock; children: React.ReactNode }) {
+  return (
+    <h2 className="eyebrow flex items-center gap-2 text-muted">
+      <Icon size={14} className="text-primary-ink" aria-hidden />
+      {children}
+    </h2>
+  );
+}
 
 // This clinic is single-tenant (CLAUDE.md decision #7 -- no per-clinician
 // scoping); automation_memory.py's own docstring confirms `scope="clinic"`
@@ -90,14 +101,15 @@ export default function PreferencesPage() {
   };
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <div>
-        <h1 className="text-xl font-extrabold">{t("preferences.title")}</h1>
-        <p className="text-sm text-muted">{t("preferences.subtitle")}</p>
-      </div>
+    <div className="mx-auto max-w-xl space-y-5">
+      <PageHeader
+        eyebrow={t("preferences.eyebrow")}
+        title={t("preferences.title")}
+        subtitle={t("preferences.subtitle")}
+      />
 
       <form onSubmit={saveLeadHours} className="card space-y-4">
-        <h2 className="font-bold">{t("preferences.leadTime.title")}</h2>
+        <SectionLabel icon={Clock}>{t("preferences.leadTime.title")}</SectionLabel>
         <div>
           <label className="mb-1 block text-sm font-semibold">{t("preferences.leadTime.label")}</label>
           <input
@@ -117,7 +129,7 @@ export default function PreferencesPage() {
       </form>
 
       <form onSubmit={saveQuietHours} className="card space-y-4">
-        <h2 className="font-bold">{t("preferences.quietHours.title")}</h2>
+        <SectionLabel icon={Moon}>{t("preferences.quietHours.title")}</SectionLabel>
         <p className="text-sm text-muted">{t("preferences.quietHours.subtitle")}</p>
         {/* Stacked on a phone, and `min-w-0` so the time widget's intrinsic
             width can't put a floor under the column — see the native-control
