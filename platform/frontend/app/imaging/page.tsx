@@ -1,5 +1,9 @@
 "use client";
 
+/** A stage-and-rail layout: the picture is the biggest thing on screen, on the left; the controls and the
+ * AI's own output sit in a narrower rail on the right, in the chat's palette (`.copilot-skin`) — so what the
+ * model generated reads as one idiom with the chat and the evidence library, not as a form plus a card. */
+
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpenCheck, Bot, CalendarPlus, Clock, Eye, ImageOff, Loader2 } from "lucide-react";
@@ -8,10 +12,14 @@ import { authHeaders } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import AgentBadge from "@/components/agent-badge";
 import ImageDropzone from "@/components/image-dropzone";
+import PatientPicker from "@/components/copilot/patient-picker";
 import { OPEN_COPILOT_EVENT } from "@/components/copilot/copilot-widget";
 import { useToast } from "@/components/ui/toast";
+import PageHeader from "@/components/ui/page-header";
+import Sheet from "@/components/ui/sheet";
 
 const PREVIEW_TIMEOUT_MS = 15000;
+const TARGET_KEYS = ["lung", "liver", "brain", "heart", "kidney"] as const;
 
 /** `/imaging/preview` requires a JWT Bearer header, which a plain <img src>
  * can never send (browsers don't attach custom headers to image requests) —
@@ -144,9 +152,7 @@ export default function ImagingPage() {
     setDescribeModel(null);
     setAddedToTimeline(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
-    showToast(
-      t("imaging.toast.loadedIntoWorkspace").replace("{button}", t("imaging.describeVisionAi"))
-    );
+    showToast(t("imaging.toast.loadedIntoWorkspace").replace("{button}", t("imaging.describeVisionAi")));
   };
 
   const runDescribe = async () => {
@@ -208,89 +214,94 @@ export default function ImagingPage() {
     window.dispatchEvent(
       new CustomEvent(OPEN_COPILOT_EVENT, {
         detail: {
-          prefill: t("imaging.askPrefill")
-            .replace("{description}", describeText)
-            .replace("{focus}", focus),
+          prefill: t("imaging.askPrefill").replace("{description}", describeText).replace("{focus}", focus),
         },
-      }),
+      })
     );
   };
 
   const hasResult = describeText || describeError;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
-      <div>
-        <h1 className="text-xl font-extrabold">{t("nav.imaging")}</h1>
-        <p className="text-sm text-muted">{t("imaging.subtitle")}</p>
-      </div>
+    <div className="mx-auto max-w-6xl space-y-5">
+      <PageHeader eyebrow={t("patients.eyebrow")} title={t("nav.imaging")} subtitle={t("imaging.subtitle")} />
 
-      <div className="card space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-          <div className="min-w-0 flex-1">
-            <label className="mb-1 block text-sm font-semibold">{t("imaging.patientOptional")}</label>
-            <select
-              value={patientId}
-              onChange={(e) => setPatientId(e.target.value)}
-              className="w-full rounded-xl border border-line/70 bg-card px-3 py-2.5 text-sm"
-            >
-              <option value="">{t("copilot.noPatient")}</option>
-              {patients?.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="min-w-0 flex-1">
-            <label className="mb-1 block text-sm font-semibold">{t("imaging.targetOptional")}</label>
-            <input
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              placeholder={t("imaging.targetPlaceholder")}
-              className="w-full rounded-xl border border-line/70 bg-card px-3 py-2.5 text-sm outline-none focus:border-primary"
-            />
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={runDescribe}
-            disabled={!imagePath || describing}
-            className="tap flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40 sm:w-auto sm:justify-start"
-            aria-label={t("imaging.describeAria")}
-          >
-            <Eye size={16} />
-            {describing ? t("imaging.sampling") : t("imaging.describeVisionAi")}
-          </button>
-        </div>
-      </div>
-
-      {/* Left: add-file control + preview stacked. Right: AI findings, streamed live. */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="space-y-4">
-          <div className="card !p-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        {/* The stage — the picture, as big as the page allows. */}
+        <div className="lg:col-span-8">
+          <div className="card min-h-[320px] !p-3 lg:min-h-[480px]">
             <ImageDropzone onUploaded={onUploaded} />
           </div>
         </div>
 
-        <div className="space-y-4">
-          {!hasResult && !describing && (
-            <div className="card space-y-3">
-              <div className="flex items-center gap-2">
-                <Eye size={16} className="text-primary" />
-                <h2 className="font-bold">{t("imaging.whatThisLooksLike")}</h2>
-                <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                  {t("imaging.sample")}
-                </span>
+        {/* The rail — who/what, then what the model made of it. */}
+        <div className="space-y-4 lg:col-span-4">
+          <div className="card space-y-3">
+            <div>
+              <label className="eyebrow mb-1.5 block text-muted">{t("imaging.patientOptional")}</label>
+              <PatientPicker
+                placement="down"
+                patients={patients ?? []}
+                value={patientId}
+                onChange={setPatientId}
+                noneLabel={t("copilot.noPatient")}
+              />
+            </div>
+            <div>
+              <label className="eyebrow mb-1.5 block text-muted">{t("imaging.targetOptional")}</label>
+              <input
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+                placeholder={t("imaging.targetPlaceholder")}
+                className="input py-2"
+              />
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {TARGET_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() =>
+                      setTarget((cur) =>
+                        cur === t(`imaging.target.${key}`) ? "" : t(`imaging.target.${key}`)
+                      )
+                    }
+                    className={`tap rounded-full border px-2.5 py-1 text-xs transition-colors duration-normal ${
+                      target === t(`imaging.target.${key}`)
+                        ? "border-primary-ink/60 bg-primary-soft/60 text-ink"
+                        : "border-line/60 text-muted hover:border-line hover:text-ink"
+                    }`}
+                  >
+                    {t(`imaging.target.${key}`)}
+                  </button>
+                ))}
               </div>
-              <p className="text-sm text-muted">{t("imaging.sampleDescription")}</p>
+            </div>
+            <button
+              onClick={runDescribe}
+              disabled={!imagePath || describing}
+              className="btn-primary tap w-full justify-center"
+              aria-label={t("imaging.describeAria")}
+            >
+              <Eye size={16} />
+              {describing ? t("imaging.sampling") : t("imaging.describeVisionAi")}
+            </button>
+          </div>
+
+          {!hasResult && !describing && (
+            <div className="card space-y-2">
+              <div className="flex items-center gap-2">
+                <Eye size={14} strokeWidth={1.5} className="text-muted" />
+                <h2 className="eyebrow text-muted">{t("imaging.whatThisLooksLike")}</h2>
+                <span className="eyebrow ml-auto text-primary-ink">{t("imaging.sample")}</span>
+              </div>
+              <p className="text-xs text-muted">{t("imaging.sampleDescription")}</p>
               {sample ? (
-                <div className="space-y-3" data-testid="imaging-sample">
+                <div className="space-y-2.5" data-testid="imaging-sample">
                   <div className="aspect-[4/3] w-full overflow-hidden rounded-inner bg-surface">
                     <AuthenticatedPreview path={sample.image} alt={`${sample.modality} ${sample.region}`} />
                   </div>
-                  <p className="line-clamp-6 text-sm leading-relaxed text-ink/80">{sample.description}</p>
-                  <p className="text-[10px] text-muted">
+                  <p className="line-clamp-5 text-xs leading-relaxed text-ink/80">{sample.description}</p>
+                  <p className="font-mono text-[10px] text-muted">
                     {t("imaging.modelLabel").replace("{model}", sample.model)}
                   </p>
                 </div>
@@ -299,18 +310,17 @@ export default function ImagingPage() {
           )}
 
           {(describing || describeText || describeError) && (
-            <div
-              className="card border-2"
-              style={{ borderImage: "linear-gradient(135deg,#8C92AC,#D1D5DB) 1" }}
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="font-bold">{t("imaging.visionDescription")}</h2>
+            <div className="copilot-skin animate-answer-in rounded-squircle p-4 ring-1 ring-white/15">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="font-display text-lg font-light uppercase leading-none tracking-wide">
+                  {t("imaging.visionDescription")}
+                </h2>
                 <AgentBadge name={t("imaging.visionAiBadge")} />
               </div>
               {describeError ? (
                 <p className="text-sm text-danger">{describeError}</p>
               ) : (
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink/90">
                   {describeText}
                   {describing && (
                     <Loader2 size={13} className="ml-1 inline animate-spin align-middle text-muted" />
@@ -318,18 +328,18 @@ export default function ImagingPage() {
                 </p>
               )}
               {describeModel && (
-                <p className="mt-3 text-xs text-muted">
+                <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.1em] text-muted">
                   {t("imaging.generatedByDisclaimer").replace("{model}", describeModel)}
                 </p>
               )}
 
               {!describing && describeText && (
-                <div className="mt-4 flex flex-wrap gap-2 border-t border-line/60 pt-3">
+                <div className="mt-4 flex flex-wrap gap-2 border-t border-white/10 pt-3">
                   <button
                     onClick={() => addToTimeline.mutate()}
                     disabled={!patientId || addToTimeline.isPending || addedToTimeline}
                     title={!patientId ? t("imaging.selectPatientFirst") : undefined}
-                    className="flex items-center gap-1.5 rounded-xl border border-line/70 px-3 py-2 text-xs font-semibold text-ink/80 hover:bg-surface disabled:opacity-40"
+                    className="tap inline-flex items-center gap-1.5 rounded-full border border-white/15 px-2.5 py-1.5 text-xs font-medium text-ink/80 transition-colors duration-normal hover:border-white/30 hover:bg-white/10 disabled:opacity-40"
                   >
                     <CalendarPlus size={13} />
                     {addedToTimeline
@@ -340,7 +350,7 @@ export default function ImagingPage() {
                   </button>
                   <button
                     onClick={askSephiroth}
-                    className="flex items-center gap-1.5 rounded-xl border border-line/70 px-3 py-2 text-xs font-semibold text-ink/80 hover:bg-surface"
+                    className="tap inline-flex items-center gap-1.5 rounded-full border border-white/15 px-2.5 py-1.5 text-xs font-medium text-ink/80 transition-colors duration-normal hover:border-white/30 hover:bg-white/10"
                   >
                     <Bot size={13} />
                     {t("imaging.askSephiroth")}
@@ -351,22 +361,22 @@ export default function ImagingPage() {
           )}
 
           {(evidence.isPending || (evidence.data && evidence.data.results.length > 0)) && (
-            <div className="card">
-              <div className="mb-3 flex items-center gap-2">
-                <BookOpenCheck size={16} className="text-primary" />
-                <h2 className="font-bold">{t("imaging.relatedEvidence")}</h2>
+            <div className="copilot-skin rounded-squircle p-4 ring-1 ring-white/15">
+              <div className="mb-2 flex items-center gap-2">
+                <BookOpenCheck size={14} strokeWidth={1.5} className="text-primary-ink" />
+                <h2 className="eyebrow text-muted">{t("imaging.relatedEvidence")}</h2>
               </div>
               {evidence.isPending ? (
                 <p className="text-sm text-muted">{t("imaging.searchingGuidelines")}</p>
               ) : (
                 <div className="space-y-3">
                   {evidence.data!.results.map((r, i) => (
-                    <div key={i} className="rounded-xl bg-surface p-3">
-                      <p className="text-sm leading-relaxed">{r.content}</p>
-                      <p className="mt-1.5 text-xs font-semibold text-primary">{r.citation}</p>
+                    <div key={i} className="border-t border-white/10 pt-3 first:border-0 first:pt-0">
+                      <p className="text-sm leading-relaxed text-ink/90">{r.content}</p>
+                      <p className="mt-1.5 text-xs font-semibold text-primary-ink">{r.citation}</p>
                     </div>
                   ))}
-                  <p className="text-xs text-muted">{t("imaging.evidenceDisclaimer")}</p>
+                  <p className="text-[11px] text-muted">{t("imaging.evidenceDisclaimer")}</p>
                 </div>
               )}
             </div>
@@ -376,11 +386,9 @@ export default function ImagingPage() {
 
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <Clock size={16} className="text-primary" />
-          <h2 className="text-base font-bold">{t("imaging.recentAnalyses")}</h2>
-          <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-            {t("imaging.aiGenerated")}
-          </span>
+          <Clock size={13} strokeWidth={1.5} className="text-primary-ink" />
+          <h2 className="eyebrow text-muted">{t("imaging.recentAnalyses")}</h2>
+          <span className="eyebrow ml-1 text-primary-ink">{t("imaging.aiGenerated")}</span>
         </div>
 
         {recentLoading && <p className="text-sm text-muted">{t("imaging.loadingRecent")}</p>}
@@ -392,9 +400,13 @@ export default function ImagingPage() {
         )}
 
         {!recentLoading && recentAnalyses && recentAnalyses.length > 0 && (
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-            {recentAnalyses.map((a) => (
-              <div key={a.id} className="card flex flex-col gap-3 !p-3">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+            {recentAnalyses.map((a, i) => (
+              <div
+                key={a.id}
+                style={{ animationDelay: `${Math.min(i, 9) * 45}ms` }}
+                className="card flex animate-fadeIn flex-col gap-2.5 !p-3 [animation-fill-mode:both]"
+              >
                 <div className="aspect-square w-full overflow-hidden rounded-inner bg-surface">
                   {a.image_path ? (
                     <AuthenticatedPreview path={a.image_path} alt={a.title} />
@@ -411,28 +423,25 @@ export default function ImagingPage() {
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="min-w-0 text-sm font-bold">{a.title}</p>
-                    <span className="shrink-0 whitespace-nowrap text-[10px] text-muted">{a.date}</span>
+                    <p className="min-w-0 truncate text-sm font-semibold">{a.title}</p>
+                    <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-muted">
+                      {a.date}
+                    </span>
                   </div>
-                  <p className="text-xs font-semibold text-primary">{a.patient_name}</p>
-                  <p className="line-clamp-4 text-xs leading-relaxed text-ink/80">{a.description}</p>
-                  {a.model && (
-                    <p className="text-[10px] text-muted">
-                      {t("imaging.modelLabel").replace("{model}", a.model)}
-                    </p>
-                  )}
+                  <p className="font-mono text-[11px] text-primary-ink">{a.patient_name}</p>
+                  <p className="line-clamp-3 text-xs leading-relaxed text-ink/80">{a.description}</p>
                 </div>
-                <div className="flex gap-2 border-t border-line/60 pt-2">
+                <div className="flex gap-2 border-t border-line/50 pt-2">
                   <button
                     onClick={() => setExpandedAnalysis(a)}
-                    className="tap flex-1 rounded-lg border border-line/70 px-2 py-1.5 text-xs font-semibold text-ink/80 hover:bg-surface"
+                    className="tap flex-1 rounded-lg border border-line/60 px-2 py-1.5 text-xs font-semibold text-ink/80 hover:bg-primary-soft/30"
                   >
                     {t("imaging.viewFull")}
                   </button>
                   <button
                     onClick={() => openInAnalyzer(a)}
                     disabled={!a.image_path}
-                    className="tap flex-1 rounded-lg bg-primary px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+                    className="btn-primary tap flex-1 justify-center !py-1.5 text-xs disabled:opacity-40"
                   >
                     {t("imaging.analyzePrecisely")}
                   </button>
@@ -443,55 +452,43 @@ export default function ImagingPage() {
         )}
       </div>
 
-      {expandedAnalysis && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setExpandedAnalysis(null)}
-        >
-          <div
-            className="max-h-[85dvh] w-full max-w-2xl overflow-y-auto rounded-card bg-card p-5 shadow-popover"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <h2 className="font-bold">{expandedAnalysis.title}</h2>
-                <p className="text-xs font-semibold text-primary">{expandedAnalysis.patient_name}</p>
-                <p className="text-[10px] text-muted">{expandedAnalysis.date}</p>
-              </div>
-              <button
-                onClick={() => setExpandedAnalysis(null)}
-                className="rounded-lg border border-line/70 px-2 py-1 text-xs font-semibold text-ink/80 hover:bg-surface"
-              >
-                {t("common.close")}
-              </button>
+      <Sheet
+        open={expandedAnalysis !== null}
+        onClose={() => setExpandedAnalysis(null)}
+        side="right"
+        title={expandedAnalysis?.title ?? ""}
+      >
+        {expandedAnalysis && (
+          <div className="space-y-4">
+            <div>
+              <p className="font-mono text-[11px] text-primary-ink">{expandedAnalysis.patient_name}</p>
+              <p className="font-mono text-[10px] text-muted">{expandedAnalysis.date}</p>
             </div>
 
             {expandedAnalysis.image_path && (
-              <div className="mb-4 max-h-80 overflow-hidden rounded-xl bg-surface">
+              <div className="max-h-80 overflow-hidden rounded-xl bg-surface">
                 <AuthenticatedPreview path={expandedAnalysis.image_path} alt={expandedAnalysis.title} />
               </div>
             )}
 
             <p className="whitespace-pre-wrap text-sm leading-relaxed">{expandedAnalysis.description}</p>
             {expandedAnalysis.model && (
-              <p className="mt-3 text-xs text-muted">
+              <p className="text-xs text-muted">
                 {t("imaging.generatedByDisclaimer").replace("{model}", expandedAnalysis.model)}
               </p>
             )}
 
-            <div className="mt-4 border-t border-line/60 pt-3">
-              <button
-                onClick={() => openInAnalyzer(expandedAnalysis)}
-                disabled={!expandedAnalysis.image_path}
-                className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
-              >
-                <Eye size={16} />
-                {t("imaging.runPreciseAnalysis")}
-              </button>
-            </div>
+            <button
+              onClick={() => openInAnalyzer(expandedAnalysis)}
+              disabled={!expandedAnalysis.image_path}
+              className="btn-primary tap w-full justify-center disabled:opacity-40"
+            >
+              <Eye size={16} />
+              {t("imaging.runPreciseAnalysis")}
+            </button>
           </div>
-        </div>
-      )}
+        )}
+      </Sheet>
     </div>
   );
 }

@@ -746,6 +746,11 @@ const EN: Record<string, string> = {
   "common.dark": "Dark",
   "common.toggleLanguage": "Toggle language",
 
+  "imaging.target.lung": "lung",
+  "imaging.target.liver": "liver",
+  "imaging.target.brain": "brain",
+  "imaging.target.heart": "heart",
+  "imaging.target.kidney": "kidney",
   "imaging.subtitle": "AI vision reasoning for X-Ray, CT, MRI, ultrasound and pathology images",
   "imaging.previewFailed": "Preview failed to load",
   "imaging.patientOptional": "Patient (optional)",

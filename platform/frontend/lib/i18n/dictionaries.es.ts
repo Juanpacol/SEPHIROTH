@@ -753,6 +753,11 @@ const ES: Record<string, string> = {
   "common.dark": "Oscuro",
   "common.toggleLanguage": "Cambiar idioma",
 
+  "imaging.target.lung": "pulmón",
+  "imaging.target.liver": "hígado",
+  "imaging.target.brain": "cerebro",
+  "imaging.target.heart": "corazón",
+  "imaging.target.kidney": "riñón",
   "imaging.subtitle": "Razonamiento de visión con IA para radiografías, TC, RM, ultrasonido y patología",
   "imaging.previewFailed": "No se pudo cargar la vista previa",
   "imaging.patientOptional": "Paciente (opcional)",
