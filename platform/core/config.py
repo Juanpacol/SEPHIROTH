@@ -183,9 +183,8 @@ class Settings(BaseSettings):
     # The gate is an enumerated list of call sites, not a payload classifier:
     # a query reading "56-year-old on warfarin, INR 4.8, is the dose safe"
     # carries no name and no identifier, and any detector tuned to catch it
-    # also refuses the guideline lookups that are fine to send. See
-    # `docs/08-decisions/ADR-015-phi-egress-enumerated-seams.md` and
-    # SPEC-022 section 6.5 for the list.
+    # also refuses the guideline lookups that are fine to send. The call
+    # sites it guards are enumerated in `src/sephiroth/models/egress.py`.
     ai_allow_phi: bool = False
 
     # AB#17: automatic grading of a sample of consultations by a second model.

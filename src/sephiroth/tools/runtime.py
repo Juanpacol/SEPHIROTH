@@ -47,13 +47,14 @@ class ToolRuntime:
     async def load(self) -> None:
         """Discover every tool on every server (idempotent).
 
-        Guarded by a lock, not just the `_loaded` check: `run_consultation`
-        awaits `Agent.run()` for every selected specialist concurrently
-        (`asyncio.gather`), and each one calls this — without the lock,
-        multiple callers would all see `_loaded is False` before the first
-        one finishes its awaited `client.list_tools()` calls, and each
-        would append its own copy of every schema, producing duplicate
-        function declarations Gemini rejects outright."""
+        Guarded by a lock, not just the `_loaded` check: this is a
+        process-wide singleton (`get_tool_runtime()`), and concurrent
+        requests each resolve their own specialist's `Agent.run()`, which
+        calls this — without the lock, multiple callers would all see
+        `_loaded is False` before the first one finishes its awaited
+        `client.list_tools()` calls, and each would append its own copy of
+        every schema, producing duplicate function declarations Gemini
+        rejects outright."""
         if self._loaded:
             return
         async with self._load_lock:
