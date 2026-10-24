@@ -65,7 +65,10 @@ export default function LoginPage() {
           {t("login.backToHome")}
         </Link>
 
-        <form onSubmit={submit} className="card space-y-4">
+        <form
+          onSubmit={submit}
+          className="card space-y-4 border border-white/10 bg-white/[0.06] shadow-[0_20px_60px_-15px_rgba(31,47,160,0.45)] backdrop-blur-xl"
+        >
           <div>
             <AccentTitle
               as="h1"

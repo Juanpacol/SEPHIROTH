@@ -12,6 +12,9 @@ import ForceDark from "@/components/landing/force-dark";
 import AuthBackdrop from "@/components/auth/auth-backdrop";
 import { useLanguage } from "@/lib/language";
 
+const AUTH_CARD_CLASS =
+  "card border border-white/10 bg-white/[0.06] shadow-[0_20px_60px_-15px_rgba(31,47,160,0.45)] backdrop-blur-xl";
+
 export default function ClaimInvitePage() {
   return (
     <Suspense fallback={null}>
@@ -89,7 +92,7 @@ function ClaimInviteForm() {
         </div>
 
         {!code ? (
-          <div className="card space-y-3 text-center">
+          <div className={`${AUTH_CARD_CLASS} space-y-3 text-center`}>
             <AccentTitle
               as="h1"
               text={t("portal.claim.incompleteTitle")}
@@ -105,7 +108,7 @@ function ClaimInviteForm() {
             </p>
           </div>
         ) : (
-          <form onSubmit={submit} className="card space-y-4">
+          <form onSubmit={submit} className={`${AUTH_CARD_CLASS} space-y-4`}>
             <div>
               <AccentTitle
                 as="h1"
