@@ -409,6 +409,7 @@ const EN: Record<string, string> = {
   "marketing.features.follow.body":
     "Lab values are read against reference ranges, critical ones are flagged, and every result lands in a review inbox until someone has dealt with it.",
   "marketing.features.follow.alt": "An ink drawing of a wave that grows and fades",
+  "marketing.footer.stageAlt": "An ink brush drawing of a figure in profile",
   "marketing.features.share.verb": "Share",
   "marketing.features.share.title": "Patients stay in the loop",
   "marketing.features.share.body":
