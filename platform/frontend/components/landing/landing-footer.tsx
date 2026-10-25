@@ -5,28 +5,20 @@ import { useLanguage } from "@/lib/language";
 import CtaButton from "./cta-button";
 import { NAV_MENUS } from "./nav-menus";
 
-/** Grain over the stage, same recipe as `feature-media.tsx`'s own `Grain` (and
- * `auth-backdrop.tsx`'s) — print texture over a flat gradient. */
+/** Grain over the footer, same recipe as `feature-media.tsx`'s own `Grain` (and
+ * `auth-backdrop.tsx`'s) — print texture over a flat colour. */
 const GRAIN =
   "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E\")";
 
-/** The vignette that keeps the ink figure a soft presence inside the stage rather than a
- * picture with visible edges: full strength in the middle, faded to nothing well before the
- * stage's own border on every side. */
-const STAGE_IMAGE_MASK = "radial-gradient(120% 95% at 50% 38%, black 40%, transparent 82%)";
-
-/** The landing page's footer, as the Hermes page builds its own: a full screen on its own. A picture fills
- * the top and fades into the page, the name climbs up out of its bottom edge, and the links sit under it,
- * all driven by how far the footer is in view (`components/landing/scroll-effects.tsx` sets
- * `--footer-progress` and `--footer-lift`). The footer stays in the normal flow, so its
- * links are always where focus and reading order expect them. Every variable has a
- * resting default, so without the script, or with reduced motion, it is simply there.
- *
- * One gradient — the page's own blue, fading to its `surface` colour — runs behind the whole
- * footer, stage and links alike, so the links never sit on a flat block that looks like a
- * different page bolted underneath the stage, and the oversized wordmark (which overlaps the
- * links section by design) tapers into a colour that already matches instead of being cut by
- * a visibly different one.
+/** The landing page's footer, built the way the Hermes Agent site (nousresearch.com) builds its
+ * own (inspected with REA — see `docs/08-decisions` if this needs re-checking against a future
+ * redesign there): one flat-coloured box, not a picture section stacked on top of a links
+ * section. Everything — the oversized wordmark, the ink figure, the links — lives in the SAME
+ * CSS grid cell (`*:col-start-1 *:row-start-1`), so paint order alone keeps the real content on
+ * top; the wordmark can never visually collide with a column heading because it's rendered at
+ * near-zero opacity (Hermes itself uses `opacity:.02` for theirs) rather than competing for
+ * contrast. That one change is what earlier attempts at this kept missing: no fade-to-a-different
+ * -colour seam, no clipped-vs-overlapping wordmark tradeoff, because there's only one surface.
  *
  * Its columns are the header's menus, so the two cannot disagree about where things are. */
 export default function LandingFooter() {
@@ -34,47 +26,30 @@ export default function LandingFooter() {
   return (
     <footer
       data-footer-reveal
-      className="relative overflow-hidden border-t border-line/60 opacity-[calc(0.4+0.6*var(--footer-progress,1))] md:flex md:min-h-dvh md:flex-col"
+      className="relative overflow-hidden border-t border-line/60 bg-[#1a2358] opacity-[calc(0.4+0.6*var(--footer-progress,1))]"
     >
-      {/* One backdrop for the whole footer: the page's blue, settling into its surface colour
-          well before the links, so stage and links read as one continuous surface. */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-[linear-gradient(to_bottom,#243473_0%,#1f2fa0_20%,rgb(var(--color-surface))_62%,rgb(var(--color-surface))_100%)]"
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/landing/footer/ink-figure.webp"
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover opacity-[0.07] mix-blend-soft-light [filter:grayscale(1)_contrast(1.1)]"
       />
+      <div className="absolute inset-0 mix-blend-overlay opacity-20" style={{ backgroundImage: GRAIN }} />
+      <span className="sr-only">{t("marketing.footer.stageAlt")}</span>
 
-      {/* The stage: the ink figure as soft texture, a grain pass, and the name rising toward
-          the bottom edge — clipped to this box (`overflow-hidden`), so it never bleeds into
-          the links section below it. The name used to overlap that section by design (a
-          resting 12% past the stage's own edge); pulled up here so the whole glyph sits
-          inside the stage instead, legible, with the links column headings never covered. */}
-      <div className="relative isolate h-[55dvh] min-h-[360px] overflow-hidden md:h-auto md:flex-auto">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/landing/footer/ink-figure.webp"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-soft-light [filter:grayscale(1)_contrast(1.1)]"
-          style={{ maskImage: STAGE_IMAGE_MASK, WebkitMaskImage: STAGE_IMAGE_MASK }}
-        />
-        <div className="absolute inset-0 mix-blend-overlay opacity-25" style={{ backgroundImage: GRAIN }} />
-        <span className="sr-only">{t("marketing.footer.stageAlt")}</span>
-        <div
+      <div className="relative mx-auto grid w-full max-w-6xl px-6 pb-10 pt-16 *:col-start-1 *:row-start-1 md:pt-24">
+        {/* The watermark: SEPHIROTH at a whisper, filling the same box the content sits in —
+            never clipped, never overlapping anything legible, because it barely reads at all. */}
+        <p
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 flex select-none justify-center pb-6"
+          className="pointer-events-none self-start whitespace-nowrap pt-2 text-center font-display text-[clamp(4rem,15vw,15rem)] font-light uppercase leading-none tracking-[0.02em] text-white/[0.06] opacity-[var(--footer-progress,1)]"
         >
-          <span
-            data-footer-wordmark
-            className="translate-y-[calc((1-var(--footer-progress,1))*40%)] whitespace-nowrap font-display text-[clamp(3.5rem,16vw,17rem)] font-light uppercase leading-[0.82] tracking-[0.04em] text-white/[0.92] opacity-[var(--footer-progress,1)]"
-          >
-            SEPHIROTH
-          </span>
-        </div>
-      </div>
+          SEPHIROTH
+        </p>
 
-      <div className="relative mx-auto w-full max-w-6xl px-6 pb-10 pt-12 md:pb-12">
         <div
           data-footer-content
-          className="translate-y-[var(--footer-lift,0px)] opacity-[calc(0.35+0.65*var(--footer-progress,1))]"
+          className="translate-y-[var(--footer-lift,0px)] self-end opacity-[calc(0.35+0.65*var(--footer-progress,1))]"
         >
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div>
