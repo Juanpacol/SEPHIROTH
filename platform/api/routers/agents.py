@@ -1,5 +1,6 @@
 """Agent consultation endpoints — auth-protected, persisted per user."""
 
+import asyncio
 import json
 import logging
 from datetime import datetime, timezone
@@ -28,6 +29,11 @@ from sephiroth.runtime import run_consultation, stream_consultation
 from sephiroth.telemetry.explain import build_explanation
 
 router = APIRouter()
+
+# How long `consult_stream`'s event loop waits for the next real event
+# before emitting an SSE keep-alive comment — module-level so a test can
+# shrink it instead of sleeping for the real duration.
+SSE_HEARTBEAT_SECONDS = 10
 
 logger = logging.getLogger("api.consultations")
 
@@ -277,13 +283,40 @@ async def consult_stream(
             return
 
         final_state: Dict[str, Any] = {}
+        agen = stream_consultation(
+            get_llm_client(),
+            query=body.query,
+            patient_id=body.patient_id,
+            context=context,
+        )
         try:
-            async for event in stream_consultation(
-                get_llm_client(),
-                query=body.query,
-                patient_id=body.patient_id,
-                context=context,
-            ):
+            # A local model's chat/verification round can run 30-90s — a
+            # browser-/proxy-level idle-connection timeout was observed
+            # closing the socket silently (no SSE `error` event, just a dead
+            # connection) around 30s of no bytes. An SSE comment line
+            # (ignored by EventSource, invisible to the frozen event
+            # contract in docs/00-migration-charter.md) keeps the connection
+            # demonstrably alive without adding a new event type.
+            #
+            # `asyncio.wait` (not `wait_for`) on purpose: `wait_for` cancels
+            # its awaitable when the timeout elapses, and cancelling
+            # `agen.__anext__()` kills the underlying async generator —
+            # every heartbeat tick would silently truncate the consultation
+            # after its first real event. `wait`'s timeout just stops
+            # waiting; the pending task keeps running underneath and is
+            # reused on the next loop iteration.
+            pending = asyncio.ensure_future(agen.__anext__())
+            while True:
+                done, _ = await asyncio.wait({pending}, timeout=SSE_HEARTBEAT_SECONDS)
+                if not done:
+                    yield ": keep-alive\n\n"
+                    continue
+                try:
+                    event = pending.result()
+                except StopAsyncIteration:
+                    break
+                pending = asyncio.ensure_future(agen.__anext__())
+
                 if event["event"] == "final":
                     final_state = {
                         "final_answer": event["answer"],
@@ -298,6 +331,12 @@ async def consult_stream(
         except Exception as exc:  # surface errors as an SSE event, not a dropped socket
             yield f"data: {json.dumps({'event': 'error', 'detail': str(exc)})}\n\n"
             return
+        finally:
+            # Exiting the loop early (the except above, or a client
+            # disconnect) can leave `pending` mid-flight — never let it run
+            # unobserved past this generator's lifetime.
+            if not pending.done():
+                pending.cancel()
 
         # Persist outside the request-scoped session (the response is streaming),
         # then tell the client its id so Export PDF works without a reload.
