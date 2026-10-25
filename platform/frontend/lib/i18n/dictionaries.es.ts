@@ -410,6 +410,7 @@ const ES: Record<string, string> = {
   "marketing.features.follow.body":
     "Los valores de laboratorio se leen contra rangos de referencia, los críticos se marcan, y cada resultado llega a una bandeja de revisión hasta que alguien lo atiende.",
   "marketing.features.follow.alt": "Un dibujo en tinta de una onda que crece y se apaga",
+  "marketing.footer.stageAlt": "Un dibujo a tinta de una figura de perfil",
   "marketing.features.share.verb": "Compartir",
   "marketing.features.share.title": "El paciente siempre informado",
   "marketing.features.share.body":

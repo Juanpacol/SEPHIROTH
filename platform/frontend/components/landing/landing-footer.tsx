@@ -6,11 +6,11 @@ import CtaButton from "./cta-button";
 import FeatureMediaView from "./feature-media";
 import { NAV_MENUS } from "./nav-menus";
 
-/** The picture that fills the top of the footer: an ink wave, in the page's blue. */
+/** The picture that fills the top of the footer: an ink figure, in the page's blue. */
 const STAGE = {
   kind: "image",
-  src: "/landing/features/follow-waveform.webp",
-  altKey: "marketing.features.follow.alt",
+  src: "/landing/footer/ink-figure.webp",
+  altKey: "marketing.footer.stageAlt",
 } as const;
 
 /** The landing page's footer, as the Hermes page builds its own: a full screen on its own. A picture fills
