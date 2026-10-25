@@ -43,29 +43,28 @@ export default function LandingFooter() {
         className="absolute inset-0 bg-[linear-gradient(to_bottom,#243473_0%,#1f2fa0_20%,rgb(var(--color-surface))_62%,rgb(var(--color-surface))_100%)]"
       />
 
-      {/* The stage: the ink figure as soft texture, a grain pass, and the name rising out of
-          the bottom edge against the shared backdrop above. Only the picture's own layer clips
-          (so its vignette has a hard edge to fade inside of) — the name itself isn't clipped
-          here, so it tapers into the links section's matching colour, not a hard line. */}
-      <div className="relative isolate h-[55dvh] min-h-[360px] md:h-auto md:flex-auto">
-        <div aria-hidden="true" className="absolute inset-0 overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/landing/footer/ink-figure.webp"
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-soft-light [filter:grayscale(1)_contrast(1.1)]"
-            style={{ maskImage: STAGE_IMAGE_MASK, WebkitMaskImage: STAGE_IMAGE_MASK }}
-          />
-          <div className="absolute inset-0 mix-blend-overlay opacity-25" style={{ backgroundImage: GRAIN }} />
-        </div>
+      {/* The stage: the ink figure as soft texture, a grain pass, and the name rising toward
+          the bottom edge — clipped to this box (`overflow-hidden`), so it never bleeds into
+          the links section below it. The name used to overlap that section by design (a
+          resting 12% past the stage's own edge); pulled up here so the whole glyph sits
+          inside the stage instead, legible, with the links column headings never covered. */}
+      <div className="relative isolate h-[55dvh] min-h-[360px] overflow-hidden md:h-auto md:flex-auto">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/landing/footer/ink-figure.webp"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-soft-light [filter:grayscale(1)_contrast(1.1)]"
+          style={{ maskImage: STAGE_IMAGE_MASK, WebkitMaskImage: STAGE_IMAGE_MASK }}
+        />
+        <div className="absolute inset-0 mix-blend-overlay opacity-25" style={{ backgroundImage: GRAIN }} />
         <span className="sr-only">{t("marketing.footer.stageAlt")}</span>
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 flex select-none justify-center"
+          className="pointer-events-none absolute inset-x-0 bottom-0 flex select-none justify-center pb-6"
         >
           <span
             data-footer-wordmark
-            className="translate-y-[calc(12%+(1-var(--footer-progress,1))*55%)] whitespace-nowrap font-display text-[clamp(4.5rem,21vw,22rem)] font-light uppercase leading-[0.82] tracking-[0.04em] text-white/[0.92] opacity-[var(--footer-progress,1)]"
+            className="translate-y-[calc((1-var(--footer-progress,1))*40%)] whitespace-nowrap font-display text-[clamp(3.5rem,16vw,17rem)] font-light uppercase leading-[0.82] tracking-[0.04em] text-white/[0.92] opacity-[var(--footer-progress,1)]"
           >
             SEPHIROTH
           </span>
