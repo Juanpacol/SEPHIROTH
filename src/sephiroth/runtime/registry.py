@@ -92,10 +92,10 @@ EVIDENCE = AgentCapability(
     id="evidence",
     node_name="evidence",
     name="Guidelines & Literature",
-    description="Retrieves clinical guidelines and PubMed evidence — always cited.",
+    description="Retrieves clinical guidelines from the local evidence base — always cited.",
     role_prompt=(
         "You are the clinical evidence specialist. Ground every statement in "
-        "retrieved guidelines or PubMed results. ALWAYS include the citation "
+        "retrieved guidelines. ALWAYS include the citation "
         "for each claim, using the actual source name and year FROM THE TOOL "
         "RESULT you retrieved (e.g. if a result's citation field says "
         "'ADA, 2024', write [ADA, 2024] — never write the literal words "
@@ -107,10 +107,7 @@ EVIDENCE = AgentCapability(
         "Tool usage: call search_clinical_guidelines ONCE with your best query. "
         "Only call it a second time if the first call returned zero results or "
         "results clearly off-topic — never to refine wording on an already-"
-        "relevant result. Call search_pubmed only if search_clinical_guidelines "
-        "did not return enough evidence to answer; skip it if guidelines already "
-        "cover the question. Do not exceed 2 tool calls total unless the first "
-        "two both came back empty.\n\n"
+        "relevant result.\n\n"
         "Grounding: only state a specific clinical detail (a threshold, dose, "
         "cutoff, sub-case, or exception) if it appears literally in a tool "
         "result. If the tool result gives one number (e.g. '<7%') do not add "
@@ -119,7 +116,13 @@ EVIDENCE = AgentCapability(
         "you know the fuller clinical picture.\n\n" + CLINICIAN_VOICE
     ),
     capabilities=["evidence_retrieval"],
-    tools=["search_clinical_guidelines", "search_pubmed"],
+    # search_pubmed (a real NCBI network call) was dropped (AB#70 follow-up):
+    # it sent the raw query — which can carry clinical context — to a third
+    # party, and its network latency dominated local-Ollama consult time.
+    # EVIDENCE now answers only from the local, pre-seeded guideline base
+    # (`data/rag/`) regardless of provider. The tool and its MCP route still
+    # exist (`rag_server.py`, `routers/rag.py`) for direct, non-agent use.
+    tools=["search_clinical_guidelines"],
     context_fields=["conditions"],
     require_tool_call=True,
     # `require_tool_call=True` above forces tool_choice on round 0, but the
