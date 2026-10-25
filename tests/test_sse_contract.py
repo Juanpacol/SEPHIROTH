@@ -40,6 +40,7 @@ specialist directly via the query's own wording — the naming-convention
 guarantee they check never depended on how many agents ran.
 """
 
+import asyncio
 import json
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List
@@ -276,14 +277,16 @@ async def _token(client: AsyncClient) -> str:
 
 
 def _parse_sse(raw: str) -> List[Dict[str, Any]]:
-    """Parse exactly the way the frontend does: split on blank lines, require
-    the `data: ` prefix, JSON-parse the remainder."""
+    """Parse exactly the way the frontend does: split on blank lines, skip
+    anything that isn't a `data: ` frame (the frontend's own parser does the
+    same — see `copilot-panel.tsx`'s `if (!chunk.startsWith("data: "))
+    continue;` — so a `: keep-alive` SSE comment is silently dropped, not a
+    violation of the frozen event contract), JSON-parse the remainder."""
     events = []
     for chunk in raw.split("\n\n"):
         chunk = chunk.strip()
-        if not chunk:
+        if not chunk or not chunk.startswith("data: "):
             continue
-        assert chunk.startswith("data: "), f"SSE frame missing `data: ` prefix: {chunk[:60]!r}"
         events.append(json.loads(chunk[6:]))
     return events
 
@@ -348,3 +351,32 @@ async def test_streamed_final_matches_persisted_history(client):
             "the rebuilt explanation diverged from the streamed one — history and "
             "PDF export would show something different from the live consultation"
         )
+
+
+async def test_slow_step_gets_an_sse_keepalive_comment(client, monkeypatch):
+    """A local model's chat/verification round can run well past 30s; a
+    silent SSE connection was observed getting closed by something between
+    browser and backend around that mark. `: keep-alive\\n\\n` SSE comment
+    lines (ignored by EventSource and by the frontend's own `data: `-only
+    parser) must appear while a step is slow, so the connection stays
+    demonstrably alive. Shrinks the real 10s heartbeat interval so the test
+    doesn't."""
+    monkeypatch.setattr(agents_router_module, "SSE_HEARTBEAT_SECONDS", 0.05)
+
+    async def _slow_stream(*args, **kwargs):
+        await asyncio.sleep(0.2)
+        yield {"event": "routing", "agents": ["evidence"]}
+
+    monkeypatch.setattr(agents_router_module, "stream_consultation", _slow_stream)
+
+    async with client:
+        token = await _token(client)
+        res = await client.post(
+            "/api/agents/consult/stream",
+            json={"query": "anything", "context": {}},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert res.text.count(": keep-alive\n\n") >= 1
+        events = _parse_sse(res.text)
+        assert events[0] == {"event": "routing", "agents": ["evidence"]}
