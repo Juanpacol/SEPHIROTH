@@ -3,16 +3,37 @@
 import WingMark from "@/components/brand/wing-mark";
 import { useLanguage } from "@/lib/language";
 import CtaButton from "./cta-button";
-import FeatureMediaView from "./feature-media";
 import { NAV_MENUS } from "./nav-menus";
 
-/** The picture that fills the top of the footer: an ink figure, in the page's blue. */
-const STAGE = {
-  kind: "image",
-  src: "/landing/footer/ink-figure.webp",
-  altKey: "marketing.footer.stageAlt",
-  fit: "contain",
-} as const;
+/** Grain over the stage, same recipe as `feature-media.tsx`'s own `Grain` (and
+ * `auth-backdrop.tsx`'s) — print texture over a flat gradient. */
+const GRAIN =
+  "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E\")";
+
+/** The stage at the top of the footer: the page's own blue gradient (the same family as the
+ * duotone tint on every feature picture), with the user's ink figure merged into it as soft
+ * texture — `mix-blend-soft-light` and low opacity, not a cropped photo in a box — so it
+ * fills the stage edge to edge and reads as one continuous gradient, the way the rest of the
+ * page uses blue, rather than a picture sitting on top of it. */
+function FooterStage() {
+  const { t } = useLanguage();
+  return (
+    <div aria-hidden="true" className="absolute inset-0 overflow-hidden bg-[#141b3d]">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#243473] via-[#1f2fa0] to-[#141b3d]" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/landing/footer/ink-figure.webp"
+        alt={t("marketing.footer.stageAlt")}
+        className="absolute inset-0 h-full w-full object-cover opacity-40 mix-blend-soft-light [filter:grayscale(1)_contrast(1.1)]"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 mix-blend-overlay opacity-30"
+        style={{ backgroundImage: GRAIN }}
+      />
+    </div>
+  );
+}
 
 /** The landing page's footer, as the Hermes page builds its own: a full screen on its own. A picture fills
  * the top and fades into the page, the name climbs up out of its bottom edge, and the links sit under it,
@@ -31,9 +52,7 @@ export default function LandingFooter() {
     >
       {/* The stage: a picture, a fade into the page's navy, and the name rising out of the bottom edge. */}
       <div className="relative isolate h-[55dvh] min-h-[360px] md:h-auto md:flex-auto">
-        <div aria-hidden="true" className="absolute inset-0 opacity-70">
-          <FeatureMediaView media={STAGE} />
-        </div>
+        <FooterStage />
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-b from-surface via-transparent to-surface"

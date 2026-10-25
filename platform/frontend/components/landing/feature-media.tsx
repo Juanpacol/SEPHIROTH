@@ -215,12 +215,7 @@ export default function FeatureMediaView({
       // A static file from /public, optimised when it was made. A single picture stays where it
       // is: only the See cell's studies, which take turns, drift as the page scrolls.
       // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={media.src}
-        alt={t(media.altKey)}
-        loading="lazy"
-        className={`h-full w-full ${media.fit === "contain" ? "object-contain" : "object-cover"}`}
-      />
+      <img src={media.src} alt={t(media.altKey)} loading="lazy" className="h-full w-full object-cover" />
     );
 
   return natural ? <span className="block h-full w-full">{picture}</span> : <Duotone>{picture}</Duotone>;
