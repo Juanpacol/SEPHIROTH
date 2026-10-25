@@ -28,7 +28,12 @@ services:
     container_name: sephiroth-api
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      # Host port configurable (AB#70) — another project's stack on this
+      # machine already squats 8000; override.yml (gitignored, local-only)
+      # used to be the only way to change it, which committed one
+      # developer's port into a merged `docker-compose.override.yml` once
+      # (SF076). `API_PORT=8010 scripts/dev.sh up` is the supported way now.
+      - "${API_PORT:-8000}:8000"
     environment:
       # Always the local postgres service below, on purpose. This is NOT read
       # from `DATABASE_URL`: that is the variable a developer's `.env` and a
@@ -53,7 +58,28 @@ services:
       # sync on purpose, not re-derived, so a bare `docker compose up` and a
       # bare `uvicorn` run never silently pick different models.
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-flash-latest}
+      # LLM provider + local-mode wiring (AB#67/AB#70) — unset LLM_PROVIDER
+      # keeps today's behavior (bare `docker compose up` is Gemini-only, no
+      # profile needed). `scripts/dev.sh up local` exports these from
+      # `config/profiles/local.env` before calling `docker compose up`, so
+      # this container always gets the same provider choice as the native
+      # `ollama serve` `dev.sh` starts alongside it.
+      LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
+      # host.docker.internal, never localhost: from inside this container,
+      # localhost is the container itself, not the host running `ollama
+      # serve`. Docker Desktop resolves this automatically; `extra_hosts`
+      # below makes that explicit instead of relying on the default.
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11435/v1}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-}
+      OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-}
+      OLLAMA_MAX_OUTPUT_TOKENS: ${OLLAMA_MAX_OUTPUT_TOKENS:-}
+      OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-}
+      LLM_ENABLE_FALLBACK: ${LLM_ENABLE_FALLBACK:-true}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-}
       DEBUG: "false"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       # urllib instead of curl — the slim python base image has no curl.
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
@@ -70,7 +96,7 @@ services:
     container_name: sephiroth-frontend
     restart: unless-stopped
     ports:
-      - "3100:3100"
+      - "${FRONTEND_PORT:-3100}:3100"
     environment:
       # "api" is the compose service name, resolved on the compose network —
       # not 127.0.0.1, which inside this container would mean itself.

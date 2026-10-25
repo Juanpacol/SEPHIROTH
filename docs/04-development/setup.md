@@ -27,6 +27,13 @@ pytest. `pip install -e .` is what makes `import sephiroth` work under uvicorn,
 
 ## Running
 
+`scripts/dev.sh up` (see "Local LLM (Ollama) instead of Gemini" below) brings
+up the whole stack — Postgres, the API, the frontend, and, for the `local`
+profile, this project's own native Ollama — in one command via Docker. The
+three-terminal flow below is the bare-metal alternative: slower to set up
+once, but `--reload`/Next.js hot-reload make it the faster loop for active
+backend/frontend iteration.
+
 ```bash
 # Terminal 1 — Postgres (host port 5433; 5432 is taken on this machine)
 docker compose up -d postgres
@@ -44,46 +51,50 @@ project's containers on this machine.
 
 ### Local LLM (Ollama) instead of Gemini
 
-Set `LLM_PROVIDER=ollama` in `.env` (plus `OLLAMA_MODEL`/`OLLAMA_VISION_MODEL`
-— see `.env.example`'s "Local LLM" block) to run chat and vision on a local
-Ollama install instead of Gemini: no API key, no quota, nothing leaves the
-machine. Ollama runs as a native macOS process, not in Docker Compose — on
-Apple Silicon that's the difference between the GPU (Metal) answering a
-request and the CPU doing it, and Compose's Postgres-only service here never
-tries to containerize it.
-
-Before starting the API, both models have to already be pulled and the
-server running:
+`scripts/dev.sh` is the one entry point for the whole local stack, in either
+of two **profiles** (`config/profiles/local.env` / `cloud.env` — non-secret
+provider/model/timeout defaults; `.env` holds only secrets, loaded on top):
 
 ```bash
-ollama pull qwen3:8b            # or whatever OLLAMA_MODEL is set to
-ollama pull qwen2.5vl:3b        # or whatever OLLAMA_VISION_MODEL is set to
-set -a; source .env; set +a; scripts/start_ollama.sh   # starts `ollama serve`
-                                                        # if not already up,
-                                                        # and warms both models
+ollama pull qwen3:8b            # or whatever local.env's OLLAMA_MODEL is
+ollama pull qwen2.5vl:3b        # or whatever local.env's OLLAMA_VISION_MODEL is
+scripts/dev.sh up local         # Postgres + this project's OWN native
+                                 # `ollama serve` (port 11435, never 11434 —
+                                 # see local.env's comment) + API + frontend
+scripts/dev.sh doctor           # real chat + vision call, not just "configured"
+scripts/dev.sh down             # stops everything dev.sh started; leaves an
+                                 # ollama serve it only *reused* running
 ```
 
-Skipping the `source .env` step is the single most common cause of
-"the model never responds" on this machine: `scripts/start_ollama.sh` reads
-`OLLAMA_MODEL`/`OLLAMA_VISION_MODEL` from the *shell's* environment, not from
-`.env` directly, and falls back to its own hardcoded defaults
-(`qwen2.5:3b-instruct`) when they're unset — silently warming a different
-model than the one the app is configured to call. The first real request
-against a model that was never warmed this way takes a slow cold-load before
-it answers, which from the frontend looks identical to "it's stuck."
+`scripts/dev.sh up cloud` runs the same stack against Gemini instead —
+useful to A/B a change against both without hand-editing `.env` between
+runs. `scripts/dev.sh status` shows what's up without the deep LLM probe;
+`doctor` is the same plus one real round-trip per model, so it costs an
+extra few seconds.
 
-Two local models kept resident at once (`OLLAMA_KEEP_ALIVE=-1`, set by the
-script) need real memory — budget roughly 6GB for an 8B chat model and 3GB
+Ollama runs as a **native** process the script starts itself, not a Docker
+Compose service — on Apple Silicon that's the difference between the GPU
+(Metal) answering a request and the CPU doing it, and a container gets no
+Metal access at all. It's given its own port (11435 by default) specifically
+so it never collides with, or gets silently pointed at, some other Ollama
+instance already running on this machine for an unrelated project — a real
+failure mode before this existed: two different projects' `ollama serve`
+both wanted the default 11434, and whichever one didn't lose the race looked
+to the other like "the model never responds."
+
+Two local models kept resident at once (`OLLAMA_KEEP_ALIVE=-1`, set by
+`dev.sh`) need real memory — budget roughly 6GB for an 8B chat model and 3GB
 for a 3B vision model, on top of whatever Postgres/Node/the browser are
 already using. On a machine with 16GB total, that is tight enough that disk
 swapping (not a crash, not an error) is a realistic explanation for a request
-that "never responds" rather than returning quickly or failing outright. For
-a concrete current reading before guessing further: `GET /health/ready` only
-reports `llm: configured`, which is true even when Ollama is down or
-swapping — it does not call the model (see `main.py::readiness_check`'s
-docstring). To tell those apart, check `ollama ps` (which models are loaded
-and whether they're thrashing) and the API logs around the failing request,
-rather than the health endpoint.
+that "never responds" rather than returning quickly or failing outright.
+`scripts/dev.sh doctor` (or `GET /health/ready?deep=1` directly) is the
+concrete reading to reach for before guessing further — unlike the bare
+`llm: "configured"` check (true even when Ollama is down or swapping, since
+it does no I/O), `deep=1` makes the same real chat/vision call `/consult`
+would and reports which model actually answered. For memory pressure
+specifically, pair it with `ollama ps` (loaded models and whether they're
+thrashing) and the API logs around the failing request.
 
 `platform/` must **not** be a Python package — a root `__init__.py` there would
 shadow the stdlib `platform` module. It goes on `PYTHONPATH` instead, so its

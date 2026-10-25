@@ -83,3 +83,7 @@ references/
 real_data/patients/synthea_raw/
 real_data/imaging/samples/
 real_data/imaging/_kaggle_download/
+
+# scripts/dev.sh's own runtime state (native Ollama pidfile/log it manages) —
+# see docs/04-development/setup.md's "Local LLM (Ollama)" section.
+.dev/

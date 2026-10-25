@@ -222,12 +222,27 @@ def _llm_configured() -> bool:
 
 
 @app.get("/health/ready")
-async def readiness_check(response: Response):
-    """Readiness/deep check: real dependency probes, for humans and the
-    post-deploy smoke test — not the Render liveness probe above."""
+async def readiness_check(response: Response, deep: bool = False):
+    """Readiness check: real dependency probes, for humans and the
+    post-deploy smoke test — not the Render liveness probe above.
+
+    `deep=1` goes one step further than `llm: "configured"` (a no-I/O
+    check) and actually calls the configured client's own `health()` —
+    the same reachability probe `/consult` and the dashboard already use
+    (a real `GET /models`-equivalent against Gemini/Groq/Ollama, not a
+    chat completion) — so "Ollama is up but the wrong model name" or "the
+    key is revoked" shows up here instead of only at the first real
+    consultation. Off by default: it's one extra round-trip to the
+    provider on every call, which the liveness-sensitive callers above
+    (Render, the smoke test) don't want paying for on every poll.
+    `llm_vision` is reported when the client exposes a separate vision
+    probe (`VisionChatSplitClient.vision_health()`, for `split` mode) and
+    never gates `ok` — AB#68/AB#67: vision failing must not flip the app
+    to "not ready" any more than it 503s `/consult` today."""
     from sqlalchemy import text
 
     from core.db import SessionLocal
+    from sephiroth.models import get_llm_client
 
     checks: dict[str, str] = {}
     try:
@@ -240,6 +255,24 @@ async def readiness_check(response: Response):
     checks["llm_provider"] = settings.llm_provider
 
     ok = checks["database"] == "ok"
+
+    if deep and checks["llm"] == "configured":
+        client = get_llm_client()
+        try:
+            chat_ok = await client.health()
+        except Exception:
+            chat_ok = False
+        checks["llm_chat"] = "ok" if chat_ok else "unreachable"
+        ok = ok and chat_ok
+
+        vision_health = getattr(client, "vision_health", None)
+        if callable(vision_health):
+            try:
+                vision_ok = await vision_health()
+            except Exception:
+                vision_ok = False
+            checks["llm_vision"] = "ok" if vision_ok else "unreachable"
+
     if not ok:
         response.status_code = 503
     return {"status": "ready" if ok else "degraded", "checks": checks}
