@@ -13,8 +13,10 @@ export type FeatureMedia =
   /** A generated blue pattern. `pattern` picks which of the six. */
   | { kind: "tile"; pattern: TilePattern }
   /** `tone: "duotone"` (the default) tints it to the page's blue, like the rest of the
-   * grid; `"natural"` leaves it as it is. */
-  | { kind: "image"; src: string; altKey: string; tone?: FeatureTone }
+   * grid; `"natural"` leaves it as it is. `fit: "cover"` (the default) fills its box,
+   * cropping to it; `"contain"` shows the whole picture, letterboxed in the duotone's own
+   * blue — for a picture whose box isn't square, like the footer stage. */
+  | { kind: "image"; src: string; altKey: string; tone?: FeatureTone; fit?: "cover" | "contain" }
   /** Several pictures that take turns in the same square, cross-fading. Only while the cell is on
    * screen, and never under reduced motion, where the first one stays. Each carries a short
    * description (`altKey`) and a label shown on it (`titleKey`, `captionKey`). */
