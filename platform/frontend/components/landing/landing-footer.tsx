@@ -10,30 +10,10 @@ import { NAV_MENUS } from "./nav-menus";
 const GRAIN =
   "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E\")";
 
-/** The stage at the top of the footer: the page's own blue gradient (the same family as the
- * duotone tint on every feature picture), with the user's ink figure merged into it as soft
- * texture — `mix-blend-soft-light` and low opacity, not a cropped photo in a box — so it
- * fills the stage edge to edge and reads as one continuous gradient, the way the rest of the
- * page uses blue, rather than a picture sitting on top of it. */
-function FooterStage() {
-  const { t } = useLanguage();
-  return (
-    <div aria-hidden="true" className="absolute inset-0 overflow-hidden bg-surface">
-      <div className="absolute inset-0 bg-gradient-to-br from-[#243473] via-[#1f2fa0] to-surface" />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/landing/footer/ink-figure.webp"
-        alt={t("marketing.footer.stageAlt")}
-        className="absolute inset-0 h-full w-full object-cover opacity-40 mix-blend-soft-light [filter:grayscale(1)_contrast(1.1)]"
-      />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 mix-blend-overlay opacity-30"
-        style={{ backgroundImage: GRAIN }}
-      />
-    </div>
-  );
-}
+/** The vignette that keeps the ink figure a soft presence inside the stage rather than a
+ * picture with visible edges: full strength in the middle, faded to nothing well before the
+ * stage's own border on every side. */
+const STAGE_IMAGE_MASK = "radial-gradient(120% 95% at 50% 38%, black 40%, transparent 82%)";
 
 /** The landing page's footer, as the Hermes page builds its own: a full screen on its own. A picture fills
  * the top and fades into the page, the name climbs up out of its bottom edge, and the links sit under it,
@@ -41,6 +21,12 @@ function FooterStage() {
  * `--footer-progress` and `--footer-lift`). The footer stays in the normal flow, so its
  * links are always where focus and reading order expect them. Every variable has a
  * resting default, so without the script, or with reduced motion, it is simply there.
+ *
+ * One gradient — the page's own blue, fading to its `surface` colour — runs behind the whole
+ * footer, stage and links alike, so the links never sit on a flat block that looks like a
+ * different page bolted underneath the stage, and the oversized wordmark (which overlaps the
+ * links section by design) tapers into a colour that already matches instead of being cut by
+ * a visibly different one.
  *
  * Its columns are the header's menus, so the two cannot disagree about where things are. */
 export default function LandingFooter() {
@@ -50,16 +36,32 @@ export default function LandingFooter() {
       data-footer-reveal
       className="relative overflow-hidden border-t border-line/60 opacity-[calc(0.4+0.6*var(--footer-progress,1))] md:flex md:min-h-dvh md:flex-col"
     >
-      {/* The stage: a picture, a fade into the page's navy, and the name rising out of the bottom edge. */}
+      {/* One backdrop for the whole footer: the page's blue, settling into its surface colour
+          well before the links, so stage and links read as one continuous surface. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-[linear-gradient(to_bottom,#243473_0%,#1f2fa0_20%,rgb(var(--color-surface))_62%,rgb(var(--color-surface))_100%)]"
+      />
+
+      {/* The stage: the ink figure as soft texture, a grain pass, and the name rising out of
+          the bottom edge against the shared backdrop above. Only the picture's own layer clips
+          (so its vignette has a hard edge to fade inside of) — the name itself isn't clipped
+          here, so it tapers into the links section's matching colour, not a hard line. */}
       <div className="relative isolate h-[55dvh] min-h-[360px] md:h-auto md:flex-auto">
-        <FooterStage />
+        <div aria-hidden="true" className="absolute inset-0 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/landing/footer/ink-figure.webp"
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-soft-light [filter:grayscale(1)_contrast(1.1)]"
+            style={{ maskImage: STAGE_IMAGE_MASK, WebkitMaskImage: STAGE_IMAGE_MASK }}
+          />
+          <div className="absolute inset-0 mix-blend-overlay opacity-25" style={{ backgroundImage: GRAIN }} />
+        </div>
+        <span className="sr-only">{t("marketing.footer.stageAlt")}</span>
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(var(--color-surface))_0%,transparent_30%,transparent_55%,rgb(var(--color-surface))_100%)]"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 flex select-none justify-center overflow-hidden"
+          className="pointer-events-none absolute inset-x-0 bottom-0 flex select-none justify-center"
         >
           <span
             data-footer-wordmark
