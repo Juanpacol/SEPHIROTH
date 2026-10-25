@@ -25,7 +25,10 @@ pytestmark = pytest.mark.spec
 LEGACY_ALLOWED_TOOLS = {
     "radiology": ["inspect_medical_image", "analyze_medical_image", "describe_medical_image"],
     "drug_safety": ["check_drug_interactions"],
-    "evidence": ["search_clinical_guidelines", "search_pubmed"],
+    # `search_pubmed` dropped from EVIDENCE after this snapshot (AB#70
+    # follow-up: a real NCBI network call, both a latency and a PHI-leak
+    # risk) — this one entry is intentionally not the pre-Phase-3 list.
+    "evidence": ["search_clinical_guidelines"],
 }
 
 

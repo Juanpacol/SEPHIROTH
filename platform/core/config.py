@@ -4,7 +4,7 @@ import ipaddress
 import logging
 from typing import Literal, Optional
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 logger = logging.getLogger(__name__)
@@ -250,6 +250,18 @@ class Settings(BaseSettings):
     ollama_timeout_seconds: int = 120
     ollama_max_output_tokens: int = 2048
     ollama_rpm_limit: int = 0
+
+    # docker-compose.yml (AB#70) passes these through as
+    # `${OLLAMA_TIMEOUT_SECONDS:-}` so a bare `docker compose up` (no
+    # profile, Gemini-only — the default) still works: unset means "", not
+    # absent, which int parsing would otherwise reject outright and crash
+    # every boot regardless of provider. Blank -> field default instead.
+    @field_validator("ollama_timeout_seconds", "ollama_max_output_tokens", "ollama_rpm_limit", mode="before")
+    @classmethod
+    def _blank_env_uses_default(cls, v: object, info) -> object:
+        if v == "":
+            return cls.model_fields[info.field_name].default
+        return v
 
     # Medical AI model weights (optional — features degrade gracefully)
     medcat_model_path: Optional[str] = None
