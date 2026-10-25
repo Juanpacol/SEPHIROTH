@@ -7,6 +7,7 @@ from httpx import ASGITransport, AsyncClient
 
 import api.main as api_main
 import api.routers.agents as agents_router
+import sephiroth.models as llm_models
 from core.config import Settings
 from sephiroth.models.vision_split import VisionChatSplitClient
 
@@ -111,3 +112,60 @@ async def test_consult_not_503_when_only_vision_is_down(monkeypatch):
 
     # Should not raise.
     await agents_router._ensure_llm()
+
+
+@pytest.mark.asyncio
+async def test_health_ready_deep_reports_chat_and_vision(monkeypatch):
+    """`?deep=1` calls the real client, not just `_llm_configured()` — and
+    reports chat/vision separately for a split client (AB#67/AB#70)."""
+    settings = Settings(_env_file=None, environment="development", llm_provider="ollama")
+    monkeypatch.setattr(api_main, "settings", settings)
+    split_stub = VisionChatSplitClient(chat_client=_StubClient(True), vision_client=_StubClient(False))
+    monkeypatch.setattr(llm_models, "get_llm_client", lambda: split_stub)
+
+    transport = ASGITransport(app=api_main.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        res = await client.get("/health/ready?deep=1")
+        body = res.json()
+        assert body["checks"]["llm_chat"] == "ok"
+        assert body["checks"]["llm_vision"] == "unreachable"
+        assert body["status"] == "ready"
+
+
+@pytest.mark.asyncio
+async def test_health_ready_deep_chat_down_is_not_ready(monkeypatch):
+    """A dead chat model is the one thing `deep` must actually gate on —
+    vision never does (same rule `/consult` follows)."""
+    settings = Settings(_env_file=None, environment="development", llm_provider="ollama")
+    monkeypatch.setattr(api_main, "settings", settings)
+    stub = _StubClient(False)
+    monkeypatch.setattr(llm_models, "get_llm_client", lambda: stub)
+
+    transport = ASGITransport(app=api_main.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        res = await client.get("/health/ready?deep=1")
+        body = res.json()
+        assert body["checks"]["llm_chat"] == "unreachable"
+        assert body["status"] == "degraded"
+        assert res.status_code == 503
+        assert "llm_vision" not in body["checks"]
+
+
+@pytest.mark.asyncio
+async def test_health_ready_without_deep_skips_the_real_call(monkeypatch):
+    """The default (`deep` omitted) stays a no-I/O check — a client whose
+    `health()` would raise is never even called."""
+    settings = Settings(_env_file=None, environment="development", llm_provider="ollama")
+    monkeypatch.setattr(api_main, "settings", settings)
+
+    def _boom():
+        raise AssertionError("get_llm_client() must not be called without deep=1")
+
+    monkeypatch.setattr(llm_models, "get_llm_client", _boom)
+
+    transport = ASGITransport(app=api_main.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        res = await client.get("/health/ready")
+        body = res.json()
+        assert "llm_chat" not in body["checks"]
+        assert res.status_code == 200
