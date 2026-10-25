@@ -11,6 +11,7 @@ const STAGE = {
   kind: "image",
   src: "/landing/footer/ink-figure.webp",
   altKey: "marketing.footer.stageAlt",
+  fit: "contain",
 } as const;
 
 /** The landing page's footer, as the Hermes page builds its own: a full screen on its own. A picture fills
