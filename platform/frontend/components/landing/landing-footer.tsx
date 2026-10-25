@@ -18,8 +18,8 @@ const GRAIN =
 function FooterStage() {
   const { t } = useLanguage();
   return (
-    <div aria-hidden="true" className="absolute inset-0 overflow-hidden bg-[#141b3d]">
-      <div className="absolute inset-0 bg-gradient-to-br from-[#243473] via-[#1f2fa0] to-[#141b3d]" />
+    <div aria-hidden="true" className="absolute inset-0 overflow-hidden bg-surface">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#243473] via-[#1f2fa0] to-surface" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/landing/footer/ink-figure.webp"
@@ -55,7 +55,7 @@ export default function LandingFooter() {
         <FooterStage />
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-surface via-transparent to-surface"
+          className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(var(--color-surface))_0%,transparent_30%,transparent_55%,rgb(var(--color-surface))_100%)]"
         />
         <div
           aria-hidden="true"
