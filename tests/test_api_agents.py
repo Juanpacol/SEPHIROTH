@@ -80,6 +80,24 @@ async def test_consult_requires_auth(client):
 
 
 @pytest.mark.asyncio
+async def test_knowledge_scope_returns_corpus_categories(client):
+    async with client:
+        token = await _register(client)
+        res = await client.get("/api/agents/knowledge-scope", headers={"Authorization": f"Bearer {token}"})
+        assert res.status_code == 200
+        categories = res.json()["categories"]
+        assert categories == sorted(categories)
+        assert "cardiovascular" in categories
+
+
+@pytest.mark.asyncio
+async def test_knowledge_scope_requires_auth(client):
+    async with client:
+        res = await client.get("/api/agents/knowledge-scope")
+        assert res.status_code == 401
+
+
+@pytest.mark.asyncio
 async def test_consult_returns_citation_report(client):
     async with client:
         token = await _register(client)

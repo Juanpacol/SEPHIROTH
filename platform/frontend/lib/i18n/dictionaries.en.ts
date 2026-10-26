@@ -306,6 +306,7 @@ const EN: Record<string, string> = {
   "performance.specificity": "Specificity",
 
   "copilot.askOrTry": "Ask a clinical question, or try one of these:",
+  "copilot.scopeIntro": "Covers:",
   "copilot.placeholder": "Ask a clinical question…",
   "copilot.stage.routing": "Routing the question…",
   "copilot.stage.answering": "Consulting specialist…",
