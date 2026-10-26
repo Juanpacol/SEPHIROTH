@@ -21,6 +21,7 @@ from auth.deps import get_current_user
 from core.config import is_local_llm_provider, settings
 from core.db import SessionLocal, get_session
 from core.rate_limit import key_by_user_or_ip, limiter
+from data.rag import SEED_GUIDELINES
 from data.schemas import AIEvaluation, Consultation, ResponseRating, User
 from intelligence.mcp.vision_server import _active_vision_model_name
 from sephiroth.context import recent_consultation_summaries
@@ -353,6 +354,19 @@ _AGENT_KEYS = {
     "Drug Safety": "drug-safety",
     "Coordinator": "coordinator",
 }
+
+
+@router.get(
+    "/knowledge-scope",
+    summary="Topic categories the evidence corpus covers, for the chat widget's empty state",
+)
+async def knowledge_scope(user: User = Depends(get_current_user)) -> Dict[str, Any]:
+    """Derived from the committed corpus definition (`SEED_GUIDELINES`), not
+    a live DB query — this is what determines the knowledge scope; the
+    seeded Postgres table is just its materialization. Sorted, deduped
+    category slugs; the frontend owns turning them into display labels."""
+    categories = sorted({d.metadata.get("category") for d in SEED_GUIDELINES if d.metadata.get("category")})
+    return {"categories": categories}
 
 
 @router.get("/status", summary="Per-agent usage + LLM health, for the Agents Activity page")

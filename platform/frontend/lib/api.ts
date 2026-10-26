@@ -933,6 +933,7 @@ export const api = {
     post<AuthResponse>("/api/auth/register", body),
   login: (body: { email: string; password: string }) =>
     post<AuthResponse>("/api/auth/login", body),
+  knowledgeScope: () => get<{ categories: string[] }>("/api/agents/knowledge-scope"),
   dashboardStats: () => get<DashboardStats>("/api/dashboard/stats"),
   dashboardBootstrap: () =>
     get<{ stats: DashboardStats; agenda: TodayAgenda; action_items: DashboardActionItems }>(

@@ -88,6 +88,14 @@ const SUGGESTED_QUESTIONS = [
   },
 ];
 
+/** Corpus category slugs ("infectious_disease") are data from the backend,
+ * not UI copy — formatted here rather than threaded through i18n, which
+ * would mean a dictionary entry per category that drifts every time the
+ * corpus gains or loses one. */
+function formatScopeCategory(slug: string): string {
+  return slug.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+}
+
 /** Token-overlap match — mirrors the >=0.5 overlap threshold Citation Guard
  * uses server-side (`citation_guard._is_verified`) so a link only attaches
  * when the citation text plausibly came from that tool result. */
@@ -330,6 +338,15 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
     queryFn: () => api.patients(),
   });
 
+  // Drives the "covers" line in the empty state — derived from the real
+  // corpus (`SEED_GUIDELINES`) rather than hardcoded, so it never drifts
+  // from what the knowledge base actually contains.
+  const { data: knowledgeScope } = useQuery({
+    queryKey: ["knowledge-scope"],
+    queryFn: () => api.knowledgeScope(),
+    staleTime: Infinity,
+  });
+
   const patch = (update: Partial<Exchange>) =>
     setExchanges((prev) => prev.map((e, i) => (i === prev.length - 1 ? { ...e, ...update } : e)));
 
@@ -507,6 +524,11 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                 </button>
               ))}
             </div>
+            {knowledgeScope && knowledgeScope.categories.length > 0 && (
+              <p className="text-[11px] leading-snug text-muted/80">
+                {t("copilot.scopeIntro")} {knowledgeScope.categories.map(formatScopeCategory).join(", ")}.
+              </p>
+            )}
           </div>
         )}
         {exchanges.map((exchange, i) => (
