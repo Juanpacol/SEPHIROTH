@@ -65,9 +65,14 @@ from .intent_router import route_intent
 from .recovery import classify, decide_recovery
 from .registry import get_capability
 
-#: Matches PlanStep.max_attempts' default (src/sephiroth/contracts/plan.py) —
-#: a specialist gets one retry before the run continues without its section.
-MAX_AGENT_ATTEMPTS = 2
+#: A specialist gets two retries (three attempts total) before the run
+#: continues without its section. Raised from 2 (one retry) once AB#82 fixed
+#: the dominant real cause of exhaustion (missing local embedding model, not
+#: genuine model flakiness) — the remaining failures are worth one more
+#: cheap local-model round-trip before showing the honest AGENT_FAILURE
+#: message, the same way a transient upstream error elsewhere gets retried
+#: without ever surfacing to the user.
+MAX_AGENT_ATTEMPTS = 3
 
 #: The closing disclaimer every consultation answer must carry. The one
 #: selected specialist's answer is the final answer (SPEC-029: the only

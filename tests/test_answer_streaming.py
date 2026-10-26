@@ -185,19 +185,25 @@ async def test_retry_after_streamed_text_emits_reset_before_next_attempt():
 
 
 async def test_exhausted_retries_after_streaming_ends_with_reset():
-    """Both attempts omit the tool call — retries exhaust at
-    `MAX_AGENT_ATTEMPTS=2`, and the specialist contributes an empty section
+    """All three attempts omit the tool call — retries exhaust at
+    `MAX_AGENT_ATTEMPTS=3`, and the specialist contributes an empty section
     (today's abstain-cleanly behavior, `tests/test_runtime_executor.py`).
     The last delta event on the wire must be the give-up `reset:true`, and
     `final.answer` carries `AbstentionReason.AGENT_FAILURE`'s honest message
     — not an empty string, which previously read as "no evidence" to the
     user when the real cause was the specialist failing (confirmed live)."""
-    client = _ScriptedRoundsClient([(_long_answer("try-one"), []), (_long_answer("try-two"), [])])
+    client = _ScriptedRoundsClient(
+        [
+            (_long_answer("try-one"), []),
+            (_long_answer("try-two"), []),
+            (_long_answer("try-three"), []),
+        ]
+    )
 
     events = [e async for e in stream_consultation(client, EVIDENCE_QUERY)]
     deltas = [e for e in events if e["event"] == "answer_delta"]
 
-    assert client.calls == 2
+    assert client.calls == 3
     assert deltas, "expected at least one flushed batch before the final reset"
     assert deltas[-1]["reset"] is True
     assert deltas[-1]["text"] == ""

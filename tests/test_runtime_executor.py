@@ -97,7 +97,7 @@ async def test_the_one_selected_specialist_exhausting_retries_abstains_cleanly(m
 async def test_transient_model_failure_retries_then_succeeds(monkeypatch):
     """A MODEL-category failure (LLMUnavailableError) is transient per
     sephiroth.runtime.recovery.decide_recovery — retried once, then
-    succeeds on the second attempt within MAX_AGENT_ATTEMPTS=2.
+    succeeds on the second attempt, well within MAX_AGENT_ATTEMPTS.
 
     Verifies AC-007-04 (docs/specs/SPEC-007-recovery.md)."""
     import sephiroth.runtime.executor as executor_module
