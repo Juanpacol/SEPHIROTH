@@ -58,6 +58,9 @@ provider/model/timeout defaults; `.env` holds only secrets, loaded on top):
 ```bash
 ollama pull qwen3:8b            # or whatever local.env's OLLAMA_MODEL is
 ollama pull qwen2.5vl:3b        # or whatever local.env's OLLAMA_VISION_MODEL is
+                                 # (nomic-embed-text, used for RAG retrieval, is
+                                 # pulled automatically by `up local` if missing —
+                                 # see `start_ollama` in scripts/dev.sh)
 scripts/dev.sh up local         # Postgres + this project's OWN native
                                  # `ollama serve` (port 11435, never 11434 —
                                  # see local.env's comment) + API + frontend

@@ -78,6 +78,13 @@ start_ollama() {
   local host="http://localhost:${OLLAMA_PORT}"
   local chat_model="${OLLAMA_MODEL:-qwen3:8b}"
   local vision_model="${OLLAMA_VISION_MODEL:-qwen2.5vl:3b}"
+  # Must match `OllamaEmbeddingProvider`'s default model id
+  # (data/embeddings/ollama.py) — a cache-miss query otherwise gets a 404
+  # from `/api/embeddings` and silently degrades to keyword-only retrieval
+  # (RAG results come back with `dense_similarity: None`, and fast_path's
+  # dense-similarity floor can then never clear). Nothing surfaces an error
+  # for this; it just looks like weaker answers and fast_path never firing.
+  local embedding_model="${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}"
 
   if curl -s -m 2 -o /dev/null "$host/api/tags"; then
     echo "ollama already reachable at $host (reusing it, not tracked for 'down')"
@@ -97,12 +104,20 @@ start_ollama() {
     fi
   fi
 
-  echo "Warming $chat_model and $vision_model (keep_alive=-1, never unload)..."
+  if ! OLLAMA_HOST="127.0.0.1:${OLLAMA_PORT}" ollama list 2>/dev/null | grep -q "^${embedding_model}"; then
+    echo "Pulling $embedding_model (not found locally — RAG retrieval degrades to keyword-only without it)..."
+    OLLAMA_HOST="127.0.0.1:${OLLAMA_PORT}" ollama pull "$embedding_model"
+  fi
+
+  echo "Warming $chat_model, $vision_model and $embedding_model (keep_alive=-1, never unload)..."
   curl -s "$host/api/chat" \
     -d "{\"model\":\"$chat_model\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}],\"stream\":false,\"keep_alive\":-1}" \
     -o /dev/null
   curl -s "$host/api/chat" \
     -d "{\"model\":\"$vision_model\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}],\"stream\":false,\"keep_alive\":-1}" \
+    -o /dev/null
+  curl -s "$host/api/embeddings" \
+    -d "{\"model\":\"$embedding_model\",\"prompt\":\"hi\",\"keep_alive\":-1}" \
     -o /dev/null
   echo "Ready: $(curl -s "$host/api/ps" | python3 -c 'import sys,json; print([m["name"] for m in json.load(sys.stdin)["models"]])' 2>/dev/null || echo "(could not list loaded models)")"
 }
