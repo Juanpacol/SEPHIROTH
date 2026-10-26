@@ -52,6 +52,7 @@
         "model_uncertainty",
         "policy_restriction",
         "out_of_scope",
+        "agent_failure",
         "observed_not_corroborated"
       ],
       "title": "AbstentionReason",

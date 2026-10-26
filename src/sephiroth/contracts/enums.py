@@ -135,6 +135,17 @@ class AbstentionReason(StrEnum):
     MODEL_UNCERTAINTY = "model_uncertainty"
     POLICY_RESTRICTION = "policy_restriction"
     OUT_OF_SCOPE = "out_of_scope"
+    #: The answering specialist itself failed and exhausted its retries
+    #: (`ADR-007`'s `_run_specialist` contributes an empty section rather than
+    #: aborting), so there was never any content to extract claims from.
+    #: Without this, an empty `AgentResult` produces an empty
+    #: `VerificationReport`, confidence computes to 0, and `decide()` would
+    #: report `INSUFFICIENT_EVIDENCE` — true of the *evidence found*, but
+    #: misleading about *why*: a real guideline match existed and a retry
+    #: would likely have found it (confirmed live). Distinguishing the two
+    #: lets the message tell a clinician "try again" instead of "the
+    #: knowledge base doesn't cover this."
+    AGENT_FAILURE = "agent_failure"
     #: A PARTIAL decision driven by OBSERVED claims — faithful to a
     #: perception tool's output, not independently corroborated (SPEC-004
     #: 1.2.0, ADR-018). Lowest priority: never overrides a higher-priority

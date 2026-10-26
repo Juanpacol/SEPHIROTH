@@ -346,7 +346,13 @@ async def _verify_and_decide(
                     ]
                 }
             )
-        abstention = decide_abstention(report, confidence, input_flags)
+        # `_run_specialist` swallows an exhausted-retries failure into an
+        # empty `AgentResult` rather than raising (ADR-007) — that empty
+        # content yields an empty `VerificationReport` here, which otherwise
+        # reads identically to "the specialist answered but found no
+        # evidence." `state.lifecycle` still distinguishes them.
+        agent_failed = state.lifecycle.get(answering_agent) is LifecycleState.FAILED
+        abstention = decide_abstention(report, confidence, input_flags, agent_failed=agent_failed)
 
         state.evidence = evidence
         state.claims = report.claims
