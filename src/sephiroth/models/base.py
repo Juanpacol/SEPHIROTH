@@ -75,6 +75,25 @@ def classify_unavailable(exc: BaseException) -> str:
     return "unavailable"
 
 
+class AnswerSink(Protocol):
+    """Receives the answering round's text as it is produced, so a caller
+    that can only emit a complete `ChatResult` once the tool loop finishes
+    can still relay provisional fragments while the final round generates.
+
+    `delta(text)` is called with a raw, non-empty fragment of the *current*
+    round's content — provisional, pre-citation-guard, pre-verification,
+    pre-abstention text. `reset()` voids everything sent to `delta` since
+    the previous `reset()` (or since the sink was created): the round that
+    produced it turned out not to be the answer (it carried tool calls, or
+    the attempt is being retried), and a caller relaying these fragments
+    must treat them as if they had never been sent.
+    """
+
+    async def delta(self, text: str) -> None: ...
+
+    async def reset(self) -> None: ...
+
+
 @dataclass
 class ChatResult:
     """Final result of a chat exchange, including the tool-call trace.
@@ -167,6 +186,19 @@ class ModelProvider(Protocol):
     `generate_json`'s first two parameters stay positional-or-keyword, in this
     order — `intelligence/evaluation/faithfulness.py` calls it positionally,
     `intelligence/nlp/timeline_extractor.py` calls it by keyword.
+
+    `chat`'s `answer_sink` is an optional, keyword-only, last parameter: a
+    provider that can stream its final, tool-free round calls `delta()` on
+    it as content arrives. An implementer that cannot stream still must
+    accept the parameter and simply ignore it (Gemini, Groq, and Ollama's
+    OpenAI-compatible path do this today). An implementer that does stream
+    must call `reset()` once a round that emitted at least one delta turns
+    out to carry tool calls, before running those tools — the sink must
+    never be left holding text from a round that wasn't the answer.
+    Transparent retry or provider fallback on a streamed round is allowed
+    only before that round's first delta; once a fragment reached the sink,
+    a failure must propagate as `LLMUnavailableError` with no retry and no
+    fallback, since the caller already forwarded unrecoverable text.
     """
 
     model: str
@@ -182,6 +214,7 @@ class ModelProvider(Protocol):
         tool_executor: Optional[ToolExecutor] = None,
         think: Optional[bool] = False,
         tool_choice: Optional[str] = None,
+        answer_sink: Optional["AnswerSink"] = None,
     ) -> ChatResult: ...
 
     async def generate_json(
@@ -203,6 +236,7 @@ class ModelProvider(Protocol):
 
 
 __all__ = [
+    "AnswerSink",
     "ChatResult",
     "classify_unavailable",
     "LLMUnavailableError",

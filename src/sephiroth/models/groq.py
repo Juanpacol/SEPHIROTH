@@ -23,7 +23,7 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional
 import httpx
 
 from ._throttle import RateLimiter, backoff_delay
-from .base import ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor, _is_local_endpoint
+from .base import AnswerSink, ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor, _is_local_endpoint
 from .call_log import record_llm_call
 
 logger = logging.getLogger(__name__)
@@ -145,6 +145,10 @@ class GroqClient:
         tool_executor: Optional[ToolExecutor] = None,
         think: Optional[bool] = False,
         tool_choice: Optional[str] = None,
+        # Real streaming is deferred for Groq (would need SSE tool_call delta
+        # assembly plus a tool_use_failed retry interaction — see AB#67's
+        # analysis); accepted and intentionally ignored.
+        answer_sink: Optional[AnswerSink] = None,
     ) -> ChatResult:
         history = self._to_messages(messages, system_prompt)
         executed_calls: List[Dict[str, Any]] = []

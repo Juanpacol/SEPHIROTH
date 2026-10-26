@@ -86,7 +86,18 @@ def test_retrieve_keyword_result_shape():
     doc = Document(id="d1", content="hypertension blood pressure target adults", source="s")
     hits = retrieve_keyword(set(_tokenize("hypertension blood pressure")), [doc])
     assert hits
-    assert set(hits[0].keys()) == {"id", "content", "source", "citation", "url", "score", "metadata"}
+    assert set(hits[0].keys()) == {
+        "id",
+        "content",
+        "source",
+        "citation",
+        "url",
+        "score",
+        "dense_similarity",
+        "metadata",
+    }
+    # No embedding was computed on this path — never dense-corroborated.
+    assert hits[0]["dense_similarity"] is None
 
 
 def test_fuse_combines_keyword_and_dense_hits():
@@ -317,4 +328,18 @@ async def test_hybrid_retrieval_output_shape_matches_keyword_only(pg_session_fac
 
     results = await pipeline.retrieve("statin therapy zzqx", top_k=1)
     assert results
-    assert set(results[0].keys()) == {"id", "content", "source", "citation", "url", "score", "metadata"}
+    assert set(results[0].keys()) == {
+        "id",
+        "content",
+        "source",
+        "citation",
+        "url",
+        "score",
+        "dense_similarity",
+        "metadata",
+    }
+    # A real dense hit this time — the exact value is `1.0 - cosine_distance`
+    # against the fake provider's vectors, not asserted here (see
+    # test_fuse_combines_keyword_and_dense_hits for that), just that it's
+    # populated rather than None.
+    assert results[0]["dense_similarity"] is not None

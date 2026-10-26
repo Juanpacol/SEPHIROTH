@@ -18,10 +18,12 @@ shape.
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
+from typing import Any, AsyncIterator, Callable, Dict, List, Optional, Tuple
 
 from core.config import settings
 from sephiroth.context import context_for_agent
@@ -41,6 +43,7 @@ from sephiroth.contracts import (
     VerificationReport,
 )
 from sephiroth.models import ModelProvider, OllamaClient, get_llm_client
+from sephiroth.models.base import AnswerSink
 from sephiroth.safety import check_input, check_scope
 from sephiroth.safety import decide as decide_abstention
 from sephiroth.safety.abstention import OBSERVED_BANNER, PARTIAL_BANNER
@@ -73,6 +76,64 @@ MAX_AGENT_ATTEMPTS = 2
 #: load-bearing belongs in code, not in a prompt — the same reasoning behind
 #: deterministic citation auditing rather than asking the model to self-check.
 CLOSING_DISCLAIMER = "This is decision support, not a diagnosis — professional review required."
+
+
+class _DeltaBatcher:
+    """An `AnswerSink` that batches a specialist's raw fragments into
+    `answer_delta` SSE events on `queue`, rather than forwarding each
+    fragment (an Ollama fragment is about one token) as its own event.
+
+    Flushes when `max_fragments` fragments are buffered or `max_wait_s` has
+    passed since the first buffered fragment of the current batch — the
+    time check runs on every `delta`, so there is no timer task to cancel.
+    `reset()` drops the unflushed buffer and, only if a batch was flushed
+    since the previous reset, enqueues one `{"text": "", "reset": True}`
+    event so a listener that already rendered those batches clears them.
+    """
+
+    def __init__(
+        self,
+        queue: "asyncio.Queue[Dict[str, Any]]",
+        agent: str,
+        *,
+        max_fragments: int = 32,
+        max_wait_s: float = 0.4,
+        clock: Callable[[], float] = time.monotonic,
+    ):
+        self._queue = queue
+        self._agent = agent
+        self._max_fragments = max_fragments
+        self._max_wait_s = max_wait_s
+        self._clock = clock
+        self._buffer: List[str] = []
+        self._batch_started_at: Optional[float] = None
+        self._flushed_since_reset = False
+
+    def _enqueue(self, text: str, *, reset: bool) -> None:
+        self._queue.put_nowait({"event": "answer_delta", "agent": self._agent, "text": text, "reset": reset})
+
+    async def delta(self, text: str) -> None:
+        if self._batch_started_at is None:
+            self._batch_started_at = self._clock()
+        self._buffer.append(text)
+        elapsed = self._clock() - self._batch_started_at
+        if len(self._buffer) >= self._max_fragments or elapsed >= self._max_wait_s:
+            await self.flush()
+
+    async def reset(self) -> None:
+        self._buffer = []
+        self._batch_started_at = None
+        if self._flushed_since_reset:
+            self._enqueue("", reset=True)
+            self._flushed_since_reset = False
+
+    async def flush(self) -> None:
+        if not self._buffer:
+            return
+        self._enqueue("".join(self._buffer), reset=False)
+        self._flushed_since_reset = True
+        self._buffer = []
+        self._batch_started_at = None
 
 
 def _with_disclaimer(answer: str) -> str:
@@ -156,6 +217,7 @@ async def _run_specialist(
     state: RunState,
     *,
     answering: bool = False,
+    answer_sink: Optional[AnswerSink] = None,
 ) -> Tuple[AgentCapability, AgentResult, List[ToolCall]]:
     """Runs one specialist, classifying and retrying a transient failure up
     to `MAX_AGENT_ATTEMPTS` (SPEC-007, executes `ADR-007`). A specialist
@@ -188,7 +250,9 @@ async def _run_specialist(
                 model=getattr(agent_client, "model", ""),
             ):
                 result = await agent.run(
-                    query, context_for_agent(capability, run_context, answering=answering)
+                    query,
+                    context_for_agent(capability, run_context, answering=answering),
+                    answer_sink=answer_sink,
                 )
             latency_ms = int((time.perf_counter() - started) * 1000)
         except Exception as exc:
@@ -201,12 +265,18 @@ async def _run_specialist(
                 state.recovery_actions.append(RecoveryAction(failure_id=failure.id, action=action))
                 state.lifecycle[capability.id] = LifecycleState.RECOVERING
                 attempt += 1
+                # Stale text from the discarded attempt must not stay on the
+                # wire — the next attempt's deltas start from a clean slate.
+                if answer_sink is not None:
+                    await answer_sink.reset()
                 continue
 
             state.recovery_actions.append(
                 RecoveryAction(failure_id=failure.id, action=action, succeeded=False)
             )
             state.lifecycle[capability.id] = LifecycleState.FAILED
+            if answer_sink is not None:
+                await answer_sink.reset()
             return capability, AgentResult(agent=capability.id), []
 
         state.lifecycle[capability.id] = LifecycleState.COMPLETED
@@ -468,9 +538,45 @@ async def _stream_consultation(
 
     yield {"event": "routing", "agents": node_names}
 
-    _, agent_result, tool_calls = await _run_specialist(
-        capability, client, query, run_context, state, answering=True
+    delta_queue: "asyncio.Queue[Dict[str, Any]]" = asyncio.Queue()
+    batcher = _DeltaBatcher(delta_queue, capability.id)
+    specialist_task: "asyncio.Task[Tuple[AgentCapability, AgentResult, List[ToolCall]]]" = (
+        asyncio.ensure_future(
+            _run_specialist(
+                capability, client, query, run_context, state, answering=True, answer_sink=batcher
+            )
+        )
     )
+    get_task: Optional["asyncio.Task[Dict[str, Any]]"] = None
+    try:
+        while not specialist_task.done():
+            if get_task is None:
+                get_task = asyncio.ensure_future(delta_queue.get())
+            done, _pending = await asyncio.wait(
+                {specialist_task, get_task}, return_when=asyncio.FIRST_COMPLETED
+            )
+            if get_task in done:
+                yield get_task.result()
+                get_task = None
+        if get_task is not None:
+            get_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await get_task
+            get_task = None
+
+        await batcher.flush()
+        while not delta_queue.empty():
+            yield delta_queue.get_nowait()
+
+        _, agent_result, tool_calls = specialist_task.result()
+    finally:
+        if get_task is not None and not get_task.done():
+            get_task.cancel()
+        if not specialist_task.done():
+            specialist_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await specialist_task
+
     state.agent_results[capability.id] = agent_result
     state.tool_calls.extend(tool_calls)
     node_calls_wire = [_tool_call_wire(tc) for tc in tool_calls]

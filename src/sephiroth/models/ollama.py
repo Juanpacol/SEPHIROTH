@@ -28,13 +28,13 @@ import base64
 import io
 import json
 import logging
-from typing import Any, Awaitable, Callable, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 
 import httpx
 from PIL import Image
 
 from ._throttle import RateLimiter, backoff_delay
-from .base import ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor, _is_local_endpoint
+from .base import AnswerSink, ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor, _is_local_endpoint
 from .call_log import record_llm_call
 
 logger = logging.getLogger(__name__)
@@ -144,6 +144,107 @@ class OllamaClient:
             return response.json()
         raise LLMUnavailableError(str(last_exc) if last_exc else "ollama request failed")
 
+    async def _post_stream(
+        self, payload: Dict[str, Any], *, endpoint: str, sink: AnswerSink
+    ) -> Tuple[Dict[str, Any], bool]:
+        """Streams one native `/api/chat` round, forwarding each non-empty
+        `message.content` fragment to `sink.delta` as it arrives — same
+        NDJSON parsing as `describe_image_stream` (no `data: ` prefix, no
+        `[DONE]` sentinel, each line `{"message": {...}, "done": bool}`).
+
+        Same retry/backoff/status classification as `_post`, but only while
+        `emitted` is False: once the round has handed the sink its first
+        fragment, any further transport error or malformed line raises
+        `LLMUnavailableError` with no retry — the caller already forwarded
+        unrecoverable text, so replaying would duplicate it on the wire.
+
+        Returns `(data, emitted)`, where `data` mirrors `_post`'s non-stream
+        response shape (`{"message": {"role", "content", "tool_calls"},
+        "prompt_eval_count", "eval_count"}`).
+        """
+        last_exc: Optional[Exception] = None
+        for attempt in range(self.max_retries):
+            emitted = False
+            content_parts: List[str] = []
+            tool_calls: List[Dict[str, Any]] = []
+            prompt_eval_count = 0
+            eval_count = 0
+            if self._rate_limiter is not None:
+                await self._rate_limiter.acquire()
+            try:
+                async with self._client.stream("POST", endpoint, json=payload) as response:
+                    if response.status_code == 429 and attempt < self.max_retries - 1:
+                        body = await response.aread()
+                        delay = backoff_delay(attempt, cap=_BACKOFF_CAP_SECONDS, jitter=lambda a, b: 0)
+                        logger.warning("ollama rate-limited (429), retrying in %.1fs", delay)
+                        await self._sleep(delay)
+                        last_exc = LLMUnavailableError(body.decode(errors="replace"))
+                        continue
+                    if response.status_code >= 500 and attempt < self.max_retries - 1:
+                        body = await response.aread()
+                        delay = backoff_delay(attempt, cap=_BACKOFF_CAP_SECONDS, jitter=lambda a, b: 0)
+                        await self._sleep(delay)
+                        last_exc = LLMUnavailableError(body.decode(errors="replace"))
+                        continue
+                    if response.status_code == 404:
+                        body = await response.aread()
+                        raise LLMUnavailableError(
+                            f"Model '{self.model}' not found on this Ollama server — run "
+                            f"`ollama pull {self.model}` first. ({body.decode(errors='replace')})"
+                        )
+                    if response.status_code >= 400:
+                        body = await response.aread()
+                        raise LLMUnavailableError(f"{response.status_code}: {body.decode(errors='replace')}")
+
+                    async for line in response.aiter_lines():
+                        if not line.strip():
+                            continue
+                        try:
+                            chunk = json.loads(line)
+                        except json.JSONDecodeError as exc:
+                            if emitted:
+                                raise LLMUnavailableError(f"malformed stream line: {exc}") from exc
+                            raise
+                        message = chunk.get("message") or {}
+                        fragment = message.get("content")
+                        if fragment:
+                            await sink.delta(fragment)
+                            emitted = True
+                            content_parts.append(fragment)
+                        chunk_tool_calls = message.get("tool_calls")
+                        if chunk_tool_calls:
+                            tool_calls.extend(chunk_tool_calls)
+                        if chunk.get("done"):
+                            prompt_eval_count = chunk.get("prompt_eval_count") or 0
+                            eval_count = chunk.get("eval_count") or 0
+                            break
+            except httpx.HTTPError as exc:
+                if emitted:
+                    raise LLMUnavailableError(str(exc)) from exc
+                last_exc = exc
+                if attempt < self.max_retries - 1:
+                    await self._sleep(backoff_delay(attempt, cap=_BACKOFF_CAP_SECONDS, jitter=lambda a, b: 0))
+                    continue
+                raise LLMUnavailableError(
+                    f"Could not reach Ollama at {self.base_url} — is `ollama serve` running? ({exc})"
+                ) from exc
+            except json.JSONDecodeError as exc:
+                raise LLMUnavailableError(f"malformed stream line: {exc}") from exc
+            else:
+                return (
+                    {
+                        "message": {
+                            "role": "assistant",
+                            "content": "".join(content_parts),
+                            "tool_calls": tool_calls,
+                        },
+                        "prompt_eval_count": prompt_eval_count,
+                        "eval_count": eval_count,
+                    },
+                    emitted,
+                )
+        raise LLMUnavailableError(str(last_exc) if last_exc else "ollama request failed")
+
     def _to_messages(
         self, messages: List[Dict[str, Any]], system_prompt: Optional[str]
     ) -> List[Dict[str, Any]]:
@@ -163,6 +264,7 @@ class OllamaClient:
         tool_executor: Optional[ToolExecutor] = None,
         think: Optional[bool] = False,
         tool_choice: Optional[str] = None,
+        answer_sink: Optional[AnswerSink] = None,
     ) -> ChatResult:
         history = self._to_messages(messages, system_prompt)
         executed_calls: List[Dict[str, Any]] = []
@@ -195,7 +297,14 @@ class OllamaClient:
                 if tools:
                     payload["tools"] = tools
                     payload["tool_choice"] = round_tool_choice or "auto"
-                data = await self._post(payload, endpoint=self._native_api_url("/api/chat"))
+                emitted = False
+                if answer_sink is not None:
+                    payload["stream"] = True
+                    data, emitted = await self._post_stream(
+                        payload, endpoint=self._native_api_url("/api/chat"), sink=answer_sink
+                    )
+                else:
+                    data = await self._post(payload, endpoint=self._native_api_url("/api/chat"))
                 message = data["message"]
                 prompt_tokens += data.get("prompt_eval_count") or 0
                 completion_tokens += data.get("eval_count") or 0
@@ -214,6 +323,7 @@ class OllamaClient:
                 usage = data.get("usage") or {}
                 prompt_tokens += usage.get("prompt_tokens") or 0
                 completion_tokens += usage.get("completion_tokens") or 0
+                emitted = False
 
             tool_calls = message.get("tool_calls") or []
 
@@ -225,6 +335,13 @@ class OllamaClient:
                     prompt_tokens=prompt_tokens,
                     completion_tokens=completion_tokens,
                 )
+
+            # Tool-call rounds normally have empty content, so in practice
+            # this fires only for a model that writes text and then a tool
+            # call — a short flash that must be cleared since this round
+            # wasn't the answer (Approach: "Rounds (decided)").
+            if answer_sink is not None and emitted:
+                await answer_sink.reset()
 
             history.append(message)
             for call in tool_calls:

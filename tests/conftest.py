@@ -116,6 +116,7 @@ class FakeLLMClient:
         json_payloads: Optional[List[Dict[str, Any]]] = None,
         prompt_tokens: int = 0,
         completion_tokens: int = 0,
+        stream_answers: bool = False,
     ):
         self.scripts = scripts or {}
         self.default_script = default_script or [("answer", "")]
@@ -127,6 +128,13 @@ class FakeLLMClient:
         # AgentResult.prompt_tokens/completion_tokens can set these.
         self.prompt_tokens = prompt_tokens
         self.completion_tokens = completion_tokens
+        # Opt-in (AB#67, token streaming): when True and a caller passes
+        # `answer_sink`, `chat` emits the scripted answer to it one word at
+        # a time (spaces kept) before returning — real providers emit
+        # sub-word fragments, but word-sized deltas are enough to exercise
+        # the executor's batching/SSE plumbing without depending on exactly
+        # how any one provider tokenizes.
+        self.stream_answers = stream_answers
 
     def _script_for(self, system_prompt: Optional[str]) -> List[Tuple]:
         system_prompt = system_prompt or ""
@@ -143,8 +151,16 @@ class FakeLLMClient:
         tool_executor=None,
         think: Optional[bool] = False,
         tool_choice: Optional[str] = None,
+        answer_sink: Optional[Any] = None,
     ) -> ChatResult:
-        self.chat_calls.append({"system_prompt": system_prompt, "messages": messages, "tools": tools})
+        self.chat_calls.append(
+            {
+                "system_prompt": system_prompt,
+                "messages": messages,
+                "tools": tools,
+                "answer_sink": answer_sink,
+            }
+        )
         script = self._script_for(system_prompt)
         executed: List[Dict[str, Any]] = []
         content = ""
@@ -156,6 +172,12 @@ class FakeLLMClient:
                 executed.append({"name": name, "arguments": args, "result": result})
             elif kind == "answer":
                 content = step[1]
+        if self.stream_answers and answer_sink is not None and content:
+            parts = content.split(" ")
+            for idx, part in enumerate(parts):
+                fragment = part if idx == 0 else f" {part}"
+                if fragment:
+                    await answer_sink.delta(fragment)
         if tool_choice == "required" and not executed and tools:
             # The real Ollama/Gemini clients would genuinely call a tool here
             # (that's what tool_choice="required" means) — a script that

@@ -24,9 +24,15 @@ class _FakeClient:
         vision_stream_chunks=None,
         vision_stream_exc=None,
         vision_stream_fail_after_first=False,
+        chat_sink_text=None,
     ):
         self.chat_result = chat_result
         self.chat_exc = chat_exc
+        # AB#67 (token streaming): emitted to `answer_sink` (if any) before
+        # `chat` returns/raises, so a test can simulate the primary having
+        # streamed a fragment before it fails.
+        self.chat_sink_text = chat_sink_text
+        self.last_chat_kwargs = None
         self.json_result = json_result
         self.json_exc = json_exc
         self.health_result = health_result
@@ -47,6 +53,10 @@ class _FakeClient:
 
     async def chat(self, **kwargs):
         self.chat_calls += 1
+        self.last_chat_kwargs = kwargs
+        answer_sink = kwargs.get("answer_sink")
+        if answer_sink is not None and self.chat_sink_text:
+            await answer_sink.delta(self.chat_sink_text)
         if self.chat_exc:
             raise self.chat_exc
         return self.chat_result
@@ -109,6 +119,50 @@ async def test_chat_propagates_secondary_failure_if_both_fail():
 
     with pytest.raises(LLMUnavailableError):
         await client.chat(messages=[{"role": "user", "content": "hi"}])
+
+
+class _Sink:
+    def __init__(self):
+        self.deltas = []
+        self.resets = 0
+
+    async def delta(self, text):
+        self.deltas.append(text)
+
+    async def reset(self):
+        self.resets += 1
+
+
+@pytest.mark.asyncio
+async def test_chat_falls_back_with_sink_when_primary_fails_before_any_delta():
+    """AB#67 (token streaming): the primary raised before emitting — the
+    secondary still gets the original sink."""
+    primary = _FakeClient(chat_exc=LLMUnavailableError("quota exhausted"))
+    secondary = _FakeClient(chat_result=ChatResult(content="from secondary"))
+    client = FallbackLLMClient(primary=primary, secondary=secondary)
+    sink = _Sink()
+
+    result = await client.chat(messages=[{"role": "user", "content": "hi"}], answer_sink=sink)
+
+    assert result.content == "from secondary"
+    assert secondary.chat_calls == 1
+    assert secondary.last_chat_kwargs["answer_sink"] is sink
+
+
+@pytest.mark.asyncio
+async def test_chat_does_not_fall_back_once_primary_emitted_a_delta():
+    """Once the primary has streamed a fragment, the error must propagate —
+    switching providers now would duplicate content already on the wire."""
+    primary = _FakeClient(chat_exc=LLMUnavailableError("dropped mid-stream"), chat_sink_text="partial ")
+    secondary = _FakeClient(chat_result=ChatResult(content="from secondary"))
+    client = FallbackLLMClient(primary=primary, secondary=secondary)
+    sink = _Sink()
+
+    with pytest.raises(LLMUnavailableError):
+        await client.chat(messages=[{"role": "user", "content": "hi"}], answer_sink=sink)
+
+    assert sink.deltas == ["partial "]
+    assert secondary.chat_calls == 0
 
 
 @pytest.mark.asyncio

@@ -41,6 +41,10 @@ interface Exchange {
   pending?: boolean;
   /** The answer is still being written out; what hangs off it (citations, trace, rating) waits. */
   revealing?: boolean;
+  /** True once any non-reset `answer_delta` arrived for this exchange — real
+   * token streaming (AB#67). When true, `final` sets the answer directly
+   * instead of running the word-by-word `revealAnswer` reveal. */
+  streamedAnswer?: boolean;
   error?: string;
 }
 
@@ -265,6 +269,16 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
   const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Tracks the in-flight /consult/stream fetch so a new submit (or an
+  // unmount) can abort it. Without this the browser never closes the old
+  // connection, the backend's StreamingResponse disconnect-cancellation
+  // (which otherwise frees the Ollama slot in <1s, see AB#78) never fires,
+  // and the old consultation keeps running to completion in the background —
+  // contending for the single-concurrency Ollama slot with whatever runs
+  // next (observed live: AB#67 verification).
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => () => abortControllerRef.current?.abort(), []);
 
   // Auto-resize, same idea as kokonutui's useAutoResizeTextarea: grow with
   // content up to a cap, then let the textarea itself scroll.
@@ -313,12 +327,15 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
   const patch = (update: Partial<Exchange>) =>
     setExchanges((prev) => prev.map((e, i) => (i === prev.length - 1 ? { ...e, ...update } : e)));
 
-  /** The `final` SSE event carries the whole answer in one shot — there's no
-   * token-level streaming from the model to relay (see the module docstring
-   * on `consult_stream`). Revealing it word-by-word client-side is what gives
-   * the "the system is producing this" feel instead of a wall of text
-   * appearing instantly. Runs detached from the SSE read loop so it doesn't
-   * hold up later events (`persisted`). */
+  /** Used only when no `answer_delta` streamed for this exchange (the fast
+   * path, or a provider without real token streaming today — Gemini, Groq,
+   * Ollama's OpenAI-compatible path; see AB#67). The `final` SSE event
+   * carries the whole answer in one shot in that case, so revealing it
+   * word-by-word client-side is what gives the "the system is producing
+   * this" feel instead of a wall of text appearing instantly. Runs detached
+   * from the SSE read loop so it doesn't hold up later events (`persisted`).
+   * When a real stream did arrive, `final` sets the answer directly instead
+   * — see the `answer_delta`/`final` handling in `submit` below. */
   const revealAnswer = (fullAnswer: string) => {
     const words = fullAnswer.split(" ");
     let shown = 0;
@@ -340,6 +357,16 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
     setStreaming(true);
     setExchanges((prev) => [...prev, { question: q, pending: true, progress: [] }]);
 
+    // Abort whatever the previous submit (or a lingering nav away) left
+    // in flight before starting this one — see abortControllerRef above.
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    // A newer submit may abort `controller` and move `abortControllerRef`
+    // on before this fetch's callbacks run; those must no-op rather than
+    // patch whatever exchange is now last in the array.
+    const isStale = () => abortControllerRef.current !== controller;
+
     try {
       const res = await fetch("/api/agents/consult/stream", {
         method: "POST",
@@ -352,12 +379,18 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
             language: lang,
           },
         }),
+        signal: controller.signal,
       });
       if (!res.ok || !res.body) throw new Error(`${res.status}`);
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      // Local to this turn, not React state — `final`'s handler needs to
+      // know synchronously whether a delta already streamed, and reading
+      // `exchanges` here would close over the pre-submit snapshot rather
+      // than what the `answer_delta` branch below has been setting.
+      let streamedThisTurn = false;
 
       for (;;) {
         const { done, value } = await reader.read();
@@ -378,6 +411,27 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                 toolCalls: [],
               })),
             });
+          } else if (event.event === "answer_delta") {
+            // Additive, provisional (AB#67) — batches already include
+            // spaces, so they're appended verbatim, never trimmed.
+            streamedThisTurn = true;
+            setExchanges((prev) =>
+              prev.map((e, i) =>
+                i === prev.length - 1
+                  ? {
+                      ...e,
+                      // `pending` must clear here too, not just on `final` —
+                      // the pending/progress view is a different branch from
+                      // the answer view (below), so the provisional text
+                      // from here on only renders once this flips.
+                      pending: false,
+                      answer: event.reset ? "" : (e.answer ?? "") + (event.text as string),
+                      streamedAnswer: true,
+                      revealing: true,
+                    }
+                  : e
+              )
+            );
           } else if (event.event === "agent_completed") {
             setExchanges((prev) =>
               prev.map((e, i) =>
@@ -394,10 +448,11 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
               )
             );
           } else if (event.event === "final") {
+            const streamed = streamedThisTurn;
             patch({
               pending: false,
-              revealing: true,
-              answer: "",
+              revealing: streamed ? false : true,
+              answer: streamed ? (event.answer as string) : "",
               agents: event.agents_involved,
               toolCalls: event.tool_calls,
               citations: event.citation_report,
@@ -405,18 +460,24 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
               llmCalls: (event.trace?.llm_calls as LLMCall[] | undefined) ?? [],
               traceId: event.trace?.trace_id as string | undefined,
             });
-            revealAnswer(event.answer as string);
+            // No fake reveal when deltas already streamed in the answer —
+            // `final.answer` is set directly above instead (AB#67).
+            if (!streamed) revealAnswer(event.answer as string);
           } else if (event.event === "persisted") {
             patch({ id: event.id });
           } else if (event.event === "error") {
-            patch({ pending: false, error: event.detail });
+            patch({ pending: false, revealing: false, answer: undefined, error: event.detail });
           }
         }
       }
-    } catch {
-      patch({ pending: false, error: t("copilot.failed") });
+    } catch (err) {
+      // A newer submit's abort() rejects this fetch/reader with AbortError —
+      // expected, not a failure, and by the time it lands `prev.length - 1`
+      // is the newer exchange, so patching here would corrupt it.
+      if (isStale() || (err instanceof DOMException && err.name === "AbortError")) return;
+      patch({ pending: false, revealing: false, answer: undefined, error: t("copilot.failed") });
     } finally {
-      setStreaming(false);
+      if (!isStale()) setStreaming(false);
     }
   };
 

@@ -11,8 +11,16 @@ the tool's own citation attached unchanged. There is nothing for an LLM
 to hallucinate because no LLM generates the answer text; Citation Guard
 and claim verification would have nothing to check that isn't already
 guaranteed true by construction. This is a stronger safety position than
-"skip verification for low-stakes questions" — it isn't skipped, it's
-structurally unnecessary.
+"skip verification for low-stakes questions" for *fabrication* — it isn't
+skipped, it's structurally unnecessary.
+
+It is not a stronger position against *irrelevance*: a real, correctly-cited
+guideline can still be the wrong guideline for the question asked, and
+nothing downstream of this module would catch that (confirmed live — see
+`fast_path_min_dense_similarity` in `config.py`). The guideline branch below
+guards against this with its own relevance floor on top of the tool's raw
+result, since it's the one branch here with no precondition as structurally
+restrictive as "an actual resolvable medication list."
 
 **Why this is a rules-based router, not an LLM router.** An LLM call to
 classify intent would reintroduce the exact latency this exists to avoid
@@ -167,13 +175,24 @@ async def try_fast_path(
             "search_clinical_guidelines", {"query": query, "top_k": MAX_GUIDELINE_RESULTS}
         )
         results = result.get("results", [])
-        # A weak top hit — e.g. a single coincidentally shared keyword with
-        # no real embedding-corroborated match — must never become the
-        # final answer unchecked: this path skips citation guard and claim
-        # verification entirely (see the module docstring's safety
-        # argument), so it can only stand in for the full pipeline when the
-        # match is actually strong. Below the floor, fall through instead.
-        if results and results[0].get("score", 0.0) >= settings.fast_path_min_score:
+        # Two independent gates, both required. `fast_path_min_score` rejects
+        # a hit with no embedding corroboration at all (pure keyword
+        # coincidence). That alone isn't enough — RRF only encodes rank, so a
+        # dense hit that barely cleared the pipeline's similarity floor and
+        # one that matched almost exactly look identical to it. This path
+        # has no citation guard, no claim verification, and no abstention
+        # gate to catch a confidently-wrong-but-real-sounding citation (see
+        # `fast_path_min_dense_similarity`'s own comment in config.py for the
+        # live case that found this gap), so it also requires the raw cosine
+        # similarity to clear a stricter, dedicated floor. Below either
+        # floor, fall through to the full pipeline instead — slower, but it
+        # can abstain when the evidence doesn't actually answer the question.
+        top = results[0] if results else None
+        if (
+            top is not None
+            and top.get("score", 0.0) >= settings.fast_path_min_score
+            and (top.get("dense_similarity") or 0.0) >= settings.fast_path_min_dense_similarity
+        ):
             formatted = _format_rag_answer(results)
             if formatted is not None:
                 answer, citations = formatted

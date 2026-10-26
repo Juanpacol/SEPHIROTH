@@ -150,7 +150,7 @@ Short version of each decision. Full rationale, if you need it, lives in `docs/0
 - **Scheduling + exam-result sharing** (`routers/scheduling.py`, `results.py`) — role-scoped per route, conflicts checked server-side, attachments capped at 10MB / 3 files per share.
 - **Durable workflow engine drives alerts, reminders, and follow-up** — outside the chat path. `platform/api/workflows/` ticks forward alert escalation, appointment reminders, and patient follow-up as state machines, driven by the unauthenticated `internal.py` endpoint. User-facing surfaces: `alerts.py`, `approvals.py`, `followups.py`, `automation_memory.py`, `notifications.py`, `encounters.py`, `result_reviews.py`.
 - **A patient sees a lab result only after a clinician communicated it** (`api/patient_labs.py`, `GET /api/portal/labs`, "My Labs" in the portal). The snapshot (`Patient.lab_results`) is never sent to a patient, and neither is the review behind a result (note, decision, classification).
-- **Streaming via SSE.** `/api/agents/consult/stream` emits `routing → agent_completed(×N) → final → persisted`.
+- **Streaming via SSE.** `/api/agents/consult/stream` emits `routing → answer_delta(×0..N, provisional) → agent_completed(×N) → final → persisted`. `answer_delta` streams the answering specialist's raw text as it generates (Ollama native only, today — AB#67); `final.answer` is always the one source of truth the frontend renders.
 
 ### Frontend & branding
 
