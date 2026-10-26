@@ -88,13 +88,24 @@ async def _workflow_events(
 
 
 async def test_event_order_is_routing_then_completions_then_final():
+    """`answer_delta` is additive and provisional (token streaming, AB#67) —
+    the same precedent as AB#78's `: keep-alive` comment line: a consumer
+    that ignores unknown events is unaffected. It may appear any number of
+    times between `routing` and the first `agent_completed`, but never
+    after it."""
     events = await _workflow_events()
     kinds = [e["event"] for e in events]
 
     assert kinds[0] == "routing", f"stream must open with `routing`, got {kinds[0]!r}"
     assert kinds[-1] == "final", f"stream must close with `final`, got {kinds[-1]!r}"
-    assert set(kinds[1:-1]) == {"agent_completed"}, (
-        f"only `agent_completed` may appear between routing and final, got {kinds}"
+    middle = kinds[1:-1]
+    assert set(middle) <= {"agent_completed", "answer_delta"}, (
+        f"only `agent_completed`/`answer_delta` may appear between routing and final, got {kinds}"
+    )
+    assert middle.count("agent_completed") >= 1, f"expected at least one agent_completed, got {kinds}"
+    first_completed = middle.index("agent_completed")
+    assert all(k != "answer_delta" for k in middle[first_completed:]), (
+        f"every answer_delta must appear before the first agent_completed, got {kinds}"
     )
 
 
@@ -289,6 +300,63 @@ def _parse_sse(raw: str) -> List[Dict[str, Any]]:
             continue
         events.append(json.loads(chunk[6:]))
     return events
+
+
+@pytest.fixture
+def streaming_app(db_session, monkeypatch):
+    """Same as `app`, but the scripted client streams its answer to the
+    executor's `_DeltaBatcher` (AB#67) — for the `answer_delta` wire-shape
+    test only, so every other endpoint-level test keeps the non-streaming
+    double."""
+    monkeypatch.setattr(
+        factory_module,
+        "_client",
+        FakeLLMClient(scripts=SCRIPTS, default_script=[("answer", "specialist output")], stream_answers=True),
+    )
+
+    @asynccontextmanager
+    async def _session_cm():
+        yield db_session
+
+    monkeypatch.setattr(agents_router_module, "SessionLocal", lambda: _session_cm())
+
+    application = FastAPI()
+    application.include_router(auth_router_module.router, prefix="/api/auth")
+    application.include_router(agents_router_module.router, prefix="/api/agents")
+
+    async def override_session():
+        yield db_session
+
+    application.dependency_overrides[get_session] = override_session
+    return application
+
+
+@pytest.fixture
+def streaming_client(streaming_app):
+    return AsyncClient(transport=ASGITransport(app=streaming_app), base_url="http://test")
+
+
+async def test_answer_delta_wire_shape(streaming_client):
+    async with streaming_client:
+        token = await _token(streaming_client)
+        # Routes to drug-safety (the default script, no tool call) rather
+        # than evidence — this test is about the `answer_delta` wire shape,
+        # not citation auditing, so it doesn't need a real tool round.
+        res = await streaming_client.post(
+            "/api/agents/consult/stream",
+            json={"query": "Are these medications safe together?", "context": {}},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        events = _parse_sse(res.text)
+        deltas = [e for e in events if e["event"] == "answer_delta"]
+
+        assert deltas, "expected at least one answer_delta"
+        for event in deltas:
+            assert set(event.keys()) == {"event", "agent", "text", "reset"}, (
+                f"answer_delta field set drifted: {sorted(event.keys())}"
+            )
+            assert isinstance(event["text"], str)
+            assert isinstance(event["reset"], bool)
 
 
 async def test_stream_wire_framing_and_persisted_event(client):

@@ -1011,6 +1011,10 @@ def _retrieve_keyword(query_tokens: set, docs: List[Document]) -> List[Dict[str,
             "citation": doc.citation,
             "url": doc.metadata.get("url"),
             "score": round(score, 4),
+            # No embedding was computed at all on this fallback path (see
+            # `retrieve`'s `EmbeddingUnavailable` branch) — never corroborated,
+            # same as a keyword-only hit through `_fuse`.
+            "dense_similarity": None,
             "metadata": doc.metadata,
         }
         for score, doc in scored
@@ -1049,6 +1053,16 @@ def _fuse(
     for rank, scored_doc in enumerate(dense_hits):
         rrf_scores[scored_doc.id] = rrf_scores.get(scored_doc.id, 0.0) + DENSE_WEIGHT / (RRF_K + rank + 1)
 
+    # RRF rank-fuses keyword and dense signals but, by construction, throws
+    # away how STRONG a dense match actually was — a 0.64 cosine hit (barely
+    # over `min_similarity`) and a 0.95 cosine hit get the same contribution
+    # if both are rank-0. That's fine for ranking a handful of results the
+    # full pipeline will cite and verify, but `fast_path.py` skips citation
+    # guard and claim verification, so it needs the real similarity, not
+    # just "some embedding corroborated this." Carried through separately —
+    # `None` for a doc that only matched on keyword overlap.
+    dense_similarity = {scored_doc.id: scored_doc.score for scored_doc in dense_hits}
+
     ordered_ids = sorted(rrf_scores.keys(), key=lambda doc_id: rrf_scores[doc_id], reverse=True)
     results = []
     for doc_id in ordered_ids[:candidate_pool_size]:
@@ -1063,6 +1077,7 @@ def _fuse(
                 "citation": doc.citation,
                 "url": doc.metadata.get("url"),
                 "score": round(rrf_scores[doc_id], 4),
+                "dense_similarity": dense_similarity.get(doc_id),
                 "metadata": doc.metadata,
             }
         )

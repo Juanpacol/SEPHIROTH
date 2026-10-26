@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from sephiroth.contracts import AgentCapability
 from sephiroth.models import ChatResult, ModelProvider
+from sephiroth.models.base import AnswerSink
 from sephiroth.tools import get_tool_runtime
 
 MEDICAL_DISCLAIMER = (
@@ -50,7 +51,13 @@ class Agent:
     def name(self) -> str:
         return self.capability.id
 
-    async def run(self, query: str, context: Optional[Dict[str, Any]] = None) -> ChatResult:
+    async def run(
+        self,
+        query: str,
+        context: Optional[Dict[str, Any]] = None,
+        *,
+        answer_sink: Optional[AnswerSink] = None,
+    ) -> ChatResult:
         registry = get_tool_runtime()
         await registry.load()
 
@@ -73,6 +80,9 @@ class Agent:
             context_lines = "\n".join(f"{k}: {v}" for k, v in context_for_prompt.items() if v)
             user_content = f"{query}\n\n--- Patient context ---\n{context_lines}"
 
+        chat_kwargs: Dict[str, Any] = {}
+        if answer_sink is not None:
+            chat_kwargs["answer_sink"] = answer_sink
         result = await self.client.chat(
             messages=[{"role": "user", "content": user_content}],
             system_prompt="\n\n".join(p for p in system_parts if p),
@@ -81,6 +91,7 @@ class Agent:
             # does not stop a model from naming a tool outside its whitelist.
             tool_executor=registry.scoped_executor(allowed_tools) if tools else None,
             tool_choice="required" if (tools and self.capability.require_tool_call) else None,
+            **chat_kwargs,
         )
         if tools and self.capability.require_tool_call and not result.tool_calls:
             raise ToolCallOmittedError(

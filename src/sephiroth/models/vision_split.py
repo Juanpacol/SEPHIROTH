@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from .base import ChatResult, ProviderInfo, ToolExecutor
+from .base import AnswerSink, ChatResult, ProviderInfo, ToolExecutor
 
 
 class VisionChatSplitClient:
@@ -49,7 +49,11 @@ class VisionChatSplitClient:
         tool_executor: Optional[ToolExecutor] = None,
         think: Optional[bool] = False,
         tool_choice: Optional[str] = None,
+        answer_sink: Optional[AnswerSink] = None,
     ) -> ChatResult:
+        kwargs: Dict[str, Any] = {}
+        if answer_sink is not None:
+            kwargs["answer_sink"] = answer_sink
         return await self.chat_client.chat(
             messages=messages,
             system_prompt=system_prompt,
@@ -57,6 +61,7 @@ class VisionChatSplitClient:
             tool_executor=tool_executor,
             think=think,
             tool_choice=tool_choice,
+            **kwargs,
         )
 
     async def generate_json(

@@ -15,9 +15,35 @@ from typing import Any, Dict, List, Optional
 
 from sephiroth.telemetry.context import fallback_scope
 
-from .base import ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor, classify_unavailable
+from .base import (
+    AnswerSink,
+    ChatResult,
+    LLMUnavailableError,
+    ProviderInfo,
+    ToolExecutor,
+    classify_unavailable,
+)
 
 logger = logging.getLogger(__name__)
+
+
+class _TrackingSink:
+    """Wraps a caller's `AnswerSink` so `chat` can tell, after an
+    `LLMUnavailableError`, whether the primary ever emitted — the signal
+    that decides whether falling through to the secondary is still safe
+    (mirrors the no-switch-after-first-chunk rule at
+    `describe_image_stream`, below)."""
+
+    def __init__(self, inner: AnswerSink):
+        self._inner = inner
+        self.emitted = False
+
+    async def delta(self, text: str) -> None:
+        self.emitted = True
+        await self._inner.delta(text)
+
+    async def reset(self) -> None:
+        await self._inner.reset()
 
 
 class FallbackLLMClient:
@@ -70,7 +96,12 @@ class FallbackLLMClient:
         tool_executor: Optional[ToolExecutor] = None,
         think: Optional[bool] = False,
         tool_choice: Optional[str] = None,
+        answer_sink: Optional[AnswerSink] = None,
     ) -> ChatResult:
+        tracking = _TrackingSink(answer_sink) if answer_sink is not None else None
+        primary_kwargs: Dict[str, Any] = {}
+        if tracking is not None:
+            primary_kwargs["answer_sink"] = tracking
         try:
             return await self.primary.chat(
                 messages=messages,
@@ -79,8 +110,18 @@ class FallbackLLMClient:
                 tool_executor=tool_executor,
                 think=think,
                 tool_choice=tool_choice,
+                **primary_kwargs,
             )
         except LLMUnavailableError as exc:
+            # Once the primary has streamed a fragment, a transparent switch
+            # to the secondary would duplicate content already on the wire —
+            # the same no-switch-after-first-chunk rule as
+            # `describe_image_stream` below, applied to `chat`'s sink.
+            if tracking is not None and tracking.emitted:
+                raise
+            secondary_kwargs: Dict[str, Any] = {}
+            if answer_sink is not None:
+                secondary_kwargs["answer_sink"] = answer_sink
             with fallback_scope(*self._primary_failed("chat", exc)):
                 return await self.secondary.chat(
                     messages=messages,
@@ -89,6 +130,7 @@ class FallbackLLMClient:
                     tool_executor=tool_executor,
                     think=think,
                     tool_choice=tool_choice,
+                    **secondary_kwargs,
                 )
 
     async def generate_json(

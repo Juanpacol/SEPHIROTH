@@ -145,7 +145,37 @@ async def test_drug_interaction_resolves_medications_from_patient_chart(db_sessi
     assert result["source"] == "drug-safety"
 
 
-async def test_guideline_query_triggers_without_patient_id(db_session):
+async def test_guideline_query_triggers_without_patient_id(db_session, monkeypatch):
+    """The real `ToolRuntime` here runs RAG's keyword-only fallback (see
+    module docstring) — `dense_similarity` is always `None` on that path, so
+    it can never clear `fast_path_min_dense_similarity` on its own (the gap
+    that path's lack of embedding corroboration deliberately leaves). A
+    strong, explicit dense hit is mocked in instead so this test exercises
+    the actually-supported case — embeddings available — rather than relying
+    on the keyword score's unrelated, much larger scale to incidentally clear
+    the floor the way it did before `dense_similarity` existed."""
+    from api import fast_path as fast_path_module
+
+    class _StrongRegistry:
+        async def load(self):
+            return None
+
+        async def execute(self, name, args):
+            assert name == "search_clinical_guidelines"
+            return {
+                "results": [
+                    {
+                        "id": "strong-hit",
+                        "content": "First-line treatment for hypertension is a thiazide diuretic.",
+                        "citation": "Real Guideline, Org, 2024",
+                        "source": "Real Guideline",
+                        "score": settings.fast_path_min_score * 2,
+                        "dense_similarity": settings.fast_path_min_dense_similarity + 0.1,
+                    }
+                ]
+            }
+
+    monkeypatch.setattr(fast_path_module, "get_tool_runtime", lambda: _StrongRegistry())
     result = await try_fast_path(
         "What is the first-line treatment for hypertension?",
         patient_id="",
@@ -160,6 +190,46 @@ async def test_guideline_query_triggers_without_patient_id(db_session):
     # to that literal string when a tool_call lacks it.
     assert result["tool_calls"][0]["agent"] == "evidence"
     assert result["citation_report"]["fabricated"] == []
+
+
+async def test_guideline_query_falls_through_without_dense_corroboration(db_session, monkeypatch):
+    """A hit can clear `fast_path_min_score` with no dense corroboration at
+    all: the RRF formula alone can't tell a rank-0 *keyword* hit scored
+    through several contributing matches from a rank-0 *dense* hit — only
+    `dense_similarity` (or its absence) distinguishes them. Without this
+    gate, that let keyword overlap alone fast-path an answer (live case: an
+    IV vancomycin dosing question matched a Surviving Sepsis Campaign
+    guideline on shared clinical vocabulary, `dense_similarity` just over
+    `retrieval_min_similarity` but nowhere near confidently relevant)."""
+    from api import fast_path as fast_path_module
+
+    class _KeywordOnlyRegistry:
+        async def load(self):
+            return None
+
+        async def execute(self, name, args):
+            assert name == "search_clinical_guidelines"
+            return {
+                "results": [
+                    {
+                        "id": "keyword-only-hit",
+                        "content": "Shares clinical vocabulary but isn't actually on topic.",
+                        "citation": "Unrelated Guideline, 2024",
+                        "source": "Unrelated Guideline",
+                        "score": settings.fast_path_min_score * 2,
+                        "dense_similarity": None,
+                    }
+                ]
+            }
+
+    monkeypatch.setattr(fast_path_module, "get_tool_runtime", lambda: _KeywordOnlyRegistry())
+    result = await try_fast_path(
+        "What is the first-line treatment for hypertension?",
+        patient_id="",
+        context={},
+        session=db_session,
+    )
+    assert result is None
 
 
 async def test_guideline_query_does_not_trigger_with_patient_id(db_session):

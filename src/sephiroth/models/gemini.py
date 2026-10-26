@@ -27,7 +27,7 @@ from google import genai
 from google.genai import errors, types
 
 from ._throttle import RateLimiter, backoff_delay
-from .base import ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor
+from .base import AnswerSink, ChatResult, LLMUnavailableError, ProviderInfo, ToolExecutor
 from .call_log import record_llm_call
 
 logger = logging.getLogger(__name__)
@@ -227,6 +227,7 @@ class GeminiClient:
         tool_executor: Optional[ToolExecutor] = None,
         think: Optional[bool] = False,
         tool_choice: Optional[str] = None,
+        answer_sink: Optional[AnswerSink] = None,
     ) -> ChatResult:
         """Run a chat exchange, resolving tool calls until a final answer.
 
@@ -242,6 +243,10 @@ class GeminiClient:
                 (mode="ANY")` on the first round only — forcing every round
                 would make the model call a tool forever instead of ever
                 emitting a final answer.
+            answer_sink: real token streaming is deferred for Gemini (would
+                need `generate_content_stream` plus function-call-part
+                detection — see AB#67's analysis); accepted and intentionally
+                ignored so callers can pass it uniformly.
         """
         contents = _to_contents(messages)
         gemini_tools = _to_gemini_tools(tools)

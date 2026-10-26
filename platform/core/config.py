@@ -315,6 +315,27 @@ class Settings(BaseSettings):
     # `data/rag/corpus_primary_care.py`); recalibrate against the rebuilt
     # embeddings artifact if the corpus changes materially.
     fast_path_min_score: float = 0.02
+    # Second, independent gate alongside `fast_path_min_score` above — the
+    # raw cosine similarity (`dense_similarity` in `_fuse`'s output), not the
+    # RRF-fused score. RRF only encodes *rank*, so a dense hit that barely
+    # cleared `retrieval_min_similarity` (0.636, tuned for the full
+    # pipeline's recall) and a near-perfect one score identically if both are
+    # rank-0 — confirmed live: a query about IV vancomycin dosing in renal
+    # impairment fast-pathed onto a Surviving Sepsis Campaign guideline
+    # (dense_similarity just above 0.636, RRF score 0.0328, comfortably over
+    # `fast_path_min_score`) because nothing upstream of this value ever
+    # distinguished "barely relevant" from "clearly relevant." The full
+    # pipeline tolerates that at 0.636 because an LLM still reads the
+    # evidence and the verification/abstention gate catches an unsupported
+    # claim; fast_path has neither, so it needs real precision, not just
+    # recall, and gets a stricter floor than the pipeline's. No golden-set
+    # calibration exists for this value yet (unlike `retrieval_min_similarity`
+    # above, pinned by `tests/test_embeddings_matching.py` against 101 cases)
+    # — 0.75 is a conservative placeholder until the eval harness (`/eval`)
+    # is run against fast_path specifically; narrow it from there; a hit
+    # missing `dense_similarity` entirely (keyword-only, or the
+    # `EmbeddingUnavailable` fallback) always fails this gate.
+    fast_path_min_dense_similarity: float = 0.75
 
     # Feature flags
     # Enforce each agent's `allowed_tools` whitelist at dispatch time, not just

@@ -38,11 +38,14 @@ coordinated frontend change in the same merge train.** They are locked by
 
 ### 2.1 SSE event stream
 
-Wire framing is `data: {json}\n\n`. Five event types, emitted in this order:
+Wire framing is `data: {json}\n\n`. `routing → answer_delta(×0..N, provisional) →
+agent_completed → final → persisted` — five frozen event types plus
+`answer_delta`, which is additive (AB#67, token streaming):
 
 | Event | Fields | Notes |
 |---|---|---|
 | `routing` | `agents: list[str]` | **node** names, underscore form (`drug_safety`) |
+| `answer_delta` | `agent, text, reset` | additive, provisional (AB#67) — a raw, pre-verification fragment of the answering specialist's content, or `{"text": "", "reset": true}` voiding everything sent since the previous `reset`. Zero or more, always between `routing` and the first `agent_completed`. Real streaming today only for Ollama's native `/api/chat`; Gemini, Groq and Ollama's OpenAI-compatible path emit none. The frontend treats it as provisional text only — `final.answer` is always the source of truth |
 | `agent_completed` | `agent, summary, tool_calls` | `agent` is the **display** name, hyphen form (`drug-safety`); `summary` truncated to 280 chars; `tool_calls` entries carry `{name, arguments}` and **no `result`** |
 | `final` | `answer, agents_involved, tool_calls, citation_report, explanation` | `tool_calls` entries here **do** carry `result` |
 | `persisted` | `id` | emitted by the router after the stream, carries the consultation id |
@@ -53,7 +56,8 @@ with `name.replace("_", "-")` on `routing` and matches `agent_completed` against
 both forms (`platform/frontend/app/copilot/page.tsx:262-341`).
 
 **Unknown events are silently ignored by the frontend.** Therefore *adding* a
-new event type is backward-compatible; changing any of these five is not.
+new event type is backward-compatible (`answer_delta` is the precedent);
+changing any of the five original ones is not.
 
 ### 2.2 Persistence shape
 
