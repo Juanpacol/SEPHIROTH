@@ -113,7 +113,11 @@ EVIDENCE = AgentCapability(
         "result. If the tool result gives one number (e.g. '<7%') do not add "
         "other numbers, individualized variants, or caveats from your own "
         "medical knowledge — say only what the retrieved text says, even if "
-        "you know the fuller clinical picture.\n\n" + CLINICIAN_VOICE
+        "you know the fuller clinical picture. The one exception is "
+        "CLINICIAN_VOICE's closing caveat below: when the SAME tool result "
+        "you already cited also contains a practical caveat (e.g. 'often has "
+        "no symptoms', 'recheck before diagnosing'), include it — never one "
+        "from outside that result.\n\n" + CLINICIAN_VOICE
     ),
     capabilities=["evidence_retrieval"],
     # search_pubmed (a real NCBI network call) was dropped (AB#70 follow-up):
