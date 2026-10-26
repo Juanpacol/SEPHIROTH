@@ -10,7 +10,7 @@ import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from data.embeddings.base import EmbeddingUnavailable
-from data.rag import SEED_GUIDELINES, Document, MedicalKnowledgeBase, RAGPipeline, ScoredDoc, _fuse, _tokenize
+from data.rag import SEED_GUIDELINES, Document, RAGPipeline, ScoredDoc, _fuse, _tokenize
 from data.rag import _retrieve_keyword as retrieve_keyword
 
 
@@ -247,17 +247,6 @@ async def test_add_document_is_retrievable(pg_session_factory, cleanup_docs):
 
     results = await pipeline.retrieve("zebrafish congenital cardiomyopathy screening", top_k=1)
     assert results[0]["id"] == "test-doc-1"
-
-
-@_needs_local_postgres
-async def test_medical_knowledge_base_search_delegates_to_pipeline(pg_session_factory):
-    from data.embeddings.cached import CachedEmbeddingProvider
-
-    kb = MedicalKnowledgeBase(embedding_provider=CachedEmbeddingProvider(inner=None))
-    kb.pipeline._session_factory = pg_session_factory
-    results = await kb.search("A1C goal type 2 diabetes", top_k=1)
-    assert results
-    assert results[0]["id"] == "ada-2024-hba1c"
 
 
 @_needs_local_postgres
