@@ -79,6 +79,66 @@ async def test_guideline_query_falls_through_when_top_score_is_below_floor(db_se
     assert result is None
 
 
+async def test_guideline_query_matches_considered_high_phrasing(db_session, monkeypatch):
+    """Live case: "What blood pressure reading is considered high?" has none
+    of `GUIDELINE_CORE_TERMS` ("guideline", "first-line", "recommend",
+    "target", "threshold") and matched neither existing phrasal extra
+    either — it fell through to the full pipeline every time, with no
+    chance to abstain instantly on a knowledge-base gap. This phrasing adds
+    coverage for that without touching the shared `GUIDELINE_CORE_TERMS`
+    core (`intent_router` doesn't need it — its net is already wider)."""
+    from api import fast_path as fast_path_module
+
+    class _EmptyRegistry:
+        async def load(self):
+            return None
+
+        async def execute(self, name, args):
+            return {"results": []}
+
+    monkeypatch.setattr(fast_path_module, "get_tool_runtime", lambda: _EmptyRegistry())
+    result = await try_fast_path(
+        "What blood pressure reading is considered high?",
+        patient_id="",
+        context={},
+        session=db_session,
+    )
+    assert result is not None
+    assert result["abstention"]["reason"] == "insufficient_evidence"
+
+
+async def test_guideline_query_abstains_instantly_when_nothing_retrieved(db_session, monkeypatch):
+    """Zero results (not merely a weak one) means nothing cleared even
+    `retrieval_min_similarity`'s recall-favoring floor — genuinely no
+    evidence, not "ambiguous, let the full pipeline judge it." This must
+    abstain here, instantly, rather than fall through to a ~60-90s
+    specialist run that would just reach the same conclusion after
+    retrying (the live case this fixes: a knowledge-base gap read as "slow
+    and stuck" instead of "no evidence for this")."""
+    from api import fast_path as fast_path_module
+
+    class _EmptyRegistry:
+        async def load(self):
+            return None
+
+        async def execute(self, name, args):
+            assert name == "search_clinical_guidelines"
+            return {"results": []}
+
+    monkeypatch.setattr(fast_path_module, "get_tool_runtime", lambda: _EmptyRegistry())
+    result = await try_fast_path(
+        "What is the first-line treatment for hypertension?",
+        patient_id="",
+        context={},
+        session=db_session,
+    )
+    assert result is not None
+    assert result["abstention"]["status"] == "abstain"
+    assert result["abstention"]["reason"] == "insufficient_evidence"
+    assert result["final_answer"] == result["abstention"]["message"]
+    assert result["citation_report"]["verified"] == []
+
+
 async def test_drug_interaction_query_triggers_with_two_plus_meds(db_session):
     result = await try_fast_path(
         "Do warfarin and furosemide interact?",

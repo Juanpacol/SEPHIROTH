@@ -307,7 +307,9 @@ const EN: Record<string, string> = {
 
   "copilot.askOrTry": "Ask a clinical question, or try one of these:",
   "copilot.placeholder": "Ask a clinical question…",
-  "copilot.agentsWorking": "Agents working…",
+  "copilot.stage.routing": "Routing the question…",
+  "copilot.stage.answering": "Consulting specialist…",
+  "copilot.stage.verifying": "Verifying evidence…",
   "copilot.noPatient": "No patient",
   "copilot.failed": "Consultation failed — is the backend running?",
   "copilot.exportPreview": "Export preview",
