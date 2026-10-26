@@ -1,24 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, ClipboardList } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import ActionItemsList from "@/components/action-items-list";
 import AccentTitle from "@/components/landing/accent-title";
 import Reveal from "@/components/landing/reveal";
-import {
-  AgendaPanel,
-  AlertRing,
-  EvolutionBar,
-  KpiStrip,
-  MedicationBars,
-  QualityRing,
-  RiskDonut,
-  VitalsWatch,
-} from "@/components/dashboard/insight-charts";
-import RuleSummaryChart from "@/components/dashboard/rule-summary-chart";
+import { KpiStrip, MedicationBars, VitalsWatch } from "@/components/dashboard/insight-charts";
 
 export default function DashboardPage() {
   const { t } = useLanguage();
@@ -32,16 +21,10 @@ export default function DashboardPage() {
     queryFn: api.dashboardBootstrap,
     refetchInterval: 30_000,
   });
-  const { data: ruleSummary } = useQuery({
-    queryKey: ["dashboard", "rule-summary"],
-    queryFn: api.dashboardRuleSummary,
-    refetchInterval: 60_000,
-  });
-  const { data: quality } = useQuery({
-    queryKey: ["dashboard", "ai"],
-    queryFn: api.dashboardAI,
-    refetchInterval: 60_000,
-  });
+  // `evolution`/`alerts` feed KpiStrip's counts only — their own cards
+  // (EvolutionBar, AlertRing) were cut from this page: each duplicated a
+  // KpiStrip number in a different shape with nothing new to act on
+  // (dashboard metric audit, AB#86).
   const { data: evolution } = useQuery({
     queryKey: ["dashboard", "evolution"],
     queryFn: api.dashboardEvolution,
@@ -116,53 +99,12 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-2.5 lg:col-span-4">
-          {bootstrap?.agenda && (
+          {medications && (
             <Reveal delay={60}>
-              <AgendaPanel agenda={bootstrap.agenda} />
-            </Reveal>
-          )}
-          <Reveal delay={120}>
-            <RiskDonut
-              critical={data.critical_count}
-              moderate={data.moderate_count}
-              stable={data.stable_count}
-            />
-          </Reveal>
-          {alerts && (
-            <Reveal delay={180}>
-              <AlertRing data={alerts} />
+              <MedicationBars data={medications} />
             </Reveal>
           )}
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
-        {evolution && (
-          <Reveal>
-            <EvolutionBar data={evolution} />
-          </Reveal>
-        )}
-        {medications && (
-          <Reveal delay={80}>
-            <MedicationBars data={medications} />
-          </Reveal>
-        )}
-        {quality && (
-          <Reveal>
-            <QualityRing data={quality} />
-          </Reveal>
-        )}
-        <Reveal delay={80} className="dash-panel !p-5">
-          <div className="mb-1 flex items-start justify-between gap-2">
-            <h2 className="eyebrow flex items-center gap-2 text-muted">
-              <BarChart3 size={13} className="text-primary-ink" /> {t("dashboard.ruleSummary.title")}
-            </h2>
-            <Link href="/patients?sort=risk" className="link-underline shrink-0 text-xs font-semibold">
-              {t("dashboard.viewAll")}
-            </Link>
-          </div>
-          {ruleSummary && <RuleSummaryChart summary={ruleSummary} />}
-        </Reveal>
       </div>
     </div>
   );
