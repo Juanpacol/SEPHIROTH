@@ -62,6 +62,11 @@ _ABSTAIN_MESSAGES = {
         "There isn't enough verified evidence to answer this confidently. "
         "Please consult the relevant specialist or guideline directly."
     ),
+    AbstentionReason.AGENT_FAILURE: (
+        "A technical issue prevented generating a reliable answer this time — "
+        "this isn't a judgment about the available evidence. Please try again "
+        "in a moment, or consult the relevant specialist or guideline directly."
+    ),
 }
 
 
@@ -76,17 +81,31 @@ def _abstain(reason: AbstentionReason, confidence: float, ratio: float) -> Abste
 
 
 def decide(
-    report: VerificationReport, confidence: float, input_flags: List[SafetyFlag]
+    report: VerificationReport,
+    confidence: float,
+    input_flags: List[SafetyFlag],
+    *,
+    agent_failed: bool = False,
 ) -> AbstentionDecision:
-    """Priority order: policy/scope > unsupported high-risk claim >
-    contradiction > confidence thresholds. Each earlier check overrides a
-    later, more lenient one. `out_of_scope` sits at the same priority as
-    `prompt_injection` — both are input-level hard stops decided before any
-    evidence-based reasoning is even consulted; see `runtime/executor.py`,
-    which checks these flags before routing so an off-topic question never
-    reaches a specialist or a model call at all."""
+    """Priority order: agent failure > policy/scope > unsupported high-risk
+    claim > contradiction > confidence thresholds. Each earlier check
+    overrides a later, more lenient one. `out_of_scope` sits at the same
+    priority as `prompt_injection` — both are input-level hard stops decided
+    before any evidence-based reasoning is even consulted; see
+    `runtime/executor.py`, which checks these flags before routing so an
+    off-topic question never reaches a specialist or a model call at all.
+
+    `agent_failed` sits above even those: it means the answering specialist
+    itself never produced content (retries exhausted — `ADR-007`), so there
+    is nothing here for the evidence-based checks below to meaningfully
+    judge. Mutually exclusive with the input-flag checks in practice (a
+    flagged input never reaches a specialist at all), but checked first
+    regardless, since "the system failed" should never be masked by a
+    coincidental later match on a different priority rule."""
     ratio = report.supported_claim_ratio
 
+    if agent_failed:
+        return _abstain(AbstentionReason.AGENT_FAILURE, confidence, ratio)
     if any(flag.code == "prompt_injection" for flag in input_flags):
         return _abstain(AbstentionReason.POLICY_RESTRICTION, confidence, ratio)
     if any(flag.code == "out_of_scope" for flag in input_flags):

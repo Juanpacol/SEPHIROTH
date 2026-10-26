@@ -55,6 +55,25 @@ def test_contradiction_abstains_even_with_high_confidence():
     assert decision.reason is AbstentionReason.CONFLICTING_EVIDENCE
 
 
+def test_agent_failure_abstains_regardless_of_confidence():
+    """An empty `VerificationReport` (nothing to extract claims from) can
+    compute a vacuously *high* confidence — no claims means no unsupported
+    claims. `agent_failed=True` must still abstain, with a reason that says
+    "the system failed", not "the evidence was insufficient"."""
+    report = VerificationReport()
+    decision = decide(report, confidence=1.0, input_flags=[], agent_failed=True)
+    assert decision.status is ResponseStatus.ABSTAIN
+    assert decision.reason is AbstentionReason.AGENT_FAILURE
+
+
+def test_agent_failure_overrides_unsupported_high_risk_claim_too():
+    report = VerificationReport(
+        claims=[Claim(id="c1", text="x", risk=RiskLevel.HIGH, status=VerificationStatus.UNSUPPORTED)]
+    )
+    decision = decide(report, confidence=0.99, input_flags=[], agent_failed=True)
+    assert decision.reason is AbstentionReason.AGENT_FAILURE
+
+
 def test_prompt_injection_flag_overrides_everything():
     report = VerificationReport()
     flags = [SafetyFlag(code="prompt_injection", severity=RiskLevel.HIGH)]

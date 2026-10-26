@@ -39,13 +39,24 @@ async def test_the_one_selected_specialist_exhausting_retries_abstains_cleanly(m
     sephiroth.runtime.recovery.decide_recovery — only MODEL/TOOL categories
     retry), so it abstains immediately with an empty section. In the
     single-specialist path (SPEC-029) there is no other agent to fall back
-    on, so the consultation completes with an empty final answer rather
-    than raising — the executor never crashes a request because its one
-    chosen specialist failed.
+    on, so the consultation completes with an honest abstention message
+    rather than raising — the executor never crashes a request because its
+    one chosen specialist failed.
+
+    `final_answer` carries `AbstentionReason.AGENT_FAILURE`'s message, not an
+    empty string: an empty `AgentResult` produces an empty
+    `VerificationReport`, whose vacuous `grounded_claim_ratio` (no claims to
+    fail) computed a *high* confidence before this reason existed — the
+    run silently answered blank instead of abstaining at all. Confirmed live
+    (not just by this test) that this reads as "no evidence" to a user when
+    the real cause was a specialist crash — a retry would likely have
+    succeeded, which `AGENT_FAILURE`'s message says explicitly instead of
+    implying a knowledge-base gap.
 
     Verifies AC-007-03 (docs/specs/SPEC-007-recovery.md)."""
     import sephiroth.runtime.executor as executor_module
-    from sephiroth.contracts import FailureCategory, LifecycleState, RecoveryActionType
+    from sephiroth.contracts import AbstentionReason, FailureCategory, LifecycleState, RecoveryActionType
+    from sephiroth.contracts.enums import ResponseStatus
 
     class FailingClient(FakeLLMClient):
         async def chat(self, messages, system_prompt=None, **kwargs):
@@ -68,9 +79,14 @@ async def test_the_one_selected_specialist_exhausting_retries_abstains_cleanly(m
 
     assert "radiology" in result["agent_outputs"]
     assert result["agent_outputs"]["radiology"] == ""
-    assert result["final_answer"] == ""
 
     state = state_holder["state"]
+    assert state.abstention is not None
+    assert state.abstention.status is ResponseStatus.ABSTAIN
+    assert state.abstention.reason is AbstentionReason.AGENT_FAILURE
+    assert result["final_answer"] == state.abstention.message
+    assert result["final_answer"] != ""
+
     assert state.lifecycle["radiology"] == LifecycleState.FAILED
     assert len(state.failures) == 1
     assert state.failures[0].category == FailureCategory.AGENT
@@ -218,7 +234,7 @@ async def test_run_consultation_partial_status_prepends_caveat_banner(monkeypatc
     from sephiroth.contracts import AbstentionDecision, ResponseStatus
     from sephiroth.safety.abstention import PARTIAL_BANNER
 
-    def fake_decide(report, confidence, input_flags):
+    def fake_decide(report, confidence, input_flags, *, agent_failed=False):
         return AbstentionDecision(
             status=ResponseStatus.PARTIAL, confidence=confidence, supported_claim_ratio=1.0
         )

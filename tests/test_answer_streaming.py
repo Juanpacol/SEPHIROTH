@@ -188,7 +188,10 @@ async def test_exhausted_retries_after_streaming_ends_with_reset():
     """Both attempts omit the tool call — retries exhaust at
     `MAX_AGENT_ATTEMPTS=2`, and the specialist contributes an empty section
     (today's abstain-cleanly behavior, `tests/test_runtime_executor.py`).
-    The last delta event on the wire must be the give-up `reset:true`."""
+    The last delta event on the wire must be the give-up `reset:true`, and
+    `final.answer` carries `AbstentionReason.AGENT_FAILURE`'s honest message
+    — not an empty string, which previously read as "no evidence" to the
+    user when the real cause was the specialist failing (confirmed live)."""
     client = _ScriptedRoundsClient([(_long_answer("try-one"), []), (_long_answer("try-two"), [])])
 
     events = [e async for e in stream_consultation(client, EVIDENCE_QUERY)]
@@ -200,7 +203,8 @@ async def test_exhausted_retries_after_streaming_ends_with_reset():
     assert deltas[-1]["text"] == ""
 
     final = next(e for e in events if e["event"] == "final")
-    assert final["answer"] == ""
+    assert final["answer"] != ""
+    assert final["abstention"]["reason"] == "agent_failure"
 
 
 class _NoSinkParamClient:
