@@ -39,6 +39,12 @@ interface Exchange {
   traceId?: string;
   progress?: AgentProgress[];
   pending?: boolean;
+  /** Which silent leg of the pipeline is running right now — surfaced as a
+   * one-line status instead of a single opaque "agents working" blob, since
+   * `agent_completed` only fires once (one specialist, ADR-016) and leaves
+   * the longest, least-visible leg (claim verification) with no signal of
+   * its own otherwise. */
+  stage?: "routing" | "answering" | "verifying";
   /** The answer is still being written out; what hangs off it (citations, trace, rating) waits. */
   revealing?: boolean;
   /** True once any non-reset `answer_delta` arrived for this exchange — real
@@ -355,7 +361,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
     const q = text;
     setQuery("");
     setStreaming(true);
-    setExchanges((prev) => [...prev, { question: q, pending: true, progress: [] }]);
+    setExchanges((prev) => [...prev, { question: q, pending: true, progress: [], stage: "routing" }]);
 
     // Abort whatever the previous submit (or a lingering nav away) left
     // in flight before starting this one — see abortControllerRef above.
@@ -410,6 +416,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                 done: false,
                 toolCalls: [],
               })),
+              stage: "answering",
             });
           } else if (event.event === "answer_delta") {
             // Additive, provisional (AB#67) — batches already include
@@ -443,6 +450,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                           ? { ...p, done: true, toolCalls: event.tool_calls }
                           : p
                       ),
+                      stage: "verifying",
                     }
                   : e
               )
@@ -515,7 +523,7 @@ export default function CopilotPanel({ initialQuery = "" }: { initialQuery?: str
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <WingMark size={14} className="text-primary-ink motion-safe:animate-pulse" />
-                    <span className="eyebrow text-muted">{t("copilot.agentsWorking")}</span>
+                    <span className="eyebrow text-muted">{t(`copilot.stage.${exchange.stage ?? "routing"}`)}</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {exchange.progress?.map((agent) => (

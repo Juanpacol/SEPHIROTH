@@ -54,7 +54,15 @@ from data.schemas import Patient
 from intelligence.mcp.drug_safety_server import INTERACTIONS
 from intelligence.mcp.rag_server import MAX_GUIDELINE_RESULTS
 from sephiroth.clinical import GUIDELINE_CORE_TERMS
+from sephiroth.contracts import AbstentionDecision, AbstentionReason, ResponseStatus
+from sephiroth.safety.abstention import ABSTAIN_MESSAGES
 from sephiroth.tools import get_tool_runtime
+
+#: A fast-path answer is always confident by construction (verbatim tool
+#: result, nothing synthesized) — see the module docstring.
+_ANSWER_ABSTENTION = AbstentionDecision(
+    status=ResponseStatus.ANSWER, confidence=1.0, supported_claim_ratio=1.0
+).model_dump(mode="json")
 
 #: Every drug name the curated interaction table knows about, lowercase —
 #: lets a plain-language question ("do warfarin and ibuprofen interact?")
@@ -86,7 +94,8 @@ _DRUG_INTERACTION_RE = re.compile(
 # `sephiroth.clinical.guideline_intent`'s module docstring for why the two
 # are asymmetric on purpose, not drifted.
 _GUIDELINE_RE = re.compile(
-    r"\b(" + "|".join(GUIDELINE_CORE_TERMS) + r"|when (is|should)|what is the (target|recommended))\b",
+    r"\b(" + "|".join(GUIDELINE_CORE_TERMS) + r"|when (is|should)|what is the (target|recommended)"
+    r"|considered (high|low|normal|elevated|abnormal)|what (level|range|count|value) (is|counts as))\b",
     re.I,
 )
 _PATIENT_SPECIFIC_RE = re.compile(r"\b(this patient|my patient|patient'?s|their regimen)\b", re.I)
@@ -164,6 +173,7 @@ async def try_fast_path(
                     }
                 ],
                 "citation_report": {"verified": [], "fabricated": []},
+                "abstention": _ANSWER_ABSTENTION,
             }
 
     if not patient_id and not _PATIENT_SPECIFIC_RE.search(query) and _GUIDELINE_RE.search(query):
@@ -175,6 +185,37 @@ async def try_fast_path(
             "search_clinical_guidelines", {"query": query, "top_k": MAX_GUIDELINE_RESULTS}
         )
         results = result.get("results", [])
+        tool_call = {
+            "agent": "evidence",
+            "name": "search_clinical_guidelines",
+            "arguments": {"query": query},
+            "result": result,
+        }
+        if not results:
+            # No candidate cleared even `retrieval_min_similarity`'s
+            # recall-favoring floor (`data/rag/__init__.py`) — not "weak but
+            # present", genuinely nothing. Abstaining here instantly, instead
+            # of falling through to a ~60-90s specialist run that would just
+            # reach the same conclusion after retrying, is the fix for the
+            # live case where a query with no knowledge-base coverage read as
+            # "slow and stuck" rather than "the system has no evidence for
+            # this" (see the AGENT_FAILURE abstention reason's own history
+            # for the related, but distinct, agent-crash case).
+            abstention = AbstentionDecision(
+                status=ResponseStatus.ABSTAIN,
+                reason=AbstentionReason.INSUFFICIENT_EVIDENCE,
+                confidence=0.0,
+                supported_claim_ratio=0.0,
+                message=ABSTAIN_MESSAGES[AbstentionReason.INSUFFICIENT_EVIDENCE],
+            ).model_dump(mode="json")
+            return {
+                "source": "evidence",
+                "final_answer": abstention["message"],
+                "tool_calls": [tool_call],
+                "citation_report": {"verified": [], "fabricated": []},
+                "abstention": abstention,
+            }
+
         # Two independent gates, both required. `fast_path_min_score` rejects
         # a hit with no embedding corroboration at all (pure keyword
         # coincidence). That alone isn't enough — RRF only encodes rank, so a
@@ -187,10 +228,9 @@ async def try_fast_path(
         # similarity to clear a stricter, dedicated floor. Below either
         # floor, fall through to the full pipeline instead — slower, but it
         # can abstain when the evidence doesn't actually answer the question.
-        top = results[0] if results else None
+        top = results[0]
         if (
-            top is not None
-            and top.get("score", 0.0) >= settings.fast_path_min_score
+            top.get("score", 0.0) >= settings.fast_path_min_score
             and (top.get("dense_similarity") or 0.0) >= settings.fast_path_min_dense_similarity
         ):
             formatted = _format_rag_answer(results)
@@ -199,15 +239,9 @@ async def try_fast_path(
                 return {
                     "source": "evidence",
                     "final_answer": answer,
-                    "tool_calls": [
-                        {
-                            "agent": "evidence",
-                            "name": "search_clinical_guidelines",
-                            "arguments": {"query": query},
-                            "result": result,
-                        }
-                    ],
+                    "tool_calls": [tool_call],
                     "citation_report": {"verified": citations, "fabricated": []},
+                    "abstention": _ANSWER_ABSTENTION,
                 }
 
     return None

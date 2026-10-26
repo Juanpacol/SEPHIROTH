@@ -41,7 +41,7 @@ OBSERVED_BANNER = (
     "carefully and confirm with a qualified professional."
 )
 
-_ABSTAIN_MESSAGES = {
+ABSTAIN_MESSAGES = {
     AbstentionReason.POLICY_RESTRICTION: (
         "This request could not be safely processed. Please rephrase your clinical question."
     ),
@@ -76,7 +76,7 @@ def _abstain(reason: AbstentionReason, confidence: float, ratio: float) -> Abste
         reason=reason,
         confidence=confidence,
         supported_claim_ratio=ratio,
-        message=_ABSTAIN_MESSAGES[reason],
+        message=ABSTAIN_MESSAGES[reason],
     )
 
 

@@ -239,13 +239,7 @@ async def consult_stream(
 
     async def event_stream():
         if fast is not None:
-            abstention = {
-                "status": "answer",
-                "reason": None,
-                "confidence": 1.0,
-                "supported_claim_ratio": 1.0,
-                "message": "",
-            }
+            abstention = fast["abstention"]
             yield f"data: {json.dumps({'event': 'routing', 'agents': [fast['source']]})}\n\n"
             agent_completed_payload = {
                 "event": "agent_completed",
