@@ -90,6 +90,10 @@ test.describe("footer", () => {
 
 test.describe("hero", () => {
   test("drifts and fades as you scroll away, and is untouched at the top", async ({ page }) => {
+    // Below `md` the hero is a stack of full-height panels under the headline, not one screen:
+    // drifting/fading its whole, now much taller, content the same way a single screen does would
+    // fade it out over the panels themselves instead of as it leaves. Desktop-only effect.
+    test.skip((page.viewportSize()?.width ?? 1024) < 768, "hero drift/fade is a desktop effect");
     await page.goto("/");
     await page.waitForLoadState("networkidle");
     const content = page.locator("[data-hero-content]");
@@ -131,7 +135,7 @@ test.describe("reduced motion", () => {
     await page.waitForTimeout(400);
     expect(await cssVar(page, "--hero-shift")).toBe("0px");
     expect(
-      Number(await page.locator("[data-hero-content]").evaluate((el) => getComputedStyle(el).opacity)),
+      Number(await page.locator("[data-hero-content]").evaluate((el) => getComputedStyle(el).opacity))
     ).toBeGreaterThan(0.99);
   });
 });
@@ -161,10 +165,10 @@ test.describe("features", () => {
     expect(await heading.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/antonio/i);
     // The section paints nothing of its own: the whole landing is one navy page.
     expect(await page.locator("#features").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
-      "rgba(0, 0, 0, 0)",
+      "rgba(0, 0, 0, 0)"
     );
     expect(
-      await page.locator("main").evaluate((el) => getComputedStyle(el.parentElement!).backgroundColor),
+      await page.locator("main").evaluate((el) => getComputedStyle(el.parentElement!).backgroundColor)
     ).toBe("rgb(18, 27, 44)");
   });
 
@@ -184,7 +188,7 @@ test.describe("features", () => {
     const frames = await page
       .locator("#features [data-parallax-frame]")
       .evaluateAll((els) =>
-        els.map((el) => ({ w: el.getBoundingClientRect().width, h: el.getBoundingClientRect().height })),
+        els.map((el) => ({ w: el.getBoundingClientRect().width, h: el.getBoundingClientRect().height }))
       );
 
     expect(frames).toHaveLength(6);

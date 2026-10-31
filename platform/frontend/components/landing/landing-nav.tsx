@@ -43,7 +43,7 @@ function HeaderRow({
     >
       <Link href="/" className="group/brand flex items-center gap-2.5">
         <WingMark size={22} className="text-primary" />
-        <Wordmark className="text-[26px] tracking-[0.16em]" />
+        <Wordmark className="text-[18px] tracking-[0.08em] sm:text-[26px] sm:tracking-[0.16em]" />
       </Link>
 
       <NavMenuBar />
