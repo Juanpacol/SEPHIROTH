@@ -43,12 +43,12 @@ function HeaderRow({
     >
       <Link href="/" className="group/brand flex items-center gap-2.5">
         <WingMark size={22} className="text-primary" />
-        <Wordmark className="text-[18px] tracking-[0.08em] sm:text-[26px] sm:tracking-[0.16em]" />
+        <Wordmark className="text-[18px] tracking-[0.08em] sm:text-[20px] sm:tracking-[0.1em] lg:text-[26px] lg:tracking-[0.16em]" />
       </Link>
 
       <NavMenuBar />
 
-      <div className="flex items-center gap-2 md:gap-3">
+      <div className="flex items-center gap-2 lg:gap-3">
         <LanguageSwitch className="hidden md:inline-flex" />
         <CtaButton href="/login" size="sm">
           {t("marketing.openApp")}
