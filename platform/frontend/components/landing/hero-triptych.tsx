@@ -35,7 +35,7 @@ export default function HeroTriptych() {
     () => () => {
       if (timer.current) clearTimeout(timer.current);
     },
-    [],
+    []
   );
   /** A panel opens only after the pointer has settled on it, so crossing the row on the way to a button does
    * not make the panels flutter. */
@@ -64,10 +64,52 @@ export default function HeroTriptych() {
       <section data-hero className="relative overflow-hidden">
         <div
           data-hero-content
-          className="relative min-h-[max(640px,100dvh)] translate-y-[calc(var(--hero-shift,0px)*0.25)] opacity-[calc(1-var(--hero-progress,0)*0.6)]"
+          className="relative md:min-h-[max(640px,100dvh)] md:translate-y-[calc(var(--hero-shift,0px)*0.25)] md:opacity-[calc(1-var(--hero-progress,0)*0.6)]"
         >
-          {/* The three panels. */}
-          <div className="absolute inset-0 flex flex-col md:flex-row" onMouseLeave={() => openSoon(null)}>
+          {/* The headline. Across all three panels on `md` and up, where it overlays a single
+            row of them and does not catch the pointer; below `md` it is its own block, ahead
+            of the (now stacked, full-height) panels in document order, since there is no single
+            screen for it to span there. */}
+          <div className="pointer-events-none relative z-20 mx-auto flex max-w-7xl flex-col px-6 pb-10 pt-24 md:absolute md:inset-0 md:min-h-[max(640px,100dvh)] md:justify-center md:pb-60 md:pt-28">
+            <span className="eyebrow w-fit rounded-full border border-white/25 bg-surface/50 px-3 py-1 text-white/85 backdrop-blur-sm">
+              {t("marketing.hero.badge")}
+            </span>
+            {/* A filter on the whole heading, not a text-shadow on each word: the shadow of a line would
+              fall over the bottom of the line above it and read as a smear under its letters. */}
+            <h1 className="mt-5 flex max-w-5xl flex-wrap gap-x-[0.22em] font-display text-[clamp(3rem,1rem+5.8vw,7.5rem)] font-light uppercase leading-[0.92] text-white [filter:drop-shadow(0_2px_24px_rgb(0_0_0/0.4))]">
+              {words.map((word, i) => (
+                <Fragment key={i}>
+                  <span
+                    style={{ animationDelay: `${i * 60}ms` }}
+                    className={`inline-block animate-word-in [animation-fill-mode:both] ${
+                      i >= words.length - ACCENT_WORDS ? "text-[#b6cfff]" : ""
+                    }`}
+                  >
+                    {word}
+                  </span>
+                  {/* A space between the words, for the text that is read and copied: a flex container draws none. */}{" "}
+                </Fragment>
+              ))}
+            </h1>
+            <p className="mt-5 max-w-2xl text-lg text-white/85 [text-shadow:0_1px_14px_rgb(0_0_0/0.5)]">
+              {t("marketing.hero.subtitle")}
+            </p>
+            <div className="pointer-events-auto mt-8 flex flex-wrap items-center gap-3">
+              <CtaButton href="/login">{t("marketing.openApp")}</CtaButton>
+              <CtaButton href="#how-it-works" variant="line">
+                {t("marketing.hero.seeHowItWorks")}
+              </CtaButton>
+            </div>
+          </div>
+
+          {/* The three panels. Below `md` they are stacked, full-height blocks in normal flow,
+            not an absolute layer under the headline: the headline has its own place above them
+            there instead of overlaying across all three, which is what the row layout needs it
+            to do on a single screen. */}
+          <div
+            className="relative flex flex-col md:absolute md:inset-0 md:flex-row"
+            onMouseLeave={() => openSoon(null)}
+          >
             {features.map((feature, i) => {
               const on = open === feature.id;
               return (
@@ -86,7 +128,7 @@ export default function HeroTriptych() {
                   onClick={() => {
                     if (!canHover()) openSoon(on ? null : feature.id, 0);
                   }}
-                  className={`group relative min-h-0 min-w-0 flex-[1_1_0%] overflow-hidden border-l border-line/40 first:border-l-0`}
+                  className={`group relative min-h-[85dvh] min-w-0 flex-[1_1_0%] overflow-hidden border-l border-line/40 first:border-l-0 md:min-h-0`}
                 >
                   {/* The picture has its own width, wider than a panel, so the panel opening uncovers more of it instead of
                     rescaling it: nothing in it moves while the panel grows. */}
@@ -118,39 +160,6 @@ export default function HeroTriptych() {
 
           {/* A shade across the top, so the header's text reads over any picture. */}
           <div className="pointer-events-none absolute inset-x-0 top-0 z-[15] h-44 bg-gradient-to-b from-surface/85 to-transparent" />
-
-          {/* The headline, across all three. It does not catch the pointer, so the panels still do. */}
-          <div className="pointer-events-none relative z-20 mx-auto flex min-h-[max(640px,100dvh)] max-w-7xl flex-col justify-center px-6 pb-48 pt-28 md:pb-60">
-            <span className="eyebrow w-fit rounded-full border border-white/25 bg-surface/50 px-3 py-1 text-white/85 backdrop-blur-sm">
-              {t("marketing.hero.badge")}
-            </span>
-            {/* A filter on the whole heading, not a text-shadow on each word: the shadow of a line would
-              fall over the bottom of the line above it and read as a smear under its letters. */}
-            <h1 className="mt-5 flex max-w-5xl flex-wrap gap-x-[0.22em] font-display text-[clamp(3rem,1rem+5.8vw,7.5rem)] font-light uppercase leading-[0.92] text-white [filter:drop-shadow(0_2px_24px_rgb(0_0_0/0.4))]">
-              {words.map((word, i) => (
-                <Fragment key={i}>
-                  <span
-                    style={{ animationDelay: `${i * 60}ms` }}
-                    className={`inline-block animate-word-in [animation-fill-mode:both] ${
-                      i >= words.length - ACCENT_WORDS ? "text-[#b6cfff]" : ""
-                    }`}
-                  >
-                    {word}
-                  </span>
-                  {/* A space between the words, for the text that is read and copied: a flex container draws none. */}{" "}
-                </Fragment>
-              ))}
-            </h1>
-            <p className="mt-5 max-w-2xl text-lg text-white/85 [text-shadow:0_1px_14px_rgb(0_0_0/0.5)]">
-              {t("marketing.hero.subtitle")}
-            </p>
-            <div className="pointer-events-auto mt-8 flex flex-wrap items-center gap-3">
-              <CtaButton href="/login">{t("marketing.openApp")}</CtaButton>
-              <CtaButton href="#how-it-works" variant="line">
-                {t("marketing.hero.seeHowItWorks")}
-              </CtaButton>
-            </div>
-          </div>
         </div>
       </section>
     </MotionConfig>

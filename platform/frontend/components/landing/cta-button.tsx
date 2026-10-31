@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-const BASE = "tap group inline-flex items-center justify-center gap-2.5 font-semibold";
+const BASE = "tap group inline-flex items-center justify-center gap-2.5 whitespace-nowrap font-semibold";
 
 export default function CtaButton({
   href,
@@ -33,7 +33,10 @@ export default function CtaButton({
       </Tag>
     );
   }
-  const sizing = size === "sm" ? "rounded-xl px-3 py-2 text-sm sm:px-4" : "rounded-2xl px-6 py-3.5 text-base";
+  const sizing =
+    size === "sm"
+      ? "rounded-xl px-2.5 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm"
+      : "rounded-2xl px-6 py-3.5 text-base";
   return (
     <Tag
       href={href}
