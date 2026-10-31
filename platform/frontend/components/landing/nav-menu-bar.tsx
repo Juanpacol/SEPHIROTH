@@ -246,7 +246,7 @@ export default function NavMenuBar() {
                 clear();
                 setOpenId(isOpen ? null : menu.id);
               }}
-              className={`tap relative inline-flex items-center gap-1 nav-underline px-3.5 py-2 text-sm font-medium transition-colors duration-normal hover:text-ink ${
+              className={`tap relative inline-flex items-center gap-1 whitespace-nowrap nav-underline px-2.5 py-2 text-sm font-medium transition-colors duration-normal hover:text-ink lg:px-3.5 ${
                 isOpen ? "text-ink" : "text-muted"
               }`}
               data-here={here || undefined}
