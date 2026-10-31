@@ -35,7 +35,7 @@ export default function CtaButton({
   }
   const sizing =
     size === "sm"
-      ? "rounded-xl px-2.5 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm"
+      ? "rounded-xl px-2.5 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm lg:px-4"
       : "rounded-2xl px-6 py-3.5 text-base";
   return (
     <Tag
@@ -47,7 +47,10 @@ export default function CtaButton({
         size={size === "sm" ? 13 : 15}
         aria-hidden="true"
         className={`transition-transform duration-normal ease-standard group-hover:translate-x-1 ${
-          size === "sm" ? "max-sm:hidden" : ""
+          // The icon only earns its keep once the button has room to spare: skip it through the
+          // tablet-width squeeze (the header's logo, menus and this button all compete there) and
+          // bring it back once `lg` gives everything space again.
+          size === "sm" ? "hidden lg:inline" : ""
         }`}
       />
     </Tag>

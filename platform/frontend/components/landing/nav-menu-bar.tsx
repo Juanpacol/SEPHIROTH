@@ -214,7 +214,7 @@ export default function NavMenuBar() {
   return (
     <div
       ref={bar}
-      className="relative hidden items-center gap-1 md:flex"
+      className="relative hidden items-center gap-0.5 md:flex lg:gap-1"
       onMouseLeave={scheduleClose}
       onMouseEnter={clear}
       onBlur={(e) => {
