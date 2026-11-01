@@ -28,6 +28,10 @@ export interface Column<T> {
   primary?: boolean;
   /** Dropped entirely from the card shape — noise a phone has no room for. */
   desktopOnly?: boolean;
+  /** On the phone card, takes the row's full width (label above value, left-aligned) instead of
+   * sharing it with the label. For a value that can run to more than a couple of short words —
+   * squeezed into half the card's width and right-aligned, it truncates hard for no reason. */
+  wide?: boolean;
   className?: string;
 }
 
@@ -88,12 +92,19 @@ export default function DataList<T>({
                 </div>
               ))}
               <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
-                {secondary.map((col) => (
-                  <Fragment key={col.key}>
-                    <dt className="eyebrow text-muted">{col.header}</dt>
-                    <dd className="text-right text-ink/80">{col.render(row)}</dd>
-                  </Fragment>
-                ))}
+                {secondary.map((col) =>
+                  col.wide ? (
+                    <Fragment key={col.key}>
+                      <dt className="col-span-2 eyebrow text-muted">{col.header}</dt>
+                      <dd className="col-span-2 text-left text-ink/80">{col.render(row)}</dd>
+                    </Fragment>
+                  ) : (
+                    <Fragment key={col.key}>
+                      <dt className="eyebrow text-muted">{col.header}</dt>
+                      <dd className="text-right text-ink/80">{col.render(row)}</dd>
+                    </Fragment>
+                  ),
+                )}
               </dl>
             </>
           );
