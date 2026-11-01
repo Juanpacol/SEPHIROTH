@@ -87,6 +87,7 @@ export default function PatientsPage() {
       key: "conditions",
       header: t("patients.table.conditions"),
       className: "max-w-sm text-muted",
+      wide: true,
       render: (p) => (
         <>
           {p.conditions.slice(0, 2).map((c) => (
