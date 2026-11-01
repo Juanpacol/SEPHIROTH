@@ -128,7 +128,7 @@ export default function HeroTriptych() {
                   onClick={() => {
                     if (!canHover()) openSoon(on ? null : feature.id, 0);
                   }}
-                  className={`group relative min-h-[85dvh] min-w-0 flex-[1_1_0%] overflow-hidden border-l border-line/40 first:border-l-0 md:min-h-0`}
+                  className={`group relative min-h-[240px] min-w-0 flex-[1_1_0%] overflow-hidden border-l border-line/40 first:border-l-0 md:min-h-0`}
                 >
                   {/* The picture has its own width, wider than a panel, so the panel opening uncovers more of it instead of
                     rescaling it: nothing in it moves while the panel grows. */}
@@ -138,7 +138,7 @@ export default function HeroTriptych() {
                   {/* Darkens the picture toward the bottom, where the headline and the captions sit. */}
                   <div className="absolute inset-0 bg-gradient-to-t from-surface/90 via-surface/20 to-surface/40" />
 
-                  <div className="relative z-10 flex h-full flex-col justify-between px-5 pb-6 pt-24 md:px-7 md:pb-8">
+                  <div className="relative z-10 flex h-full flex-col justify-between px-5 pb-6 pt-6 md:px-7 md:pb-8 md:pt-24">
                     <div>
                       <div className="eyebrow text-white/80">
                         #{i + 1} {t(feature.verbKey)}
