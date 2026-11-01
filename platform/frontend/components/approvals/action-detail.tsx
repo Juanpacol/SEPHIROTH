@@ -129,7 +129,7 @@ export default function ActionDetail({ action, onDone }: { action: PendingAction
                 placeholder={t("approvals.reasonPlaceholder")}
                 className="input w-full resize-y"
               />
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => reject.mutate()}
                   disabled={reject.isPending || rejectReason.trim() === ""}
@@ -143,7 +143,7 @@ export default function ActionDetail({ action, onDone }: { action: PendingAction
               </div>
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => approve.mutate()}
                 disabled={approve.isPending || text.trim() === ""}

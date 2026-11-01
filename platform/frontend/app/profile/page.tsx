@@ -118,7 +118,7 @@ export default function ProfilePage() {
           <Bot size={16} className="shrink-0 text-primary-ink" aria-hidden />
           <span className="font-semibold text-ink">{t("profile.automationPreferences")}</span>
         </span>
-        <span className="flex min-w-0 shrink-0 items-center gap-1.5 text-sm text-muted">
+        <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted">
           {t("profile.automationPreferencesHint")}
           <ArrowRight size={13} className="shrink-0 -rotate-45" aria-hidden />
         </span>
