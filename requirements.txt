@@ -1,13 +1,13 @@
 # Core Framework
-fastapi>=0.143.0
+fastapi>=0.162.0
 uvicorn[standard]>=0.54.0
-pydantic>=2.14.0
-pydantic-settings>=2.6
+pydantic>=2.14.3
+pydantic-settings>=2.16.2
 
 # Database
-sqlalchemy[asyncio]>=2.1.4
+sqlalchemy[asyncio]>=2.1.8
 asyncpg>=0.32.0
-alembic>=1.20.0
+alembic>=1.20.1
 pgvector>=0.5.1
 
 # Auth
@@ -40,12 +40,12 @@ pillow>=10.0
 
 # Object storage (S3-compatible) — optional backend for attachment bytes,
 # behind platform/core/storage.py; default backend stays Postgres.
-boto3>=1.43.111
+boto3>=1.43.126
 
 # Documents & reports
 pypdf>=6.20.0               # PDF text extraction (clinical note upload)
-reportlab>=4.2           # Consultation PDF export
-python-multipart>=0.0.9  # FastAPI multipart parsing (file uploads)
+reportlab>=5.1.0           # Consultation PDF export
+python-multipart>=0.0.33  # FastAPI multipart parsing (file uploads)
 
 # Utilities
 python-dotenv>=1.2.4
