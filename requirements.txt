@@ -36,7 +36,7 @@ fastmcp>=2.0
 # Medical Imaging (lightweight metadata support)
 pydicom>=2.4
 nibabel>=5.1
-pillow>=10.0
+pillow>=13.0.0
 
 # Object storage (S3-compatible) — optional backend for attachment bytes,
 # behind platform/core/storage.py; default backend stays Postgres.
