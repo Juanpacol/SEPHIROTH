@@ -22,7 +22,7 @@ cryptography>=50.0.2  # column-level PHI encryption (core/crypto.py) — already
 # LLM & Agents — Google Gemini API (AI Studio free tier); PHI leaves the
 # machine, see README's privacy notice.
 google-genai>=2.29.0
-fastmcp>=2.0
+fastmcp>=3.4.10
 
 # RAG (optional heavy extras; core retrieval works without them)
 # llama-index>=0.11
