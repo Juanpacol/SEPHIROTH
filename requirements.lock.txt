@@ -80,7 +80,7 @@ fastapi==0.143.0
     # via -r requirements.txt
 fastmcp==3.4.7
     # via -r requirements.txt
-fastmcp-slim==3.4.7
+fastmcp-slim==3.4.10
     # via fastmcp
 google-auth==2.61.0
     # via google-genai
