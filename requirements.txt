@@ -1,19 +1,19 @@
 # Core Framework
-fastapi>=0.143.0
+fastapi>=0.165.0
 uvicorn[standard]>=0.54.0
-pydantic>=2.14.0
-pydantic-settings>=2.6
+pydantic>=2.14.4
+pydantic-settings>=2.16.3
 
 # Database
-sqlalchemy[asyncio]>=2.1.4
+sqlalchemy[asyncio]>=2.1.9
 asyncpg>=0.32.0
-alembic>=1.20.0
+alembic>=1.20.1
 pgvector>=0.5.1
 
 # Auth
 bcrypt>=4.1
 pyjwt>=2.15.1
-pyotp>=2.9
+pyotp>=2.12.1
 slowapi>=0.1.9
 cryptography>=50.0.2  # column-level PHI encryption (core/crypto.py) — already a
                      # transitive dep (pyjwt/cryptography backends), pinned
@@ -35,17 +35,17 @@ fastmcp>=2.0
 
 # Medical Imaging (lightweight metadata support)
 pydicom>=2.4
-nibabel>=5.1
+nibabel>=5.5.0
 pillow>=10.0
 
 # Object storage (S3-compatible) — optional backend for attachment bytes,
 # behind platform/core/storage.py; default backend stays Postgres.
-boto3>=1.43.111
+boto3>=1.44.9
 
 # Documents & reports
 pypdf>=6.20.0               # PDF text extraction (clinical note upload)
-reportlab>=4.2           # Consultation PDF export
-python-multipart>=0.0.9  # FastAPI multipart parsing (file uploads)
+reportlab>=5.1.0           # Consultation PDF export
+python-multipart>=0.0.34  # FastAPI multipart parsing (file uploads)
 
 # Utilities
 python-dotenv>=1.2.4
